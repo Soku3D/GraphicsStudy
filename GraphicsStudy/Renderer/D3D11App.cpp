@@ -151,7 +151,7 @@ void Renderer::D3D11App::Update(const double& deltaTime)
 
 void Renderer::D3D11App::Render(const double& deltaTime)
 {
-	m_context->OMSetRenderTargets(0, m_rtv.GetAddressOf(), nullptr);
+	m_context->OMSetRenderTargets(1, m_rtv.GetAddressOf(), nullptr);
 	FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
 	m_context->ClearRenderTargetView(m_rtv.Get(), clearColor);
 
