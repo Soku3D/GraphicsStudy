@@ -169,4 +169,5 @@ void Renderer::D3D11App::Render(const double& deltaTime)
 	m_context->RSSetState(m_rasterizerState.Get());
 
 	m_context->DrawIndexed(3, 0, 0);
+	m_swapChain->Present(0, 0);
 }

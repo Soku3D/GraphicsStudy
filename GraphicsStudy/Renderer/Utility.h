@@ -96,7 +96,7 @@ namespace Renderer {
 			Microsoft::WRL::ComPtr <ID3DBlob> error;
 
 			ThrowIfFailed(D3DCompileFromFile(shaderPath.c_str(), nullptr, nullptr, "main",
-				"vs_5_0", 0, 0, shader.GetAddressOf(), error.GetAddressOf()));
+				"vs_4_0", 0, 0, shader.GetAddressOf(), error.GetAddressOf()));
 
 			ThrowIfFailed(device->CreateVertexShader(shader->GetBufferPointer(), shader->GetBufferSize(), nullptr,
 				vertexShader.GetAddressOf()));
@@ -113,7 +113,7 @@ namespace Renderer {
 			Microsoft::WRL::ComPtr <ID3DBlob> error;
 
 			ThrowIfFailed(D3DCompileFromFile(shaderPath.c_str(), nullptr, nullptr, "main",
-				nullptr, 0, 0, shader.GetAddressOf(), error.GetAddressOf()));
+				"ps_4_0", 0, 0, shader.GetAddressOf(), error.GetAddressOf()));
 
 			ThrowIfFailed(device->CreatePixelShader(shader->GetBufferPointer(), shader->GetBufferSize(), nullptr,
 				pixelShader.GetAddressOf()));
