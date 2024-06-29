@@ -82,8 +82,11 @@ int Renderer::SimpleApp::Run()
         }
         else {
             m_timer.Tick();
-            Update(m_timer.GetDeltaTime());
-            Render(m_timer.GetDeltaTime());
+            double delTime = m_timer.GetDeltaTime();
+            double elapsedTime = m_timer.GetElapsedTime();
+            Update(delTime);
+            Render(delTime);
+            //std::cout << delTime << ' ' << elapsedTime << '\n';
         }
     }
     return (int)msg.wParam;
