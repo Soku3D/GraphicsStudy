@@ -11,12 +11,10 @@ namespace Renderer {
 		virtual bool Initialize();
 		virtual bool InitDirectX() override;
 		virtual void OnResize() override;
-
-		virtual void Render(const double& deltaTime) override;
+		
 		virtual void Update(const double& deltaTime) override;
+		virtual void Render(const double& deltaTime) override;
 
-	public:
-		HWND m_mainWnd;
-		static SimpleApp* m_pApp;
+
 	};
 }
