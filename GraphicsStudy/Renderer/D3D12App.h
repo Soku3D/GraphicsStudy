@@ -15,6 +15,5 @@ namespace Renderer {
 		virtual void Update(const double& deltaTime) override;
 		virtual void Render(const double& deltaTime) override;
 
-
 	};
 }
