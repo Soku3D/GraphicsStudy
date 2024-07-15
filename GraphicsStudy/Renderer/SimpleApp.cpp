@@ -20,15 +20,42 @@ Renderer::SimpleApp::~SimpleApp()
 
 bool Renderer::SimpleApp::Initialize()
 {
-    if (!InitWindow()) {
+     if (!InitWindow()) {
         std::cerr << "Failed InitWindow()\n";
         return false;
-    }
+     }
+     /*if (!InitbackgroundWindow()) {
+         std::cerr << "Failed InitWindow()\n";
+         return false;
+     }*/
     if (!InitDirectX()) {
         std::cerr << "Failed InitDirectX()\n";
         return false;
     }
     return true;
+}
+
+bool Renderer::SimpleApp::InitbackgroundWindow()
+{
+    HWND progman = FindWindow(L"Progman", NULL);
+
+    if (progman)
+    {
+        // Progman을 활성화시킴
+        SendMessageTimeout(progman, 0x052C, 0, 0, SMTO_NORMAL, 1000, nullptr);
+        // WorkerW 찾기
+        EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+            HWND p = FindWindowEx(hwnd, NULL, L"SHELLDLL_DefView", NULL);
+            if (p)
+            {
+                HWND* ret = (HWND*)lParam;
+                *ret = FindWindowEx(NULL, hwnd, L"WorkerW", NULL);
+            }
+            return TRUE;
+            }, (LPARAM)&m_mainWnd);
+    }
+
+    return m_mainWnd!=NULL;
 }
 
 bool Renderer::SimpleApp::InitWindow()

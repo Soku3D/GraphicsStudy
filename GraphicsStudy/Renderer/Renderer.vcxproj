@@ -103,16 +103,19 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ConformanceMode>false</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(OutDir)CompiledShaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderModel>5.0</ShaderModel>
+      <VariableName>g_p%(Filename)</VariableName>
+      <HeaderFileOutput>$(OutDir)CompiledShaders\%(Filename).h</HeaderFileOutput>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -122,18 +125,21 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ConformanceMode>false</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(OutDir)CompiledShaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderModel>5.0</ShaderModel>
+      <VariableName>g_p%(Filename)</VariableName>
+      <HeaderFileOutput>$(OutDir)CompiledShaders\%(Filename).h</HeaderFileOutput>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -160,8 +166,12 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">g_p%(Filename)</VariableName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">g_p%(Filename)</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)CompiledShaders\%(Filename).h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)CompiledShaders\%(Filename).h</HeaderFileOutput>
     </FxCompile>
     <FxCompile Include="TestVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
@@ -170,6 +180,10 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">g_p%(Filename)</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)CompiledShaders\%(Filename).h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">g_p%(Filename)</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)CompiledShaders\%(Filename).h</HeaderFileOutput>
     </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

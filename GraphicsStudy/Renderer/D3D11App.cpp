@@ -1,5 +1,6 @@
 #include "D3D11App.h"
 
+
 Renderer::D3D11App::D3D11App(const int& width, const int& height)
 	:SimpleApp(width, height)
 {
@@ -12,25 +13,31 @@ Renderer::D3D11App::~D3D11App()
 bool Renderer::D3D11App::Initialize()
 {
 	using DirectX::SimpleMath::Vector3;
-	if(!SimpleApp::Initialize())
+	if (!SimpleApp::Initialize())
 		return false;
 
+	// Vertex Buffer & Index Buffer & input Layout 생성
 	std::vector<SimpleVertex> vertices = {
-		{Vector3(-1.f,-1.f,0.f)},
-		{Vector3(0.f,1.f,0.f)},
-		{Vector3(1.f,-1.f,0.f)}
+		{Vector3(-0.5f,-0.5f,0.f)},
+		{Vector3(0.f,0.5f,0.f)},
+		{Vector3(0.5f,-0.5f,0.f)}
 	};
+
 	std::vector<uint32_t> indices = {
 		0,1,2
 	};
+
 	Utility::CreateVertexBuffer(vertices, m_vertexBuffer, m_device);
 	Utility::CreateIndexBuffer(indices, m_indexBuffer, m_device);
 
-	std::vector<D3D11_INPUT_ELEMENT_DESC> elements = {
-		{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0}
+	std::vector<D3D11_INPUT_ELEMENT_DESC> inputElements = {
+		{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA, 0}
 	};
-	Utility::CreateVertexShaderAndInputLayout(L"TestVS.hlsl", m_vertexShader, elements, m_inputLayout, m_device);
-	Utility::CreatePixelShader(L"TestPS.hlsl", m_pixelShader, m_device);
+
+	m_device->CreateVertexShader((void*)g_pTestVS, sizeof(g_pTestVS), nullptr, m_vertexShader.GetAddressOf());
+	m_device->CreatePixelShader((void*)g_pTestPS, sizeof(g_pTestPS), nullptr, m_pixelShader.GetAddressOf());
+	m_device->CreateInputLayout(inputElements.data(), inputElements.size(), (void*)g_pTestVS, sizeof(g_pTestVS), m_inputLayout.GetAddressOf());
+
 	return true;
 }
 
@@ -50,7 +57,7 @@ bool Renderer::D3D11App::InitDirectX()
 #if defined(DEBUG) || defined(_DEBUG)
 	debugFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
-	
+
 	ThrowIfFailed(D3D11CreateDevice(
 		nullptr,
 		driverType,
@@ -66,6 +73,8 @@ bool Renderer::D3D11App::InitDirectX()
 	device->CheckMultisampleQualityLevels(m_backBufferFormat, m_sampleCount,
 		&m_msaaQuality);
 
+	printf("msaa Quality : %d\n", m_msaaQuality);
+	
 	ThrowIfFailed(device.As(&m_device));
 	ThrowIfFailed(context.As(&m_context));
 
@@ -76,7 +85,8 @@ bool Renderer::D3D11App::InitDirectX()
 	scDesc.BufferDesc.Format = m_backBufferFormat;
 	scDesc.BufferDesc.RefreshRate.Numerator = 60;
 	scDesc.BufferDesc.RefreshRate.Denominator = 1;
-	scDesc.SampleDesc.Count = 1;
+	scDesc.SampleDesc.Count = (m_msaaQuality > 0) ? m_sampleCount : 1;
+	scDesc.SampleDesc.Quality = (m_msaaQuality > 0) ? (m_msaaQuality - 1) : 0;
 	scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	scDesc.BufferCount = 2;
 	scDesc.OutputWindow = m_mainWnd;
@@ -98,12 +108,12 @@ bool Renderer::D3D11App::InitDirectX()
 		&featureLevel,
 		m_context.ReleaseAndGetAddressOf()
 	));
+
 	SetViewport();
 
 	CreateRenderTargets();
 
 	CreateDepthBuffer();
-
 
 	return true;
 }
@@ -132,7 +142,7 @@ void Renderer::D3D11App::CreateRenderTargets()
 
 void Renderer::D3D11App::CreateDepthBuffer()
 {
-	
+
 }
 
 void Renderer::D3D11App::CreateRaseterizerState()
@@ -152,8 +162,9 @@ void Renderer::D3D11App::Update(const double& deltaTime)
 void Renderer::D3D11App::Render(const double& deltaTime)
 {
 	m_context->OMSetRenderTargets(1, m_rtv.GetAddressOf(), nullptr);
-	FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
-	m_context->ClearRenderTargetView(m_rtv.Get(), clearColor);
+	FLOAT clearColor_beige[4] = { 255.f / 255.f,250.f / 255.f,239.f / 255.f,1.f };
+	FLOAT clearColor_red[4] = { 1.f, 0.f, 0.f, 1.f };
+	m_context->ClearRenderTargetView(m_rtv.Get(), clearColor_red);
 
 	UINT stride = sizeof(SimpleVertex);
 	UINT offset = 0;

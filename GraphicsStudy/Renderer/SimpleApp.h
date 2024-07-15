@@ -11,7 +11,9 @@ namespace Renderer {
 		virtual bool Initialize();
 		virtual bool InitDirectX() = 0;
 		virtual void OnResize() = 0;
+
 		bool InitWindow();
+		bool InitbackgroundWindow();
 
 		int Run();
 		LRESULT MainProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);

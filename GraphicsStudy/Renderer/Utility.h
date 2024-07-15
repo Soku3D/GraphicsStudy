@@ -12,9 +12,15 @@
 #include "dxgi.h"
 #include "Vertex.h"
 #include "d3d11.h"
-#include "d3d12.h"
 #include "wrl.h"
 #include "d3dcompiler.h"
+
+#include "d3dx12.h"
+#include "d3d12.h"
+#include "dxgi1_4.h"
+
+#include "TestVS.h"
+#include "TestPS.h"
 
 inline std::wstring AnsiToWString(const std::string& str)
 {
@@ -46,6 +52,7 @@ public:
 };
 namespace Renderer {
 
+	using Microsoft::WRL::ComPtr;
 
 	class Utility {
 	public:
@@ -117,6 +124,89 @@ namespace Renderer {
 
 			ThrowIfFailed(device->CreatePixelShader(shader->GetBufferPointer(), shader->GetBufferSize(), nullptr,
 				pixelShader.GetAddressOf()));
+		}
+		template<typename V>
+		static void CreateUploadBuffer(std::vector<V>& data,
+			ComPtr<ID3D12Resource> & buffer,
+			ComPtr<ID3D12Device> & device) {
+			D3D12_HEAP_PROPERTIES hp;
+			ZeroMemory(&hp, sizeof(hp));
+			hp.Type = D3D12_HEAP_TYPE_UPLOAD;
+			hp.CreationNodeMask = 1;
+			hp.VisibleNodeMask = 1;
+
+			D3D12_RESOURCE_DESC rDesc;
+			rDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+			rDesc.Width = data.size() * sizeof(V);
+			rDesc.Height = rDesc.MipLevels = 1;
+			rDesc.SampleDesc.Count = 1;
+			rDesc.Format = DXGI_FORMAT_UNKNOWN;
+			rDesc.DepthOrArraySize = 1;
+			rDesc.Layout = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+			ThrowIfFailed(device->CreateCommittedResource(
+				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+				D3D12_HEAP_FLAG_NONE,
+				&CD3DX12_RESOURCE_DESC::Buffer(data.size() * sizeof(V)),
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				nullptr,
+				IID_PPV_ARGS(&buffer)
+			));
+		}
+		template<typename V>
+		static void CreateGPUBuffer(std::vector<V>& data,
+			ComPtr<ID3D12Resource>& buffer,
+			ComPtr<ID3D12Device>& device) {
+			D3D12_HEAP_PROPERTIES hp;
+			ZeroMemory(&hp, sizeof(hp));
+			hp.Type = D3D12_HEAP_TYPE_DEFAULT;
+			hp.CreationNodeMask = 1;
+			hp.VisibleNodeMask = 1;
+
+			D3D12_RESOURCE_DESC rDesc;
+			rDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+			rDesc.Width = data.size() * sizeof(V);
+			rDesc.Height = rDesc.MipLevels = 1;
+			rDesc.SampleDesc.Count = 1;
+			rDesc.Format = DXGI_FORMAT_UNKNOWN;
+			rDesc.DepthOrArraySize = 1;
+			rDesc.Layout = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+			ThrowIfFailed(device->CreateCommittedResource(
+				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+				D3D12_HEAP_FLAG_NONE,
+				&CD3DX12_RESOURCE_DESC::Buffer(data.size() * sizeof(V)), 
+				D3D12_RESOURCE_STATE_COMMON,
+				nullptr,
+				IID_PPV_ARGS(&buffer)
+			));
+		}
+		template<typename V>
+		static void CreateBuffer(std::vector<V>& data,
+			ComPtr<ID3D12Resource>& uploadBuffer,
+			ComPtr<ID3D12Resource>& gpuBuffer,
+			ComPtr<ID3D12Device>& device,
+			ComPtr<ID3D12GraphicsCommandList> & commandList) {
+
+			CreateUploadBuffer<V>(data, uploadBuffer, device);
+			CreateGPUBuffer<V>(data, gpuBuffer, device);
+
+			D3D12_SUBRESOURCE_DATA subData;
+			subData.pData = data.data();
+			subData.RowPitch = data.size() * sizeof(V);
+			subData.SlicePitch = subData.RowPitch;
+			D3D12_RESOURCE_BARRIER rb;
+			ZeroMemory(&rb, sizeof(rb));
+			rb.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			rb.Transition.pResource = gpuBuffer.Get();
+			rb.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+			rb.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+			rb.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(gpuBuffer.Get(),D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST));
+			UpdateSubresources<1>(commandList.Get(), gpuBuffer.Get(), uploadBuffer.Get(), 0, 0, 1, &subData);
+			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(gpuBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
+			
 		}
 	};
 }
