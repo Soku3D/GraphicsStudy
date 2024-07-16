@@ -108,7 +108,7 @@ namespace Renderer {
 			ThrowIfFailed(device->CreateVertexShader(shader->GetBufferPointer(), shader->GetBufferSize(), nullptr,
 				vertexShader.GetAddressOf()));
 
-			ThrowIfFailed(device->CreateInputLayout(elements.data(), elements.size(), shader->GetBufferPointer(), shader->GetBufferSize(),
+			ThrowIfFailed(device->CreateInputLayout(elements.data(), elements.size(), shader->GetBufferPointer(), (UINT)shader->GetBufferSize(),
 				inputlayout.GetAddressOf()));
 		}
 		static void CreatePixelShader(
@@ -153,6 +153,7 @@ namespace Renderer {
 				IID_PPV_ARGS(&buffer)
 			));
 		}
+		// data->UploadBuffer->DefaultBuffer
 		template<typename V>
 		static void CreateBuffer(std::vector<V>& data,
 			ComPtr<ID3D12Resource>& uploadBuffer,

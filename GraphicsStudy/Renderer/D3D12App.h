@@ -25,8 +25,15 @@ namespace Renderer {
 		
 		virtual void Update(const double& deltaTime) override;
 		virtual void Render(const double& deltaTime) override;
-
+					
+		void CreateCommandObjects();
+		void CreateDescriptorHeaps();
 		void FlushCommandQueue();
+
+		void CreateVertexAndIndexBuffer();
+		void CreateConstantBuffer();
+		void CreateRootSignature();
+		void CreatePSO();
 
 	protected:
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
@@ -73,18 +80,19 @@ namespace Renderer {
 
 		ComPtr<ID3D12Resource> m_vertexUpload;
 		ComPtr<ID3D12Resource> m_vertexGpu;
-		D3D12_VERTEX_BUFFER_VIEW vbv;
+		D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
 
 		ComPtr<ID3D12Resource> m_indexUpload;
 		ComPtr<ID3D12Resource> m_indexGpu;
-		D3D12_INDEX_BUFFER_VIEW ibv;
+		D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
 
 		ComPtr<ID3D12PipelineState> m_pso;
 		ComPtr<ID3D12RootSignature> m_rootSignature;
 
-		ConstantBuffer m_bufferData;
-		ComPtr<ID3D12Resource> m_constUploadBuffer;
+		ConstantBuffer m_constantData;
+		ComPtr<ID3D12Resource> m_constantUploadBuffer;
 		UINT8* m_pCbvDataBegin = nullptr;
 
+		D3D12_INPUT_LAYOUT_DESC m_simpleVertexInputLayout;
 	};
 }

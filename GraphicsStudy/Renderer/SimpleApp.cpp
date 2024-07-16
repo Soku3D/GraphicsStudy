@@ -32,6 +32,9 @@ bool Renderer::SimpleApp::Initialize()
         std::cerr << "Failed InitDirectX()\n";
         return false;
     }
+
+    OnResize();
+
     return true;
 }
 
@@ -126,7 +129,11 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
         PostQuitMessage(0);
         return 0;
     case WM_SIZE:
+        m_screenWidth = LOWORD(lParam);
+        m_screenHeight = HIWORD(lParam);
+        
         OnResize();
+        
         return 0;
     }
     return DefWindowProc(hWnd, msg, wParam, lParam);
