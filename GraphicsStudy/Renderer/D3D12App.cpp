@@ -39,6 +39,32 @@ bool Renderer::D3D12App::Initialize()
 
 	FlushCommandQueue();
 
+	/*CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+	rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	ComPtr<ID3DBlob> signature;
+	ComPtr<ID3DBlob> error;
+	ThrowIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error));
+	ThrowIfFailed(m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));*/
+	
+	CD3DX12_ROOT_PARAMETER1 slotRootParameter[1];
+
+	CD3DX12_DESCRIPTOR_RANGE1 tables[1];
+	tables[0].Init(
+		D3D12_DESCRIPTOR_RANGE_TYPE_CBV,
+		1,
+		0);
+	slotRootParameter[0].InitAsDescriptorTable(1, tables);
+
+	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSigDesc;
+	rootSigDesc.Init_1_1(_countof(slotRootParameter), slotRootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	ComPtr<ID3DBlob> serialzedRootSig;
+	ComPtr<ID3DBlob> error;
+
+	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1, serialzedRootSig.GetAddressOf(), error.GetAddressOf()));
+
+	m_device->CreateRootSignature(0, serialzedRootSig->GetBufferPointer(), serialzedRootSig->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature));
 
 	vbv.BufferLocation = m_vertexGpu->GetGPUVirtualAddress();
 	vbv.SizeInBytes = sizeof(SimpleVertex) * vertices.size();
@@ -61,14 +87,6 @@ bool Renderer::D3D12App::Initialize()
 	D3D12_INPUT_LAYOUT_DESC inputLayout;
 	inputLayout.NumElements = elements.size();
 	inputLayout.pInputElementDescs = elements.data();
-
-	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-	ComPtr<ID3DBlob> signature;
-	ComPtr<ID3DBlob> error;
-	ThrowIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error));
-	ThrowIfFailed(m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	psoDesc.VS = {
@@ -146,22 +164,24 @@ bool Renderer::D3D12App::InitDirectX()
 	ThrowIfFailed(device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msaaData, sizeof(msaaData)));
 	
 	// Describe and create the command queue and commandAllocator.
-	m_device->CreateCommandAllocator(m_commandType, IID_PPV_ARGS(&m_commandAllocator));
-	
-	D3D12_COMMAND_QUEUE_DESC cqDesc;
-	ZeroMemory(&cqDesc, sizeof(cqDesc));
-	cqDesc.Type = m_commandType;
-	
-	m_device->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&m_commandQueue));
-	
-	ThrowIfFailed(m_device->CreateCommandList(
-		0,
-		m_commandType,
-		m_commandAllocator.Get(),
-		nullptr,
-		IID_PPV_ARGS(&m_commandList)));
+	{
+		m_device->CreateCommandAllocator(m_commandType, IID_PPV_ARGS(&m_commandAllocator));
 
-	m_commandList->Close();
+		D3D12_COMMAND_QUEUE_DESC cqDesc;
+		ZeroMemory(&cqDesc, sizeof(cqDesc));
+		cqDesc.Type = m_commandType;
+
+		m_device->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&m_commandQueue));
+
+		ThrowIfFailed(m_device->CreateCommandList(
+			0,
+			m_commandType,
+			m_commandAllocator.Get(),
+			nullptr,
+			IID_PPV_ARGS(&m_commandList)));
+
+		m_commandList->Close();
+	}
 
 	// Describe and create the swap chain.
 	DXGI_SWAP_CHAIN_DESC1 scDesc;
