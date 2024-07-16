@@ -65,6 +65,15 @@ bool Renderer::D3D12App::Initialize()
 	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1, serialzedRootSig.GetAddressOf(), error.GetAddressOf()));
 
 	m_device->CreateRootSignature(0, serialzedRootSig->GetBufferPointer(), serialzedRootSig->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature));
+	m_bufferData.offset = 1.f;
+	std::vector<ConstantBuffer> cBufferData{ m_bufferData };
+	Utility::CreateUploadBuffer(cBufferData, m_constUploadBuffer, m_device);
+
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
+	cbvDesc.BufferLocation = m_constUploadBuffer->GetGPUVirtualAddress();
+	cbvDesc.SizeInBytes = sizeof(ConstantBuffer)* cBufferData.size();
+
+	m_device->CreateConstantBufferView(&cbvDesc, m_cbvHeap->GetCPUDescriptorHandleForHeapStart());
 
 	vbv.BufferLocation = m_vertexGpu->GetGPUVirtualAddress();
 	vbv.SizeInBytes = sizeof(SimpleVertex) * vertices.size();
@@ -239,6 +248,15 @@ bool Renderer::D3D12App::InitDirectX()
 	ThrowIfFailed(m_device->CreateDescriptorHeap(
 		&dsvHeapDesc, IID_PPV_ARGS(m_dsvHeap.GetAddressOf())));
 
+
+	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc;
+	cbvHeapDesc.NumDescriptors = 1;
+	cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	cbvHeapDesc.NodeMask = 0;
+	ThrowIfFailed(m_device->CreateDescriptorHeap(
+		&cbvHeapDesc, IID_PPV_ARGS(m_cbvHeap.GetAddressOf())));
+
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 	// Create frame resources.
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
@@ -327,10 +345,13 @@ void Renderer::D3D12App::Render(const double& deltaTime)
 	m_commandList->IASetVertexBuffers(0, 1, &vbv);
 	m_commandList->IASetIndexBuffer(&ibv);
 	m_commandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
+	m_commandList->SetDescriptorHeaps(1, m_cbvHeap.GetAddressOf());
+	m_commandList->SetGraphicsRootDescriptorTable(0, m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
 
 	m_commandList->RSSetScissorRects(1, &m_scissorRect);
 	m_commandList->RSSetViewports(1, &m_viewport);
-	m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
+
 	m_commandList->DrawInstanced(3, 1, 0, 0);
 
 	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(

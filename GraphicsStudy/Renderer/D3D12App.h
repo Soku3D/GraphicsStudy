@@ -5,6 +5,12 @@
 
 using Microsoft::WRL::ComPtr;
 
+struct ConstantBuffer
+{
+	float offset = 0.8f;
+	float padding[63]; // Padding so the constant buffer is 256-byte aligned.
+};
+
 namespace Renderer {
 	class D3D12App :public SimpleApp {
 	public:
@@ -24,6 +30,7 @@ namespace Renderer {
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
 		ID3D12Resource* CurrentBackBuffer() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const;
+
 	private:
 		bool bUseWarpAdapter;
 		D3D_FEATURE_LEVEL m_minimumFeatureLevel;
@@ -57,6 +64,7 @@ namespace Renderer {
 
 		ComPtr<ID3D12DescriptorHeap> m_rtvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_dsvHeap;
+		ComPtr<ID3D12DescriptorHeap> m_cbvHeap;
 
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;
@@ -71,5 +79,9 @@ namespace Renderer {
 
 		ComPtr<ID3D12PipelineState> m_pso;
 		ComPtr<ID3D12RootSignature> m_rootSignature;
+
+		ConstantBuffer m_bufferData;
+		ComPtr<ID3D12Resource> m_constUploadBuffer;
+
 	};
 }
