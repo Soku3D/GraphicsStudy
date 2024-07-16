@@ -23,6 +23,7 @@ namespace Renderer {
 	protected:
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
 		ID3D12Resource* CurrentBackBuffer() const;
+		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const;
 	private:
 		bool bUseWarpAdapter;
 		D3D_FEATURE_LEVEL m_minimumFeatureLevel;
@@ -34,17 +35,19 @@ namespace Renderer {
 		UINT m_numQualityLevels = 0;
 		UINT m_sampleCount = 4;
 		DXGI_FORMAT m_backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		DXGI_FORMAT m_depthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+		ComPtr<IDXGISwapChain3> m_swapChain;
+		static const UINT m_swapChainCount = 2;
+		ComPtr<ID3D12Resource> m_renderTargets[m_swapChainCount];
+		ComPtr<ID3D12Resource> m_depthStencilBuffer;
+		UINT m_frameIndex = 0;
 
 		D3D12_COMMAND_LIST_TYPE m_commandType = D3D12_COMMAND_LIST_TYPE_DIRECT;
 		ComPtr<ID3D12CommandAllocator> m_commandAllocator;
 		ComPtr<ID3D12GraphicsCommandList> m_commandList;
 		ComPtr<ID3D12CommandQueue> m_commandQueue;
-
-		ComPtr<IDXGISwapChain3> m_swapChain;
-		static const UINT m_swapChainCount = 2;
-		ComPtr<ID3D12Resource> m_renderTargets[m_swapChainCount];
-		UINT m_frameIndex = 0;
-
+		
 		UINT m_currentFence = 0;
 		ComPtr<ID3D12Fence> m_fence;
 
@@ -53,6 +56,7 @@ namespace Renderer {
 		UINT m_csuHeapSize = 0;
 
 		ComPtr<ID3D12DescriptorHeap> m_rtvHeap;
+		ComPtr<ID3D12DescriptorHeap> m_dsvHeap;
 
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;
