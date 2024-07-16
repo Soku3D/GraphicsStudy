@@ -7,8 +7,10 @@ using Microsoft::WRL::ComPtr;
 
 struct ConstantBuffer
 {
-	float offset = 0.8f;
-	float padding[63]; // Padding so the constant buffer is 256-byte aligned.
+	float r = 0.5f;
+	float g = 0.5f;
+	float b = 1.f;
+	float padding[61]; // Padding
 };
 
 namespace Renderer {
@@ -82,6 +84,7 @@ namespace Renderer {
 
 		ConstantBuffer m_bufferData;
 		ComPtr<ID3D12Resource> m_constUploadBuffer;
+		UINT8* m_pCbvDataBegin = nullptr;
 
 	};
 }

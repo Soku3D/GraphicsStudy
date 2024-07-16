@@ -20,10 +20,11 @@ bool Renderer::D3D12App::Initialize()
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 	// Create Vertex Buffer & Index Buffer & input Layout 
 
-	std::vector<SimpleVertex> vertices = {
-			{Vector3(-0.5f, -0.5f, 0.5f)},
-			{Vector3(0.f, 0.5f, 0.5f)},
-			{Vector3(0.5f, -0.5f, 0.5f)}
+	std::vector<SimpleVertex> vertices = 
+	{
+		{Vector3(-0.5f, -0.5f, 0.5f)},
+		{Vector3(0.f, 0.5f, 0.5f)},
+		{Vector3(0.5f, -0.5f, 0.5f)}
 	};
 
 	std::vector<uint32_t> indices = {
@@ -55,7 +56,7 @@ bool Renderer::D3D12App::Initialize()
 		1,
 		0);
 	slotRootParameter[0].InitAsDescriptorTable(1, tables);
-
+	UINT rootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSigDesc;
 	rootSigDesc.Init_1_1(_countof(slotRootParameter), slotRootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
@@ -65,7 +66,7 @@ bool Renderer::D3D12App::Initialize()
 	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1, serialzedRootSig.GetAddressOf(), error.GetAddressOf()));
 
 	m_device->CreateRootSignature(0, serialzedRootSig->GetBufferPointer(), serialzedRootSig->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature));
-	m_bufferData.offset = 1.f;
+	
 	std::vector<ConstantBuffer> cBufferData{ m_bufferData };
 	Utility::CreateUploadBuffer(cBufferData, m_constUploadBuffer, m_device);
 
@@ -74,6 +75,10 @@ bool Renderer::D3D12App::Initialize()
 	cbvDesc.SizeInBytes = sizeof(ConstantBuffer)* cBufferData.size();
 
 	m_device->CreateConstantBufferView(&cbvDesc, m_cbvHeap->GetCPUDescriptorHandleForHeapStart());
+
+	CD3DX12_RANGE readRange(0, 0);
+	ThrowIfFailed(m_constUploadBuffer->Map(0, &readRange, reinterpret_cast<void**>(&m_pCbvDataBegin)));
+	memcpy(m_pCbvDataBegin, cBufferData.data(), cbvDesc.SizeInBytes);
 
 	vbv.BufferLocation = m_vertexGpu->GetGPUVirtualAddress();
 	vbv.SizeInBytes = sizeof(SimpleVertex) * vertices.size();
@@ -120,8 +125,6 @@ bool Renderer::D3D12App::Initialize()
 	psoDesc.DSVFormat = m_depthStencilFormat;
 
 	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pso)));
-	
-
 
 	return true;
 }

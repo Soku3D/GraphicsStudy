@@ -1,9 +1,11 @@
 cbuffer cb : register(b0)
 {
-    float offset;
+    float r;
+    float g;
+    float b;
 }
 
 float4 main(float4 position :SV_Position) : SV_TARGET
 {
-    return float4(offset, 1.f, offset, 1.0f);
+    return float4(r, g, b, 1.0f);
 }
