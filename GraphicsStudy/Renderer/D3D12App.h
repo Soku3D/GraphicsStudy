@@ -2,15 +2,13 @@
 
 #include "SimpleApp.h"
 
-
 using Microsoft::WRL::ComPtr;
 
-struct ConstantBuffer
+__declspec(align(256)) struct ConstantBuffer
 {
-	float r = 0.5f;
-	float g = 0.5f;
-	float b = 1.f;
-	float padding[61]; // Padding
+	DirectX::SimpleMath::Matrix ModelMat = DirectX::SimpleMath::Matrix();
+	DirectX::SimpleMath::Matrix ViewMat = DirectX::SimpleMath::Matrix();
+	DirectX::SimpleMath::Matrix ProjMat = DirectX::SimpleMath::Matrix();
 };
 
 namespace Renderer {
@@ -89,7 +87,7 @@ namespace Renderer {
 		ComPtr<ID3D12PipelineState> m_pso;
 		ComPtr<ID3D12RootSignature> m_rootSignature;
 
-		ConstantBuffer m_constantData;
+		ConstantBuffer* m_constantData;
 		ComPtr<ID3D12Resource> m_constantUploadBuffer;
 		UINT8* m_pCbvDataBegin = nullptr;
 

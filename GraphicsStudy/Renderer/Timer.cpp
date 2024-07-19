@@ -12,7 +12,7 @@ Utils::Timer::Timer():
 {
 	__int64 freq;
 	QueryPerformanceFrequency((LARGE_INTEGER*)&freq);
-	std::cout << freq;
+	//std::cout << freq;
 	m_secondPerCount = 1.0/freq;
 
 	__int64 currTime;

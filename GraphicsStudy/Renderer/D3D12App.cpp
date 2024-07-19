@@ -18,6 +18,7 @@ bool Renderer::D3D12App::Initialize()
 		return false;
 	}
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
+
 	CreateVertexAndIndexBuffer();
 	CreateConstantBuffer();
 	CreateRootSignature();
@@ -77,8 +78,8 @@ bool Renderer::D3D12App::InitDirectX()
 	msaaData.SampleCount = m_sampleCount;
 
 	ThrowIfFailed(device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msaaData, sizeof(msaaData)));
-	std::cout << "Msaa Num Quality Level : " << m_numQualityLevels << std::endl;
-
+	std::cout << "Msaa Num Quality Level : " << msaaData.NumQualityLevels << std::endl;
+	m_numQualityLevels = msaaData.NumQualityLevels;
 	m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
 
 	CreateCommandObjects();
@@ -90,10 +91,10 @@ bool Renderer::D3D12App::InitDirectX()
 	scDesc.Width = m_screenWidth;
 	scDesc.Height = m_screenHeight;
 	scDesc.Format = m_backbufferFormat;
-	scDesc.SampleDesc.Count = (m_numQualityLevels > 0) ? m_sampleCount : 1;
-	scDesc.SampleDesc.Quality = (m_numQualityLevels > 0) ? m_numQualityLevels - 1 : 0;
+	scDesc.SampleDesc.Count = 1;
+	scDesc.SampleDesc.Quality = 0;
 	scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	scDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	scDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 	scDesc.Flags = DXGI_SWAP_CHAIN_FLAG::DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 	scDesc.BufferCount = m_swapChainCount;
 
@@ -116,7 +117,7 @@ bool Renderer::D3D12App::InitDirectX()
 
 	ThrowIfFailed(swapChain.As(&m_swapChain));
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
-	
+
 	return true;
 }
 
@@ -133,13 +134,13 @@ void Renderer::D3D12App::OnResize()
 		m_renderTargets[i].Reset();
 	}
 	m_depthStencilBuffer.Reset();
-	
+
 	ThrowIfFailed(m_swapChain->ResizeBuffers(m_swapChainCount,
 		m_screenWidth,
 		m_screenHeight,
 		DXGI_FORMAT_UNKNOWN,
 		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
-	
+
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
@@ -202,6 +203,30 @@ void Renderer::D3D12App::OnResize()
 
 void Renderer::D3D12App::Update(const double& deltaTime)
 {
+	using DirectX::SimpleMath::Vector3;
+	using namespace DirectX::SimpleMath;
+	using namespace DirectX;
+	static Vector3 position = Vector3::Zero;
+
+	/*Vector3 veloctiy = Vector3(1.1f, 0.f, 0.f);
+	position += veloctiy * deltaTime;
+	if (position.x > 2.f)
+		position.x = -1.f;*/
+	float fov = 70.0 / 180.0 * 3.141592;
+	float aspectRatio = m_screenWidth / m_screenHeight;
+
+	m_constantData->ModelMat = DirectX::SimpleMath::Matrix::CreateTranslation(position);
+	m_constantData->ViewMat =XMMatrixLookToLH(Vector3(0.f, 0.f, -1.f), Vector3(0.f, 0.f, 1.f), Vector3(0.f, 1.f, 0.f));
+	m_constantData->ProjMat =XMMatrixPerspectiveFovLH(fov, aspectRatio, 0.01f, 100.f);
+	
+	m_constantData->ModelMat = m_constantData->ModelMat.Transpose();
+	m_constantData->ViewMat = m_constantData->ViewMat.Transpose();
+	m_constantData->ProjMat = m_constantData->ProjMat.Transpose();
+
+	CD3DX12_RANGE range(0, 0);
+	ThrowIfFailed(m_constantUploadBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
+	memcpy(m_pCbvDataBegin, m_constantData, sizeof(ConstantBuffer));
+	m_constantUploadBuffer->Unmap(0, nullptr);
 }
 
 void Renderer::D3D12App::Render(const double& deltaTime)
@@ -216,13 +241,9 @@ void Renderer::D3D12App::Render(const double& deltaTime)
 
 		FLOAT clearColor[4] = { 1.f,1.f,1.f,1.f };
 		m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
-		m_commandList->ClearDepthStencilView(
-			m_dsvHeap->GetCPUDescriptorHandleForHeapStart(),
+		m_commandList->ClearDepthStencilView(m_dsvHeap->GetCPUDescriptorHandleForHeapStart(),
 			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-			1.f,
-			0,
-			0,
-			nullptr);
+			1.f, 0, 0, nullptr);
 
 		m_commandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
 
@@ -241,7 +262,7 @@ void Renderer::D3D12App::Render(const double& deltaTime)
 		m_commandList->SetGraphicsRootDescriptorTable(0, m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
 
 		m_commandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
-		
+
 		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			CurrentBackBuffer(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
@@ -327,9 +348,9 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 	using DirectX::SimpleMath::Vector3;
 
 	std::vector<SimpleVertex> triangleVertices = {
-		{Vector3(-1.f,-1.f,0.f)},
-		{Vector3(0.f,1.f,0.f)},
-		{Vector3(1.f,-1.f,0.f)},
+		{Vector3(-1.f,-1.f,0.5f)},
+		{Vector3(0.f,1.f,0.5f)},
+		{Vector3(1.f,-1.f,0.5f)},
 	};
 	std::vector<uint16_t> indices = {
 		0,1,2
@@ -350,14 +371,17 @@ void Renderer::D3D12App::CreateConstantBuffer()
 {
 	// 1. Create buffer
 	// 2. Create bufferView
+	m_constantData = new ConstantBuffer();
 	std::vector<ConstantBuffer> constantData = {
-		m_constantData
+		*m_constantData
 	};
+	//m_constantData->ModelMat = m_constantData->ModelMat.Transpose();
+
 	Utility::CreateUploadBuffer(constantData, m_constantUploadBuffer, m_device);
 
 	CD3DX12_RANGE range(0, 0);
 	ThrowIfFailed(m_constantUploadBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
-	memcpy(m_pCbvDataBegin, &m_constantData, sizeof(ConstantBuffer));
+	memcpy(m_pCbvDataBegin, m_constantData, sizeof(ConstantBuffer));
 	m_constantUploadBuffer->Unmap(0, nullptr);
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
@@ -375,8 +399,15 @@ void Renderer::D3D12App::CreateRootSignature()
 	CD3DX12_ROOT_PARAMETER1 rootParameters[1];
 	rootParameters[0].InitAsDescriptorTable(1, tables);
 
+	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags = 
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS | 
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS | 
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
+
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 0, nullptr, rootSignatureFlags);
 
 	ComPtr<ID3DBlob> signature;
 	ComPtr<ID3DBlob> error;
@@ -387,7 +418,8 @@ void Renderer::D3D12App::CreateRootSignature()
 
 void Renderer::D3D12App::CreatePSO()
 {
-	std::vector<D3D12_INPUT_ELEMENT_DESC> elements = {
+	std::vector<D3D12_INPUT_ELEMENT_DESC> elements =
+	{
 		{"POSITION", 0,DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 	};
 	m_simpleVertexInputLayout.NumElements = (UINT)elements.size();
@@ -414,9 +446,9 @@ void Renderer::D3D12App::CreatePSO()
 	psoDesc.NumRenderTargets = 1;
 	psoDesc.RTVFormats[0] = m_backbufferFormat;
 	psoDesc.DSVFormat = m_depthStencilFormat;
-	psoDesc.SampleDesc.Count = (m_numQualityLevels > 0) ? m_sampleCount : 1;
-	psoDesc.SampleDesc.Quality = (m_numQualityLevels > 0) ? m_numQualityLevels -1 : 0;
-	
+	psoDesc.SampleDesc.Count = 1;
+	psoDesc.SampleDesc.Quality = 0;
+
 	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pso)));
 }
 
