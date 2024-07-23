@@ -95,6 +95,18 @@ bool Renderer::SimpleApp::InitWindow()
 
     assert(m_mainWnd != 0);
     
+    RAWINPUTDEVICE rawInputDevice;
+
+    //The HID standard for mouse
+    const uint16_t standardMouse = 0x02;
+   
+    rawInputDevice.usUsagePage = 0x01;
+    rawInputDevice.usUsage = standardMouse;
+    rawInputDevice.dwFlags = 0;
+    rawInputDevice.hwndTarget = m_mainWnd;
+
+    ::RegisterRawInputDevices(&rawInputDevice, 1, sizeof(RAWINPUTDEVICE));
+
     ShowWindow(m_mainWnd,SW_SHOWDEFAULT);
     UpdateWindow(m_mainWnd);
     
@@ -126,15 +138,54 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 {
     switch (msg) {
     case WM_DESTROY:
-        PostQuitMessage(0);
-        return 0;
+        {
+            PostQuitMessage(0);
+            return 0;
+        }
+        break;
+
     case WM_SIZE:
-        m_screenWidth = LOWORD(lParam);
-        m_screenHeight = HIWORD(lParam);
-        
-        OnResize();
-        
-        return 0;
+        {
+            m_screenWidth = LOWORD(lParam);
+            m_screenHeight = HIWORD(lParam);
+
+            OnResize();
+
+            return 0;
+        }
+        break;
+    case WM_INPUT:
+    {
+        RAWINPUT raw;
+        UINT rawSize = sizeof(raw);
+
+        const UINT resultData =
+        GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT,
+            &raw, &rawSize, sizeof(RAWINPUTHEADER));
+        // if (raw.header.dwType == RIM_TYPEMOUSE && m_FPSMode) {
+        int deltaX = raw.data.mouse.lLastX;
+        int deltaY = raw.data.mouse.lLastY;
+        std::cout << deltaX << " " << deltaY << '\n';
+    }
+    break;
+
+    case WM_KEYDOWN:
+    case WM_KEYUP:
+    case WM_LBUTTONDOWN:
+    case WM_MBUTTONDOWN:
+    case WM_RBUTTONDOWN:
+    case WM_LBUTTONUP:
+    case WM_MBUTTONUP:
+    case WM_RBUTTONUP:
+    case WM_MOUSEWHEEL:
+        {
+            std::cout << "wParam : " << wParam << ", lParam : " << lParam << std::endl;
+            return 0;
+        }
+        break;
+
+   
     }
     return DefWindowProc(hWnd, msg, wParam, lParam);
+    
 }

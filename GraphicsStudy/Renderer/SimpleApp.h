@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Utility.h"
+#include "Object.h"
 
 namespace Renderer {
 	class SimpleApp {
