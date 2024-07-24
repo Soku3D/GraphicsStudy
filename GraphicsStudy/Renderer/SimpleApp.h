@@ -28,5 +28,6 @@ namespace Renderer {
 		UINT m_screenWidth;
 		UINT m_screenHeight;
 		
+		std::unique_ptr<Camera> m_camera;
 	};
 }

@@ -11,6 +11,8 @@ Renderer::SimpleApp::SimpleApp(const int& width, const int& height):
 {
     assert(m_pApp == nullptr);
     m_pApp = this;
+    m_camera = std::make_unique<Camera>();
+    m_camera->SetAspectRation(width / (float)height);
 }
 
 Renderer::SimpleApp::~SimpleApp()

@@ -216,8 +216,8 @@ void Renderer::D3D12App::Update(const double& deltaTime)
 	float aspectRatio = m_screenWidth / m_screenHeight;
 
 	m_constantData->ModelMat = DirectX::SimpleMath::Matrix::CreateTranslation(position);
-	m_constantData->ViewMat =XMMatrixLookToLH(Vector3(0.f, 0.f, -1.f), Vector3(0.f, 0.f, 1.f), Vector3(0.f, 1.f, 0.f));
-	m_constantData->ProjMat =XMMatrixPerspectiveFovLH(fov, aspectRatio, 0.01f, 100.f);
+	m_constantData->ViewMat = XMMatrixLookToLH(Vector3(0.f, 0.f, -1.f), Vector3(0.f, 0.f, 1.f), Vector3(0.f, 1.f, 0.f));
+	m_constantData->ProjMat = XMMatrixPerspectiveFovLH(fov, aspectRatio, 0.01f, 100.f);
 	
 	m_constantData->ModelMat = m_constantData->ModelMat.Transpose();
 	m_constantData->ViewMat = m_constantData->ViewMat.Transpose();

@@ -19,8 +19,11 @@
 #include "d3d12.h"
 #include "dxgi1_4.h"
 
+#include "Camera.h"
+
 #include "TestVS.h"
 #include "TestPS.h"
+
 
 inline std::wstring AnsiToWString(const std::string& str)
 {

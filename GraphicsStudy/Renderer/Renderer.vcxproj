@@ -145,6 +145,7 @@
   <ItemGroup>
     <ClCompile Include="Actor.cpp" />
     <ClCompile Include="BoxComponent.cpp" />
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Command.cpp" />
     <ClCompile Include="D3D11App.cpp" />
     <ClCompile Include="D3D12App.cpp" />
@@ -159,6 +160,7 @@
     <ClInclude Include="Actor.h" />
     <ClInclude Include="ActorComponent.h" />
     <ClInclude Include="BoxComponent.h" />
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="CameraComponent.h" />
     <ClInclude Include="Command.h" />
     <ClInclude Include="D3D11App.h" />
