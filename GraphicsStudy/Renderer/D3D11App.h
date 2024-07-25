@@ -17,8 +17,8 @@ namespace Renderer {
 		void CreateDepthBuffer();
 		void CreateRaseterizerState();
 
-		virtual void Update(const double& deltaTime) override;
-		virtual void Render(const double& deltaTime) override;
+		virtual void Update(float& deltaTime) override;
+		virtual void Render(float& deltaTime) override;
 	protected:
 		UINT m_msaaQuality;
 		bool m_useMsaa = true;

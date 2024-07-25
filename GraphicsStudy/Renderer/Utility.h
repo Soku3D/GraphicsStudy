@@ -64,7 +64,7 @@ namespace Renderer {
 			Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer,
 			Microsoft::WRL::ComPtr<ID3D11Device>& device) {
 			D3D11_BUFFER_DESC buffDesc;
-			buffDesc.ByteWidth = sizeof(Vertex) * vertices.size();
+			buffDesc.ByteWidth = UINT(sizeof(Vertex) * vertices.size());
 			buffDesc.Usage = D3D11_USAGE_IMMUTABLE;
 			buffDesc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_VERTEX_BUFFER;
 			buffDesc.CPUAccessFlags = false;
@@ -82,7 +82,7 @@ namespace Renderer {
 			Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer,
 			Microsoft::WRL::ComPtr<ID3D11Device>& device) {
 			D3D11_BUFFER_DESC buffDesc;
-			buffDesc.ByteWidth = sizeof(Index) * indices.size();
+			buffDesc.ByteWidth = UINT(sizeof(Index) * indices.size());
 			buffDesc.Usage = D3D11_USAGE_IMMUTABLE;
 			buffDesc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_INDEX_BUFFER;
 			buffDesc.CPUAccessFlags = false;
@@ -111,7 +111,7 @@ namespace Renderer {
 			ThrowIfFailed(device->CreateVertexShader(shader->GetBufferPointer(), shader->GetBufferSize(), nullptr,
 				vertexShader.GetAddressOf()));
 
-			ThrowIfFailed(device->CreateInputLayout(elements.data(), elements.size(), shader->GetBufferPointer(), (UINT)shader->GetBufferSize(),
+			ThrowIfFailed(device->CreateInputLayout(elements.data(), (UINT)elements.size(), shader->GetBufferPointer(), (UINT)shader->GetBufferSize(),
 				inputlayout.GetAddressOf()));
 		}
 		static void CreatePixelShader(

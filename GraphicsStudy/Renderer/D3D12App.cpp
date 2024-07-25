@@ -4,8 +4,12 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	:SimpleApp(width, height),
 	bUseWarpAdapter(false),
 	m_minimumFeatureLevel(D3D_FEATURE_LEVEL_11_0),
-	m_viewport(D3D12_VIEWPORT())
+	m_viewport(D3D12_VIEWPORT()),
+	m_vertexBufferView(D3D12_VERTEX_BUFFER_VIEW()),
+	m_indexBufferView(D3D12_INDEX_BUFFER_VIEW()),
+	m_scissorRect(D3D12_RECT())
 {
+	m_constantData = new ConstantBuffer();
 }
 
 Renderer::D3D12App::~D3D12App()
@@ -198,26 +202,15 @@ void Renderer::D3D12App::OnResize()
 
 	m_viewport = { 0.f,0.f,(FLOAT)m_screenWidth,(FLOAT)m_screenHeight, 0.f, 1.f };
 	m_scissorRect = { 0,0,static_cast<LONG>(m_screenWidth), static_cast<LONG>(m_screenHeight) };
-
 }
 
-void Renderer::D3D12App::Update(const double& deltaTime)
+void Renderer::D3D12App::Update( float& deltaTime)
 {
-	using DirectX::SimpleMath::Vector3;
-	using namespace DirectX::SimpleMath;
-	using namespace DirectX;
-	static Vector3 position = Vector3::Zero;
+	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime);
 
-	/*Vector3 veloctiy = Vector3(1.1f, 0.f, 0.f);
-	position += veloctiy * deltaTime;
-	if (position.x > 2.f)
-		position.x = -1.f;*/
-	float fov = 70.0 / 180.0 * 3.141592;
-	float aspectRatio = m_screenWidth / m_screenHeight;
-
-	m_constantData->ModelMat = DirectX::SimpleMath::Matrix::CreateTranslation(position);
-	m_constantData->ViewMat = XMMatrixLookToLH(Vector3(0.f, 0.f, -1.f), Vector3(0.f, 0.f, 1.f), Vector3(0.f, 1.f, 0.f));
-	m_constantData->ProjMat = XMMatrixPerspectiveFovLH(fov, aspectRatio, 0.01f, 100.f);
+	//m_constantData->ModelMat = DirectX::SimpleMath::Matrix::CreateTranslation(position);
+	m_constantData->ViewMat = m_camera->GetViewMatrix();
+	m_constantData->ProjMat = m_camera->GetProjMatrix();
 	
 	m_constantData->ModelMat = m_constantData->ModelMat.Transpose();
 	m_constantData->ViewMat = m_constantData->ViewMat.Transpose();
@@ -229,7 +222,7 @@ void Renderer::D3D12App::Update(const double& deltaTime)
 	m_constantUploadBuffer->Unmap(0, nullptr);
 }
 
-void Renderer::D3D12App::Render(const double& deltaTime)
+void Renderer::D3D12App::Render(float& deltaTime)
 {
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), m_pso.Get()));
@@ -262,7 +255,7 @@ void Renderer::D3D12App::Render(const double& deltaTime)
 		m_commandList->SetGraphicsRootDescriptorTable(0, m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
 
 		m_commandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
-
+	
 		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			CurrentBackBuffer(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
@@ -371,7 +364,7 @@ void Renderer::D3D12App::CreateConstantBuffer()
 {
 	// 1. Create buffer
 	// 2. Create bufferView
-	m_constantData = new ConstantBuffer();
+	
 	std::vector<ConstantBuffer> constantData = {
 		*m_constantData
 	};
@@ -393,7 +386,7 @@ void Renderer::D3D12App::CreateConstantBuffer()
 
 void Renderer::D3D12App::CreateRootSignature()
 {
-	CD3DX12_DESCRIPTOR_RANGE1 tables[1];
+	CD3DX12_DESCRIPTOR_RANGE1 tables[1] = {};
 	tables[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
 
 	CD3DX12_ROOT_PARAMETER1 rootParameters[1];

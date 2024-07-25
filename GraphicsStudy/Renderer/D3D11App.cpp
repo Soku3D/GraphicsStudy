@@ -36,7 +36,7 @@ bool Renderer::D3D11App::Initialize()
 
 	m_device->CreateVertexShader((void*)g_pTestVS, sizeof(g_pTestVS), nullptr, m_vertexShader.GetAddressOf());
 	m_device->CreatePixelShader((void*)g_pTestPS, sizeof(g_pTestPS), nullptr, m_pixelShader.GetAddressOf());
-	m_device->CreateInputLayout(inputElements.data(), inputElements.size(), (void*)g_pTestVS, sizeof(g_pTestVS), m_inputLayout.GetAddressOf());
+	m_device->CreateInputLayout(inputElements.data(), (UINT)inputElements.size(), (void*)g_pTestVS, sizeof(g_pTestVS), m_inputLayout.GetAddressOf());
 
 	return true;
 }
@@ -155,11 +155,11 @@ void Renderer::D3D11App::CreateRaseterizerState()
 	m_context->RSSetState(m_rasterizerState.Get());
 }
 
-void Renderer::D3D11App::Update(const double& deltaTime)
+void Renderer::D3D11App::Update( float& deltaTime)
 {
 }
 
-void Renderer::D3D11App::Render(const double& deltaTime)
+void Renderer::D3D11App::Render( float& deltaTime)
 {
 	m_context->OMSetRenderTargets(1, m_rtv.GetAddressOf(), nullptr);
 	FLOAT clearColor_beige[4] = { 255.f / 255.f,250.f / 255.f,239.f / 255.f,1.f };

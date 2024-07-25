@@ -11,7 +11,9 @@ Renderer::SimpleApp::SimpleApp(const int& width, const int& height):
 {
     assert(m_pApp == nullptr);
     m_pApp = this;
-    m_camera = std::make_unique<Camera>();
+    m_camera = std::make_shared<Camera>();
+    m_inputHandler = std::make_unique<InputHandler>();
+
     m_camera->SetAspectRation(width / (float)height);
 }
 
@@ -126,7 +128,7 @@ int Renderer::SimpleApp::Run()
         }
         else {
             m_timer.Tick();
-            double delTime = m_timer.GetDeltaTime();
+            float delTime = (float)m_timer.GetDeltaTime();
             
             Update(delTime);
             Render(delTime);
@@ -150,7 +152,7 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
         {
             m_screenWidth = LOWORD(lParam);
             m_screenHeight = HIWORD(lParam);
-
+            m_camera->SetAspectRation(m_screenWidth / (float)m_screenWidth);
             OnResize();
 
             return 0;
@@ -164,15 +166,22 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
         const UINT resultData =
         GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT,
             &raw, &rawSize, sizeof(RAWINPUTHEADER));
-        // if (raw.header.dwType == RIM_TYPEMOUSE && m_FPSMode) {
+        
         int deltaX = raw.data.mouse.lLastX;
         int deltaY = raw.data.mouse.lLastY;
-        std::cout << deltaX << " " << deltaY << '\n';
+
     }
     break;
 
     case WM_KEYDOWN:
+        m_inputHandler->m_keyStates[(int)wParam] = true;
+        
+        break;
+
     case WM_KEYUP:
+        m_inputHandler->m_keyStates[(int)wParam] = false;
+        break;
+
     case WM_LBUTTONDOWN:
     case WM_MBUTTONDOWN:
     case WM_RBUTTONDOWN:
@@ -181,7 +190,7 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
     case WM_RBUTTONUP:
     case WM_MOUSEWHEEL:
         {
-            std::cout << "wParam : " << wParam << ", lParam : " << lParam << std::endl;
+            //std::cout << "wParam : " << wParam << ", lParam : " << lParam << std::endl;
             return 0;
         }
         break;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Object.h"
+#include "InputHandler.h"
 
 namespace Renderer {
 	class SimpleApp {
@@ -18,8 +19,8 @@ namespace Renderer {
 		int Run();
 		LRESULT MainProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-		virtual void Render(const double& deltaTime) = 0;
-		virtual void Update(const double& deltaTime) = 0;
+		virtual void Render(float& deltaTime) = 0;
+		virtual void Update(float& deltaTime) = 0;
 	public:
 		HWND m_mainWnd;
 		static SimpleApp* m_pApp;
@@ -28,6 +29,7 @@ namespace Renderer {
 		UINT m_screenWidth;
 		UINT m_screenHeight;
 		
-		std::unique_ptr<Camera> m_camera;
+		std::shared_ptr<Camera> m_camera;
+		std::unique_ptr<InputHandler> m_inputHandler;
 	};
 }
