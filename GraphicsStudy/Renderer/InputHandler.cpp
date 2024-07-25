@@ -13,6 +13,8 @@ InputHandler::InputHandler()
 
 void InputHandler::ExicuteCommand(Camera* camera, float deltaTime)
 {
+	camera->RotateDirection();
+
 	if (m_keyStates[upKey]) {
 		upCommand->Execute(camera, deltaTime);
 	}
@@ -32,5 +34,4 @@ void InputHandler::ExicuteCommand(Camera* camera, float deltaTime)
 		leftCommand->Execute(camera, deltaTime);
 	}
 }
-
 

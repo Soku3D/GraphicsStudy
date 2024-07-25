@@ -1,5 +1,5 @@
 #include "Command.h"
-#include "Camera.h"
+
 
 void UpCommand::Execute(Camera* camera, float deltaTime)
 {

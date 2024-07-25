@@ -31,5 +31,6 @@ namespace Renderer {
 		
 		std::shared_ptr<Camera> m_camera;
 		std::unique_ptr<InputHandler> m_inputHandler;
+		bool bIsShowCursor = false;
 	};
 }

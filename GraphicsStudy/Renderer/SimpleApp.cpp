@@ -75,7 +75,7 @@ bool Renderer::SimpleApp::InitWindow()
     wcex.cbWndExtra = 0;
     wcex.hInstance = GetModuleHandle(NULL);
     wcex.hIcon = NULL;
-    wcex.hCursor = NULL;
+    wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcex.hbrBackground = NULL;
     wcex.lpszMenuName = nullptr;
     wcex.lpszClassName = L"D3DApp";
@@ -113,7 +113,8 @@ bool Renderer::SimpleApp::InitWindow()
 
     ShowWindow(m_mainWnd,SW_SHOWDEFAULT);
     UpdateWindow(m_mainWnd);
-    
+    ShowCursor(FALSE);
+
     return true;
 }
 
@@ -146,8 +147,6 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
             PostQuitMessage(0);
             return 0;
         }
-        break;
-
     case WM_SIZE:
         {
             m_screenWidth = LOWORD(lParam);
@@ -162,14 +161,20 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
     {
         RAWINPUT raw;
         UINT rawSize = sizeof(raw);
-
+        
         const UINT resultData =
         GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT,
             &raw, &rawSize, sizeof(RAWINPUTHEADER));
-        
+      
         int deltaX = raw.data.mouse.lLastX;
         int deltaY = raw.data.mouse.lLastY;
+        m_camera->SetQuaternion(deltaX, deltaY);
 
+        if (raw.data.mouse.ulButtons == 0x0020) {
+            ShowCursor(!bIsShowCursor);
+            bIsShowCursor = !bIsShowCursor;
+        }
+        return 0;
     }
     break;
 
@@ -180,22 +185,7 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 
     case WM_KEYUP:
         m_inputHandler->m_keyStates[(int)wParam] = false;
-        break;
-
-    case WM_LBUTTONDOWN:
-    case WM_MBUTTONDOWN:
-    case WM_RBUTTONDOWN:
-    case WM_LBUTTONUP:
-    case WM_MBUTTONUP:
-    case WM_RBUTTONUP:
-    case WM_MOUSEWHEEL:
-        {
-            //std::cout << "wParam : " << wParam << ", lParam : " << lParam << std::endl;
-            return 0;
-        }
-        break;
-
-   
+        break;  
     }
     return DefWindowProc(hWnd, msg, wParam, lParam);
     

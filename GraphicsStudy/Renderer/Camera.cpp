@@ -9,11 +9,29 @@ Camera::Camera():
 	m_nearZ(100.f)
 {
 	m_fov = DirectX::XMConvertToRadians(70.f);
+	m_delTheta = DirectX::XMConvertToRadians(0.2f);
+	m_delSine = sin(m_delTheta / 2.f);
+	m_delCosine = cos(m_delTheta / 2.f);
 }
 
 void Camera::SetAspectRation(float aspectRatio)
 {
 	m_aspectRatio = aspectRatio;
+}
+
+
+void Camera::SetQuaternion(int deltaX, int deltaY)
+{
+	DirectX::SimpleMath::Vector3 n((float)deltaY, (float)deltaX, 0.f);
+	m_quaternion = DirectX::SimpleMath::Quaternion(n * m_delSine, m_delCosine);
+}
+
+void Camera::RotateDirection() {
+	using DirectX::SimpleMath::Vector3;
+	m_forwardDirection = Vector3::Transform(m_forwardDirection, DirectX::XMMatrixRotationQuaternion(m_quaternion));
+	m_forwardDirection.Normalize();
+	m_quaternion = DirectX::SimpleMath::Quaternion();
+	m_rightDirection = m_upDirection.Cross(m_forwardDirection);
 }
 
 void Camera::MoveUp(float deltaTime)

@@ -18,10 +18,10 @@ public:
 	std::unique_ptr<BackwardCommand> backwardCommand;
 
 	std::unordered_map<int, bool> m_keyStates;
-
+	
 public:
 	void ExicuteCommand(class Camera* camera, float deltaTime);
-	
+
 private:
 	unsigned int upKey = unsigned int('Q');
 	unsigned int downKey = unsigned int('E');
