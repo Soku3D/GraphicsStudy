@@ -1,15 +1,9 @@
 #pragma once
 
 #include "SimpleApp.h"
+#include "Constants.h"
 
 using Microsoft::WRL::ComPtr;
-
-__declspec(align(256)) struct ConstantBuffer
-{
-	DirectX::SimpleMath::Matrix ModelMat = DirectX::SimpleMath::Matrix();
-	DirectX::SimpleMath::Matrix ViewMat = DirectX::SimpleMath::Matrix();
-	DirectX::SimpleMath::Matrix ProjMat = DirectX::SimpleMath::Matrix();
-};
 
 namespace Renderer {
 	class D3D12App :public SimpleApp {
@@ -87,8 +81,8 @@ namespace Renderer {
 		ComPtr<ID3D12PipelineState> m_pso;
 		ComPtr<ID3D12RootSignature> m_rootSignature;
 
-		ConstantBuffer* m_constantData;
-		ComPtr<ID3D12Resource> m_constantUploadBuffer;
+		GlobalVertexConstantData* m_passConstantData;
+		ComPtr<ID3D12Resource> m_passConstantBuffer;
 		UINT8* m_pCbvDataBegin = nullptr;
 
 		D3D12_INPUT_LAYOUT_DESC m_simpleVertexInputLayout;

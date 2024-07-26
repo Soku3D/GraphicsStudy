@@ -9,7 +9,7 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	m_indexBufferView(D3D12_INDEX_BUFFER_VIEW()),
 	m_scissorRect(D3D12_RECT())
 {
-	m_constantData = new ConstantBuffer();
+	m_passConstantData = new GlobalVertexConstantData();
 }
 
 Renderer::D3D12App::~D3D12App()
@@ -54,7 +54,6 @@ bool Renderer::D3D12App::InitDirectX()
 		}
 	}
 #endif
-
 	// Create Factory and Device 
 	ComPtr<ID3D12Device> device;
 	CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&m_dxgiFactory));
@@ -208,18 +207,16 @@ void Renderer::D3D12App::Update( float& deltaTime)
 {
 	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime);
 
-	//m_constantData->ModelMat = DirectX::SimpleMath::Matrix::CreateTranslation(position);
-	m_constantData->ViewMat = m_camera->GetViewMatrix();
-	m_constantData->ProjMat = m_camera->GetProjMatrix();
+	m_passConstantData->ViewMat = m_camera->GetViewMatrix();
+	m_passConstantData->ProjMat = m_camera->GetProjMatrix();
 	
-	m_constantData->ModelMat = m_constantData->ModelMat.Transpose();
-	m_constantData->ViewMat = m_constantData->ViewMat.Transpose();
-	m_constantData->ProjMat = m_constantData->ProjMat.Transpose();
+	m_passConstantData->ViewMat = m_passConstantData->ViewMat.Transpose();
+	m_passConstantData->ProjMat = m_passConstantData->ProjMat.Transpose();
 
-	CD3DX12_RANGE range(0, 0);
-	ThrowIfFailed(m_constantUploadBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
-	memcpy(m_pCbvDataBegin, m_constantData, sizeof(ConstantBuffer));
-	m_constantUploadBuffer->Unmap(0, nullptr);
+	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
+	//CD3DX12_RANGE range(0, 0);
+	//ThrowIfFailed(m_constantUploadBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
+	//m_constantUploadBuffer->Unmap(0, nullptr);
 }
 
 void Renderer::D3D12App::Render(float& deltaTime)
@@ -242,17 +239,25 @@ void Renderer::D3D12App::Render(float& deltaTime)
 
 		m_commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 		m_commandList->IASetIndexBuffer(&m_indexBufferView);
-		m_commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		m_commandList->RSSetScissorRects(1, &m_scissorRect);
 		m_commandList->RSSetViewports(1, &m_viewport);
 
 		m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
-		ID3D12DescriptorHeap* descriptorHeaps[] = {
-			m_cbvHeap.Get()
-		};
-		m_commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		m_commandList->SetGraphicsRootDescriptorTable(0, m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
+		
+		// 루스 서술자 테이블 등록
+		//ID3D12DescriptorHeap* descriptorHeaps[] = {
+		//	m_cbvHeap.Get()
+		//};
+		//m_commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		//m_commandList->SetGraphicsRootDescriptorTable(0, m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
+
+		//// 루트 상수 등록 방법
+		////m_commandList->SetGraphicsRoot32BitConstants(0, 1, ...);
+
+		//// 루트 서술자 등록 방법
+		m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer->GetGPUVirtualAddress());
 
 		m_commandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
 	
@@ -365,32 +370,30 @@ void Renderer::D3D12App::CreateConstantBuffer()
 	// 1. Create buffer
 	// 2. Create bufferView
 	
-	std::vector<ConstantBuffer> constantData = {
-		*m_constantData
+	std::vector<GlobalVertexConstantData> constantData = {
+		*m_passConstantData
 	};
 	//m_constantData->ModelMat = m_constantData->ModelMat.Transpose();
 
-	Utility::CreateUploadBuffer(constantData, m_constantUploadBuffer, m_device);
+	Utility::CreateUploadBuffer(constantData, m_passConstantBuffer, m_device);
 
 	CD3DX12_RANGE range(0, 0);
-	ThrowIfFailed(m_constantUploadBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
-	memcpy(m_pCbvDataBegin, m_constantData, sizeof(ConstantBuffer));
-	m_constantUploadBuffer->Unmap(0, nullptr);
+	ThrowIfFailed(m_passConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
+	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
+	//m_constantUploadBuffer->Unmap(0, nullptr);
 
-	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
-	cbvDesc.BufferLocation = m_constantUploadBuffer->GetGPUVirtualAddress();
-	cbvDesc.SizeInBytes = sizeof(ConstantBuffer);
-
-	m_device->CreateConstantBufferView(&cbvDesc, m_cbvHeap->GetCPUDescriptorHandleForHeapStart());
+	//D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
+	//cbvDesc.BufferLocation = m_passConstantBuffer->GetGPUVirtualAddress();
+	//cbvDesc.SizeInBytes = sizeof(GlobalVertexConstantData);
+	//CD3DX12_CPU_DESCRIPTOR_HANDLE cbHandle(m_cbvHeap->GetCPUDescriptorHandleForHeapStart());
+	//m_device->CreateConstantBufferView(&cbvDesc, cbHandle);
 }
 
 void Renderer::D3D12App::CreateRootSignature()
 {
-	CD3DX12_DESCRIPTOR_RANGE1 tables[1] = {};
-	tables[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-
 	CD3DX12_ROOT_PARAMETER1 rootParameters[1];
-	rootParameters[0].InitAsDescriptorTable(1, tables);
+	rootParameters[0].InitAsConstantBufferView(0);
+	//rootParameters[1].InitAsConstantBufferView(1);
 
 	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags = 
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |

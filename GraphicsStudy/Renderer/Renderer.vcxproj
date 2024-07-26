@@ -163,6 +163,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CameraComponent.h" />
     <ClInclude Include="Command.h" />
+    <ClInclude Include="Constants.h" />
     <ClInclude Include="D3D11App.h" />
     <ClInclude Include="D3D12App.h" />
     <ClInclude Include="GenerateGeometry.h" />
@@ -172,6 +173,7 @@
     <ClInclude Include="PrimitiveComponent.h" />
     <ClInclude Include="SceneComponent.h" />
     <ClInclude Include="SimpleApp.h" />
+    <ClInclude Include="StaticMesh.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Utility.h" />
     <ClInclude Include="Vertex.h" />

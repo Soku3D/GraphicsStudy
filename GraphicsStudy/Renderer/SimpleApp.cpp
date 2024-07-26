@@ -113,7 +113,7 @@ bool Renderer::SimpleApp::InitWindow()
 
     ShowWindow(m_mainWnd,SW_SHOWDEFAULT);
     UpdateWindow(m_mainWnd);
-    ShowCursor(FALSE);
+    //ShowCursor(FALSE);
 
     return true;
 }
@@ -151,7 +151,8 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
         {
             m_screenWidth = LOWORD(lParam);
             m_screenHeight = HIWORD(lParam);
-            m_camera->SetAspectRation(m_screenWidth / (float)m_screenWidth);
+            if(m_camera!=nullptr)
+                m_camera->SetAspectRation(m_screenWidth / (float)m_screenWidth);
             OnResize();
 
             return 0;
@@ -168,7 +169,8 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
       
         int deltaX = raw.data.mouse.lLastX;
         int deltaY = raw.data.mouse.lLastY;
-        m_camera->SetQuaternion(deltaX, deltaY);
+        if (m_camera != nullptr)
+            m_camera->SetQuaternion(deltaX, deltaY);
 
         if (raw.data.mouse.ulButtons == 0x0020) {
             ShowCursor(!bIsShowCursor);
