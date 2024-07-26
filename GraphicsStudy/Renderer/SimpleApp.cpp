@@ -152,7 +152,7 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
             m_screenWidth = LOWORD(lParam);
             m_screenHeight = HIWORD(lParam);
             if(m_camera!=nullptr)
-                m_camera->SetAspectRation(m_screenWidth / (float)m_screenWidth);
+                m_camera->SetAspectRation(m_screenWidth / (float)m_screenHeight);
             OnResize();
 
             return 0;

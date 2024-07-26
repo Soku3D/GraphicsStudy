@@ -2,6 +2,7 @@
 
 #include "SimpleApp.h"
 #include "Constants.h"
+#include "StaticMesh.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -86,5 +87,7 @@ namespace Renderer {
 		UINT8* m_pCbvDataBegin = nullptr;
 
 		D3D12_INPUT_LAYOUT_DESC m_simpleVertexInputLayout;
+
+		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
 	};
 }

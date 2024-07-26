@@ -1,5 +1,7 @@
 #pragma once
 
+#include "directxtk/SimpleMath.h"
+
 __declspec(align(256)) struct GlobalVertexConstantData
 {
 	DirectX::SimpleMath::Matrix ViewMat = DirectX::SimpleMath::Matrix();

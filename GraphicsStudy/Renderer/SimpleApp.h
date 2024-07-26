@@ -2,7 +2,6 @@
 
 #include "Object.h"
 #include "InputHandler.h"
-#include "StaticMesh.h"
 
 namespace Renderer {
 	class SimpleApp {

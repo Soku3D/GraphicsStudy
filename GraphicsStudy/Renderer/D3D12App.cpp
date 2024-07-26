@@ -1,5 +1,7 @@
 #include "D3D12App.h"
 
+using namespace Core;
+
 Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	:SimpleApp(width, height),
 	bUseWarpAdapter(false),
@@ -203,7 +205,7 @@ void Renderer::D3D12App::OnResize()
 	m_scissorRect = { 0,0,static_cast<LONG>(m_screenWidth), static_cast<LONG>(m_screenHeight) };
 }
 
-void Renderer::D3D12App::Update( float& deltaTime)
+void Renderer::D3D12App::Update( float& deltaTime )
 {
 	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime);
 
@@ -214,9 +216,10 @@ void Renderer::D3D12App::Update( float& deltaTime)
 	m_passConstantData->ProjMat = m_passConstantData->ProjMat.Transpose();
 
 	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
-	//CD3DX12_RANGE range(0, 0);
-	//ThrowIfFailed(m_constantUploadBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
-	//m_constantUploadBuffer->Unmap(0, nullptr);
+
+	for (auto& mesh : m_staticMeshes) {
+		mesh->Update(deltaTime);
+	}
 }
 
 void Renderer::D3D12App::Render(float& deltaTime)
@@ -237,8 +240,6 @@ void Renderer::D3D12App::Render(float& deltaTime)
 
 		m_commandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
 
-		m_commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-		m_commandList->IASetIndexBuffer(&m_indexBufferView);
 		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		m_commandList->RSSetScissorRects(1, &m_scissorRect);
@@ -246,21 +247,25 @@ void Renderer::D3D12App::Render(float& deltaTime)
 
 		m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
 		
-		// 루스 서술자 테이블 등록
-		//ID3D12DescriptorHeap* descriptorHeaps[] = {
-		//	m_cbvHeap.Get()
-		//};
-		//m_commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		//m_commandList->SetGraphicsRootDescriptorTable(0, m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
-
-		//// 루트 상수 등록 방법
-		////m_commandList->SetGraphicsRoot32BitConstants(0, 1, ...);
+		{
+			// 루트 서술자 테이블 등록
+			//ID3D12DescriptorHeap* descriptorHeaps[] = {
+			//	m_cbvHeap.Get()
+			//};
+			//m_commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+			//m_commandList->SetGraphicsRootDescriptorTable(0, m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
+			// 루트 상수 등록 방법
+			//m_commandList->SetGraphicsRoot32BitConstants(0, 1, ...);
+		}
 
 		//// 루트 서술자 등록 방법
 		m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer->GetGPUVirtualAddress());
 
-		m_commandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
-	
+		
+		for (auto& mesh : m_staticMeshes) {
+			mesh->Render(deltaTime, m_commandList);
+		}
+
 		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			CurrentBackBuffer(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
@@ -327,6 +332,7 @@ void Renderer::D3D12App::CreateDescriptorHeaps() {
 	ThrowIfFailed(m_device->CreateDescriptorHeap(
 		&cbvHeapDesc, IID_PPV_ARGS(m_cbvHeap.GetAddressOf())));
 }
+
 void Renderer::D3D12App::FlushCommandQueue() {
 	++m_currentFence;
 
@@ -345,55 +351,47 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 {
 	using DirectX::SimpleMath::Vector3;
 
-	std::vector<SimpleVertex> triangleVertices = {
-		{Vector3(-1.f,-1.f,0.5f)},
-		{Vector3(0.f,1.f,0.5f)},
-		{Vector3(1.f,-1.f,0.5f)},
+
+	std::vector<SimpleVertex> triangleVertices1 = {
+		{Vector3(-sqrt(3),-1.f,0.0f)},
+		{Vector3(0.f,2.f,0.0f)},
+		{Vector3(sqrt(3),-1.f,0.0f)},
+	};
+	std::vector<SimpleVertex> triangleVertices2 = {
+		{Vector3(-sqrt(3)-0.5f,-1.f,0.0f)},
+		{Vector3(-0.5f,2.f,0.0f)},
+		{Vector3(sqrt(3)-0.5f,-1.f,0.0f)},
 	};
 	std::vector<uint16_t> indices = {
 		0,1,2
 	};
-	Utility::CreateBuffer(triangleVertices, m_vertexUpload, m_vertexGpu, m_device, m_commandList);
-	Utility::CreateBuffer(indices, m_indexUpload, m_indexGpu, m_device, m_commandList);
+	
+	std::shared_ptr<StaticMesh> mesh1 = std::make_shared<StaticMesh>();
+	std::shared_ptr<StaticMesh> mesh2 = std::make_shared<StaticMesh>();
+	mesh1->Initialize(triangleVertices1, indices, m_device, m_commandList);
+	mesh2->Initialize(triangleVertices2, indices, m_device, m_commandList);
+	m_staticMeshes.push_back(mesh1);
+	m_staticMeshes.push_back(mesh2);
 
-	m_vertexBufferView.BufferLocation = m_vertexGpu->GetGPUVirtualAddress();
-	m_vertexBufferView.SizeInBytes = (UINT)(triangleVertices.size() * sizeof(SimpleVertex));
-	m_vertexBufferView.StrideInBytes = sizeof(SimpleVertex);
-
-	m_indexBufferView.BufferLocation = m_indexGpu->GetGPUVirtualAddress();
-	m_indexBufferView.Format = DXGI_FORMAT_R16_UINT;
-	m_indexBufferView.SizeInBytes = UINT(sizeof(uint16_t) * indices.size());
 }
 
 void Renderer::D3D12App::CreateConstantBuffer()
 {
-	// 1. Create buffer
-	// 2. Create bufferView
-	
 	std::vector<GlobalVertexConstantData> constantData = {
 		*m_passConstantData
 	};
-	//m_constantData->ModelMat = m_constantData->ModelMat.Transpose();
-
 	Utility::CreateUploadBuffer(constantData, m_passConstantBuffer, m_device);
 
 	CD3DX12_RANGE range(0, 0);
 	ThrowIfFailed(m_passConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
 	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
-	//m_constantUploadBuffer->Unmap(0, nullptr);
-
-	//D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
-	//cbvDesc.BufferLocation = m_passConstantBuffer->GetGPUVirtualAddress();
-	//cbvDesc.SizeInBytes = sizeof(GlobalVertexConstantData);
-	//CD3DX12_CPU_DESCRIPTOR_HANDLE cbHandle(m_cbvHeap->GetCPUDescriptorHandleForHeapStart());
-	//m_device->CreateConstantBufferView(&cbvDesc, cbHandle);
 }
 
 void Renderer::D3D12App::CreateRootSignature()
 {
-	CD3DX12_ROOT_PARAMETER1 rootParameters[1];
+	CD3DX12_ROOT_PARAMETER1 rootParameters[2];
 	rootParameters[0].InitAsConstantBufferView(0);
-	//rootParameters[1].InitAsConstantBufferView(1);
+	rootParameters[1].InitAsConstantBufferView(1);
 
 	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags = 
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
