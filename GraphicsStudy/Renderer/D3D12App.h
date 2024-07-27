@@ -71,14 +71,6 @@ namespace Renderer {
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;
 
-		ComPtr<ID3D12Resource> m_vertexUpload;
-		ComPtr<ID3D12Resource> m_vertexGpu;
-		D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
-
-		ComPtr<ID3D12Resource> m_indexUpload;
-		ComPtr<ID3D12Resource> m_indexGpu;
-		D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
-
 		ComPtr<ID3D12PipelineState> m_pso;
 		ComPtr<ID3D12RootSignature> m_rootSignature;
 

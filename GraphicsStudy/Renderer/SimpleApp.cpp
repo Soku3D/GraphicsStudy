@@ -19,15 +19,16 @@ Renderer::SimpleApp::SimpleApp(const int& width, const int& height):
 
 Renderer::SimpleApp::~SimpleApp()
 {
+    m_mainWnd = NULL;
     m_pApp = nullptr;
 }
 
 bool Renderer::SimpleApp::Initialize()
 {
-     if (!InitWindow()) {
+    if (!InitWindow()) {
         std::cerr << "Failed InitWindow()\n";
         return false;
-     }
+    }
      /*if (!InitbackgroundWindow()) {
          std::cerr << "Failed InitWindow()\n";
          return false;

@@ -2,6 +2,7 @@
 
 #include "Constants.h"
 #include "Utility.h"
+#include "GeometryGenerator.h"
 
 namespace Core {
 	class StaticMesh {
@@ -11,25 +12,26 @@ namespace Core {
 		~StaticMesh() {};
 
 		template <typename Vertex>
-		void Initialize(std::vector<Vertex>& verticies, std::vector<uint16_t>& indices,
+		void Initialize(MeshData<Vertex>& meshData,
 			Microsoft::WRL::ComPtr<ID3D12Device>& device,
-			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList) {
-			Renderer::Utility::CreateBuffer(verticies, m_vertexUpload, m_vertexGpu, device, commandList);
-			Renderer::Utility::CreateBuffer(indices, m_indexUpload, m_indexGpu, device, commandList);
+			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList) 
+		{
+			Renderer::Utility::CreateBuffer(meshData.m_vertices, m_vertexUpload, m_vertexGpu, device, commandList);
+			Renderer::Utility::CreateBuffer(meshData.m_indices, m_indexUpload, m_indexGpu, device, commandList);
 
 			m_vertexBufferView.BufferLocation = m_vertexGpu->GetGPUVirtualAddress();
-			m_vertexBufferView.SizeInBytes = (UINT)(verticies.size() * sizeof(Vertex));
+			m_vertexBufferView.SizeInBytes = (UINT)(meshData.m_vertices.size() * sizeof(Vertex));
 			m_vertexBufferView.StrideInBytes = sizeof(Vertex);
 
 			m_indexBufferView.BufferLocation = m_indexGpu->GetGPUVirtualAddress();
 			m_indexBufferView.Format = DXGI_FORMAT_R16_UINT;
-			m_indexBufferView.SizeInBytes = UINT(sizeof(uint16_t) * indices.size());
+			m_indexBufferView.SizeInBytes = UINT(sizeof(uint16_t) * meshData.m_indices.size());
 			m_objectConstantData = new ObjectConstantData();
-			//m_objectConstantData->Model = DirectX::SimpleMath::Matrix::CreateRotationZ(3.141592/2.f);
+			
 			m_objectConstantData->Model = m_objectConstantData->Model.Transpose();
-			std::vector<ObjectConstantData> constantData = {*m_objectConstantData	};
+			std::vector<ObjectConstantData> constantData = { *m_objectConstantData	};
 			Renderer::Utility::CreateUploadBuffer(constantData, m_objectConstantBuffer, device);
-			indexCount = indices.size();
+			indexCount = meshData.m_indices.size();
 
 			CD3DX12_RANGE range(0, 0);
 			ThrowIfFailed(m_objectConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));

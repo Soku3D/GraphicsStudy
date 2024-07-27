@@ -1,4 +1,5 @@
 #include "D3D12App.h"
+#include "GeometryGenerator.h"
 
 using namespace Core;
 
@@ -7,8 +8,6 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	bUseWarpAdapter(false),
 	m_minimumFeatureLevel(D3D_FEATURE_LEVEL_11_0),
 	m_viewport(D3D12_VIEWPORT()),
-	m_vertexBufferView(D3D12_VERTEX_BUFFER_VIEW()),
-	m_indexBufferView(D3D12_INDEX_BUFFER_VIEW()),
 	m_scissorRect(D3D12_RECT())
 {
 	m_passConstantData = new GlobalVertexConstantData();
@@ -16,6 +15,14 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 
 Renderer::D3D12App::~D3D12App()
 {
+	if (m_device != nullptr)
+		FlushCommandQueue();
+	for (int i = 0; i < m_swapChainCount; i++)
+	{
+		m_renderTargets[i].Reset();
+	}
+	m_depthStencilBuffer.Reset();
+
 }
 
 bool Renderer::D3D12App::Initialize()
@@ -99,15 +106,26 @@ bool Renderer::D3D12App::InitDirectX()
 	scDesc.SampleDesc.Count = 1;
 	scDesc.SampleDesc.Quality = 0;
 	scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	scDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+	scDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	scDesc.Flags = DXGI_SWAP_CHAIN_FLAG::DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 	scDesc.BufferCount = m_swapChainCount;
 
-	DXGI_SWAP_CHAIN_FULLSCREEN_DESC scfDesc;
-	scfDesc.RefreshRate.Denominator = 60;
-	scfDesc.RefreshRate.Numerator = 1;
-	// 전체화면 창모드?
-	scfDesc.Windowed = true;
+
+	//DXGI_SWAP_CHAIN_DESC scDesc2;
+	//ZeroMemory(&scDesc, sizeof(scDesc2));
+	//scDesc2.BufferDesc.Width = m_screenWidth;
+	//scDesc2.BufferDesc.Height = m_screenHeight;
+	//scDesc2.BufferDesc.Format = m_backbufferFormat;
+	//scDesc2.SampleDesc.Count = 1;
+	//scDesc2.SampleDesc.Quality = 0;
+	//scDesc2.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	//scDesc2.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+	//scDesc2.Flags = DXGI_SWAP_CHAIN_FLAG::DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+	//scDesc2.BufferCount = m_swapChainCount;
+	//scDesc2.OutputWindow = m_mainWnd;
+	//scDesc2.Windowed = TRUE;
+	//ComPtr<IDXGISwapChain> swapChain;
+	//ThrowIfFailed(m_dxgiFactory->CreateSwapChain(m_commandQueue.Get(), &scDesc2, swapChain.GetAddressOf()));
 
 	ComPtr<IDXGISwapChain1> swapChain;
 
@@ -117,7 +135,7 @@ bool Renderer::D3D12App::InitDirectX()
 		&scDesc,
 		nullptr,
 		nullptr,
-		&swapChain
+		swapChain.ReleaseAndGetAddressOf()
 	));
 
 	ThrowIfFailed(swapChain.As(&m_swapChain));
@@ -350,28 +368,12 @@ void Renderer::D3D12App::FlushCommandQueue() {
 void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 {
 	using DirectX::SimpleMath::Vector3;
+		
+	std::shared_ptr<StaticMesh> triangle = std::make_shared<StaticMesh>();
 
+	triangle->Initialize(GeomertyGenerator::SimpleTriangle(1.f), m_device, m_commandList);
 
-	std::vector<SimpleVertex> triangleVertices1 = {
-		{Vector3(-sqrt(3),-1.f,0.0f)},
-		{Vector3(0.f,2.f,0.0f)},
-		{Vector3(sqrt(3),-1.f,0.0f)},
-	};
-	std::vector<SimpleVertex> triangleVertices2 = {
-		{Vector3(-sqrt(3)-0.5f,-1.f,0.0f)},
-		{Vector3(-0.5f,2.f,0.0f)},
-		{Vector3(sqrt(3)-0.5f,-1.f,0.0f)},
-	};
-	std::vector<uint16_t> indices = {
-		0,1,2
-	};
-	
-	std::shared_ptr<StaticMesh> mesh1 = std::make_shared<StaticMesh>();
-	std::shared_ptr<StaticMesh> mesh2 = std::make_shared<StaticMesh>();
-	mesh1->Initialize(triangleVertices1, indices, m_device, m_commandList);
-	mesh2->Initialize(triangleVertices2, indices, m_device, m_commandList);
-	m_staticMeshes.push_back(mesh1);
-	m_staticMeshes.push_back(mesh2);
+	m_staticMeshes.push_back(triangle);
 
 }
 
