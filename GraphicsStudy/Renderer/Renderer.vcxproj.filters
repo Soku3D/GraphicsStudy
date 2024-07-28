@@ -122,6 +122,12 @@
     <ClInclude Include="GeometryGenerator.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="PipelineState.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="TestVS.hlsl" />

@@ -371,7 +371,7 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 		
 	std::shared_ptr<StaticMesh> triangle = std::make_shared<StaticMesh>();
 
-	triangle->Initialize(GeomertyGenerator::SimpleTriangle(1.f), m_device, m_commandList);
+	triangle->Initialize(GeomertyGenerator::SimpleBox(1.f), m_device, m_commandList);
 
 	m_staticMeshes.push_back(triangle);
 

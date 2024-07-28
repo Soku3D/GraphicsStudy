@@ -20,6 +20,8 @@ using SimpleMeshData = MeshData<Renderer::SimpleVertex>;
 class GeomertyGenerator {
 public:
 	static SimpleMeshData SimpleTriangle(const float& length);
+	static SimpleMeshData SimpleRectangle(const float& length);
+	static SimpleMeshData SimpleBox(const float& length);
 };
 
 template<typename Vertex>

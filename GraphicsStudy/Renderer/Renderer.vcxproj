@@ -173,7 +173,9 @@
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="MeshData.h" />
     <ClInclude Include="Object.h" />
+    <ClInclude Include="PipelineState.h" />
     <ClInclude Include="PrimitiveComponent.h" />
+    <ClInclude Include="Renderer.h" />
     <ClInclude Include="SceneComponent.h" />
     <ClInclude Include="SimpleApp.h" />
     <ClInclude Include="StaticMesh.h" />

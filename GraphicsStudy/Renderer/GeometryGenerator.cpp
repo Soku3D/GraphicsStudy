@@ -20,3 +20,45 @@ SimpleMeshData GeomertyGenerator::SimpleTriangle(const float& length)
 
 	return data;
 }
+
+SimpleMeshData GeomertyGenerator::SimpleRectangle(const float& length)
+{
+	SimpleMeshData data;
+
+	float l = length / 2.f;
+	std::vector<Renderer::SimpleVertex> vertices = {
+		{Vector3(-l, -l, 0.0f)},
+		{Vector3(-l, l, 0.0f)},
+		{Vector3(l, l, 0.0f)},
+		{Vector3(l, -l, 0.0f)},
+	};
+	std::vector<uint16_t> indices = {
+		0, 1, 2, 0, 2, 3
+	};
+	data.Initialize(vertices, indices);
+
+	return data;
+}
+
+SimpleMeshData GeomertyGenerator::SimpleBox(const float& length)
+{
+	SimpleMeshData data;
+
+	float l = length / 2.f;
+ 
+	std::vector<Renderer::SimpleVertex> vertices = {
+		{Vector3(-l, -l, -l)},{Vector3(-l, l, -l)},{Vector3(l, l, -l)},{Vector3(l, -l, -l)},
+		{Vector3(-l, -l, l)},{Vector3(-l, l, l)},{Vector3(l, l, l)},{Vector3(l, -l, l)}
+	};
+	std::vector<uint16_t> indices = {
+		0, 1, 2, 0, 2, 3,
+		7, 6, 5, 7, 5, 4,
+		4, 5, 1, 5, 1, 0,
+		4, 0, 3, 4, 3, 7,
+		3, 2, 6, 3, 6, 7,
+		1, 5, 6, 1, 6, 2
+	};
+	data.Initialize(vertices, indices);
+
+	return data;
+}
