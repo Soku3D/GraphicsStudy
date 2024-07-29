@@ -12,3 +12,8 @@ __declspec(align(256)) struct ObjectConstantData {
 	DirectX::SimpleMath::Matrix Model = DirectX::SimpleMath::Matrix();
 
 };
+
+struct Light {
+	DirectX::SimpleMath::Vector3 Position;
+	DirectX::SimpleMath::Vector3 Direction;
+};

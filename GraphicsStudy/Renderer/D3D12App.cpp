@@ -37,6 +37,9 @@ bool Renderer::D3D12App::Initialize()
 	CreateRootSignature();
 	CreatePSO();
 
+	//TextureTest
+	Utility::CreateTextureBuffer(L"Textures/RockTexture.dds", m_textureTest, m_device, m_commandList);
+
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
@@ -371,10 +374,9 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 		
 	std::shared_ptr<StaticMesh> triangle = std::make_shared<StaticMesh>();
 
-	triangle->Initialize(GeomertyGenerator::SimpleBox(1.f), m_device, m_commandList);
+	triangle->Initialize(GeomertyGenerator::Box(1.f), m_device, m_commandList);
 
 	m_staticMeshes.push_back(triangle);
-
 }
 
 void Renderer::D3D12App::CreateConstantBuffer()
@@ -414,38 +416,53 @@ void Renderer::D3D12App::CreateRootSignature()
 
 void Renderer::D3D12App::CreatePSO()
 {
-	std::vector<D3D12_INPUT_ELEMENT_DESC> elements =
+	std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElements =
 	{
 		{"POSITION", 0,DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 	};
-	m_simpleVertexInputLayout.NumElements = (UINT)elements.size();
-	m_simpleVertexInputLayout.pInputElementDescs = elements.data();
+	m_simpleVertexInputLayout.NumElements = (UINT)simpleElements.size();
+	m_simpleVertexInputLayout.pInputElementDescs = simpleElements.data();
 
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	psoDesc.pRootSignature = m_rootSignature.Get();
-	psoDesc.VS =
+	std::vector<D3D12_INPUT_ELEMENT_DESC> elements =
+	{
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+
+	};
+	m_vertexInputLayout.NumElements = (UINT)elements.size();
+	m_vertexInputLayout.pInputElementDescs = elements.data();
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC simplePsoDesc = {};
+	simplePsoDesc.pRootSignature = m_rootSignature.Get();
+	simplePsoDesc.VS =
 	{
 		g_pTestVS,
 		sizeof(g_pTestVS)
 	};
-	psoDesc.PS =
+	simplePsoDesc.PS =
 	{
 		g_pTestPS,
 		sizeof(g_pTestPS)
 	};
-	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-	psoDesc.SampleMask = UINT_MAX;
-	psoDesc.InputLayout = m_simpleVertexInputLayout;
-	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	psoDesc.NumRenderTargets = 1;
-	psoDesc.RTVFormats[0] = m_backbufferFormat;
-	psoDesc.DSVFormat = m_depthStencilFormat;
-	psoDesc.SampleDesc.Count = 1;
-	psoDesc.SampleDesc.Quality = 0;
+	simplePsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	simplePsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	simplePsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	simplePsoDesc.SampleMask = UINT_MAX;
+	simplePsoDesc.InputLayout = m_simpleVertexInputLayout;
+	simplePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	simplePsoDesc.NumRenderTargets = 1;
+	simplePsoDesc.RTVFormats[0] = m_backbufferFormat;
+	simplePsoDesc.DSVFormat = m_depthStencilFormat;
+	simplePsoDesc.SampleDesc.Count = 1;
+	simplePsoDesc.SampleDesc.Quality = 0;
 
+	//ThrowIfFailed(m_device->CreateGraphicsPipelineState(&simplePsoDesc, IID_PPV_ARGS(&m_simplePso)));
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = simplePsoDesc;
+	psoDesc.InputLayout = m_vertexInputLayout;
 	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pso)));
+
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE Renderer::D3D12App::CurrentBackBufferView() const

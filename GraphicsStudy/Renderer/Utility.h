@@ -176,5 +176,10 @@ namespace Renderer {
 			UpdateSubresources<1>(commandList.Get(), gpuBuffer.Get(), uploadBuffer.Get(), 0, 0, 1, &subData);
 			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(gpuBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
 		}
+
+		static void CreateTextureBuffer(const wchar_t* path,
+			ComPtr<ID3D12Resource>& uploadBuffer,
+			ComPtr<ID3D12Device>& device,
+			ComPtr<ID3D12GraphicsCommandList>& commandList);
 	};
 }

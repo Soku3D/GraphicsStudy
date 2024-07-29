@@ -22,16 +22,18 @@ void Camera::SetAspectRation(float aspectRatio)
 
 void Camera::SetQuaternion(int deltaX, int deltaY)
 {
-	DirectX::SimpleMath::Vector3 n((float)deltaY, (float)deltaX, 0.f);
+	DirectX::SimpleMath::Vector3 n((float)deltaY*m_aspectRatio, (float)deltaX, 0.f);
 	m_quaternion = DirectX::SimpleMath::Quaternion(n * m_delSine, m_delCosine);
 }
 
 void Camera::RotateDirection() {
 	using DirectX::SimpleMath::Vector3;
-	m_forwardDirection = Vector3::Transform(m_forwardDirection, DirectX::XMMatrixRotationQuaternion(m_quaternion));
-	m_forwardDirection.Normalize();
-	m_quaternion = DirectX::SimpleMath::Quaternion();
-	m_rightDirection = m_upDirection.Cross(m_forwardDirection);
+	//if (m_forwardDirection.Dot(Vector3(0.f, 1.f, 0.f)) < 0.99f && m_forwardDirection.Dot(Vector3(0.f, -1.f, 0.f)) > -0.99f) {
+		m_forwardDirection = Vector3::Transform(m_forwardDirection, DirectX::XMMatrixRotationQuaternion(m_quaternion));
+		m_forwardDirection.Normalize();
+		m_quaternion = DirectX::SimpleMath::Quaternion();
+		m_rightDirection = m_upDirection.Cross(m_forwardDirection);
+	//}
 }
 
 void Camera::MoveUp(float deltaTime)

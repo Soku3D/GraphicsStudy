@@ -16,12 +16,14 @@ public:
 };
 //typedef MeshData<Renderer::SimpleVertex> SimpleMeshData;
 using SimpleMeshData = MeshData<Renderer::SimpleVertex>;
+using BasicMeshData = MeshData<Renderer::Vertex>;
 
 class GeomertyGenerator {
 public:
 	static SimpleMeshData SimpleTriangle(const float& length);
 	static SimpleMeshData SimpleRectangle(const float& length);
 	static SimpleMeshData SimpleBox(const float& length);
+	static BasicMeshData Box(const float& length);
 };
 
 template<typename Vertex>

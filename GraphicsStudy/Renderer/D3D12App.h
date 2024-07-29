@@ -71,6 +71,7 @@ namespace Renderer {
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;
 
+		ComPtr<ID3D12PipelineState> m_simplePso;
 		ComPtr<ID3D12PipelineState> m_pso;
 		ComPtr<ID3D12RootSignature> m_rootSignature;
 
@@ -79,6 +80,10 @@ namespace Renderer {
 		UINT8* m_pCbvDataBegin = nullptr;
 
 		D3D12_INPUT_LAYOUT_DESC m_simpleVertexInputLayout;
+		D3D12_INPUT_LAYOUT_DESC m_vertexInputLayout;
+
+		ComPtr<ID3D12Resource> m_textureTest;
+
 
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
 	};
