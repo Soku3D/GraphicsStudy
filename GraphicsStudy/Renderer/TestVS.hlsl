@@ -22,6 +22,7 @@ struct PSInput
     float3 normal : NORMAL;
     float2 uv : TEXCOORD;
 };
+
 PSInput main(VSInput input)
 {
     PSInput output;

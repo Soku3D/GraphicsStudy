@@ -2,6 +2,7 @@
 
 #include "Object.h"
 #include "InputHandler.h"
+#include "Camera.h"
 
 namespace Renderer {
 	class SimpleApp {
@@ -29,8 +30,11 @@ namespace Renderer {
 		UINT m_screenWidth;
 		UINT m_screenHeight;
 		
-		std::shared_ptr<Camera> m_camera;
+		std::shared_ptr<Core::Camera> m_camera;
 		std::unique_ptr<InputHandler> m_inputHandler;
+		
 		bool bIsShowCursor = false;
+		bool bIsWireMode = false;
+
 	};
 }

@@ -16,7 +16,6 @@ void Core::StaticMesh::Update(float& deltaTime)
 	m_objectConstantData->Model = DirectX::SimpleMath::Matrix::CreateRotationZ(m_currTheta);
 	m_objectConstantData->Model = m_objectConstantData->Model.Transpose();
 
-
 	CD3DX12_RANGE range(0, 0);
 	ThrowIfFailed(m_objectConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
 	memcpy(m_pCbvDataBegin, m_objectConstantData, sizeof(ObjectConstantData));

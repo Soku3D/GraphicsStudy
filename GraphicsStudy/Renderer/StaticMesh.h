@@ -31,7 +31,7 @@ namespace Core {
 			m_objectConstantData->Model = m_objectConstantData->Model.Transpose();
 			std::vector<ObjectConstantData> constantData = { *m_objectConstantData	};
 			Renderer::Utility::CreateUploadBuffer(constantData, m_objectConstantBuffer, device);
-			indexCount = meshData.m_indices.size();
+			indexCount = (UINT)meshData.m_indices.size();
 
 			CD3DX12_RANGE range(0, 0);
 			ThrowIfFailed(m_objectConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));

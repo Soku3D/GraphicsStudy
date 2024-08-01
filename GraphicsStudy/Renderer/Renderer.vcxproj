@@ -152,6 +152,7 @@
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Object.cpp" />
     <ClCompile Include="SceneComponent.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
     <ClCompile Include="StaticMesh.cpp" />

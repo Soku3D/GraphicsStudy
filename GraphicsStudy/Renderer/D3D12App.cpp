@@ -40,12 +40,13 @@ bool Renderer::D3D12App::Initialize()
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	srvHeapDesc.NodeMask = 0;
-	srvHeapDesc.NumDescriptors = 1;
+	srvHeapDesc.NumDescriptors = 2;
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 
 	m_device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_srvHeap));
 
-	Utility::CreateTextureBuffer(L"Textures/RockTexture.dds", m_texture, m_srvHeap, m_device, m_commandQueue);
+	Utility::CreateTextureBuffer(L"Textures/RockTexture.dds", m_rockTexture, m_srvHeap, m_device, m_commandQueue);
+	Utility::CreateTextureBuffer(L"Textures/Metal.png", m_metalTexture, m_srvHeap, m_device, m_commandQueue, 1, m_csuHeapSize);
 
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
@@ -245,14 +246,19 @@ void Renderer::D3D12App::Update( float& deltaTime )
 	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
 
 	for (auto& mesh : m_staticMeshes) {
-		mesh->Update(deltaTime);
+		//mesh->Update(deltaTime);
 	}
 }
 
 void Renderer::D3D12App::Render(float& deltaTime)
 {
 	ThrowIfFailed(m_commandAllocator->Reset());
-	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), m_pso.Get()));
+	if (m_inputHandler->bIsWireMode) {
+		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), m_wireModePso.Get()));
+	}
+	else {
+		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), m_pso.Get()));
+	}
 	{
 		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			CurrentBackBuffer(),
@@ -381,11 +387,15 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 {
 	using DirectX::SimpleMath::Vector3;
 		
-	std::shared_ptr<StaticMesh> triangle = std::make_shared<StaticMesh>();
+	//std::shared_ptr<StaticMesh> triangle = std::make_shared<StaticMesh>();
 
-	triangle->Initialize(GeomertyGenerator::Box(1.f), m_device, m_commandList);
+	//triangle->Initialize(GeomertyGenerator::Box(1.f), m_device, m_commandList);
 
-	m_staticMeshes.push_back(triangle);
+	//m_staticMeshes.push_back(triangle);
+
+	std::shared_ptr<StaticMesh> grid = std::make_shared<StaticMesh>();
+	grid->Initialize(GeomertyGenerator::Grid(1.f, 1.f,4, 3), m_device, m_commandList);
+	m_staticMeshes.push_back(grid);
 }
 
 void Renderer::D3D12App::CreateConstantBuffer()
@@ -403,7 +413,7 @@ void Renderer::D3D12App::CreateConstantBuffer()
 void Renderer::D3D12App::CreateRootSignature()
 {
 	CD3DX12_DESCRIPTOR_RANGE1 srvTable;
-	srvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+	srvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0);
 
 	CD3DX12_ROOT_PARAMETER1 rootParameters[3];
 	rootParameters[0].InitAsDescriptorTable(1, &srvTable, D3D12_SHADER_VISIBILITY_PIXEL);
@@ -455,7 +465,6 @@ void Renderer::D3D12App::CreatePSO()
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
-
 	};
 	m_vertexInputLayout.NumElements = (UINT)elements.size();
 	m_vertexInputLayout.pInputElementDescs = elements.data();
@@ -489,6 +498,16 @@ void Renderer::D3D12App::CreatePSO()
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = simplePsoDesc;
 	psoDesc.InputLayout = m_vertexInputLayout;
 	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pso)));
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC wirePsoDesc = psoDesc;
+	wireFrameRasterizer = {};
+	wireFrameRasterizer.CullMode = D3D12_CULL_MODE_BACK;
+	wireFrameRasterizer.FillMode = D3D12_FILL_MODE_WIREFRAME;
+	wireFrameRasterizer.DepthClipEnable = TRUE;
+	wirePsoDesc.RasterizerState = wireFrameRasterizer;
+
+	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&wirePsoDesc, IID_PPV_ARGS(&m_wireModePso)));
+
 
 }
 

@@ -11,7 +11,7 @@ Renderer::SimpleApp::SimpleApp(const int& width, const int& height):
 {
     assert(m_pApp == nullptr);
     m_pApp = this;
-    m_camera = std::make_shared<Camera>();
+    m_camera = std::make_shared<Core::Camera>();
     m_inputHandler = std::make_unique<InputHandler>();
 
     m_camera->SetAspectRation(width / (float)height);
@@ -171,7 +171,7 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
         int deltaX = raw.data.mouse.lLastX;
         int deltaY = raw.data.mouse.lLastY;
         if (m_camera != nullptr)
-            m_camera->SetQuaternion(deltaX, deltaY);
+            m_camera->SetRotation(deltaX, deltaY);
 
         if (raw.data.mouse.ulButtons == 0x0020) {
             ShowCursor(!bIsShowCursor);
@@ -182,13 +182,14 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
     break;
 
     case WM_KEYDOWN:
-        m_inputHandler->m_keyStates[(int)wParam] = true;
-        
+        m_inputHandler->m_currKeyStates[(int)wParam] = true;
+        //m_inputHandler->UpdateKeyDown((int)wParam);
         break;
 
     case WM_KEYUP:
-        m_inputHandler->m_keyStates[(int)wParam] = false;
-        break;  
+        m_inputHandler->m_currKeyStates[(int)wParam] = false;
+        //m_inputHandler->UpdateKeyUp((int)wParam);
+
     }
     return DefWindowProc(hWnd, msg, wParam, lParam);
     

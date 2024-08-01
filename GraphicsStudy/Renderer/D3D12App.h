@@ -74,6 +74,7 @@ namespace Renderer {
 
 		ComPtr<ID3D12PipelineState> m_simplePso;
 		ComPtr<ID3D12PipelineState> m_pso;
+		ComPtr<ID3D12PipelineState> m_wireModePso;
 		ComPtr<ID3D12RootSignature> m_rootSignature;
 
 		GlobalVertexConstantData* m_passConstantData;
@@ -84,9 +85,12 @@ namespace Renderer {
 		D3D12_INPUT_LAYOUT_DESC m_vertexInputLayout;
 
 		ComPtr<ID3D12Resource> m_uploadHeap;
-		ComPtr<ID3D12Resource> m_texture;
-
+		ComPtr<ID3D12Resource> m_rockTexture;
+		ComPtr<ID3D12Resource> m_metalTexture;
 
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
+
+		D3D12_RASTERIZER_DESC wireFrameRasterizer;
+
 	};
 }

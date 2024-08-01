@@ -1,6 +1,8 @@
 #include "InputHandler.h"
 #include <iostream>
 
+using namespace Core;
+
 InputHandler::InputHandler()
 {
 	upCommand = std::make_unique<UpCommand>();
@@ -11,27 +13,42 @@ InputHandler::InputHandler()
 	backwardCommand = std::make_unique<BackwardCommand>();
 }
 
-void InputHandler::ExicuteCommand(Camera* camera, float deltaTime)
+void InputHandler::ExicuteCommand(Core::Actor* actor, float deltaTime)
 {
-	camera->RotateDirection();
+	actor->RotateDirection();
 
-	if (m_keyStates[upKey]) {
-		upCommand->Execute(camera, deltaTime);
+	if (m_currKeyStates[upKey]) {
+		upCommand->Execute(actor, deltaTime);
 	}
-	if (m_keyStates[downKey]) {
-		downCommand->Execute(camera, deltaTime);
+	if (m_currKeyStates[downKey]) {
+		downCommand->Execute(actor, deltaTime);
 	}
-	if (m_keyStates[forwardKey]) {
-		forwardCommand->Execute(camera, deltaTime);
+	if (m_currKeyStates[forwardKey]) {
+		forwardCommand->Execute(actor, deltaTime);
 	}
-	if (m_keyStates[backwardKey]) {
-		backwardCommand->Execute(camera, deltaTime);
+	if (m_currKeyStates[backwardKey]) {
+		backwardCommand->Execute(actor, deltaTime);
 	}
-	if (m_keyStates[rightKey]) {
-		rightCommand->Execute(camera, deltaTime);
+	if (m_currKeyStates[rightKey]) {
+		rightCommand->Execute(actor, deltaTime);
 	}
-	if (m_keyStates[leftKey]) {
-		leftCommand->Execute(camera, deltaTime);
+	if (m_currKeyStates[leftKey]) {
+		leftCommand->Execute(actor, deltaTime);
 	}
+	if (m_prevKeyStates[wireModeSwitch] && !m_currKeyStates[wireModeSwitch])
+	{
+		bIsWireMode = !bIsWireMode;
+	}
+	m_prevKeyStates = m_currKeyStates;
+}
+
+void InputHandler::UpdateKeyDown(const int& wParam)
+{
+	m_currKeyStates[wParam] = true;
+}
+
+void InputHandler::UpdateKeyUp(const int& wParam)
+{
+	m_currKeyStates[wParam] = true;
 }
 

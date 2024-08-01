@@ -17,11 +17,15 @@ public:
 	std::unique_ptr<ForwardCommand> forwardCommand;
 	std::unique_ptr<BackwardCommand> backwardCommand;
 
-	std::unordered_map<int, bool> m_keyStates;
+	std::unordered_map<int, bool> m_prevKeyStates;
+	std::unordered_map<int, bool> m_currKeyStates;
 	
+	bool bIsWireMode = false;
 public:
-	void ExicuteCommand(class Camera* camera, float deltaTime);
-
+	// 매 프레임당 호출되어 키 입력을 처리한다
+	void ExicuteCommand(class Core::Actor* actor, float deltaTime);
+	void UpdateKeyDown(const int& wParam);
+	void UpdateKeyUp(const int& wParam);
 private:
 	unsigned int upKey = unsigned int('Q');
 	unsigned int downKey = unsigned int('E');
@@ -29,4 +33,8 @@ private:
 	unsigned int leftKey = unsigned int('A');
 	unsigned int forwardKey = unsigned int('W');
 	unsigned int backwardKey = unsigned int('S');
+
+	unsigned int wireModeSwitch = unsigned int('R');
+
+
 };

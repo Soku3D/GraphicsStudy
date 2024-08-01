@@ -1,32 +1,33 @@
 #include "Command.h"
 
 
-void UpCommand::Execute(Camera* camera, float deltaTime)
+
+void UpCommand::Execute(Core::Actor* actor, float deltaTime)
 {
-	camera->MoveUp(deltaTime);
+	actor->MoveUp(deltaTime);
 }
 
-void DownCommand::Execute(Camera* camera, float deltaTime)
+void DownCommand::Execute(Core::Actor* actor, float deltaTime)
 {
-	camera->MoveDown(deltaTime);
+	actor->MoveDown(deltaTime);
 }
 
-void RightCommand::Execute(Camera* camera, float deltaTime)
+void RightCommand::Execute(Core::Actor* actor, float deltaTime)
 {
-	camera->MoveRight(deltaTime);
+	actor->MoveRight(deltaTime);
 }
 
-void LeftCommand::Execute(Camera* camera, float deltaTime)
+void LeftCommand::Execute(Core::Actor* actor, float deltaTime)
 {
-	camera->MoveLeft(deltaTime);
+	actor->MoveLeft(deltaTime);
 }
 
-void ForwardCommand::Execute(Camera* camera, float deltaTime)
+void ForwardCommand::Execute(Core::Actor* actor, float deltaTime)
 {
-	camera->MoveForward(deltaTime);
+	actor->MoveForward(deltaTime);
 }
 
-void BackwardCommand::Execute(Camera* camera, float deltaTime)
+void BackwardCommand::Execute(Core::Actor* actor, float deltaTime)
 {
-	camera->MoveBackward(deltaTime);
+	actor->MoveBackward(deltaTime);
 }
