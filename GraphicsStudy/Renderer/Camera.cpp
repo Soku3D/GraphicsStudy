@@ -6,8 +6,8 @@ namespace Core {
 		m_forwardDirection(DirectX::SimpleMath::Vector3(0.f, 0.f, 1.f)),
 		m_upDirection(DirectX::SimpleMath::Vector3(0.f, 1.f, 0.f)),
 		m_rightDirection(DirectX::SimpleMath::Vector3(1.f, 0.f, 0.f)),
-		m_farZ(0.01f),
-		m_nearZ(100.f),
+		m_farZ(100.f),
+		m_nearZ(0.1f),
 		Actor()
 	{
 		m_fov = DirectX::XMConvertToRadians(70.f);

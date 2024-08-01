@@ -1,5 +1,5 @@
-Texture2D g_rock : register(t0);
-Texture2D g_metal : register(t1);
+Texture2D g_basic: register(t0);
+
 SamplerState g_sampler : register(s0);
 
 struct PSInput
@@ -10,5 +10,5 @@ struct PSInput
 };
 float4 main(PSInput input) : SV_TARGET
 {
-    return g_metal.Sample(g_sampler, input.uv);
+    return g_basic.Sample(g_sampler, input.uv);
 }

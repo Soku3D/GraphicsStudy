@@ -25,7 +25,8 @@ public:
 	static SimpleMeshData SimpleBox(const float& length);
 	static BasicMeshData Box(const float& length);
 	static BasicMeshData Grid(const float& xLength, const float& yLength, const int& x, const int& y);
-	BasicMeshData Sphere(const float& radius);
+	static BasicMeshData Cyilinder(const float& topRadius, const float& bottomRadius, const float& height, const int& x, const int& y);
+	static BasicMeshData Sphere(const float& radius, const int& x, const int& y);
 };
 
 template<typename Vertex>

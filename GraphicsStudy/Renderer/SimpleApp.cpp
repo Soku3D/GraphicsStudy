@@ -21,6 +21,7 @@ Renderer::SimpleApp::~SimpleApp()
 {
     m_mainWnd = NULL;
     m_pApp = nullptr;
+    m_camera.reset();
 }
 
 bool Renderer::SimpleApp::Initialize()

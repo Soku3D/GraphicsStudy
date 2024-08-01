@@ -169,3 +169,116 @@ BasicMeshData GeomertyGenerator::Grid(const float& xLength, const float& yLength
 	return data;
 }
 
+BasicMeshData GeomertyGenerator::Cyilinder(const float& topRadius, const float& bottomRadius, const float& height,  const int& x, const int& y) {
+	
+	BasicMeshData data;
+	if (x == 0 || y == 0)
+	{
+		return data;
+	}
+	Vector3 basePosition(Vector3(-topRadius, height / 2.f, 0.f));
+
+	float delY = height / y;
+	float delX = (bottomRadius - topRadius) / y;
+
+	float delTheta = DirectX::XM_2PI / x;
+	float uvDelX = 1.f / x;
+	float uvDelY = 1.f / y;
+
+	int index = 0;
+
+	std::vector<Vertex> vertices;
+	std::vector<uint16_t> indices;
+	for (int j = 0; j < y + 1; ++j)
+	{
+		Vector3 position = basePosition - Vector3(j*delX, j * delY, 0.f);
+		for (int i = 0; i < x + 1; ++i)
+		{
+			Vertex v;
+			v.Position = Vector3::Transform(position, DirectX::XMMatrixRotationY(-delTheta * i));
+			v.Texcoord = Vector2(i * uvDelX, j * uvDelY);
+			v.Normal = v.Position;
+			v.Normal.y = 0.f;
+			v.Normal.Normalize();
+
+			vertices.push_back(v);
+		}
+	}
+
+	for (int i = 0; i < y; i++)
+	{
+		int index = i * (x + 1);
+		for (int j = 0; j < x; j++)
+		{
+			int idx = index + j;
+			indices.push_back(idx + x + 1);
+			indices.push_back(idx);
+			indices.push_back(idx + 1);
+
+			indices.push_back(idx + x + 1);
+			indices.push_back(idx + 1);
+			indices.push_back(idx + x + 2);
+		}
+	}
+
+	data.m_vertices = vertices;
+	data.m_indices = indices;
+	return data;
+}
+
+BasicMeshData GeomertyGenerator::Sphere(const float& radius, const int& x, const int& y)
+{
+	BasicMeshData data;
+	if (x == 0 || y == 0)
+	{
+		return data;
+	}
+	Vector3 basePosition(Vector3(0.f, radius / 2.f, 0.f));
+
+
+	float delYTheta = DirectX::XM_2PI / x;
+	float delZTheta = DirectX::XM_PI / y;
+
+	float uvDelX = 1.f / x;
+	float uvDelY = 1.f / y;
+
+	int index = 0;
+
+	std::vector<Vertex> vertices;
+	std::vector<uint16_t> indices;
+	for (int j = 0; j < y + 1; ++j)
+	{
+		Vector3 position = Vector3::Transform(basePosition, DirectX::XMMatrixRotationZ(-delZTheta * j));
+		for (int i = 0; i < x + 1; ++i)
+		{
+			Vertex v;
+			v.Position = Vector3::Transform(position, DirectX::XMMatrixRotationY(-delYTheta * i));
+			v.Texcoord = Vector2(i * uvDelX, j * uvDelY);
+			v.Normal = v.Position;
+			v.Normal.Normalize();
+
+			vertices.push_back(v);
+		}
+	}
+
+	for (int i = 0; i < y; i++)
+	{
+		int index = i * (x + 1);
+		for (int j = 0; j < x; j++)
+		{
+			int idx = index + j;
+			indices.push_back(idx + x + 1);
+			indices.push_back(idx);
+			indices.push_back(idx + 1);
+
+			indices.push_back(idx + x + 1);
+			indices.push_back(idx + 1);
+			indices.push_back(idx + x + 2);
+		}
+	}
+
+	data.m_vertices = vertices;
+	data.m_indices = indices;
+	return data;
+}
+

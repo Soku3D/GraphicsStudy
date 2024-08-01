@@ -45,7 +45,7 @@ bool Renderer::D3D12App::Initialize()
 
 	m_device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_srvHeap));
 
-	Utility::CreateTextureBuffer(L"Textures/RockTexture.dds", m_rockTexture, m_srvHeap, m_device, m_commandQueue);
+	Utility::CreateTextureBuffer(L"Textures/8k_earth_daymap.jpg", m_rockTexture, m_srvHeap, m_device, m_commandQueue);
 	Utility::CreateTextureBuffer(L"Textures/Metal.png", m_metalTexture, m_srvHeap, m_device, m_commandQueue, 1, m_csuHeapSize);
 
 	ThrowIfFailed(m_commandList->Close());
@@ -209,7 +209,7 @@ void Renderer::D3D12App::OnResize()
 		&depthStencilDesc,
 		D3D12_RESOURCE_STATE_COMMON,
 		&optClear,
-		IID_PPV_ARGS(m_depthStencilBuffer.ReleaseAndGetAddressOf())));
+		IID_PPV_ARGS(m_depthStencilBuffer.GetAddressOf())));
 
 	// Create descriptor to mip level 0 of entire resource using the format of the resource.
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
@@ -269,7 +269,7 @@ void Renderer::D3D12App::Render(float& deltaTime)
 		m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
 		m_commandList->ClearDepthStencilView(m_dsvHeap->GetCPUDescriptorHandleForHeapStart(),
 			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-			1.f, 0, 0, nullptr);
+			1.f, 0, 0, NULL);
 
 		m_commandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
 
@@ -296,10 +296,14 @@ void Renderer::D3D12App::Render(float& deltaTime)
 		
 		ID3D12DescriptorHeap* ppHeaps[] = { m_srvHeap.Get() };
 		m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-		m_commandList->SetGraphicsRootDescriptorTable(0, m_srvHeap->GetGPUDescriptorHandleForHeapStart());
 		
-		for (auto& mesh : m_staticMeshes) {
-			mesh->Render(deltaTime, m_commandList);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_srvHeap->GetGPUDescriptorHandleForHeapStart());
+		
+		
+		for (int i = 0; i<m_staticMeshes.size(); ++i) {
+			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
+			m_staticMeshes[i]->Render(deltaTime, m_commandList);
+			handle.Offset(m_csuHeapSize);
 		}
 
 		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
@@ -393,9 +397,23 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 
 	//m_staticMeshes.push_back(triangle);
 
-	std::shared_ptr<StaticMesh> grid = std::make_shared<StaticMesh>();
-	grid->Initialize(GeomertyGenerator::Grid(1.f, 1.f,4, 3), m_device, m_commandList);
-	m_staticMeshes.push_back(grid);
+	//std::shared_ptr<StaticMesh> grid = std::make_shared<StaticMesh>();
+	//grid->Initialize(GeomertyGenerator::Grid(1.f, 1.f,4, 3), m_device, m_commandList);
+	//m_staticMeshes.push_back(grid);
+
+	/*std::shared_ptr<StaticMesh> cyilnder = std::make_shared<StaticMesh>();
+	cyilnder->Initialize(GeomertyGenerator::Cyilinder(0.f, 1.f, 1.f, 3, 3), m_device, m_commandList, Vector3(0.5f,0.f,0.f));
+	m_staticMeshes.push_back(cyilnder);*/
+
+	std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
+	sphere->Initialize(GeomertyGenerator::Sphere(0.8f,100,100), m_device, m_commandList, Vector3(-0.2f,0.f,1.f));
+	
+	
+	std::shared_ptr<StaticMesh> sphere2 = std::make_shared<StaticMesh>();
+	sphere2->Initialize(GeomertyGenerator::Sphere(1.f, 100, 100), m_device, m_commandList);
+	
+	m_staticMeshes.push_back(sphere2);
+	m_staticMeshes.push_back(sphere);
 }
 
 void Renderer::D3D12App::CreateConstantBuffer()
@@ -413,7 +431,7 @@ void Renderer::D3D12App::CreateConstantBuffer()
 void Renderer::D3D12App::CreateRootSignature()
 {
 	CD3DX12_DESCRIPTOR_RANGE1 srvTable;
-	srvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0);
+	srvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 
 	CD3DX12_ROOT_PARAMETER1 rootParameters[3];
 	rootParameters[0].InitAsDescriptorTable(1, &srvTable, D3D12_SHADER_VISIBILITY_PIXEL);
@@ -453,12 +471,12 @@ void Renderer::D3D12App::CreateRootSignature()
 
 void Renderer::D3D12App::CreatePSO()
 {
-	std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElements =
-	{
-		{"POSITION", 0,DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
-	};
-	m_simpleVertexInputLayout.NumElements = (UINT)simpleElements.size();
-	m_simpleVertexInputLayout.pInputElementDescs = simpleElements.data();
+	//std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElements =
+	//{
+	//	{"POSITION", 0,DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+	//};
+	//m_simpleVertexInputLayout.NumElements = (UINT)simpleElements.size();
+	//m_simpleVertexInputLayout.pInputElementDescs = simpleElements.data();
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> elements =
 	{
@@ -469,37 +487,47 @@ void Renderer::D3D12App::CreatePSO()
 	m_vertexInputLayout.NumElements = (UINT)elements.size();
 	m_vertexInputLayout.pInputElementDescs = elements.data();
 
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC simplePsoDesc = {};
-	simplePsoDesc.pRootSignature = m_rootSignature.Get();
-	simplePsoDesc.VS =
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC defalutPsoDesc = {};
+	defalutPsoDesc.pRootSignature = m_rootSignature.Get();
+	defalutPsoDesc.VS =
 	{
 		g_pTestVS,
 		sizeof(g_pTestVS)
 	};
-	simplePsoDesc.PS =
+	defalutPsoDesc.PS =
 	{
 		g_pTestPS,
 		sizeof(g_pTestPS)
 	};
-	simplePsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	simplePsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	simplePsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-	simplePsoDesc.SampleMask = UINT_MAX;
-	simplePsoDesc.InputLayout = m_simpleVertexInputLayout;
-	simplePsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	simplePsoDesc.NumRenderTargets = 1;
-	simplePsoDesc.RTVFormats[0] = m_backbufferFormat;
-	simplePsoDesc.DSVFormat = m_depthStencilFormat;
-	simplePsoDesc.SampleDesc.Count = 1;
-	simplePsoDesc.SampleDesc.Quality = 0;
+	defalutPsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	defalutPsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	defalutPsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	defalutPsoDesc.SampleMask = UINT_MAX;
+	defalutPsoDesc.InputLayout = m_vertexInputLayout;
+	defalutPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	defalutPsoDesc.NumRenderTargets = 1;
+	defalutPsoDesc.RTVFormats[0] = m_backbufferFormat;
+	defalutPsoDesc.DSVFormat = m_depthStencilFormat;
+	defalutPsoDesc.SampleDesc.Count = 1;
+	defalutPsoDesc.SampleDesc.Quality = 0;
+	
+	D3D12_DEPTH_STENCIL_DESC depthStencilDesc = {};
+	depthStencilDesc.DepthEnable = true;
+	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC::D3D12_COMPARISON_FUNC_LESS;
+	defalutPsoDesc.DepthStencilState = depthStencilDesc;
+	
+	D3D12_RASTERIZER_DESC solidRaseterDesc = {};
+	solidRaseterDesc.CullMode = D3D12_CULL_MODE_BACK;
+	solidRaseterDesc.FillMode = D3D12_FILL_MODE_SOLID;
+	solidRaseterDesc.DepthClipEnable = TRUE;
 
-	//ThrowIfFailed(m_device->CreateGraphicsPipelineState(&simplePsoDesc, IID_PPV_ARGS(&m_simplePso)));
+	defalutPsoDesc.RasterizerState = solidRaseterDesc;
 
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = simplePsoDesc;
-	psoDesc.InputLayout = m_vertexInputLayout;
-	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pso)));
+	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&defalutPsoDesc, IID_PPV_ARGS(&m_pso)));
 
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC wirePsoDesc = psoDesc;
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC wirePsoDesc = defalutPsoDesc;
+
 	wireFrameRasterizer = {};
 	wireFrameRasterizer.CullMode = D3D12_CULL_MODE_BACK;
 	wireFrameRasterizer.FillMode = D3D12_FILL_MODE_WIREFRAME;

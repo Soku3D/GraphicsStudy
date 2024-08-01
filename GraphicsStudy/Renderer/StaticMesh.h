@@ -14,7 +14,8 @@ namespace Core {
 		template <typename Vertex>
 		void Initialize(MeshData<Vertex>& meshData,
 			Microsoft::WRL::ComPtr<ID3D12Device>& device,
-			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList) 
+			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList,
+			const DirectX::SimpleMath::Vector3& modelPosition = DirectX::SimpleMath::Vector3::Zero)
 		{
 			Renderer::Utility::CreateBuffer(meshData.m_vertices, m_vertexUpload, m_vertexGpu, device, commandList);
 			Renderer::Utility::CreateBuffer(meshData.m_indices, m_indexUpload, m_indexGpu, device, commandList);
@@ -28,6 +29,7 @@ namespace Core {
 			m_indexBufferView.SizeInBytes = UINT(sizeof(uint16_t) * meshData.m_indices.size());
 			m_objectConstantData = new ObjectConstantData();
 			
+			m_objectConstantData->Model = DirectX::XMMatrixTranslation(modelPosition.x, modelPosition.y, modelPosition.z);
 			m_objectConstantData->Model = m_objectConstantData->Model.Transpose();
 			std::vector<ObjectConstantData> constantData = { *m_objectConstantData	};
 			Renderer::Utility::CreateUploadBuffer(constantData, m_objectConstantBuffer, device);
@@ -54,5 +56,6 @@ namespace Core {
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_indexGpu;
 		D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
 		UINT indexCount = 0;
+
 	};
 }
