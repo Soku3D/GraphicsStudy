@@ -18,14 +18,33 @@ std::wstring DxException::ToString()const
     return FunctionName + L" failed in " + Filename + L"; line " + std::to_wstring(LineNumber) + L"; error: " + msg;
 }
 
-void Renderer::Utility::CreateTextureBuffer(const wchar_t* path, ComPtr<ID3D12Resource>& uploadBuffer, ComPtr<ID3D12Device>& device, ComPtr<ID3D12GraphicsCommandList>& commandList)
+
+
+void Renderer::Utility::CreateTextureBuffer(const wchar_t* path, ComPtr<ID3D12Resource>& texture, ComPtr<ID3D12DescriptorHeap>& heap,
+    ComPtr<ID3D12Device>& device, ComPtr<ID3D12CommandQueue>& commandQueue)
 {
     using namespace DirectX;
-    std::unique_ptr<uint8_t[]> ddsData;
-    std::vector<D3D12_SUBRESOURCE_DATA> subresources;
+
+    ResourceUploadBatch resourceUpload(device.Get());
+
+    resourceUpload.Begin();
+
     ThrowIfFailed(
-        LoadDDSTextureFromFile(device.Get(), path,
-            uploadBuffer.ReleaseAndGetAddressOf(), ddsData, subresources)
+       CreateDDSTextureFromFile(device.Get(), resourceUpload, path,
+            texture.ReleaseAndGetAddressOf())
     );
 
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = texture->GetDesc().Format;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    srvDesc.Texture2D.MipLevels = texture->GetDesc().MipLevels;
+    srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
+    device->CreateShaderResourceView(texture.Get(), &srvDesc, heap->GetCPUDescriptorHandleForHeapStart());
+
+    auto uploadResourcesFinished = resourceUpload.End(
+        commandQueue.Get());
+
+    uploadResourcesFinished.wait();
 }

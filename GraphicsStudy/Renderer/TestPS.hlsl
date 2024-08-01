@@ -1,3 +1,6 @@
+Texture2D g_texture : register(t0);
+SamplerState g_sampler : register(s0);
+
 struct PSInput
 {
     float4 position : SV_POSITION;
@@ -6,5 +9,5 @@ struct PSInput
 };
 float4 main(PSInput input) : SV_TARGET
 {
-    return float4(1.f, 0.f,0.f, 1.0f);
+    return g_texture.Sample(g_sampler, input.uv);
 }

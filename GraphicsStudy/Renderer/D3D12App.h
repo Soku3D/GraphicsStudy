@@ -67,6 +67,7 @@ namespace Renderer {
 		ComPtr<ID3D12DescriptorHeap> m_rtvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_dsvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_cbvHeap;
+		ComPtr<ID3D12DescriptorHeap> m_srvHeap;
 
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;
@@ -82,7 +83,8 @@ namespace Renderer {
 		D3D12_INPUT_LAYOUT_DESC m_simpleVertexInputLayout;
 		D3D12_INPUT_LAYOUT_DESC m_vertexInputLayout;
 
-		ComPtr<ID3D12Resource> m_textureTest;
+		ComPtr<ID3D12Resource> m_uploadHeap;
+		ComPtr<ID3D12Resource> m_texture;
 
 
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
