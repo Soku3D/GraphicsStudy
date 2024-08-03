@@ -11,6 +11,7 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	m_scissorRect(D3D12_RECT())
 {
 	m_passConstantData = new GlobalVertexConstantData();
+	textureBasePath = L"Textures/";
 }
 
 Renderer::D3D12App::~D3D12App()
@@ -32,22 +33,13 @@ bool Renderer::D3D12App::Initialize()
 	}
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 
-	CreateVertexAndIndexBuffer();
+
 	CreateConstantBuffer();
 	CreateRootSignature();
 	CreatePSO();
-
-	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	srvHeapDesc.NodeMask = 0;
-	srvHeapDesc.NumDescriptors = 2;
-	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-
-	m_device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_srvHeap));
-
-	Utility::CreateTextureBuffer(L"Textures/8k_earth_daymap.jpg", m_rockTexture, m_srvHeap, m_device, m_commandQueue);
-	Utility::CreateTextureBuffer(L"Textures/Metal.png", m_metalTexture, m_srvHeap, m_device, m_commandQueue, 1, m_csuHeapSize);
-
+	CreateTextures();
+	CreateVertexAndIndexBuffer();
+		
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
@@ -297,13 +289,15 @@ void Renderer::D3D12App::Render(float& deltaTime)
 		ID3D12DescriptorHeap* ppHeaps[] = { m_srvHeap.Get() };
 		m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 		
-		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_srvHeap->GetGPUDescriptorHandleForHeapStart());
 		
 		
-		for (int i = 0; i<m_staticMeshes.size(); ++i) {
+
+		for (int i = 0; i < m_staticMeshes.size(); ++i) {
+			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_srvHeap->GetGPUDescriptorHandleForHeapStart());
+			handle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath()], m_csuHeapSize);
 			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
 			m_staticMeshes[i]->Render(deltaTime, m_commandList);
-			handle.Offset(m_csuHeapSize);
+			//handle.Offset(m_csuHeapSize);
 		}
 
 		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
@@ -390,30 +384,15 @@ void Renderer::D3D12App::FlushCommandQueue() {
 void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 {
 	using DirectX::SimpleMath::Vector3;
-		
-	//std::shared_ptr<StaticMesh> triangle = std::make_shared<StaticMesh>();
-
-	//triangle->Initialize(GeomertyGenerator::Box(1.f), m_device, m_commandList);
-
-	//m_staticMeshes.push_back(triangle);
-
-	//std::shared_ptr<StaticMesh> grid = std::make_shared<StaticMesh>();
-	//grid->Initialize(GeomertyGenerator::Grid(1.f, 1.f,4, 3), m_device, m_commandList);
-	//m_staticMeshes.push_back(grid);
-
-	/*std::shared_ptr<StaticMesh> cyilnder = std::make_shared<StaticMesh>();
-	cyilnder->Initialize(GeomertyGenerator::Cyilinder(0.f, 1.f, 1.f, 3, 3), m_device, m_commandList, Vector3(0.5f,0.f,0.f));
-	m_staticMeshes.push_back(cyilnder);*/
-
+	
 	std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
-	sphere->Initialize(GeomertyGenerator::Sphere(0.8f,100,100), m_device, m_commandList, Vector3(-0.2f,0.f,1.f));
-	
-	
-	std::shared_ptr<StaticMesh> sphere2 = std::make_shared<StaticMesh>();
-	sphere2->Initialize(GeomertyGenerator::Sphere(1.f, 100, 100), m_device, m_commandList);
-	
-	m_staticMeshes.push_back(sphere2);
+	sphere->Initialize(GeomertyGenerator::Sphere(0.8f, 100, 100, L"earth.jpg"), m_device, m_commandList, Vector3(-0.2f, 0.f, 0.f));
+
+	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
+	//plane->Initialize(GeomertyGenerator::Box(4,4,1, L"Metal.png"), m_device, m_commandList, Vector3(0.f, -0.5f, 0.f));
+	plane->Initialize(GeomertyGenerator::Box(4,1,4,L"Metal.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f));
 	m_staticMeshes.push_back(sphere);
+	m_staticMeshes.push_back(plane);
 }
 
 void Renderer::D3D12App::CreateConstantBuffer()
@@ -446,9 +425,9 @@ void Renderer::D3D12App::CreateRootSignature()
 
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
 	sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-	sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	sampler.MipLODBias = 0;
 	sampler.MaxAnisotropy = 0;
 	sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
@@ -537,6 +516,44 @@ void Renderer::D3D12App::CreatePSO()
 	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&wirePsoDesc, IID_PPV_ARGS(&m_wireModePso)));
 
 
+}
+
+void Renderer::D3D12App::CreateTextures() {
+	namespace fs = std::filesystem;
+
+	fs::path path = fs::current_path();
+	path.append(textureBasePath);
+
+	int file_count = 0;
+	if (fs::exists(path) && fs::is_directory(path)) {
+		for (const auto& entry : fs::directory_iterator(path)) {
+			if (fs::is_regular_file(entry.status())) {
+				++file_count;
+			}
+		}
+	}
+	else {
+		std::cerr << "현재 경로가 존재하지 않거나 디렉토리가 아닙니다." << std::endl;
+		return;
+	}
+	
+
+	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
+	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	srvHeapDesc.NodeMask = 0;
+	srvHeapDesc.NumDescriptors = file_count;
+	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	m_device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_srvHeap));
+
+	m_textureResources.resize(file_count);
+	int mapIdx = 0;
+	if (fs::exists(path) && fs::is_directory(path)) {
+		for (const auto& entry : fs::directory_iterator(path)) {
+			std::wstring fileName = entry.path().filename().wstring();
+			Utility::CreateTextureBuffer(textureBasePath + fileName, m_textureResources[mapIdx], m_srvHeap, m_device, m_commandQueue, mapIdx, m_csuHeapSize);
+			m_textureMap.emplace(fileName, mapIdx++);
+		}
+	}
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE Renderer::D3D12App::CurrentBackBufferView() const

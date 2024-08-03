@@ -38,9 +38,11 @@ namespace Core {
 			CD3DX12_RANGE range(0, 0);
 			ThrowIfFailed(m_objectConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
 			memcpy(m_pCbvDataBegin, m_objectConstantData, sizeof(ObjectConstantData));
+			m_texturePath = meshData.GetTexturePath();
 		}
 		void Render(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 		void Update(float& deltaTime);
+		std::wstring GetTexturePath() const { return m_texturePath; }
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_objectConstantBuffer;
 		ObjectConstantData* m_objectConstantData;
@@ -56,6 +58,7 @@ namespace Core {
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_indexGpu;
 		D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
 		UINT indexCount = 0;
+		std::wstring m_texturePath = L"";
 
 	};
 }

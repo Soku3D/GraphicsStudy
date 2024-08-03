@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <iostream>
+#include <filesystem>
 
 #include "Timer.h"
 #include <cassert>
@@ -177,6 +178,7 @@ namespace Renderer {
 			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(gpuBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
 		}
 		
+		// Texture Buffer를 만들고 Texture에 대한 Descriptor를 Heap에 넣는다
 		static void CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Resource>& texture, ComPtr<ID3D12DescriptorHeap>& heap, 
 			ComPtr<ID3D12Device>& device, ComPtr<ID3D12CommandQueue>& commandQueue, int offset = 0 , int descriptorSize = 0);
 };

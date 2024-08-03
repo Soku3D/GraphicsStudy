@@ -66,62 +66,71 @@ SimpleMeshData GeomertyGenerator::SimpleBox(const float& length)
 	return data;
 }
 
-BasicMeshData GeomertyGenerator::Box(const float& length)
+BasicMeshData GeomertyGenerator::Box(const float& length, const std::wstring& texturePath)
+{
+	return Box(length, length, length, texturePath);
+}
+
+
+BasicMeshData GeomertyGenerator::Box(const float& x, const float& y, const float& z, const std::wstring& texturePath)
 {
 	BasicMeshData data;
 
-	float l = length / 2.f;
-
+	float hX = x / 2.f;
+	float hY = y / 2.f;
+	float hZ = z / 2.f;
+	
 	std::vector<Renderer::Vertex> vertices = {
-		{Vector3(-l, -l, -l), Vector3(0.f,0.f,-1.f), Vector2(0.f, 1.f)},
-		{Vector3(-l, l, -l), Vector3(0.f,0.f,-1.f), Vector2(0.f, 0.f)},
-		{Vector3(l, l, -l), Vector3(0.f,0.f,-1.f), Vector2(1.f, 0.f)},
-		{Vector3(l, -l, -l), Vector3(0.f,0.f,-1.f), Vector2(1.f, 1.f)},
+		{Vector3(-hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(0.f, 1.f)},
+		{Vector3(-hX, hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(0.f, 0.f)},
+		{Vector3(hX, hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(1.f, 0.f)},
+		{Vector3(hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(1.f, 1.f)},
 
-		{Vector3(l, -l, l), Vector3(0.f,0.f, 1.f), Vector2(1.f, 1.f)},
-		{Vector3(l, l, l), Vector3(0.f,0.f, 1.f), Vector2(1.f, 0.f)},
-		{Vector3(-l, l, l), Vector3(0.f,0.f, 1.f), Vector2(0.f, 0.f)},
-		{Vector3(-l, -l, l), Vector3(0.f,0.f, 1.f), Vector2(0.f, 1.f)},
+		{Vector3(hX, -hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(1.f, 1.f)},
+		{Vector3(hX, hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(1.f, 0.f)},
+		{Vector3(-hX, hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(0.f, 0.f)},
+		{Vector3(-hX, -hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(0.f, 1.f)},
 
-		{Vector3(-l, -l, l), Vector3(-1.f,0.f,0.f), Vector2(0.f, 1.f)},
-		{Vector3(-l, l, l), Vector3(-1.f,0.f, 0.f), Vector2(0.f, 0.f)},
-		{Vector3(-l, l, -l), Vector3(-1.f,0.f, 0.f), Vector2(1.f, 0.f)},
-		{Vector3(-l, -l, -l), Vector3(-1.f,0.f, 0.f), Vector2(1.f, 1.f)},
-		
-		{Vector3(l, -l, -l), Vector3(1.f,0.f,0.f), Vector2(1.f, 1.f)},
-		{Vector3(l, l, -l), Vector3(1.f,0.f,0.f), Vector2(1.f, 0.f)},
-		{Vector3(l, l, l), Vector3(1.f,0.f,0.f), Vector2(0.f, 0.f)},
-		{Vector3(l, -l, l), Vector3(1.f,0.f,0.f), Vector2(0.f, 1.f)},		
+		{Vector3(-hX, -hY, hZ), Vector3(-1.f,0.f,0.f), Vector2(0.f, 1.f)},
+		{Vector3(-hX, hY, hZ), Vector3(-1.f,0.f, 0.f), Vector2(0.f, 0.f)},
+		{Vector3(-hX, hY, -hZ), Vector3(-1.f,0.f, 0.f), Vector2(1.f, 0.f)},
+		{Vector3(-hX, -hY, -hZ), Vector3(-1.f,0.f, 0.f), Vector2(1.f, 1.f)},
 
-		{Vector3(-l, l, -l), Vector3(0.f, 1.f, 0.f), Vector2(0.f, 1.f)},
-		{Vector3(-l, l, l), Vector3(0.f, 1.f, 0.f), Vector2(0.f, 0.f)},
-		{Vector3(l, l, l), Vector3(0.f, 1.f, 0.f), Vector2(1.f, 0.f)},
-		{Vector3(l, l, -l), Vector3(0.f, 1.f, 0.f), Vector2(1.f, 1.f)},
+		{Vector3(hX, -hY, -hZ), Vector3(1.f,0.f,0.f), Vector2(1.f, 1.f)},
+		{Vector3(hX, hY, -hZ), Vector3(1.f,0.f,0.f), Vector2(1.f, 0.f)},
+		{Vector3(hX, hY, hZ), Vector3(1.f,0.f,0.f), Vector2(0.f, 0.f)},
+		{Vector3(hX, -hY, hZ), Vector3(1.f,0.f,0.f), Vector2(0.f, 1.f)},
 
-		{Vector3(l, -l, -l), Vector3(0.f, -1.f, 0.f), Vector2(1.f, 1.f)},
-		{Vector3(l, -l, l), Vector3(0.f, -1.f, 0.f), Vector2(1.f, 0.f)},
-		{Vector3(-l, -l, l), Vector3(0.f, -1.f, 0.f), Vector2(0.f, 0.f)},
-		{Vector3(-l, -l, -l), Vector3(0.f, -1.f, 0.f), Vector2(0.f, 1.f)}		
+		// 윗 면 (xz 평면)
+		{Vector3(-hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(0.f, z)},
+		{Vector3(-hX, hY, hZ), Vector3(0.f, 1.f, 0.f), Vector2(0.f, 0.f)},
+		{Vector3(hX, hY, hZ), Vector3(0.f, 1.f, 0.f), Vector2(x, 0.f)},
+		{Vector3(hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(x, z)},
+
+		// 아랫 면
+		{Vector3(hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(1.f, 1.f)},
+		{Vector3(hX, -hY, hZ), Vector3(0.f, -1.f, 0.f), Vector2(1.f, 0.f)},
+		{Vector3(-hX, -hY, hZ), Vector3(0.f, -1.f, 0.f), Vector2(0.f, 0.f)},
+		{Vector3(-hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(0.f, 1.f)}
 	};
 	std::vector<uint16_t> indices;
-	
+
 	for (int i = 0; i < 6; i++)
 	{
 		int idx = i * 4;
 		indices.push_back(idx);
-		indices.push_back(idx+1);
-		indices.push_back(idx+2);
+		indices.push_back(idx + 1);
+		indices.push_back(idx + 2);
 
 		indices.push_back(idx);
-		indices.push_back(idx+2);
-		indices.push_back(idx+3);
+		indices.push_back(idx + 2);
+		indices.push_back(idx + 3);
 	}
-	data.Initialize(vertices, indices);
+	data.Initialize(vertices, indices, texturePath);
 
 	return data;
 }
-
-BasicMeshData GeomertyGenerator::Grid(const float& xLength, const float& yLength, const int& x, const int& y) {
+BasicMeshData GeomertyGenerator::Grid(const float& xLength, const float& yLength, const int& x, const int& y, const std::wstring& texturePath) {
 	BasicMeshData data;
 	if (x == 0 || y == 0)
 	{
@@ -163,13 +172,12 @@ BasicMeshData GeomertyGenerator::Grid(const float& xLength, const float& yLength
 			indices.push_back(idx + x + 2);
 		}
 	}
+	data.Initialize(vertices, indices, texturePath);
 
-	data.m_vertices = vertices;
-	data.m_indices = indices;
 	return data;
 }
 
-BasicMeshData GeomertyGenerator::Cyilinder(const float& topRadius, const float& bottomRadius, const float& height,  const int& x, const int& y) {
+BasicMeshData GeomertyGenerator::Cyilinder(const float& topRadius, const float& bottomRadius, const float& height,  const int& x, const int& y, const std::wstring& texturePath) {
 	
 	BasicMeshData data;
 	if (x == 0 || y == 0)
@@ -221,12 +229,11 @@ BasicMeshData GeomertyGenerator::Cyilinder(const float& topRadius, const float& 
 		}
 	}
 
-	data.m_vertices = vertices;
-	data.m_indices = indices;
+	data.Initialize(vertices, indices, texturePath);
 	return data;
 }
 
-BasicMeshData GeomertyGenerator::Sphere(const float& radius, const int& x, const int& y)
+BasicMeshData GeomertyGenerator::Sphere(const float& radius, const int& x, const int& y, const std::wstring& texturePath)
 {
 	BasicMeshData data;
 	if (x == 0 || y == 0)
@@ -276,9 +283,8 @@ BasicMeshData GeomertyGenerator::Sphere(const float& radius, const int& x, const
 			indices.push_back(idx + x + 2);
 		}
 	}
+	data.Initialize(vertices, indices, texturePath);
 
-	data.m_vertices = vertices;
-	data.m_indices = indices;
 	return data;
 }
 

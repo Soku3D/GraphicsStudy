@@ -3,6 +3,7 @@
 #include "SimpleApp.h"
 #include "Constants.h"
 #include "StaticMesh.h"
+#include <map>
 
 using Microsoft::WRL::ComPtr;
 
@@ -27,6 +28,8 @@ namespace Renderer {
 		void CreateConstantBuffer();
 		void CreateRootSignature();
 		void CreatePSO();
+
+		void CreateTextures();
 
 	protected:
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
@@ -85,12 +88,14 @@ namespace Renderer {
 		D3D12_INPUT_LAYOUT_DESC m_vertexInputLayout;
 
 		ComPtr<ID3D12Resource> m_uploadHeap;
-		ComPtr<ID3D12Resource> m_rockTexture;
-		ComPtr<ID3D12Resource> m_metalTexture;
 
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
 
 		D3D12_RASTERIZER_DESC wireFrameRasterizer;
+
+		std::wstring textureBasePath;
+		std::vector<ComPtr<ID3D12Resource>> m_textureResources;
+		std::map<std::wstring, unsigned int> m_textureMap;
 
 	};
 }
