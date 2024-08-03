@@ -152,6 +152,7 @@
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ModelLoader.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="SceneComponent.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
@@ -173,6 +174,7 @@
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="MeshData.h" />
+    <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="PipelineState.h" />
     <ClInclude Include="PrimitiveComponent.h" />

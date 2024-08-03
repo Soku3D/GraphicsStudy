@@ -4,11 +4,11 @@
 
 namespace Renderer {
 	struct SimpleVertex {
-		DirectX::SimpleMath::Vector3 Position;
+		DirectX::SimpleMath::Vector3 position;
 	};
 	struct Vertex {
-		DirectX::SimpleMath::Vector3 Position;
-		DirectX::SimpleMath::Vector3 Normal;
-		DirectX::SimpleMath::Vector2 Texcoord;
+		DirectX::SimpleMath::Vector3 position;
+		DirectX::SimpleMath::Vector3 normal;
+		DirectX::SimpleMath::Vector2 texcoord;
 	};
 }

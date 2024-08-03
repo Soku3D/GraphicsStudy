@@ -1,11 +1,12 @@
 #include "GeometryGenerator.h"
 #include "directxtk/SimpleMath.h"
+#include "ModelLoader.h"
 
 using DirectX::SimpleMath::Vector3;
 using DirectX::SimpleMath::Vector2;
 using namespace Renderer;
 
-SimpleMeshData GeomertyGenerator::SimpleTriangle(const float& length)
+SimpleMeshData GeometryGenerator::SimpleTriangle(const float& length)
 {
 	SimpleMeshData data;
 
@@ -16,7 +17,7 @@ SimpleMeshData GeomertyGenerator::SimpleTriangle(const float& length)
 		{Vector3(0.f, l * 2.f / x , 0.0f)},
 		{Vector3(l, -l / x, 0.0f)},
 	};
-	std::vector<uint16_t> indices = {
+	std::vector<uint32_t> indices = {
 		0, 1, 2
 	};
 	data.Initialize(vertices, indices);
@@ -24,7 +25,7 @@ SimpleMeshData GeomertyGenerator::SimpleTriangle(const float& length)
 	return data;
 }
 
-SimpleMeshData GeomertyGenerator::SimpleRectangle(const float& length)
+SimpleMeshData GeometryGenerator::SimpleRectangle(const float& length)
 {
 	SimpleMeshData data;
 
@@ -35,7 +36,7 @@ SimpleMeshData GeomertyGenerator::SimpleRectangle(const float& length)
 		{Vector3(l, l, 0.0f)},
 		{Vector3(l, -l, 0.0f)},
 	};
-	std::vector<uint16_t> indices = {
+	std::vector<uint32_t> indices = {
 		0, 1, 2, 0, 2, 3
 	};
 	data.Initialize(vertices, indices);
@@ -43,7 +44,7 @@ SimpleMeshData GeomertyGenerator::SimpleRectangle(const float& length)
 	return data;
 }
 
-SimpleMeshData GeomertyGenerator::SimpleBox(const float& length)
+SimpleMeshData GeometryGenerator::SimpleBox(const float& length)
 {
 	SimpleMeshData data;
 
@@ -53,7 +54,7 @@ SimpleMeshData GeomertyGenerator::SimpleBox(const float& length)
 		{Vector3(-l, -l, -l)},{Vector3(-l, l, -l)},{Vector3(l, l, -l)},{Vector3(l, -l, -l)},
 		{Vector3(-l, -l, l)},{Vector3(-l, l, l)},{Vector3(l, l, l)},{Vector3(l, -l, l)}
 	};
-	std::vector<uint16_t> indices = {
+	std::vector<uint32_t> indices = {
 		0, 1, 2, 0, 2, 3,
 		7, 6, 5, 7, 5, 4,
 		4, 5, 1, 5, 1, 0,
@@ -66,13 +67,13 @@ SimpleMeshData GeomertyGenerator::SimpleBox(const float& length)
 	return data;
 }
 
-BasicMeshData GeomertyGenerator::Box(const float& length, const std::wstring& texturePath)
+BasicMeshData GeometryGenerator::Box(const float& length, const std::wstring& texturePath)
 {
 	return Box(length, length, length, texturePath);
 }
 
 
-BasicMeshData GeomertyGenerator::Box(const float& x, const float& y, const float& z, const std::wstring& texturePath)
+BasicMeshData GeometryGenerator::Box(const float& x, const float& y, const float& z, const std::wstring& texturePath)
 {
 	BasicMeshData data;
 
@@ -113,7 +114,7 @@ BasicMeshData GeomertyGenerator::Box(const float& x, const float& y, const float
 		{Vector3(-hX, -hY, hZ), Vector3(0.f, -1.f, 0.f), Vector2(0.f, 0.f)},
 		{Vector3(-hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(0.f, 1.f)}
 	};
-	std::vector<uint16_t> indices;
+	std::vector<uint32_t> indices;
 
 	for (int i = 0; i < 6; i++)
 	{
@@ -130,7 +131,7 @@ BasicMeshData GeomertyGenerator::Box(const float& x, const float& y, const float
 
 	return data;
 }
-BasicMeshData GeomertyGenerator::Grid(const float& xLength, const float& yLength, const int& x, const int& y, const std::wstring& texturePath) {
+BasicMeshData GeometryGenerator::Grid(const float& xLength, const float& yLength, const int& x, const int& y, const std::wstring& texturePath) {
 	BasicMeshData data;
 	if (x == 0 || y == 0)
 	{
@@ -147,7 +148,7 @@ BasicMeshData GeomertyGenerator::Grid(const float& xLength, const float& yLength
 	int index = 0;
 
 	std::vector<Vertex> vertices;
-	std::vector<uint16_t> indices;
+	std::vector<uint32_t> indices;
 	for (int j = 0; j < y+1; ++j)
 	{
 		Vector3 position = basePosition - Vector3(0.f, j * dely, 0.f);
@@ -177,7 +178,7 @@ BasicMeshData GeomertyGenerator::Grid(const float& xLength, const float& yLength
 	return data;
 }
 
-BasicMeshData GeomertyGenerator::Cyilinder(const float& topRadius, const float& bottomRadius, const float& height,  const int& x, const int& y, const std::wstring& texturePath) {
+BasicMeshData GeometryGenerator::Cyilinder(const float& topRadius, const float& bottomRadius, const float& height,  const int& x, const int& y, const std::wstring& texturePath) {
 	
 	BasicMeshData data;
 	if (x == 0 || y == 0)
@@ -196,18 +197,18 @@ BasicMeshData GeomertyGenerator::Cyilinder(const float& topRadius, const float& 
 	int index = 0;
 
 	std::vector<Vertex> vertices;
-	std::vector<uint16_t> indices;
+	std::vector<uint32_t> indices;
 	for (int j = 0; j < y + 1; ++j)
 	{
 		Vector3 position = basePosition - Vector3(j*delX, j * delY, 0.f);
 		for (int i = 0; i < x + 1; ++i)
 		{
 			Vertex v;
-			v.Position = Vector3::Transform(position, DirectX::XMMatrixRotationY(-delTheta * i));
-			v.Texcoord = Vector2(i * uvDelX, j * uvDelY);
-			v.Normal = v.Position;
-			v.Normal.y = 0.f;
-			v.Normal.Normalize();
+			v.position = Vector3::Transform(position, DirectX::XMMatrixRotationY(-delTheta * i));
+			v.texcoord = Vector2(i * uvDelX, j * uvDelY);
+			v.normal = v.position;
+			v.normal.y = 0.f;
+			v.normal.Normalize();
 
 			vertices.push_back(v);
 		}
@@ -233,7 +234,7 @@ BasicMeshData GeomertyGenerator::Cyilinder(const float& topRadius, const float& 
 	return data;
 }
 
-BasicMeshData GeomertyGenerator::Sphere(const float& radius, const int& x, const int& y, const std::wstring& texturePath)
+BasicMeshData GeometryGenerator::Sphere(const float& radius, const int& x, const int& y, const std::wstring& texturePath)
 {
 	BasicMeshData data;
 	if (x == 0 || y == 0)
@@ -252,17 +253,17 @@ BasicMeshData GeomertyGenerator::Sphere(const float& radius, const int& x, const
 	int index = 0;
 
 	std::vector<Vertex> vertices;
-	std::vector<uint16_t> indices;
+	std::vector<uint32_t> indices;
 	for (int j = 0; j < y + 1; ++j)
 	{
 		Vector3 position = Vector3::Transform(basePosition, DirectX::XMMatrixRotationZ(-delZTheta * j));
 		for (int i = 0; i < x + 1; ++i)
 		{
 			Vertex v;
-			v.Position = Vector3::Transform(position, DirectX::XMMatrixRotationY(-delYTheta * i));
-			v.Texcoord = Vector2(i * uvDelX, j * uvDelY);
-			v.Normal = v.Position;
-			v.Normal.Normalize();
+			v.position = Vector3::Transform(position, DirectX::XMMatrixRotationY(-delYTheta * i));
+			v.texcoord = Vector2(i * uvDelX, j * uvDelY);
+			v.normal = v.position;
+			v.normal.Normalize();
 
 			vertices.push_back(v);
 		}
@@ -287,4 +288,41 @@ BasicMeshData GeomertyGenerator::Sphere(const float& radius, const int& x, const
 
 	return data;
 }
+						   
+std::vector<BasicMeshData> GeometryGenerator::ReadFromFile(std::string filename) {
 
+    using namespace DirectX;
+
+    ModelLoader modelLoader;
+    modelLoader.Load(filename);
+    std::vector<BasicMeshData> &meshes = modelLoader.meshes;
+
+    // Normalize vertices
+    Vector3 vmin(1000, 1000, 1000);
+    Vector3 vmax(-1000, -1000, -1000);
+    for (auto &mesh : meshes) {
+        for (auto &v : mesh.m_vertices) {
+            vmin.x = XMMin(vmin.x, v.position.x);
+            vmin.y = XMMin(vmin.y, v.position.y);
+            vmin.z = XMMin(vmin.z, v.position.z);
+            vmax.x = XMMax(vmax.x, v.position.x);
+            vmax.y = XMMax(vmax.y, v.position.y);
+            vmax.z = XMMax(vmax.z, v.position.z);
+        }
+    }
+
+    float dx = vmax.x - vmin.x, dy = vmax.y - vmin.y, dz = vmax.z - vmin.z;
+    float dl = XMMax(XMMax(dx, dy), dz);
+    float cx = (vmax.x + vmin.x) * 0.5f, cy = (vmax.y + vmin.y) * 0.5f,
+          cz = (vmax.z + vmin.z) * 0.5f;
+
+    for (auto &mesh : meshes) {
+        for (auto &v : mesh.m_vertices) {
+            v.position.x = (v.position.x - cx) / dl;
+            v.position.y = (v.position.y - cy) / dl;
+            v.position.z = (v.position.z - cz) / dl;
+        }
+    }
+
+    return meshes;
+}

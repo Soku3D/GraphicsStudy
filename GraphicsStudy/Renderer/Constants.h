@@ -14,6 +14,6 @@ __declspec(align(256)) struct ObjectConstantData {
 };
 
 struct Light {
-	DirectX::SimpleMath::Vector3 Position;
+	DirectX::SimpleMath::Vector3 position;
 	DirectX::SimpleMath::Vector3 Direction;
 };

@@ -25,8 +25,8 @@ namespace Core {
 			m_vertexBufferView.StrideInBytes = sizeof(Vertex);
 
 			m_indexBufferView.BufferLocation = m_indexGpu->GetGPUVirtualAddress();
-			m_indexBufferView.Format = DXGI_FORMAT_R16_UINT;
-			m_indexBufferView.SizeInBytes = UINT(sizeof(uint16_t) * meshData.m_indices.size());
+			m_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+			m_indexBufferView.SizeInBytes = UINT(sizeof(uint32_t) * meshData.m_indices.size());
 			m_objectConstantData = new ObjectConstantData();
 			
 			m_objectConstantData->Model = DirectX::XMMatrixTranslation(modelPosition.x, modelPosition.y, modelPosition.z);

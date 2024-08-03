@@ -386,13 +386,19 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 	using DirectX::SimpleMath::Vector3;
 	
 	std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
-	sphere->Initialize(GeomertyGenerator::Sphere(0.8f, 100, 100, L"earth.jpg"), m_device, m_commandList, Vector3(-0.2f, 0.f, 0.f));
+	sphere->Initialize(GeometryGenerator::Sphere(0.8f, 100, 100, L"earth.jpg"), m_device, m_commandList, Vector3(-0.2f, 0.f, 0.f));
 
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
-	//plane->Initialize(GeomertyGenerator::Box(4,4,1, L"Metal.png"), m_device, m_commandList, Vector3(0.f, -0.5f, 0.f));
-	plane->Initialize(GeomertyGenerator::Box(4,1,4,L"Metal.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f));
+	plane->Initialize(GeometryGenerator::Box(4,1,4,L"Metal.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f));
 	m_staticMeshes.push_back(sphere);
 	m_staticMeshes.push_back(plane);
+	auto meshes = GeometryGenerator::ReadFromFile("soldier.fbx");
+	for (auto& mesh : meshes) {
+		std::shared_ptr<StaticMesh> newMesh = std::make_shared<StaticMesh>();
+		newMesh->Initialize(mesh, m_device, m_commandList);
+		m_staticMeshes.push_back(newMesh);
+	}
+
 }
 
 void Renderer::D3D12App::CreateConstantBuffer()
@@ -514,8 +520,6 @@ void Renderer::D3D12App::CreatePSO()
 	wirePsoDesc.RasterizerState = wireFrameRasterizer;
 
 	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&wirePsoDesc, IID_PPV_ARGS(&m_wireModePso)));
-
-
 }
 
 void Renderer::D3D12App::CreateTextures() {
@@ -537,7 +541,6 @@ void Renderer::D3D12App::CreateTextures() {
 		return;
 	}
 	
-
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	srvHeapDesc.NodeMask = 0;
