@@ -39,7 +39,7 @@ bool Renderer::D3D12App::Initialize()
 	CreatePSO();
 	CreateTextures();
 	CreateVertexAndIndexBuffer();
-		
+	
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
@@ -244,6 +244,7 @@ void Renderer::D3D12App::Update( float& deltaTime )
 
 void Renderer::D3D12App::Render(float& deltaTime)
 {
+
 	ThrowIfFailed(m_commandAllocator->Reset());
 	if (m_inputHandler->bIsWireMode) {
 		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), m_wireModePso.Get()));
@@ -269,9 +270,9 @@ void Renderer::D3D12App::Render(float& deltaTime)
 
 		m_commandList->RSSetScissorRects(1, &m_scissorRect);
 		m_commandList->RSSetViewports(1, &m_viewport);
-
+			
 		m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
-		
+
 		{
 			// 루트 서술자 테이블 등록
 			//ID3D12DescriptorHeap* descriptorHeaps[] = {
@@ -283,21 +284,17 @@ void Renderer::D3D12App::Render(float& deltaTime)
 			//m_commandList->SetGraphicsRoot32BitConstants(0, 1, ...);
 		}
 
-		// View Proj Matrix 
+		// View Proj Matrix Constant Buffer 
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
-		
+
 		ID3D12DescriptorHeap* ppHeaps[] = { m_srvHeap.Get() };
 		m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-		
-		
-		
 
 		for (int i = 0; i < m_staticMeshes.size(); ++i) {
 			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_srvHeap->GetGPUDescriptorHandleForHeapStart());
 			handle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath()], m_csuHeapSize);
 			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
 			m_staticMeshes[i]->Render(deltaTime, m_commandList);
-			//handle.Offset(m_csuHeapSize);
 		}
 
 		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(

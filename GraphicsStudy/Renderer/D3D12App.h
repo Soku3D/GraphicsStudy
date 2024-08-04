@@ -5,9 +5,19 @@
 #include "StaticMesh.h"
 #include <map>
 
+#include "directxtk12/DescriptorHeap.h"
+#include "directxtk12/SpriteFont.h"
+#include "directxtk12/ResourceUploadBatch.h"
+
 using Microsoft::WRL::ComPtr;
 
 namespace Renderer {
+	enum Descriptors
+	{
+		MyFont,
+		Count
+
+	};
 	class D3D12App :public SimpleApp {
 	public:
 		D3D12App(const int& width, const int& height);
@@ -36,7 +46,7 @@ namespace Renderer {
 		ID3D12Resource* CurrentBackBuffer() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const;
 
-	private:
+	protected:
 		bool bUseWarpAdapter;
 		D3D_FEATURE_LEVEL m_minimumFeatureLevel;
 		ComPtr<IDXGIFactory4> m_dxgiFactory;
@@ -97,5 +107,11 @@ namespace Renderer {
 		std::vector<ComPtr<ID3D12Resource>> m_textureResources;
 		std::map<std::wstring, unsigned int> m_textureMap;
 
+	private:
+		std::unique_ptr<DirectX::DescriptorHeap> m_resourceDescriptors;
+		std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
+		std::unique_ptr<DirectX::SpriteFont> m_font;
+
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_heap;
 	};
 }

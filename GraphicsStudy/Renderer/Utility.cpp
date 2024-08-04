@@ -40,7 +40,6 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
         );
     }
        
-
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Format = texture->GetDesc().Format;
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
