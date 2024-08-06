@@ -30,10 +30,10 @@ bool Renderer::SimpleApp::Initialize()
         std::cerr << "Failed InitWindow()\n";
         return false;
     }
-     /*if (!InitbackgroundWindow()) {
+    /*if (!InitbackgroundWindow()) {
          std::cerr << "Failed InitWindow()\n";
          return false;
-     }*/
+    }*/
     if (!InitDirectX()) {
         std::cerr << "Failed InitDirectX()\n";
         return false;
@@ -63,8 +63,24 @@ bool Renderer::SimpleApp::InitbackgroundWindow()
             return TRUE;
             }, (LPARAM)&m_mainWnd);
     }
+    assert(m_mainWnd != 0);
 
-    return m_mainWnd!=NULL;
+    RAWINPUTDEVICE rawInputDevice;
+
+    //The HID standard for mouse
+    const uint16_t standardMouse = 0x02;
+
+    rawInputDevice.usUsagePage = 0x01;
+    rawInputDevice.usUsage = standardMouse;
+    rawInputDevice.dwFlags = 0;
+    rawInputDevice.hwndTarget = m_mainWnd;
+
+    ::RegisterRawInputDevices(&rawInputDevice, 1, sizeof(RAWINPUTDEVICE));
+
+    ShowWindow(m_mainWnd, SW_SHOWDEFAULT);
+    UpdateWindow(m_mainWnd);
+
+    return true;
 }
 
 bool Renderer::SimpleApp::InitWindow()

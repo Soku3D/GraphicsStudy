@@ -1,5 +1,4 @@
 Texture2D g_basic: register(t0);
-
 SamplerState g_sampler : register(s0);
 
 struct PSInput

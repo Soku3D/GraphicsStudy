@@ -149,7 +149,6 @@
     <ClCompile Include="Command.cpp" />
     <ClCompile Include="D3D11App.cpp" />
     <ClCompile Include="D3D12App.cpp" />
-    <ClCompile Include="D3D12FontApp.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="main.cpp" />
@@ -171,7 +170,6 @@
     <ClInclude Include="Constants.h" />
     <ClInclude Include="D3D11App.h" />
     <ClInclude Include="D3D12App.h" />
-    <ClInclude Include="D3D12FontApp.h" />
     <ClInclude Include="GenerateGeometry.h" />
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="InputHandler.h" />
