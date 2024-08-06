@@ -8,7 +8,7 @@ namespace Core {
 	class StaticMesh {
 	public:
 
-		StaticMesh() {};
+		StaticMesh();
 		~StaticMesh() {};
 
 		template <typename Vertex>

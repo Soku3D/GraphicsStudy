@@ -1,5 +1,14 @@
 #include "StaticMesh.h"
 
+Core::StaticMesh::StaticMesh():
+	m_vertexBufferView(D3D12_VERTEX_BUFFER_VIEW()),
+	m_indexBufferView(D3D12_INDEX_BUFFER_VIEW()),
+	m_pCbvDataBegin(nullptr),
+	m_objectConstantData(nullptr)
+
+{
+}
+
 void Core::StaticMesh::Render(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
 {
 	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);

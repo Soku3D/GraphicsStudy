@@ -2,7 +2,9 @@
 
 
 Renderer::D3D11App::D3D11App(const int& width, const int& height)
-	:SimpleApp(width, height)
+	:SimpleApp(width, height),
+	m_msaaQuality(0),
+	m_viewport(D3D11_VIEWPORT())
 {
 }
 
