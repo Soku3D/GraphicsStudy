@@ -38,12 +38,12 @@ namespace Renderer {
 		void FlushCommandQueue();
 
 		void CreateVertexAndIndexBuffer();
-		void RenderFonts();
+		void RenderFonts(const std::wstring& output);
 		void CreateConstantBuffer();
 		void CreateRootSignature();
 		void CreatePSO();
 		void CreateTextures();
-		void CreateFonts();
+		void CreateFontFromFile(const std::wstring& fileName, Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& fontHeap, std::unique_ptr<DirectX::SpriteFont>& font);
 
 	protected:
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
@@ -87,13 +87,14 @@ namespace Renderer {
 		ComPtr<ID3D12PipelineState> m_simplePso;
 		ComPtr<ID3D12PipelineState> m_pso;
 		ComPtr<ID3D12PipelineState> m_wireModePso;
+
 		ComPtr<ID3D12RootSignature> m_rootSignature;
+		ComPtr<ID3D12RootSignature> m_fontRootSignature;
 
 		GlobalVertexConstantData* m_passConstantData;
 		ComPtr<ID3D12Resource> m_passConstantBuffer;
 		UINT8* m_pCbvDataBegin = nullptr;
 
-		D3D12_INPUT_LAYOUT_DESC m_simpleVertexInputLayout;
 		D3D12_INPUT_LAYOUT_DESC m_vertexInputLayout;
 
 		ComPtr<ID3D12Resource> m_uploadHeap;
@@ -109,10 +110,15 @@ namespace Renderer {
 	protected:
 
 		std::unique_ptr<DirectX::SpriteFont> m_font;
+		std::unique_ptr<DirectX::SpriteFont> m_guiFont;
 		std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_fontHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_guiFontHeap;
 		DirectX::SimpleMath::Vector2 m_fontPos;
 		std::unique_ptr<DirectX::GraphicsMemory> g_graphicsMemory;
 		int m_textureCount = 0;
+
+		D3D12_GPU_DESCRIPTOR_HANDLE nullHandle = {};
+		
 	};
 }
