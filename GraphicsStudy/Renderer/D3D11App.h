@@ -10,6 +10,7 @@ namespace Renderer {
 
 		virtual bool Initialize();
 		virtual bool InitDirectX() override;
+		virtual bool InitGUI() override;
 		virtual void OnResize() override;
 
 		void SetViewport();
@@ -18,7 +19,10 @@ namespace Renderer {
 		void CreateRaseterizerState();
 
 		virtual void Update(float& deltaTime) override;
+		virtual void UpdateGUI(float& deltaTime) override;
 		virtual void Render(float& deltaTime) override;
+		void RenderGUI(float& deltaTime) override;
+
 	protected:
 		UINT m_msaaQuality;
 		bool m_useMsaa = true;

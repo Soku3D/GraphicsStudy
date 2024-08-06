@@ -39,13 +39,33 @@ bool Renderer::D3D12App::Initialize()
 	CreateTextures();
 	CreateVertexAndIndexBuffer();
 	CreateFonts();
-	
+	InitGUI();
+
 	g_graphicsMemory = std::make_unique<DirectX::GraphicsMemory>(m_device.Get());
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
 
 	FlushCommandQueue();
+
+
+	return true;
+}
+
+bool Renderer::D3D12App::InitGUI()
+{
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplWin32_Init(m_mainWnd);
+	ImGui_ImplDX12_Init(m_device.Get(), m_swapChainCount, m_backbufferFormat,
+		m_fontHeap.Get(),
+		m_fontHeap->GetCPUDescriptorHandleForHeapStart(),
+		m_fontHeap->GetGPUDescriptorHandleForHeapStart());
 
 	return true;
 }
@@ -243,8 +263,13 @@ void Renderer::D3D12App::Update( float& deltaTime )
 	}
 }
 
+void Renderer::D3D12App::UpdateGUI(float& deltaTime)
+{
+}
+
 void Renderer::D3D12App::Render(float& deltaTime)
 {
+
 	ThrowIfFailed(m_commandAllocator->Reset());
 	if (m_inputHandler->bIsWireMode) {
 		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), m_wireModePso.Get()));
@@ -252,6 +277,7 @@ void Renderer::D3D12App::Render(float& deltaTime)
 	else {
 		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), m_pso.Get()));
 	}
+	
 	{
 		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			CurrentBackBuffer(),
@@ -259,10 +285,8 @@ void Renderer::D3D12App::Render(float& deltaTime)
 			D3D12_RESOURCE_STATE_RENDER_TARGET));
 
 		FLOAT clearColor[4] = { 1.f,1.f,1.f,1.f };
-		m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
-		m_commandList->ClearDepthStencilView(m_dsvHeap->GetCPUDescriptorHandleForHeapStart(),
-			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-			1.f, 0, 0, NULL);
+		//m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
+		
 
 		m_commandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
 
@@ -305,7 +329,7 @@ void Renderer::D3D12App::Render(float& deltaTime)
 			m_staticMeshes[i]->Render(deltaTime, m_commandList);
 		}
 
-		RenderFonts();
+		//RenderFonts();
 		
 		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			CurrentBackBuffer(),
@@ -314,6 +338,7 @@ void Renderer::D3D12App::Render(float& deltaTime)
 	}
 
 	m_commandList->Close();
+
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
 
@@ -323,9 +348,56 @@ void Renderer::D3D12App::Render(float& deltaTime)
 	FlushCommandQueue();
 }
 
+void Renderer::D3D12App::RenderGUI(float& deltaTime)
+{
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+	ImGui::Begin("GUI");                   
+	ImGui::SetWindowPos(ImVec2(0, 0));
+	m_guiWidth = ImGui::GetWindowWidth();
+	
+	ImGui::Text("This is some useful text."); 
+	UpdateGUI(deltaTime);
+
+	ImGui::End();
+	ImGui::Render();
+	
+	{
+		ThrowIfFailed(m_guiCommandAllocator->Reset());
+		ThrowIfFailed(m_guiCommandList->Reset(m_guiCommandAllocator.Get(), nullptr));
+		m_guiCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+			CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_PRESENT,
+			D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+		FLOAT clearColor[4] = { 1.f,1.f,1.f,1.f };
+		m_guiCommandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
+		m_guiCommandList->ClearDepthStencilView(m_dsvHeap->GetCPUDescriptorHandleForHeapStart(),
+			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+			1.f, 0, 0, NULL);
+		m_guiCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
+		ID3D12DescriptorHeap* ppHeaps[] = { m_fontHeap.Get() };
+		m_guiCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_guiCommandList.Get());
+
+		m_guiCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+			CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PRESENT));
+	}
+		
+	m_guiCommandList->Close();
+	ID3D12CommandList* lists[] = { m_guiCommandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
+
+	FlushCommandQueue();
+}
+
 void Renderer::D3D12App::CreateCommandObjects()
 {
 	m_device->CreateCommandAllocator(m_commandType, IID_PPV_ARGS(&m_commandAllocator));
+	m_device->CreateCommandAllocator(m_commandType, IID_PPV_ARGS(&m_guiCommandAllocator));
 
 	D3D12_COMMAND_QUEUE_DESC cqDesc;
 	ZeroMemory(&cqDesc, sizeof(cqDesc));
@@ -341,6 +413,15 @@ void Renderer::D3D12App::CreateCommandObjects()
 		IID_PPV_ARGS(&m_commandList)));
 
 	m_commandList->Close();
+
+	ThrowIfFailed(m_device->CreateCommandList(
+		0,
+		m_commandType,
+		m_guiCommandAllocator.Get(),
+		nullptr,
+		IID_PPV_ARGS(&m_guiCommandList)));
+
+	m_guiCommandList->Close();
 }
 
 void Renderer::D3D12App::CreateDescriptorHeaps() {
@@ -397,14 +478,15 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
 	plane->Initialize(GeometryGenerator::Box(4,1,4,L"Metal.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f));
+	
 	//m_staticMeshes.push_back(sphere);
 	m_staticMeshes.push_back(plane);
-	/*auto meshes = GeometryGenerator::ReadFromFile("zelda.fbx");
+	auto meshes = GeometryGenerator::ReadFromFile("zelda.fbx");
 	for (auto& mesh : meshes) {
 		std::shared_ptr<StaticMesh> newMesh = std::make_shared<StaticMesh>();
 		newMesh->Initialize(mesh, m_device, m_commandList);
 		m_staticMeshes.push_back(newMesh);
-	}*/
+	}
 
 }
 

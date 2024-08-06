@@ -24,12 +24,15 @@ namespace Renderer {
 		virtual ~D3D12App();
 
 		virtual bool Initialize();
-		virtual bool InitDirectX() override;
-		virtual void OnResize() override;
+		bool InitGUI() override;
+		bool InitDirectX() override;
+		void OnResize() override;
 		
-		virtual void Update(float& deltaTime) override;
-		virtual void Render(float& deltaTime) override;
-					
+		void Update(float& deltaTime) override;
+		void UpdateGUI(float& deltaTime) override;
+		void Render(float& deltaTime) override;
+		void RenderGUI(float& deltaTime) override;
+
 		void CreateCommandObjects();
 		void CreateDescriptorHeaps();
 		void FlushCommandQueue();
@@ -66,11 +69,6 @@ namespace Renderer {
 		ComPtr<ID3D12Resource> m_depthStencilBuffer;
 		UINT m_frameIndex = 0;
 
-		D3D12_COMMAND_LIST_TYPE m_commandType = D3D12_COMMAND_LIST_TYPE_DIRECT;
-		ComPtr<ID3D12CommandAllocator> m_commandAllocator;
-		ComPtr<ID3D12GraphicsCommandList> m_commandList;
-		ComPtr<ID3D12CommandQueue> m_commandQueue;
-		
 		UINT m_currentFence = 0;
 		ComPtr<ID3D12Fence> m_fence;
 
@@ -109,7 +107,7 @@ namespace Renderer {
 		std::map<std::wstring, unsigned int> m_textureMap;
 
 	protected:
-		std::unique_ptr<DirectX::DescriptorHeap> m_resourceDescriptors;
+
 		std::unique_ptr<DirectX::SpriteFont> m_font;
 		std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_fontHeap;

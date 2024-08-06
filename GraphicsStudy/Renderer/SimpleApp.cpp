@@ -19,6 +19,10 @@ Renderer::SimpleApp::SimpleApp(const int& width, const int& height):
 
 Renderer::SimpleApp::~SimpleApp()
 {
+    ImGui_ImplDX12_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+
     m_mainWnd = NULL;
     m_pApp = nullptr;
     m_camera.reset();
@@ -38,7 +42,6 @@ bool Renderer::SimpleApp::Initialize()
         std::cerr << "Failed InitDirectX()\n";
         return false;
     }
-
     OnResize();
 
     return true;
@@ -131,7 +134,7 @@ bool Renderer::SimpleApp::InitWindow()
 
     ShowWindow(m_mainWnd,SW_SHOWDEFAULT);
     UpdateWindow(m_mainWnd);
-    //ShowCursor(FALSE);
+    ShowCursor(FALSE);
 
     return true;
 }
@@ -149,8 +152,10 @@ int Renderer::SimpleApp::Run()
             m_timer.Tick();
             float delTime = (float)m_timer.GetDeltaTime();
             
+            RenderGUI(delTime);
             Update(delTime);
             Render(delTime);
+
             //std::cout << delTime << ' ' << elapsedTime << '\n';
         }
     }
@@ -159,6 +164,10 @@ int Renderer::SimpleApp::Run()
 
 LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+        return true;
+
     switch (msg) {
     case WM_DESTROY:
         {
@@ -187,8 +196,10 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
       
         int deltaX = raw.data.mouse.lLastX;
         int deltaY = raw.data.mouse.lLastY;
-        if (m_camera != nullptr)
+        if (m_camera != nullptr && bIsFPSMode)
+        {
             m_camera->SetRotation(deltaX, deltaY);
+        }
 
         if (raw.data.mouse.ulButtons == 0x0020) {
             ShowCursor(!bIsShowCursor);
@@ -200,6 +211,9 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 
     case WM_KEYDOWN:
         m_inputHandler->m_currKeyStates[(int)wParam] = true;
+        if (wParam == 'F') {
+            bIsFPSMode = !bIsFPSMode;
+        }
         //m_inputHandler->UpdateKeyDown((int)wParam);
         break;
 

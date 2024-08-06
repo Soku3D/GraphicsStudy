@@ -3,6 +3,9 @@
 #include "Object.h"
 #include "InputHandler.h"
 #include "Camera.h"
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx12.h"
 
 namespace Renderer {
 	class SimpleApp {
@@ -12,6 +15,7 @@ namespace Renderer {
 
 		virtual bool Initialize();
 		virtual bool InitDirectX() = 0;
+		virtual bool InitGUI() = 0;
 		virtual void OnResize() = 0;
 
 		bool InitWindow();
@@ -20,7 +24,10 @@ namespace Renderer {
 		int Run();
 		LRESULT MainProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
+		virtual void RenderGUI(float& deltaTime) = 0;
 		virtual void Render(float& deltaTime) = 0;
+
+		virtual void UpdateGUI(float& deltaTime) = 0;
 		virtual void Update(float& deltaTime) = 0;
 	public:
 		HWND m_mainWnd;
@@ -28,13 +35,23 @@ namespace Renderer {
 		Utils::Timer m_timer;
 	public:
 		UINT m_screenWidth;
+		float m_guiWidth = 0.f;
+
 		UINT m_screenHeight;
 		
 		std::shared_ptr<Core::Camera> m_camera;
 		std::unique_ptr<InputHandler> m_inputHandler;
 		
+		bool bIsFPSMode = true;
 		bool bIsShowCursor = false;
 		bool bIsWireMode = false;
 
+	protected:
+		D3D12_COMMAND_LIST_TYPE m_commandType = D3D12_COMMAND_LIST_TYPE_DIRECT;
+		ComPtr<ID3D12CommandAllocator> m_commandAllocator;
+		ComPtr<ID3D12CommandAllocator> m_guiCommandAllocator;
+		ComPtr<ID3D12GraphicsCommandList> m_commandList;
+		ComPtr<ID3D12GraphicsCommandList> m_guiCommandList;
+		ComPtr<ID3D12CommandQueue> m_commandQueue;
 	};
 }

@@ -118,6 +118,11 @@ bool Renderer::D3D11App::InitDirectX()
 	return true;
 }
 
+bool Renderer::D3D11App::InitGUI()
+{
+	return false;
+}
+
 void Renderer::D3D11App::OnResize()
 {
 }
@@ -159,6 +164,10 @@ void Renderer::D3D11App::Update( float& deltaTime)
 {
 }
 
+void Renderer::D3D11App::UpdateGUI(float& deltaTime)
+{
+}
+
 void Renderer::D3D11App::Render( float& deltaTime)
 {
 	m_context->OMSetRenderTargets(1, m_rtv.GetAddressOf(), nullptr);
@@ -182,4 +191,8 @@ void Renderer::D3D11App::Render( float& deltaTime)
 	m_context->DrawIndexed(3, 0, 0);
 
 	m_swapChain->Present(1, 0);
+}
+
+void Renderer::D3D11App::RenderGUI(float& deltaTime)
+{
 }
