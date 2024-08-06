@@ -40,10 +40,8 @@ bool Renderer::D3D12App::Initialize()
 	CreateTextures();
 	CreateVertexAndIndexBuffer();
 
-	CreateFontFromFile(L"Fonts/default.spritefont", m_fontHeap, m_font);
-	CreateFontFromFile(L"Fonts/cyberpunk.spritefont", m_guiFontHeap, m_guiFont);
-
-	g_graphicsMemory = std::make_unique<DirectX::GraphicsMemory>(m_device.Get());
+	CreateFontFromFile(L"Fonts/default.spritefont", m_font, m_spriteBatch, m_resourceDescriptors);
+	CreateFontFromFile(L"Fonts/cyberpunk.spritefont", m_guiFont, m_guiSpriteBatch, m_guiResourceDescriptors);
 
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
@@ -68,9 +66,10 @@ bool Renderer::D3D12App::InitGUI()
 	// Setup Platform/Renderer backends
 	ImGui_ImplWin32_Init(m_mainWnd);
 	ImGui_ImplDX12_Init(m_device.Get(), m_swapChainCount, m_backbufferFormat,
-		m_guiFontHeap.Get(),
-		m_guiFontHeap->GetCPUDescriptorHandleForHeapStart(),
-		m_guiFontHeap->GetGPUDescriptorHandleForHeapStart());
+		m_guiResourceDescriptors->Heap(),
+		m_guiResourceDescriptors->GetFirstCpuHandle(),
+		m_guiResourceDescriptors->GetFirstGpuHandle());
+
 	return true;
 }
 
@@ -246,8 +245,8 @@ void Renderer::D3D12App::OnResize()
 
 	FlushCommandQueue();
 
-	m_viewport = { 0.f,0.f,(FLOAT)m_screenWidth,(FLOAT)m_screenHeight, 0.f, 1.f };
-	m_scissorRect = { 0,0,static_cast<LONG>(m_screenWidth), static_cast<LONG>(m_screenHeight) };
+	m_viewport = { 0.f ,0.f,(FLOAT)m_screenWidth ,(FLOAT)m_screenHeight, 0.f, 1.f };
+	m_scissorRect = { 0 ,0,static_cast<LONG>(m_screenWidth), static_cast<LONG>(m_screenHeight) };
 }
 
 void Renderer::D3D12App::Update( float& deltaTime )
@@ -286,11 +285,12 @@ void Renderer::D3D12App::Render(float& deltaTime)
 			D3D12_RESOURCE_STATE_PRESENT,
 			D3D12_RESOURCE_STATE_RENDER_TARGET));
 		
-		FLOAT clearColor[4] = { 1.f,1.f,1.f,1.f };
+		//FLOAT clearColor[4] = { 1.f,1.f,1.f,1.f };
 		/*m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
 		m_commandList->ClearDepthStencilView(m_dsvHeap->GetCPUDescriptorHandleForHeapStart(),
 			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-			1.f, 0, 0, NULL);*/
+			1.f, 0, 0, NULL);
+		*/
 
 		m_commandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
 
@@ -300,18 +300,6 @@ void Renderer::D3D12App::Render(float& deltaTime)
 		m_commandList->RSSetViewports(1, &m_viewport);
 		
 		m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
-
-		{
-			// 루트 서술자 테이블 등록
-			//ID3D12DescriptorHeap* descriptorHeaps[] = {
-			//	m_cbvHeap.Get()
-			//};
-			//m_commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-			//m_commandList->SetGraphicsRootDescriptorTable(0, m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
-			// 루트 상수 등록 방법
-			//m_commandList->SetGraphicsRoot32BitConstants(0, 1, ...);
-		}
-
 		// View Proj Matrix Constant Buffer 
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
 
@@ -332,12 +320,11 @@ void Renderer::D3D12App::Render(float& deltaTime)
 
 			m_staticMeshes[i]->Render(deltaTime, m_commandList);
 		}
-		m_commandList->SetGraphicsRootSignature(m_fontRootSignature.Get());
-		ID3D12DescriptorHeap* ppFontHeaps[] = { m_fontHeap.Get() };
-		m_commandList->SetDescriptorHeaps(_countof(ppFontHeaps), ppFontHeaps);
-		m_commandList->SetGraphicsRootDescriptorTable(0, m_fontHeap->GetGPUDescriptorHandleForHeapStart());
-		int gameTime = (int)m_timer.GetElapsedTime();
-		RenderFonts(std::to_wstring(gameTime));
+		
+		{
+			int gameTime = (int)m_timer.GetElapsedTime();
+			RenderFonts(std::to_wstring(gameTime), m_resourceDescriptors);
+		}
 
 		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			CurrentBackBuffer(),
@@ -363,7 +350,6 @@ void Renderer::D3D12App::RenderGUI(float& deltaTime)
 	ImGui::NewFrame();
 	ImGui::Begin("GUI");                   
 	ImGui::SetWindowPos(ImVec2(0, 0));
-	m_guiWidth = ImGui::GetWindowWidth();
 	
 	ImGui::Text("This is some useful text."); 
 	UpdateGUI(deltaTime);
@@ -388,9 +374,8 @@ void Renderer::D3D12App::RenderGUI(float& deltaTime)
 		
 		//m_guiCommandList->SetGraphicsRootSignature(m_fontRootSignature.Get());
 
-		ID3D12DescriptorHeap* ppHeaps[] = { m_guiFontHeap.Get() };
-		m_guiCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-		//m_guiCommandList->SetGraphicsRootDescriptorTable(0, m_guiFontHeap->GetGPUDescriptorHandleForHeapStart());
+		ID3D12DescriptorHeap* heaps[] = { m_guiResourceDescriptors->Heap() };
+		m_guiCommandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
 		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_guiCommandList.Get());
 
 		m_guiCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
@@ -502,24 +487,29 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 
 }
 
-void Renderer::D3D12App::RenderFonts(const std::wstring& output) {
+void Renderer::D3D12App::RenderFonts(const std::wstring& output, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors) {
+	
+	m_graphicsMemory.reset();
 
+	m_graphicsMemory = std::make_unique<DirectX::GraphicsMemory>(m_device.Get());
+		
+	ID3D12DescriptorHeap* heaps[] = { resourceDescriptors->Heap() };
+	m_commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
 	m_spriteBatch->Begin(m_commandList.Get());
 
 	m_spriteBatch->SetViewport(m_viewport);
 
 	float margin = 3.f;
-	m_fontPos = DirectX::SimpleMath::Vector2(m_screenWidth - margin, margin);
+	m_fontPos = DirectX::SimpleMath::Vector2(m_screenWidth/2.f, m_screenHeight/2.f);
 
-	//DirectX::SimpleMath::Vector2 origin = DirectX::SimpleMath::Vector2::Zero;
 	DirectX::SimpleMath::Vector2 origin = m_font->MeasureString(output.c_str());
-	origin.y = 0.f;
 
 	DirectX::XMVECTORF32 color = DirectX::Colors::Black;
 	m_font->DrawString(m_spriteBatch.get(), output.c_str(),
-		m_fontPos, color, 0.f, origin);
+		m_fontPos, color, 0.f);
 
 	m_spriteBatch->End();
+	
 }
 
 void Renderer::D3D12App::CreateConstantBuffer()
@@ -710,29 +700,27 @@ void Renderer::D3D12App::CreateTextures() {
 	}
 }
 
-void Renderer::D3D12App::CreateFontFromFile(const std::wstring& fileName, Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& fontHeap,
-	std::unique_ptr<DirectX::SpriteFont> & font) {
+void Renderer::D3D12App::CreateFontFromFile(const std::wstring& fileName,
+	std::shared_ptr<DirectX::SpriteFont> & font, std::shared_ptr<DirectX::SpriteBatch>& spriteBatch,
+	std::shared_ptr<DirectX::DescriptorHeap>&  resourceDescriptors) {
+
+	resourceDescriptors = std::make_shared<DirectX::DescriptorHeap>(m_device.Get(),
+		Descriptors::Count);
 
 	DirectX::RenderTargetState rtState(m_backbufferFormat,
 		m_depthStencilFormat);
-
-	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-	heapDesc.NumDescriptors = Descriptors::Count;
-	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&fontHeap));
-
+		
 	DirectX::ResourceUploadBatch resourceUpload(m_device.Get());
 	resourceUpload.Begin();
 
 	// Load the font
-	font = std::make_unique<DirectX::SpriteFont>(m_device.Get(), resourceUpload,
+	font = std::make_shared<DirectX::SpriteFont>(m_device.Get(), resourceUpload,
 		fileName.c_str(),
-		fontHeap->GetCPUDescriptorHandleForHeapStart(),
-		fontHeap->GetGPUDescriptorHandleForHeapStart());
+		resourceDescriptors->GetCpuHandle(Descriptors::MyFont),
+		resourceDescriptors->GetGpuHandle(Descriptors::MyFont));
 
 	DirectX::SpriteBatchPipelineStateDescription pd(rtState);
-	m_spriteBatch = std::make_unique<DirectX::SpriteBatch>(m_device.Get(), resourceUpload, pd);
+	spriteBatch = std::make_shared<DirectX::SpriteBatch>(m_device.Get(), resourceUpload, pd);
 
 	auto uploadResourcesFinished = resourceUpload.End(m_commandQueue.Get());
 	uploadResourcesFinished.wait();
