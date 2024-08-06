@@ -8,7 +8,7 @@
 #include "directxtk12/DescriptorHeap.h"
 #include "directxtk12/SpriteFont.h"
 #include "directxtk12/ResourceUploadBatch.h"
-
+#include "directxtk12/GraphicsMemory.h"
 using Microsoft::WRL::ComPtr;
 
 namespace Renderer {
@@ -35,11 +35,12 @@ namespace Renderer {
 		void FlushCommandQueue();
 
 		void CreateVertexAndIndexBuffer();
+		void RenderFonts();
 		void CreateConstantBuffer();
 		void CreateRootSignature();
 		void CreatePSO();
-
 		void CreateTextures();
+		void CreateFonts();
 
 	protected:
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
@@ -107,11 +108,13 @@ namespace Renderer {
 		std::vector<ComPtr<ID3D12Resource>> m_textureResources;
 		std::map<std::wstring, unsigned int> m_textureMap;
 
-	private:
+	protected:
 		std::unique_ptr<DirectX::DescriptorHeap> m_resourceDescriptors;
-		std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
 		std::unique_ptr<DirectX::SpriteFont> m_font;
-
-		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_heap;
+		std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_fontHeap;
+		DirectX::SimpleMath::Vector2 m_fontPos;
+		std::unique_ptr<DirectX::GraphicsMemory> g_graphicsMemory;
+		int m_textureCount = 0;
 	};
 }

@@ -33,13 +33,14 @@ bool Renderer::D3D12App::Initialize()
 	}
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 
-
 	CreateConstantBuffer();
 	CreateRootSignature();
 	CreatePSO();
 	CreateTextures();
 	CreateVertexAndIndexBuffer();
+	CreateFonts();
 	
+	g_graphicsMemory = std::make_unique<DirectX::GraphicsMemory>(m_device.Get());
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
@@ -93,7 +94,7 @@ bool Renderer::D3D12App::InitDirectX()
 	msaaData.SampleCount = m_sampleCount;
 
 	ThrowIfFailed(device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msaaData, sizeof(msaaData)));
-	std::cout << "Msaa Num Quality Level : " << msaaData.NumQualityLevels << std::endl;
+	//std::cout << "Msaa Num Quality Level : " << msaaData.NumQualityLevels << std::endl;
 	m_numQualityLevels = msaaData.NumQualityLevels;
 	m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
 
@@ -244,7 +245,6 @@ void Renderer::D3D12App::Update( float& deltaTime )
 
 void Renderer::D3D12App::Render(float& deltaTime)
 {
-
 	ThrowIfFailed(m_commandAllocator->Reset());
 	if (m_inputHandler->bIsWireMode) {
 		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), m_wireModePso.Get()));
@@ -287,16 +287,26 @@ void Renderer::D3D12App::Render(float& deltaTime)
 		// View Proj Matrix Constant Buffer 
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
 
+		// Texture SRV Heap 
 		ID3D12DescriptorHeap* ppHeaps[] = { m_srvHeap.Get() };
 		m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
 		for (int i = 0; i < m_staticMeshes.size(); ++i) {
 			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_srvHeap->GetGPUDescriptorHandleForHeapStart());
-			handle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath()], m_csuHeapSize);
+
+			if (m_textureMap.count(m_staticMeshes[i]->GetTexturePath()) > 0) {
+				handle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath()], m_csuHeapSize);
+			}
+			else {
+				handle.Offset(m_textureMap[L"default.png"], m_csuHeapSize);
+			}
 			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
+
 			m_staticMeshes[i]->Render(deltaTime, m_commandList);
 		}
 
+		RenderFonts();
+		
 		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			CurrentBackBuffer(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
@@ -383,19 +393,35 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 	using DirectX::SimpleMath::Vector3;
 	
 	std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
-	sphere->Initialize(GeometryGenerator::Sphere(0.8f, 100, 100, L"earth.jpg"), m_device, m_commandList, Vector3(-0.2f, 0.f, 0.f));
+	//sphere->Initialize(GeometryGenerator::Sphere(0.8f, 100, 100, L"earth.jpg"), m_device, m_commandList, Vector3(-0.2f, 0.f, 0.f));
 
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
 	plane->Initialize(GeometryGenerator::Box(4,1,4,L"Metal.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f));
-	m_staticMeshes.push_back(sphere);
+	//m_staticMeshes.push_back(sphere);
 	m_staticMeshes.push_back(plane);
-	auto meshes = GeometryGenerator::ReadFromFile("soldier.fbx");
+	/*auto meshes = GeometryGenerator::ReadFromFile("zelda.fbx");
 	for (auto& mesh : meshes) {
 		std::shared_ptr<StaticMesh> newMesh = std::make_shared<StaticMesh>();
 		newMesh->Initialize(mesh, m_device, m_commandList);
 		m_staticMeshes.push_back(newMesh);
-	}
+	}*/
 
+}
+
+void Renderer::D3D12App::RenderFonts() {
+	m_spriteBatch->Begin(m_commandList.Get());
+
+	m_spriteBatch->SetViewport(m_viewport);
+
+	m_fontPos.x = 0.f;
+	m_fontPos.y = 0.f;
+	const wchar_t* output = L"Son Hyeongwon";
+	DirectX::SimpleMath::Vector2 origin = DirectX::SimpleMath::Vector2::Zero;
+	DirectX::XMVECTORF32 color = DirectX::Colors::Black;
+	m_font->DrawString(m_spriteBatch.get(), output,
+		m_fontPos, color, 0.f, origin);
+
+	m_spriteBatch->End();
 }
 
 void Renderer::D3D12App::CreateConstantBuffer()
@@ -537,11 +563,11 @@ void Renderer::D3D12App::CreateTextures() {
 		std::cerr << "현재 경로가 존재하지 않거나 디렉토리가 아닙니다." << std::endl;
 		return;
 	}
-	
+	m_textureCount = file_count;
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	srvHeapDesc.NodeMask = 0;
-	srvHeapDesc.NumDescriptors = file_count;
+	srvHeapDesc.NumDescriptors = file_count	;
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	m_device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_srvHeap));
 
@@ -554,6 +580,33 @@ void Renderer::D3D12App::CreateTextures() {
 			m_textureMap.emplace(fileName, mapIdx++);
 		}
 	}
+}
+
+void Renderer::D3D12App::CreateFonts() {
+
+	DirectX::RenderTargetState rtState(m_backbufferFormat,
+		m_depthStencilFormat);
+
+	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+	heapDesc.NumDescriptors = Descriptors::Count;
+	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_fontHeap));
+
+	DirectX::ResourceUploadBatch resourceUpload(m_device.Get());
+	resourceUpload.Begin();
+
+	// Load the font
+	m_font = std::make_unique<DirectX::SpriteFont>(m_device.Get(), resourceUpload,
+		L"Fonts/comicSansMs.spritefont",
+		m_fontHeap->GetCPUDescriptorHandleForHeapStart(),
+		m_fontHeap->GetGPUDescriptorHandleForHeapStart());
+
+	DirectX::SpriteBatchPipelineStateDescription pd(rtState);
+	m_spriteBatch = std::make_unique<DirectX::SpriteBatch>(m_device.Get(), resourceUpload, pd);
+
+	auto uploadResourcesFinished = resourceUpload.End(m_commandQueue.Get());
+	uploadResourcesFinished.wait();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE Renderer::D3D12App::CurrentBackBufferView() const
