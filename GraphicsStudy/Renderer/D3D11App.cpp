@@ -1,5 +1,6 @@
 #include "D3D11App.h"
-
+#include "TestVS.h"
+#include "TestPS.h"
 
 Renderer::D3D11App::D3D11App(const int& width, const int& height)
 	:SimpleApp(width, height),

@@ -22,10 +22,6 @@
 
 #include "Camera.h"
 
-#include "TestVS.h"
-#include "TestPS.h"
-
-
 inline std::wstring AnsiToWString(const std::string& str)
 {
 	WCHAR buffer[512];

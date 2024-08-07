@@ -3,6 +3,7 @@
 #include "directxtk12/DDSTextureLoader.h"
 #include "directxtk12/WICTextureLoader.h"
 #include "directxtk12/ResourceUploadBatch.h"
+
 DxException::DxException(HRESULT hr, const std::wstring& functionName, const std::wstring& filename, int lineNumber) :
     ErrorCode(hr),
     FunctionName(functionName),

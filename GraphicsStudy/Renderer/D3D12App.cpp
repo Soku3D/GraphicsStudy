@@ -1,5 +1,6 @@
 #include "D3D12App.h"
 #include "GeometryGenerator.h"
+#include "Renderer.h"
 
 using namespace Core;
 
@@ -12,7 +13,6 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 {
 	m_passConstantData = new GlobalVertexConstantData();
 	textureBasePath = L"Textures/";
-	nullHandle.ptr = 0;
 }
 
 Renderer::D3D12App::~D3D12App()
@@ -35,8 +35,11 @@ bool Renderer::D3D12App::Initialize()
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 
 	CreateConstantBuffer();
-	CreateRootSignature();
-	CreatePSO();
+	
+	// Init PSO & RootSignature
+	Renderer::Initialize();
+	Renderer::Finalize(m_device);
+
 	CreateTextures();
 	CreateVertexAndIndexBuffer();
 
@@ -62,13 +65,29 @@ bool Renderer::D3D12App::InitGUI()
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	// io.Fonts->TexID = (ImTextureID)m_guiFont->GetSpriteSheet().ptr;
+	
+	ImGui::StyleColorsLight();
+	const char* fontPath = "Fonts/Hack-Bold.ttf";  
+	float fontSize = 18.0f;
+	// 폰트 로드
+	io.Fonts->AddFontFromFileTTF(fontPath, fontSize);
+	
+	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	heapDesc.NumDescriptors = 1;
+	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_fontHeap));
 
 	// Setup Platform/Renderer backends
 	ImGui_ImplWin32_Init(m_mainWnd);
-	ImGui_ImplDX12_Init(m_device.Get(), m_swapChainCount, m_backbufferFormat,
+	/*ImGui_ImplDX12_Init(m_device.Get(), m_swapChainCount, m_backbufferFormat,
 		m_guiResourceDescriptors->Heap(),
 		m_guiResourceDescriptors->GetFirstCpuHandle(),
-		m_guiResourceDescriptors->GetFirstGpuHandle());
+		m_guiResourceDescriptors->GetFirstGpuHandle());*/
+	ImGui_ImplDX12_Init(m_device.Get(), m_swapChainCount, m_backbufferFormat,
+		m_fontHeap.Get(),
+		m_fontHeap->GetCPUDescriptorHandleForHeapStart(),
+		m_fontHeap->GetGPUDescriptorHandleForHeapStart());
 
 	return true;
 }
@@ -251,7 +270,7 @@ void Renderer::D3D12App::OnResize()
 
 void Renderer::D3D12App::Update( float& deltaTime )
 {
-	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime);
+	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
 
 	m_passConstantData->ViewMat = m_camera->GetViewMatrix();
 	m_passConstantData->ProjMat = m_camera->GetProjMatrix();
@@ -268,29 +287,42 @@ void Renderer::D3D12App::Update( float& deltaTime )
 
 void Renderer::D3D12App::UpdateGUI(float& deltaTime)
 {
+	if (ImGui::BeginCombo("Mode", currRenderMode.c_str())) // The second parameter is the label previewed before opening the combo.
+	{
+		for (int n = 0; n < psoListNames.size(); n++)
+		{
+			bool is_selected = (currRenderMode == psoListNames[n]); // You can store your selection however you want, outside or inside your objects
+			if (ImGui::Selectable(psoListNames[n].c_str(), is_selected)) {
+				currRenderMode = psoListNames[n];
+			}
+			if (is_selected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
 }
 
 void Renderer::D3D12App::Render(float& deltaTime)
 {
+	auto& pso = psoList[currRenderMode];
+
 	ThrowIfFailed(m_commandAllocator->Reset());
-	if (m_inputHandler->bIsWireMode) {
-		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), m_wireModePso.Get()));
-	}
-	else {
-		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), m_pso.Get()));
-	}
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+	
 	{
 		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			CurrentBackBuffer(),
 			D3D12_RESOURCE_STATE_PRESENT,
 			D3D12_RESOURCE_STATE_RENDER_TARGET));
 		
-		//FLOAT clearColor[4] = { 1.f,1.f,1.f,1.f };
-		/*m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
+		FLOAT clearColor[4] = { 1.f,1.f,1.f,1.f };
+		m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
 		m_commandList->ClearDepthStencilView(m_dsvHeap->GetCPUDescriptorHandleForHeapStart(),
 			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
 			1.f, 0, 0, NULL);
-		*/
+		
 
 		m_commandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
 
@@ -299,7 +331,8 @@ void Renderer::D3D12App::Render(float& deltaTime)
 		m_commandList->RSSetScissorRects(1, &m_scissorRect);
 		m_commandList->RSSetViewports(1, &m_viewport);
 		
-		m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
+		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+
 		// View Proj Matrix Constant Buffer 
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
 
@@ -337,9 +370,9 @@ void Renderer::D3D12App::Render(float& deltaTime)
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
 
-	ThrowIfFailed(m_swapChain->Present(0, 0));
+	/*ThrowIfFailed(m_swapChain->Present(0, 0));
 	m_frameIndex = (m_frameIndex + 1) % m_swapChainCount;
-
+	*/
 	FlushCommandQueue();
 }
 
@@ -349,9 +382,7 @@ void Renderer::D3D12App::RenderGUI(float& deltaTime)
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 	ImGui::Begin("GUI");                   
-	ImGui::SetWindowPos(ImVec2(0, 0));
 	
-	ImGui::Text("This is some useful text."); 
 	UpdateGUI(deltaTime);
 
 	ImGui::End();
@@ -365,17 +396,16 @@ void Renderer::D3D12App::RenderGUI(float& deltaTime)
 			D3D12_RESOURCE_STATE_PRESENT,
 			D3D12_RESOURCE_STATE_RENDER_TARGET));
 
-		FLOAT clearColor[4] = { 1.f,1.f,1.f,1.f };
+		/*FLOAT clearColor[4] = { 1.f,1.f,1.f,1.f };
 		m_guiCommandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
 		m_guiCommandList->ClearDepthStencilView(m_dsvHeap->GetCPUDescriptorHandleForHeapStart(),
 			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-			1.f, 0, 0, NULL);
+			1.f, 0, 0, NULL);*/
 		m_guiCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
-		
-		//m_guiCommandList->SetGraphicsRootSignature(m_fontRootSignature.Get());
 
-		ID3D12DescriptorHeap* heaps[] = { m_guiResourceDescriptors->Heap() };
-		m_guiCommandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
+		//ID3D12DescriptorHeap* pHeaps[] = { m_guiResourceDescriptors->Heap() };
+		ID3D12DescriptorHeap* pHeaps[] = { m_fontHeap.Get()};
+		m_guiCommandList->SetDescriptorHeaps(static_cast<UINT>(std::size(pHeaps)), pHeaps);
 		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_guiCommandList.Get());
 
 		m_guiCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
@@ -387,6 +417,9 @@ void Renderer::D3D12App::RenderGUI(float& deltaTime)
 	m_guiCommandList->Close();
 	ID3D12CommandList* lists[] = { m_guiCommandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
+
+	ThrowIfFailed(m_swapChain->Present(0, 0));
+	m_frameIndex = (m_frameIndex + 1) % m_swapChainCount;
 
 	FlushCommandQueue();
 }
@@ -471,19 +504,19 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 	using DirectX::SimpleMath::Vector3;
 	
 	std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
-	//sphere->Initialize(GeometryGenerator::Sphere(0.8f, 100, 100, L"earth.jpg"), m_device, m_commandList, Vector3(-0.2f, 0.f, 0.f));
+	sphere->Initialize(GeometryGenerator::Sphere(0.8f, 100, 100, L"earth.jpg"), m_device, m_commandList, Vector3(-1.f, 0.f, 0.f));
 
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
 	plane->Initialize(GeometryGenerator::Box(4,1,4,L"Metal.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f));
 	
-	//m_staticMeshes.push_back(sphere);
+	m_staticMeshes.push_back(sphere);
 	m_staticMeshes.push_back(plane);
-	/*auto meshes = GeometryGenerator::ReadFromFile("zelda.fbx");
+	auto meshes = GeometryGenerator::ReadFromFile("zelda.fbx");
 	for (auto& mesh : meshes) {
 		std::shared_ptr<StaticMesh> newMesh = std::make_shared<StaticMesh>();
 		newMesh->Initialize(mesh, m_device, m_commandList);
 		m_staticMeshes.push_back(newMesh);
-	}*/
+	}
 
 }
 
@@ -499,14 +532,15 @@ void Renderer::D3D12App::RenderFonts(const std::wstring& output, std::shared_ptr
 
 	m_spriteBatch->SetViewport(m_viewport);
 
-	float margin = 3.f;
-	m_fontPos = DirectX::SimpleMath::Vector2(m_screenWidth/2.f, m_screenHeight/2.f);
-
+	float margin = 5.f;
+	m_fontPos = DirectX::SimpleMath::Vector2(m_screenWidth -margin , margin);
+	//m_fontPos = DirectX::SimpleMath::Vector2(m_screenWidth/ 2.f , m_screenHeight / 2.f);
 	DirectX::SimpleMath::Vector2 origin = m_font->MeasureString(output.c_str());
+	origin.y = 0.f;
 
 	DirectX::XMVECTORF32 color = DirectX::Colors::Black;
 	m_font->DrawString(m_spriteBatch.get(), output.c_str(),
-		m_fontPos, color, 0.f);
+		m_fontPos, color, 0.f, origin);
 
 	m_spriteBatch->End();
 	
@@ -524,144 +558,6 @@ void Renderer::D3D12App::CreateConstantBuffer()
 	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
 }
 
-void Renderer::D3D12App::CreateRootSignature()
-{
-	CD3DX12_DESCRIPTOR_RANGE1 srvTable;
-	srvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
-
-	CD3DX12_ROOT_PARAMETER1 rootParameters[3];
-	rootParameters[0].InitAsDescriptorTable(1, &srvTable, D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParameters[1].InitAsConstantBufferView(0);
-	rootParameters[2].InitAsConstantBufferView(1);
-
-	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags = 
-		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS | 
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
-
-	D3D12_STATIC_SAMPLER_DESC sampler = {};
-	sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-	sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	sampler.MipLODBias = 0;
-	sampler.MaxAnisotropy = 0;
-	sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-	sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-	sampler.MinLOD = 0.0f;
-	sampler.MaxLOD = D3D12_FLOAT32_MAX;
-	sampler.ShaderRegister = 0;
-	sampler.RegisterSpace = 0;
-	sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, &sampler, rootSignatureFlags);
-
-	ComPtr<ID3DBlob> signature;
-	ComPtr<ID3DBlob> error;
-	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, signature.GetAddressOf(), error.GetAddressOf()));
-
-	m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature));
-
-	CD3DX12_DESCRIPTOR_RANGE1 guiSrvTable;
-	guiSrvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
-
-	CD3DX12_ROOT_PARAMETER1 guiRootParameters[1];
-	guiRootParameters[0].InitAsDescriptorTable(1, &guiSrvTable, D3D12_SHADER_VISIBILITY_PIXEL);
-
-	D3D12_STATIC_SAMPLER_DESC guiSampler = {};
-	guiSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-	guiSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	guiSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	guiSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	guiSampler.MipLODBias = 0;
-	guiSampler.MaxAnisotropy = 0;
-	guiSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-	guiSampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-	guiSampler.MinLOD = 0.0f;
-	guiSampler.MaxLOD = D3D12_FLOAT32_MAX;
-	guiSampler.ShaderRegister = 0;
-	guiSampler.RegisterSpace = 0;
-	guiSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC guiRootSignatureDesc;
-	guiRootSignatureDesc.Init_1_1(_countof(guiRootParameters), guiRootParameters, 1, &guiSampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-	ComPtr<ID3DBlob> guiSignature;
-	ComPtr<ID3DBlob> guiError;
-	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&guiRootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, guiSignature.GetAddressOf(), guiError.GetAddressOf()));
-
-	m_device->CreateRootSignature(0, guiSignature->GetBufferPointer(), guiSignature->GetBufferSize(), IID_PPV_ARGS(&m_fontRootSignature));
-}
-
-void Renderer::D3D12App::CreatePSO()
-{
-	//std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElements =
-	//{
-	//	{"POSITION", 0,DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
-	//};
-	//m_simpleVertexInputLayout.NumElements = (UINT)simpleElements.size();
-	//m_simpleVertexInputLayout.pInputElementDescs = simpleElements.data();
-
-	std::vector<D3D12_INPUT_ELEMENT_DESC> elements =
-	{
-		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
-	};
-	m_vertexInputLayout.NumElements = (UINT)elements.size();
-	m_vertexInputLayout.pInputElementDescs = elements.data();
-
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC defalutPsoDesc = {};
-	defalutPsoDesc.pRootSignature = m_rootSignature.Get();
-	defalutPsoDesc.VS =
-	{
-		g_pTestVS,
-		sizeof(g_pTestVS)
-	};
-	defalutPsoDesc.PS =
-	{
-		g_pTestPS,
-		sizeof(g_pTestPS)
-	};
-	defalutPsoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	defalutPsoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	defalutPsoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-	defalutPsoDesc.SampleMask = UINT_MAX;
-	defalutPsoDesc.InputLayout = m_vertexInputLayout;
-	defalutPsoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	defalutPsoDesc.NumRenderTargets = 1;
-	defalutPsoDesc.RTVFormats[0] = m_backbufferFormat;
-	defalutPsoDesc.DSVFormat = m_depthStencilFormat;
-	defalutPsoDesc.SampleDesc.Count = 1;
-	defalutPsoDesc.SampleDesc.Quality = 0;
-	
-	D3D12_DEPTH_STENCIL_DESC depthStencilDesc = {};
-	depthStencilDesc.DepthEnable = true;
-	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC::D3D12_COMPARISON_FUNC_LESS;
-	defalutPsoDesc.DepthStencilState = depthStencilDesc;
-	
-	D3D12_RASTERIZER_DESC solidRaseterDesc = {};
-	solidRaseterDesc.CullMode = D3D12_CULL_MODE_BACK;
-	solidRaseterDesc.FillMode = D3D12_FILL_MODE_SOLID;
-	solidRaseterDesc.DepthClipEnable = TRUE;
-
-	defalutPsoDesc.RasterizerState = solidRaseterDesc;
-
-	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&defalutPsoDesc, IID_PPV_ARGS(&m_pso)));
-
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC wirePsoDesc = defalutPsoDesc;
-
-	wireFrameRasterizer = {};
-	wireFrameRasterizer.CullMode = D3D12_CULL_MODE_BACK;
-	wireFrameRasterizer.FillMode = D3D12_FILL_MODE_WIREFRAME;
-	wireFrameRasterizer.DepthClipEnable = TRUE;
-	wirePsoDesc.RasterizerState = wireFrameRasterizer;
-
-	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&wirePsoDesc, IID_PPV_ARGS(&m_wireModePso)));
-}
 
 void Renderer::D3D12App::CreateTextures() {
 	namespace fs = std::filesystem;
@@ -681,7 +577,7 @@ void Renderer::D3D12App::CreateTextures() {
 		std::cerr << "현재 경로가 존재하지 않거나 디렉토리가 아닙니다." << std::endl;
 		return;
 	}
-	m_textureCount = file_count;
+	m_textureNum = file_count;
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	srvHeapDesc.NodeMask = 0;

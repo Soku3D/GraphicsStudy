@@ -19,13 +19,13 @@ public:
 
 	std::unordered_map<int, bool> m_prevKeyStates;
 	std::unordered_map<int, bool> m_currKeyStates;
-	
-	bool bIsWireMode = false;
+
 public:
 	// 매 프레임당 호출되어 키 입력을 처리한다
-	void ExicuteCommand(class Core::Actor* actor, float deltaTime);
+	void ExicuteCommand(Core::Actor* actor, float deltaTime, bool bIsFPSMode);
 	void UpdateKeyDown(const int& wParam);
 	void UpdateKeyUp(const int& wParam);
+
 private:
 	unsigned int upKey = unsigned int('Q');
 	unsigned int downKey = unsigned int('E');
@@ -34,7 +34,6 @@ private:
 	unsigned int forwardKey = unsigned int('W');
 	unsigned int backwardKey = unsigned int('S');
 
-	unsigned int wireModeSwitch = unsigned int('R');
 
 
 };

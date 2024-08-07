@@ -63,6 +63,15 @@
     <ClCompile Include="ModelLoader.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="RootSignature.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="PipelineState.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3D12App.h">
@@ -135,6 +144,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="ModelLoader.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="RootSignature.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

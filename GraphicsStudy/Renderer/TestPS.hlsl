@@ -9,5 +9,8 @@ struct PSInput
 };
 float4 main(PSInput input) : SV_TARGET
 {
-    return g_basic.Sample(g_sampler, input.uv);
+    float4 output = g_basic.Sample(g_sampler, input.uv);
+    //clip(output.a - 0.1f);
+    return output;
+    
 }

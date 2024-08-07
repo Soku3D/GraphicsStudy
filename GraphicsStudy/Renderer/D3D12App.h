@@ -1,14 +1,16 @@
 #pragma once
 
+#include <map>
+
 #include "SimpleApp.h"
 #include "Constants.h"
 #include "StaticMesh.h"
-#include <map>
 
 #include "directxtk12/DescriptorHeap.h"
 #include "directxtk12/SpriteFont.h"
 #include "directxtk12/ResourceUploadBatch.h"
 #include "directxtk12/GraphicsMemory.h"
+
 using Microsoft::WRL::ComPtr;
 
 namespace Renderer {
@@ -40,8 +42,6 @@ namespace Renderer {
 		void CreateVertexAndIndexBuffer();
 		void RenderFonts(const std::wstring& output, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors);
 		void CreateConstantBuffer();
-		void CreateRootSignature();
-		void CreatePSO();
 		void CreateTextures();
 		void CreateFontFromFile(const std::wstring& fileName, std::shared_ptr<DirectX::SpriteFont>& font, std::shared_ptr<DirectX::SpriteBatch>& spriteBatch, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors);
 
@@ -84,24 +84,12 @@ namespace Renderer {
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;
 
-		ComPtr<ID3D12PipelineState> m_simplePso;
-		ComPtr<ID3D12PipelineState> m_pso;
-		ComPtr<ID3D12PipelineState> m_wireModePso;
-
-		ComPtr<ID3D12RootSignature> m_rootSignature;
-		ComPtr<ID3D12RootSignature> m_fontRootSignature;
-
 		GlobalVertexConstantData* m_passConstantData;
 		ComPtr<ID3D12Resource> m_passConstantBuffer;
 		UINT8* m_pCbvDataBegin = nullptr;
-
-		D3D12_INPUT_LAYOUT_DESC m_vertexInputLayout;
-
+		
 		ComPtr<ID3D12Resource> m_uploadHeap;
-
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
-
-		D3D12_RASTERIZER_DESC wireFrameRasterizer;
 
 		std::wstring textureBasePath;
 		std::vector<ComPtr<ID3D12Resource>> m_textureResources;
@@ -110,6 +98,9 @@ namespace Renderer {
 	protected:
 		std::shared_ptr<DirectX::DescriptorHeap> m_resourceDescriptors;
 		std::shared_ptr<DirectX::DescriptorHeap> m_guiResourceDescriptors;
+		
+		ComPtr<ID3D12DescriptorHeap> m_fontHeap;
+
 		std::shared_ptr<DirectX::SpriteFont> m_font;
 		std::shared_ptr<DirectX::SpriteFont> m_guiFont;
 		std::shared_ptr<DirectX::SpriteBatch> m_spriteBatch;
@@ -117,9 +108,11 @@ namespace Renderer {
 
 		DirectX::SimpleMath::Vector2 m_fontPos;
 		std::unique_ptr<DirectX::GraphicsMemory> m_graphicsMemory;
-		int m_textureCount = 0;
+		int m_textureNum = 0;
 
-		D3D12_GPU_DESCRIPTOR_HANDLE nullHandle = {};
-		
+	private:
+		float test = 0.f;
+		std::string currRenderMode = "Default";
+
 	};
 }

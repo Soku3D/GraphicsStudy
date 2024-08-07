@@ -154,6 +154,9 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ModelLoader.cpp" />
     <ClCompile Include="Object.cpp" />
+    <ClCompile Include="PipelineState.cpp" />
+    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="SceneComponent.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
     <ClCompile Include="StaticMesh.cpp" />
@@ -179,6 +182,7 @@
     <ClInclude Include="PipelineState.h" />
     <ClInclude Include="PrimitiveComponent.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="RootSignature.h" />
     <ClInclude Include="SceneComponent.h" />
     <ClInclude Include="SimpleApp.h" />
     <ClInclude Include="StaticMesh.h" />

@@ -35,16 +35,16 @@ namespace Renderer {
 		Utils::Timer m_timer;
 	public:
 		UINT m_screenWidth;
-		float m_guiWidth = 0.f;
+		float m_prevGuiWidth = 0.f;
+		float m_currGuiWidth = 0.f;
 
 		UINT m_screenHeight;
 		
 		std::shared_ptr<Core::Camera> m_camera;
 		std::unique_ptr<InputHandler> m_inputHandler;
 		
-		bool bIsFPSMode = true;
-		bool bIsShowCursor = false;
-		bool bIsWireMode = false;
+		bool bIsFPSMode = false;
+		POINT m_fpsModeCursorPos;
 
 	protected:
 		D3D12_COMMAND_LIST_TYPE m_commandType = D3D12_COMMAND_LIST_TYPE_DIRECT;

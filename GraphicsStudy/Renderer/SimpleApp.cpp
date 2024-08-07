@@ -134,7 +134,6 @@ bool Renderer::SimpleApp::InitWindow()
 
     ShowWindow(m_mainWnd,SW_SHOWDEFAULT);
     UpdateWindow(m_mainWnd);
-    ShowCursor(FALSE);
 
     return true;
 }
@@ -196,25 +195,33 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
       
         int deltaX = raw.data.mouse.lLastX;
         int deltaY = raw.data.mouse.lLastY;
+        if (raw.data.mouse.usButtonFlags == RI_MOUSE_RIGHT_BUTTON_DOWN) {
+            if (!bIsFPSMode) {
+                GetCursorPos(&m_fpsModeCursorPos);
+                std::cout << m_fpsModeCursorPos.x << " " << m_fpsModeCursorPos.y << std::endl;
+                bIsFPSMode = true;
+                ShowCursor(FALSE);
+            }         
+        }
+        if (raw.data.mouse.usButtonFlags == RI_MOUSE_RIGHT_BUTTON_UP) {
+            bIsFPSMode = false;
+            ShowCursor(TRUE);
+            SetCursorPos(m_fpsModeCursorPos.x, m_fpsModeCursorPos.y);
+
+        }
         if (m_camera != nullptr && bIsFPSMode)
         {
             m_camera->SetRotation(deltaX, deltaY);
         }
 
-        if (raw.data.mouse.ulButtons == 0x0020) {
-            ShowCursor(!bIsShowCursor);
-            bIsShowCursor = !bIsShowCursor;
-        }
+  
         return 0;
     }
     break;
 
     case WM_KEYDOWN:
         m_inputHandler->m_currKeyStates[(int)wParam] = true;
-        if (wParam == 'F') {
-            bIsFPSMode = !bIsFPSMode;
-        }
-        //m_inputHandler->UpdateKeyDown((int)wParam);
+
         break;
 
     case WM_KEYUP:
