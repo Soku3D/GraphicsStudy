@@ -53,8 +53,8 @@ bool Renderer::D3D12App::Initialize()
 	CreateTextures();
 	CreateVertexAndIndexBuffer();
 
-	CreateFontFromFile(L"Fonts/default.spritefont", m_font, m_spriteBatch, m_resourceDescriptors, false);
-	CreateFontFromFile(L"Fonts/default.spritefont", m_msaaFont, m_msaaSpriteBatch, m_msaaResourceDescriptors, true);
+	CreateFontFromFile(L"Fonts/default.spritefont", m_font, m_spriteBatch, m_resourceDescriptors, false, m_backbufferFormat, m_depthStencilFormat);
+	CreateFontFromFile(L"Fonts/default.spritefont", m_msaaFont, m_msaaSpriteBatch, m_msaaResourceDescriptors, true, m_msaaFormat, m_depthStencilFormat);
 
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
@@ -141,7 +141,7 @@ bool Renderer::D3D12App::InitDirectX()
 	// Check Msaa Quality
 	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msaaData;
 	ZeroMemory(&msaaData, sizeof(msaaData));
-	msaaData.Format = m_backbufferFormat;
+	msaaData.Format = m_msaaFormat;
 	msaaData.NumQualityLevels = m_numQualityLevels;
 	msaaData.SampleCount = m_sampleCount;
 
@@ -228,13 +228,13 @@ void Renderer::D3D12App::OnResize()
 	D3D12_RESOURCE_FLAGS uavFlag = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 	D3D12_RESOURCE_FLAGS rtvFlag = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
-	CreateRenderTargetBuffer(m_msaaRenderTarget, m_backbufferFormat, true, rtvFlag);
+	CreateRenderTargetBuffer(m_msaaRenderTarget, m_msaaFormat, true, rtvFlag);
 	CreateRenderTargetBuffer(m_hdrRenderTarget, m_backbufferFormat, false, uavFlag);
 
 	D3D12_RENDER_TARGET_VIEW_DESC msaaRtvDesc;
 	ZeroMemory(&msaaRtvDesc, sizeof(msaaRtvDesc));
 	msaaRtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
-	msaaRtvDesc.Format = m_backbufferFormat;
+	msaaRtvDesc.Format = m_msaaFormat;
 	msaaRtvDesc.Texture2D.MipSlice = 0;
 
 	m_device->CreateRenderTargetView(m_msaaRenderTarget.Get(), &msaaRtvDesc, m_msaaRtvHeap->GetCPUDescriptorHandleForHeapStart());
@@ -652,11 +652,13 @@ void Renderer::D3D12App::CreateFontFromFile(const std::wstring& fileName,
 	std::shared_ptr<DirectX::SpriteFont> & font, 
 	std::shared_ptr<DirectX::SpriteBatch>& spriteBatch,
 	std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors,
-	bool bUseMsaa) 
+	bool bUseMsaa,
+	DXGI_FORMAT& rtFormat,
+	DXGI_FORMAT& dsFormat)
 {
 	resourceDescriptors = std::make_shared<DirectX::DescriptorHeap>(m_device.Get(),	Descriptors::Count);
 
-	DirectX::RenderTargetState rtState(m_backbufferFormat,	m_depthStencilFormat);
+	DirectX::RenderTargetState rtState(rtFormat, dsFormat);
 
 	if (bUseMsaa)
 	{

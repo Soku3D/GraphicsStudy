@@ -10,7 +10,7 @@ namespace Renderer {
 	
 	extern std::map<std::string, GraphicsPSO > grphicsPsoList;
 	extern std::vector<std::string> graphicsPsoListNames;
-
+	
 	extern std::map<std::string, ComputePSO > computePsoList;
 	extern std::vector<std::string> computePsoListNames;
 
