@@ -151,9 +151,9 @@ int Renderer::SimpleApp::Run()
             m_timer.Tick();
             float delTime = (float)m_timer.GetDeltaTime();
             
-            RenderGUI(delTime);
             Update(delTime);
             Render(delTime);
+            RenderGUI(delTime);
 
             //std::cout << delTime << ' ' << elapsedTime << '\n';
         }
