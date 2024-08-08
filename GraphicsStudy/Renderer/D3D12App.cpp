@@ -12,6 +12,7 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	m_scissorRect(D3D12_RECT())
 {
 	m_passConstantData = new GlobalVertexConstantData();
+	m_psConstantData = new PSConstantData();
 	textureBasePath = L"Textures/";
 }
 
@@ -241,7 +242,7 @@ void Renderer::D3D12App::OnResize()
 	dsvDesc.Format = m_depthStencilFormat;
 	dsvDesc.Texture2D.MipSlice = 0;
 
-	m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), &dsvDesc, DepthStencilView());
+	m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), &dsvDesc, MsaaDepthStencilView());
 
 	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_depthStencilBuffer.Get(),
 		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE));
@@ -338,11 +339,11 @@ void Renderer::D3D12App::Render(float& deltaTime)
 	{
 		FLOAT clearColor[4] = { 1.f,1.f,1.f,1.f };
 		m_commandList->ClearRenderTargetView(GetMSAARtV(), clearColor, 0, nullptr);
-		m_commandList->ClearDepthStencilView(m_dsvHeap->GetCPUDescriptorHandleForHeapStart(),
+		m_commandList->ClearDepthStencilView(m_msaaDsvHeap->GetCPUDescriptorHandleForHeapStart(),
 			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
 			1.f, 0, 0, NULL);
 		
-		m_commandList->OMSetRenderTargets(1, &GetMSAARtV(), true, &DepthStencilView());
+		m_commandList->OMSetRenderTargets(1, &GetMSAARtV(), true, &MsaaDepthStencilView());
 
 		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -371,12 +372,13 @@ void Renderer::D3D12App::Render(float& deltaTime)
 
 			m_staticMeshes[i]->Render(deltaTime, m_commandList);
 		}
-		
-		{
-			int gameTime = (int)m_timer.GetElapsedTime();
-			//RenderFonts(std::to_wstring(gameTime), m_resourceDescriptors);
-		}	
+
 	}
+	//int time = (int)m_timer.GetElapsedTime();
+	//RenderFonts(std::to_wstring(time), m_resourceDescriptors, m_commandList);
+
+	ResolveSubresource(m_commandList);
+	
 	ThrowIfFailed(m_commandList->Close());
 
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
@@ -394,7 +396,6 @@ void Renderer::D3D12App::RenderGUI(float& deltaTime)
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 	ImGui::Begin("GUI");                   
-	
 	UpdateGUI(deltaTime);
 
 	ImGui::End();
@@ -404,37 +405,24 @@ void Renderer::D3D12App::RenderGUI(float& deltaTime)
 		ThrowIfFailed(m_guiCommandAllocator->Reset());
 		ThrowIfFailed(m_guiCommandList->Reset(m_guiCommandAllocator.Get(), nullptr));
 		
-		FLOAT clearColor[4] = { 1.f,1.f,1.f,1.f };
-	
-		m_guiCommandList->OMSetRenderTargets(1, &GetMSAARtV(), true, &DepthStencilView());
-
+		m_guiCommandList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				CurrentBackBuffer(),
+				D3D12_RESOURCE_STATE_PRESENT,
+				D3D12_RESOURCE_STATE_RENDER_TARGET
+			));	
+		
+		m_guiCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), false, nullptr);
 		ID3D12DescriptorHeap* pHeaps[] = { m_fontHeap.Get()};
 		m_guiCommandList->SetDescriptorHeaps(static_cast<UINT>(std::size(pHeaps)), pHeaps);
 		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_guiCommandList.Get());
-	}
-	// swapChain 버퍼로 MSAA 버퍼 복사
-	{
-		m_guiCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			CurrentBackBuffer(),
-			D3D12_RESOURCE_STATE_PRESENT,
-			D3D12_RESOURCE_STATE_RESOLVE_DEST));
 
-		m_guiCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			m_msaaRenderTarget.Get(),
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			D3D12_RESOURCE_STATE_RESOLVE_SOURCE));
-
-		m_guiCommandList->ResolveSubresource(CurrentBackBuffer(), 0, m_msaaRenderTarget.Get(), 0, m_backbufferFormat);
-
-		m_guiCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			m_msaaRenderTarget.Get(),
-			D3D12_RESOURCE_STATE_RESOLVE_SOURCE,
-			D3D12_RESOURCE_STATE_RENDER_TARGET));
-
-		m_guiCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			CurrentBackBuffer(),
-			D3D12_RESOURCE_STATE_RESOLVE_DEST,
-			D3D12_RESOURCE_STATE_PRESENT));
+		m_guiCommandList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				CurrentBackBuffer(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_PRESENT
+			));
 	}
 
 	m_guiCommandList->Close();
@@ -498,7 +486,7 @@ void Renderer::D3D12App::CreateDescriptorHeaps() {
 	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	dsvHeapDesc.NodeMask = 0;
 	ThrowIfFailed(m_device->CreateDescriptorHeap(
-		&dsvHeapDesc, IID_PPV_ARGS(m_dsvHeap.GetAddressOf())));
+		&dsvHeapDesc, IID_PPV_ARGS(m_msaaDsvHeap.GetAddressOf())));
 
 	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc;
 	cbvHeapDesc.NumDescriptors = 1;
@@ -538,7 +526,7 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 	using DirectX::SimpleMath::Vector3;
 	
 	std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
-	sphere->Initialize(GeometryGenerator::Sphere(0.8f, 100, 100, L"earth.jpg"), m_device, m_commandList, Vector3(-1.f, 0.f, 0.f));
+	sphere->Initialize(GeometryGenerator::Sphere(0.8f, 100, 100, L""), m_device, m_commandList, Vector3(-1.f, 0.f, 0.f));
 
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
 	plane->Initialize(GeometryGenerator::Box(4,1,4,L"Metal.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f));
@@ -554,29 +542,31 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 
 }
 
-void Renderer::D3D12App::RenderFonts(const std::wstring& output, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors) {
+void Renderer::D3D12App::RenderFonts(const std::wstring& output, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors,
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList) {
 	
 	m_graphicsMemory.reset();
 
 	m_graphicsMemory = std::make_unique<DirectX::GraphicsMemory>(m_device.Get());
-		
-	ID3D12DescriptorHeap* heaps[] = { resourceDescriptors->Heap() };
-	m_commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
-	m_spriteBatch->Begin(m_commandList.Get());
+	
+	{
+		ID3D12DescriptorHeap* heaps[] = { resourceDescriptors->Heap() };
+		commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
+		m_spriteBatch->Begin(commandList.Get());
 
-	m_spriteBatch->SetViewport(m_viewport);
+		m_spriteBatch->SetViewport(m_viewport);
+		float margin = 5.f;
+		m_fontPos = DirectX::SimpleMath::Vector2(m_screenWidth - margin, margin);
+		//m_fontPos = DirectX::SimpleMath::Vector2(m_screenWidth/ 2.f , m_screenHeight / 2.f);
+		DirectX::SimpleMath::Vector2 origin = m_font->MeasureString(output.c_str());
+		origin.y = 0.f;
 
-	float margin = 5.f;
-	m_fontPos = DirectX::SimpleMath::Vector2(m_screenWidth -margin , margin);
-	//m_fontPos = DirectX::SimpleMath::Vector2(m_screenWidth/ 2.f , m_screenHeight / 2.f);
-	DirectX::SimpleMath::Vector2 origin = m_font->MeasureString(output.c_str());
-	origin.y = 0.f;
+		DirectX::XMVECTORF32 color = DirectX::Colors::Black;
+		m_font->DrawString(m_spriteBatch.get(), output.c_str(),
+			m_fontPos, color, 0.f, origin);
 
-	DirectX::XMVECTORF32 color = DirectX::Colors::Black;
-	m_font->DrawString(m_spriteBatch.get(), output.c_str(),
-		m_fontPos, color, 0.f, origin);
-
-	m_spriteBatch->End();
+		m_spriteBatch->End();		
+	}
 	
 }
 
@@ -590,6 +580,14 @@ void Renderer::D3D12App::CreateConstantBuffer()
 	CD3DX12_RANGE range(0, 0);
 	ThrowIfFailed(m_passConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
 	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
+
+	std::vector<PSConstantData> psConstantData = {
+		*m_psConstantData
+	};
+	Utility::CreateUploadBuffer(psConstantData, m_psConstantBuffer, m_device);
+
+	ThrowIfFailed(m_psConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pPSDataBegin)));
+	memcpy(m_pPSDataBegin, m_psConstantData, sizeof(PSConstantData));
 }
 
 
@@ -632,14 +630,16 @@ void Renderer::D3D12App::CreateTextures() {
 
 void Renderer::D3D12App::CreateFontFromFile(const std::wstring& fileName,
 	std::shared_ptr<DirectX::SpriteFont> & font, std::shared_ptr<DirectX::SpriteBatch>& spriteBatch,
-	std::shared_ptr<DirectX::DescriptorHeap>&  resourceDescriptors) {
-
+	std::shared_ptr<DirectX::DescriptorHeap>&  resourceDescriptors) 
+{
 	resourceDescriptors = std::make_shared<DirectX::DescriptorHeap>(m_device.Get(),
 		Descriptors::Count);
 
 	DirectX::RenderTargetState rtState(m_backbufferFormat,
 		m_depthStencilFormat);
-		
+	rtState.sampleDesc.Count = (m_numQualityLevels > 0) ? m_sampleCount : 1;
+	rtState.sampleDesc.Quality = (m_numQualityLevels > 0) ? m_numQualityLevels - 1 : 0;
+	
 	DirectX::ResourceUploadBatch resourceUpload(m_device.Get());
 	resourceUpload.Begin();
 
@@ -670,12 +670,37 @@ ID3D12Resource* Renderer::D3D12App::CurrentBackBuffer() const
 	return m_renderTargets[m_frameIndex].Get();
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE Renderer::D3D12App::DepthStencilView() const
+D3D12_CPU_DESCRIPTOR_HANDLE Renderer::D3D12App::MsaaDepthStencilView() const
 {
-	return m_dsvHeap->GetCPUDescriptorHandleForHeapStart();
+	return m_msaaDsvHeap->GetCPUDescriptorHandleForHeapStart();
 }
+
+
 
 D3D12_CPU_DESCRIPTOR_HANDLE Renderer::D3D12App::GetMSAARtV() const
 {
 	return m_msaaRtvHeap->GetCPUDescriptorHandleForHeapStart();
+}
+void  Renderer::D3D12App::ResolveSubresource(ComPtr<ID3D12GraphicsCommandList>& commandList) {
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		CurrentBackBuffer(),
+		D3D12_RESOURCE_STATE_PRESENT,
+		D3D12_RESOURCE_STATE_RESOLVE_DEST));
+
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		m_msaaRenderTarget.Get(),
+		D3D12_RESOURCE_STATE_RENDER_TARGET,
+		D3D12_RESOURCE_STATE_RESOLVE_SOURCE));
+
+	commandList->ResolveSubresource(CurrentBackBuffer(), 0, m_msaaRenderTarget.Get(), 0, m_backbufferFormat);
+
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		m_msaaRenderTarget.Get(),
+		D3D12_RESOURCE_STATE_RESOLVE_SOURCE,
+		D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		CurrentBackBuffer(),
+		D3D12_RESOURCE_STATE_RESOLVE_DEST,
+		D3D12_RESOURCE_STATE_PRESENT));
 }

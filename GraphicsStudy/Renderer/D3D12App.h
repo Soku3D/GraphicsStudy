@@ -40,7 +40,7 @@ namespace Renderer {
 		void FlushCommandQueue();
 
 		void CreateVertexAndIndexBuffer();
-		void RenderFonts(const std::wstring& output, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors);
+		void RenderFonts(const std::wstring& output, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 		void CreateConstantBuffer();
 		void CreateTextures();
 		void CreateFontFromFile(const std::wstring& fileName, std::shared_ptr<DirectX::SpriteFont>& font, std::shared_ptr<DirectX::SpriteBatch>& spriteBatch, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors);
@@ -48,8 +48,10 @@ namespace Renderer {
 	protected:
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
 		ID3D12Resource* CurrentBackBuffer() const;
-		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const;
+		D3D12_CPU_DESCRIPTOR_HANDLE MsaaDepthStencilView() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE GetMSAARtV() const;
+
+		void ResolveSubresource(ComPtr<ID3D12GraphicsCommandList>& commandList);
 
 	protected:
 		bool bUseWarpAdapter;
@@ -78,7 +80,7 @@ namespace Renderer {
 		UINT m_csuHeapSize = 0;
 
 		ComPtr<ID3D12DescriptorHeap> m_rtvHeap;
-		ComPtr<ID3D12DescriptorHeap> m_dsvHeap;
+		ComPtr<ID3D12DescriptorHeap> m_msaaDsvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_cbvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_srvHeap;
 
@@ -89,6 +91,10 @@ namespace Renderer {
 		ComPtr<ID3D12Resource> m_passConstantBuffer;
 		UINT8* m_pCbvDataBegin = nullptr;
 		
+		PSConstantData* m_psConstantData;
+		ComPtr<ID3D12Resource> m_psConstantBuffer;
+		UINT8* m_pPSDataBegin = nullptr;
+
 		ComPtr<ID3D12Resource> m_uploadHeap;
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
 
