@@ -5,6 +5,9 @@
 
 namespace Renderer {
 
+	UINT msaaCount = 4;
+	UINT msaaQuality = 0;
+
 	GraphicsPSO defaultPso("Default");
 	
 	std::map<std::string, GraphicsPSO > psoList;
@@ -72,7 +75,12 @@ namespace Renderer {
 		defaultPso.SetDepthStencilState(CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT));
 		defaultPso.SetSampleMask(UINT_MAX);
 		defaultPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
-		defaultPso.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_D24_UNORM_S8_UINT);
+		if (msaaQuality > 0) {
+			defaultPso.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
+		}
+		else {
+			defaultPso.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		}
 		defaultPso.SetRootSignature(&defaultSignature);
 
 		wirePso = defaultPso;

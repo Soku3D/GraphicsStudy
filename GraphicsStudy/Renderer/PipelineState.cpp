@@ -102,5 +102,10 @@ namespace Renderer {
         ThrowIfFailed(device->CreateGraphicsPipelineState(&m_psoDesc, IID_PPV_ARGS(&m_pso)));
     }
 
+    void GraphicsPSO::PrintMSAAData()
+    {
+        std::cout << "Count : " << m_psoDesc.SampleDesc.Count << "Quality : " << m_psoDesc.SampleDesc.Quality << std::endl;
+    }
+
 }
 

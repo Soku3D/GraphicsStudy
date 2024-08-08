@@ -49,6 +49,7 @@ namespace Renderer {
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
 		ID3D12Resource* CurrentBackBuffer() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const;
+		D3D12_CPU_DESCRIPTOR_HANDLE GetMSAARtV() const;
 
 	protected:
 		bool bUseWarpAdapter;
@@ -109,6 +110,10 @@ namespace Renderer {
 		DirectX::SimpleMath::Vector2 m_fontPos;
 		std::unique_ptr<DirectX::GraphicsMemory> m_graphicsMemory;
 		int m_textureNum = 0;
+
+	private:
+		ComPtr<ID3D12Resource> m_msaaRenderTarget;
+		ComPtr<ID3D12DescriptorHeap> m_msaaRtvHeap;
 
 	private:
 		float test = 0.f;

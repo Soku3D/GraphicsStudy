@@ -59,6 +59,7 @@ namespace Renderer {
 
         // Perform validation and compute a hash value for fast state block comparisons
         void Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device);
+        void PrintMSAAData();
 
     private:
         D3D12_GRAPHICS_PIPELINE_STATE_DESC m_psoDesc;

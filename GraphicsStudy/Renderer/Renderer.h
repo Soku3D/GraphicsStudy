@@ -10,6 +10,8 @@ namespace Renderer {
 	
 	extern std::map<std::string, GraphicsPSO > psoList;
 	extern std::vector<std::string> psoListNames;
+	extern UINT msaaCount;
+	extern UINT msaaQuality;
 
 	extern GraphicsPSO defaultPso; 
 
