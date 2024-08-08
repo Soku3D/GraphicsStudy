@@ -109,5 +109,32 @@ namespace Renderer {
         std::cout << "Count : " << m_psoDesc.SampleDesc.Count << "Quality : " << m_psoDesc.SampleDesc.Quality << std::endl;
     }
 
+    ComputePSO::ComputePSO(const char* Name)
+        :PSO(Name)
+    {
+        ZeroMemory(&m_psoDesc, sizeof(m_psoDesc));
+    }
+
+    ComputePSO::ComputePSO()
+        :PSO("")
+    {
+        ZeroMemory(&m_psoDesc, sizeof(m_psoDesc));
+    }
+
+    void ComputePSO::operator=(ComputePSO& pso)
+    {
+        this->m_psoDesc = pso.m_psoDesc;
+        this->m_rootSignature = pso.m_rootSignature;
+        this->m_pso = pso.m_pso;
+    }
+
+    void ComputePSO::Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device)
+    {
+        if (m_rootSignature != nullptr) {
+            m_psoDesc.pRootSignature = m_rootSignature->Get();
+        }
+        ThrowIfFailed(device->CreateComputePipelineState(&m_psoDesc, IID_PPV_ARGS(&m_pso)));
+    }
+
 }
 

@@ -44,6 +44,7 @@ namespace Renderer {
 		std::unique_ptr<InputHandler> m_inputHandler;
 		
 		bool bIsFPSMode = false;
+		bool bUseGUI = true;
 		POINT m_fpsModeCursorPos;
 
 	protected:

@@ -8,14 +8,20 @@
 
 namespace Renderer {
 	
-	extern std::map<std::string, GraphicsPSO > psoList;
-	extern std::vector<std::string> psoListNames;
+	extern std::map<std::string, GraphicsPSO > grphicsPsoList;
+	extern std::vector<std::string> graphicsPsoListNames;
+
+	extern std::map<std::string, ComputePSO > computePsoList;
+	extern std::vector<std::string> computePsoListNames;
+
 	extern UINT msaaCount;
 	extern UINT msaaQuality;
 
-	extern GraphicsPSO defaultPso; 
+	extern GraphicsPSO defaultPso;
+	extern ComputePSO computePso;
 
 	extern RootSignature defaultSignature;
+	extern RootSignature computeSignature;
 	
 	extern std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;
 

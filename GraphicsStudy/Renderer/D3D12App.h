@@ -40,18 +40,32 @@ namespace Renderer {
 		void FlushCommandQueue();
 
 		void CreateVertexAndIndexBuffer();
-		void RenderFonts(const std::wstring& output, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
+		void RenderFonts(const std::wstring& output, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors, std::shared_ptr<DirectX::SpriteBatch>& spriteBatch, std::shared_ptr<DirectX::SpriteFont>& font, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 		void CreateConstantBuffer();
 		void CreateTextures();
-		void CreateFontFromFile(const std::wstring& fileName, std::shared_ptr<DirectX::SpriteFont>& font, std::shared_ptr<DirectX::SpriteBatch>& spriteBatch, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors);
+		void CreateFontFromFile(const std::wstring& fileName, std::shared_ptr<DirectX::SpriteFont>& font, std::shared_ptr<DirectX::SpriteBatch>& spriteBatch, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors, bool bUseMsaa = false);
 
 	protected:
-		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
 		ID3D12Resource* CurrentBackBuffer() const;
+		ID3D12Resource* MsaaRenderTargetBuffer() const;
+		ID3D12Resource* HDRRenderTargetBuffer() const;
+		
 		D3D12_CPU_DESCRIPTOR_HANDLE MsaaDepthStencilView() const;
-		D3D12_CPU_DESCRIPTOR_HANDLE GetMSAARtV() const;
+		D3D12_CPU_DESCRIPTOR_HANDLE HDRDepthStencilView() const;
+		D3D12_CPU_DESCRIPTOR_HANDLE HDRUnorderedAccesslView() const;
 
-		void ResolveSubresource(ComPtr<ID3D12GraphicsCommandList>& commandList);
+		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
+		D3D12_CPU_DESCRIPTOR_HANDLE MsaaRenderTargetView() const;
+		
+		D3D12_CPU_DESCRIPTOR_HANDLE HDRRendertargetView() const;
+
+		void ResolveSubresource(ComPtr<ID3D12GraphicsCommandList>& commandList, ID3D12Resource* dest, ID3D12Resource* src);
+
+		void CopyResource(ComPtr<ID3D12GraphicsCommandList>& commandList, ID3D12Resource* dest, ID3D12Resource* src);
+
+		void CreateDepthBuffer(ComPtr<ID3D12Resource>& buffer, D3D12_CPU_DESCRIPTOR_HANDLE& handle, bool bUseMsaa);
+		void CreateRenderTargetBuffer(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_RESOURCE_FLAGS flag);
+		
 
 	protected:
 		bool bUseWarpAdapter;
@@ -69,7 +83,7 @@ namespace Renderer {
 		ComPtr<IDXGISwapChain3> m_swapChain;
 		static const UINT m_swapChainCount = 2;
 		ComPtr<ID3D12Resource> m_renderTargets[m_swapChainCount];
-		ComPtr<ID3D12Resource> m_depthStencilBuffer;
+		ComPtr<ID3D12Resource> m_msaaDepthStencilBuffer;
 		UINT m_frameIndex = 0;
 
 		UINT m_currentFence = 0;
@@ -80,7 +94,7 @@ namespace Renderer {
 		UINT m_csuHeapSize = 0;
 
 		ComPtr<ID3D12DescriptorHeap> m_rtvHeap;
-		ComPtr<ID3D12DescriptorHeap> m_msaaDsvHeap;
+		ComPtr<ID3D12DescriptorHeap> m_dsvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_cbvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_srvHeap;
 
@@ -103,26 +117,35 @@ namespace Renderer {
 		std::map<std::wstring, unsigned int> m_textureMap;
 
 	protected:
-		std::shared_ptr<DirectX::DescriptorHeap> m_resourceDescriptors;
-		std::shared_ptr<DirectX::DescriptorHeap> m_guiResourceDescriptors;
+		// GUI용 
+		ComPtr<ID3D12DescriptorHeap> m_guiFontHeap;
 		
-		ComPtr<ID3D12DescriptorHeap> m_fontHeap;
+		std::shared_ptr<DirectX::DescriptorHeap> m_resourceDescriptors;
+		std::shared_ptr<DirectX::DescriptorHeap> m_msaaResourceDescriptors;
 
 		std::shared_ptr<DirectX::SpriteFont> m_font;
-		std::shared_ptr<DirectX::SpriteFont> m_guiFont;
+		std::shared_ptr<DirectX::SpriteFont> m_msaaFont;
+
 		std::shared_ptr<DirectX::SpriteBatch> m_spriteBatch;
-		std::shared_ptr<DirectX::SpriteBatch> m_guiSpriteBatch;
+		std::shared_ptr<DirectX::SpriteBatch> m_msaaSpriteBatch;
 
 		DirectX::SimpleMath::Vector2 m_fontPos;
 		std::unique_ptr<DirectX::GraphicsMemory> m_graphicsMemory;
 		int m_textureNum = 0;
 
-	private:
+	protected:
 		ComPtr<ID3D12Resource> m_msaaRenderTarget;
-		ComPtr<ID3D12DescriptorHeap> m_msaaRtvHeap;
 
-	private:
-		std::string currRenderMode = "Default";
+		ComPtr<ID3D12Resource> m_hdrRenderTarget;
+		ComPtr<ID3D12Resource> m_hdrDepthStencilBuffer;
+
+		ComPtr<ID3D12DescriptorHeap> m_msaaRtvHeap;
+		ComPtr<ID3D12DescriptorHeap> m_hdrRtvHeap;
+		ComPtr<ID3D12DescriptorHeap> m_hdrDepthHeap;
+		ComPtr<ID3D12DescriptorHeap> m_hdrUavHeap;
+
+	protected:
+		std::string currRenderMode = "Msaa";
 		DirectX::SimpleMath::Vector3 gui_lightPos;
 		float gui_shineness;
 		float gui_diffuse;

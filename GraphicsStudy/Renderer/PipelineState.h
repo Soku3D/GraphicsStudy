@@ -32,6 +32,7 @@ namespace Renderer {
     public:
         GraphicsPSO(const char* Name);
         GraphicsPSO();
+        ~GraphicsPSO() {}
 
         void operator=(GraphicsPSO& pso);
         void SetBlendState(const D3D12_BLEND_DESC& BlendDesc);
@@ -66,7 +67,17 @@ namespace Renderer {
     };
 
     class ComputePSO : public PSO {
+    public:
+        ComputePSO(const char* Name);
+        ComputePSO();
+        ~ComputePSO() {}
 
+        void operator=(ComputePSO& pso);
+        void Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device);
+        void SetComputeShader(const D3D12_SHADER_BYTECODE& Binary) { m_psoDesc.CS = Binary; }
+        void SetComputeShader(const void* Binary, size_t Size) { m_psoDesc.CS = CD3DX12_SHADER_BYTECODE(const_cast<void*>(Binary), Size); }
+
+    private:
         D3D12_COMPUTE_PIPELINE_STATE_DESC m_psoDesc;
     };
 }
