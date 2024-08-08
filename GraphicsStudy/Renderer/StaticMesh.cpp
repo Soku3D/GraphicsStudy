@@ -5,7 +5,6 @@ Core::StaticMesh::StaticMesh():
 	m_indexBufferView(D3D12_INDEX_BUFFER_VIEW()),
 	m_pCbvDataBegin(nullptr),
 	m_objectConstantData(nullptr)
-
 {
 }
 

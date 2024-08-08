@@ -26,7 +26,7 @@ namespace Renderer {
 	void Initialize(void)
 	{
 		GraphicsPSO wirePso("Wire");
-
+		
 		defaultElement =
 		{
 			{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
@@ -64,11 +64,13 @@ namespace Renderer {
 		defaultSampler.ShaderRegister = 0;
 		defaultSampler.RegisterSpace = 0;
 		defaultSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-		defaultSignature.Initialize(1, 2, defaultSampler);
+		
+		// Init RootSignature
+		defaultSignature.Initialize(1, 3, defaultSampler);
 
 		defaultPso.SetVertexShader(g_pTestVS, sizeof(g_pTestVS));
 		defaultPso.SetPixelShader(g_pTestPS, sizeof(g_pTestPS));
-		defaultPso.SetInputLayout(defaultElement.size(), defaultElement.data());
+		defaultPso.SetInputLayout((UINT)defaultElement.size(), defaultElement.data());
 		defaultPso.SetRasterizerState(CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT));
 		
 		defaultPso.SetBlendState(alphaBlender);
@@ -77,17 +79,22 @@ namespace Renderer {
 		defaultPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 		if (msaaQuality > 0) {
 			defaultPso.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
+			//guiPso.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
 		}
 		else {
 			defaultPso.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+			//guiPso.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 		}
 		defaultPso.SetRootSignature(&defaultSignature);
+
+		//guiPso.SetSampleMask(UINT_MAX);
 
 		wirePso = defaultPso;
 		wirePso.SetRasterizerState(wireRasterizer);
 
 		psoList[defaultPso.GetName()] = defaultPso;
 		psoList[wirePso.GetName()] = wirePso;
+		//psoList[guiPso.GetName()] = guiPso;
 	}
 
 	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device)

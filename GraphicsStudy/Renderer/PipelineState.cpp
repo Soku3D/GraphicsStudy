@@ -98,7 +98,9 @@ namespace Renderer {
     }
     void GraphicsPSO::Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device)
     {
-        m_psoDesc.pRootSignature = m_rootSignature->Get();
+        if (m_rootSignature != nullptr){
+            m_psoDesc.pRootSignature = m_rootSignature->Get();
+        }
         ThrowIfFailed(device->CreateGraphicsPipelineState(&m_psoDesc, IID_PPV_ARGS(&m_pso)));
     }
 

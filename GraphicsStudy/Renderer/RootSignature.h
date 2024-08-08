@@ -6,17 +6,19 @@
 namespace Renderer {
 	class RootSignature {
 	public:
-		RootSignature() {};
+		RootSignature(): m_sampler(CD3DX12_STATIC_SAMPLER_DESC()){};
 		~RootSignature() {}
-		void Initialize(int srvCount, int uavCount, int cbCount, D3D12_STATIC_SAMPLER_DESC& sampler);
-		void Initialize(int srvCount, int cbCount, D3D12_STATIC_SAMPLER_DESC& sampler);
+		void Initialize(UINT srvCount, UINT uavCount, UINT cbCount, D3D12_STATIC_SAMPLER_DESC& sampler);
+		void Initialize(UINT srvCount, UINT cbCount, D3D12_STATIC_SAMPLER_DESC& sampler);
 		void Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device);
 		ID3D12RootSignature* Get()const { return m_rootSignature.Get(); }
 		
 	private:
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rootSignature;
 		D3D12_STATIC_SAMPLER_DESC m_sampler;
+
 		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC m_rootSignatureDesc;
-		CD3DX12_ROOT_PARAMETER1* paramenters;
+		std::vector<CD3DX12_ROOT_PARAMETER1> paramenters;
+		CD3DX12_DESCRIPTOR_RANGE1 rangeTable;
 	};
 }

@@ -15,7 +15,6 @@ namespace Renderer {
 
 	extern GraphicsPSO defaultPso; 
 
-
 	extern RootSignature defaultSignature;
 	
 	extern std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;

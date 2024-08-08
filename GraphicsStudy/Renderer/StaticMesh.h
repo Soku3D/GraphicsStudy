@@ -9,13 +9,23 @@ namespace Core {
 	public:
 
 		StaticMesh();
-		~StaticMesh() {};
+		~StaticMesh() {
+			m_objectConstantData = nullptr;
+			m_objectConstantBuffer.Reset();
+			m_pCbvDataBegin = nullptr;
+			m_vertexUploadBuffer.Reset();
+			m_vertexUpload.Reset();
+			m_vertexGpu.Reset();
+			m_indexUpload.Reset();
+			m_indexGpu.Reset();
+		};
 
 		template <typename Vertex>
 		void Initialize(MeshData<Vertex>& meshData,
 			Microsoft::WRL::ComPtr<ID3D12Device>& device,
 			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList,
-			const DirectX::SimpleMath::Vector3& modelPosition = DirectX::SimpleMath::Vector3::Zero)
+			const DirectX::SimpleMath::Vector3& modelPosition = DirectX::SimpleMath::Vector3::Zero, 
+			Material& material = Material())
 		{
 			Renderer::Utility::CreateBuffer(meshData.m_vertices, m_vertexUpload, m_vertexGpu, device, commandList);
 			Renderer::Utility::CreateBuffer(meshData.m_indices, m_indexUpload, m_indexGpu, device, commandList);
@@ -31,6 +41,7 @@ namespace Core {
 			
 			m_objectConstantData->Model = DirectX::XMMatrixTranslation(modelPosition.x, modelPosition.y, modelPosition.z);
 			m_objectConstantData->Model = m_objectConstantData->Model.Transpose();
+
 			std::vector<ObjectConstantData> constantData = { *m_objectConstantData	};
 			Renderer::Utility::CreateUploadBuffer(constantData, m_objectConstantBuffer, device);
 			indexCount = (UINT)meshData.m_indices.size();
@@ -40,6 +51,7 @@ namespace Core {
 			memcpy(m_pCbvDataBegin, m_objectConstantData, sizeof(ObjectConstantData));
 			m_texturePath = meshData.GetTexturePath();
 		}
+
 		void Render(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 		void Update(float& deltaTime);
 		std::wstring GetTexturePath() const { return m_texturePath; }

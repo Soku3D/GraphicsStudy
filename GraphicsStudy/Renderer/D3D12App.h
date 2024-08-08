@@ -122,8 +122,10 @@ namespace Renderer {
 		ComPtr<ID3D12DescriptorHeap> m_msaaRtvHeap;
 
 	private:
-		float test = 0.f;
 		std::string currRenderMode = "Default";
-
+		DirectX::SimpleMath::Vector3 gui_lightPos;
+		float gui_shineness;
+		float gui_diffuse;
+		float gui_specular;
 	};
 }

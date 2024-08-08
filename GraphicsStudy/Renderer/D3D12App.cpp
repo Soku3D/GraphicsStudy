@@ -14,6 +14,16 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	m_passConstantData = new GlobalVertexConstantData();
 	m_psConstantData = new PSConstantData();
 	textureBasePath = L"Textures/";
+
+	m_psConstantData->light->position = DirectX::SimpleMath::Vector3(3.f, 3.f, -2.f);
+	m_psConstantData->material.shineiness = 40.f;
+	m_psConstantData->material.diffuse = DirectX::SimpleMath::Vector3(0.2f);
+	m_psConstantData->material.specular = DirectX::SimpleMath::Vector3(0.8f);
+
+	gui_lightPos = m_psConstantData->light->position;
+	gui_shineness = m_psConstantData->material.shineiness;
+	gui_diffuse = m_psConstantData->material.diffuse.x;
+	gui_specular = m_psConstantData->material.specular.x;
 }
 
 Renderer::D3D12App::~D3D12App()
@@ -25,7 +35,6 @@ Renderer::D3D12App::~D3D12App()
 		m_renderTargets[i].Reset();
 	}
 	m_depthStencilBuffer.Reset();
-
 }
 
 bool Renderer::D3D12App::Initialize()
@@ -68,8 +77,8 @@ bool Renderer::D3D12App::InitGUI()
 	// io.Fonts->TexID = (ImTextureID)m_guiFont->GetSpriteSheet().ptr;
 	
 	ImGui::StyleColorsLight();
-	const char* fontPath = "Fonts/Hack-Bold.ttf";  
-	float fontSize = 18.0f;
+	const char* fontPath = "Fonts/Hack-Regular.ttf";  
+	float fontSize = 15.0f;
 	// 폰트 로드
 	io.Fonts->AddFontFromFileTTF(fontPath, fontSize);
 	
@@ -303,7 +312,14 @@ void Renderer::D3D12App::Update( float& deltaTime )
 	m_passConstantData->ViewMat = m_passConstantData->ViewMat.Transpose();
 	m_passConstantData->ProjMat = m_passConstantData->ProjMat.Transpose();
 
+	m_psConstantData->eyePos = m_camera->GetPosition();
+	m_psConstantData->light->position = gui_lightPos;
+	m_psConstantData->material.shineiness = gui_shineness;
+	m_psConstantData->material.diffuse = DirectX::SimpleMath::Vector3(gui_diffuse);
+	m_psConstantData->material.specular = DirectX::SimpleMath::Vector3(gui_specular);
+
 	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
+	memcpy(m_pPSDataBegin, m_psConstantData, sizeof(PSConstantData));
 
 	for (auto& mesh : m_staticMeshes) {
 		//mesh->Update(deltaTime);
@@ -327,6 +343,11 @@ void Renderer::D3D12App::UpdateGUI(float& deltaTime)
 		}
 		ImGui::EndCombo();
 	}
+
+	ImGui::SliderFloat3("Light Position", (float*)&gui_lightPos, -10.f, 10.f);
+	ImGui::SliderFloat("Material Shineness", &gui_shineness, 1.f, 100.f);
+	ImGui::SliderFloat("Material Diffuse", &gui_diffuse, 0.f, 1.f);
+	ImGui::SliderFloat("Material Specualr", &gui_specular, 0.f, 1.f);
 }
 
 void Renderer::D3D12App::Render(float& deltaTime)
@@ -354,6 +375,7 @@ void Renderer::D3D12App::Render(float& deltaTime)
 
 		// View Proj Matrix Constant Buffer 
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
+		m_commandList->SetGraphicsRootConstantBufferView(3, m_psConstantBuffer->GetGPUVirtualAddress());
 
 		// Texture SRV Heap 
 		ID3D12DescriptorHeap* ppHeaps[] = { m_srvHeap.Get() };
@@ -374,8 +396,8 @@ void Renderer::D3D12App::Render(float& deltaTime)
 		}
 
 	}
-	//int time = (int)m_timer.GetElapsedTime();
-	//RenderFonts(std::to_wstring(time), m_resourceDescriptors, m_commandList);
+	int time = (int)m_timer.GetElapsedTime();
+	RenderFonts(std::to_wstring(time), m_resourceDescriptors, m_commandList);
 
 	ResolveSubresource(m_commandList);
 	
@@ -526,7 +548,7 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 	using DirectX::SimpleMath::Vector3;
 	
 	std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
-	sphere->Initialize(GeometryGenerator::Sphere(0.8f, 100, 100, L""), m_device, m_commandList, Vector3(-1.f, 0.f, 0.f));
+	sphere->Initialize(GeometryGenerator::Sphere(0.8f, 100, 100, L"earth.jpg"), m_device, m_commandList, Vector3(-1.f, 0.f, 0.f));
 
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
 	plane->Initialize(GeometryGenerator::Box(4,1,4,L"Metal.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f));
@@ -536,7 +558,7 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 	auto meshes = GeometryGenerator::ReadFromFile("zelda.fbx");
 	for (auto& mesh : meshes) {
 		std::shared_ptr<StaticMesh> newMesh = std::make_shared<StaticMesh>();
-		newMesh->Initialize(mesh, m_device, m_commandList);
+		newMesh->Initialize(mesh, m_device, m_commandList, Vector3(0.f, -0.05f, 0.f));
 		m_staticMeshes.push_back(newMesh);
 	}
 

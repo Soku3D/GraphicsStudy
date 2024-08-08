@@ -36,6 +36,7 @@ namespace Core {
 	public:
 		DirectX::SimpleMath::Matrix GetViewMatrix() const;
 		DirectX::SimpleMath::Matrix GetProjMatrix() const;
+		DirectX::SimpleMath::Vector3 GetPosition() const;
 
 	public:
 		virtual void RotateDirection() override;

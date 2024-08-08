@@ -95,4 +95,8 @@ namespace Core {
 	{
 		return DirectX::XMMatrixPerspectiveFovLH(m_fov, m_aspectRatio, m_nearZ, m_farZ);
 	}
+	DirectX::SimpleMath::Vector3 Camera::GetPosition() const
+	{
+		return m_position;
+	}
 }
