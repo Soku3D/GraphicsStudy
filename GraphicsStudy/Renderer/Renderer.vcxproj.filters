@@ -154,4 +154,7 @@
     <FxCompile Include="TestVS.hlsl" />
     <FxCompile Include="TestPS.hlsl" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Common.hlsli" />
+  </ItemGroup>
 </Project>
