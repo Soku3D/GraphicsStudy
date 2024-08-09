@@ -34,3 +34,8 @@ __declspec(align(256)) struct PSConstantData {
 	Material material;
 	DirectX::SimpleMath::Vector3 eyePos = DirectX::SimpleMath::Vector3(0.f,0.f,-1.f);
 };
+
+__declspec(align(256)) struct CSConstantData {
+	float time;
+	float dummy[3];
+};

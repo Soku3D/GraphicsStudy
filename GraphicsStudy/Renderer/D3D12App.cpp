@@ -499,11 +499,11 @@ void Renderer::D3D12App::RenderCubeMap(float& deltaTime)
 		int time = (int)m_timer.GetElapsedTime();
 
 		if (msaaMode) {
-			//RenderFonts(std::to_wstring(time), m_msaaResourceDescriptors, m_msaaSpriteBatch, m_msaaFont, m_commandList);
+			RenderFonts(std::to_wstring(time), m_msaaResourceDescriptors, m_msaaSpriteBatch, m_msaaFont, m_commandList);
 			ResolveSubresource(m_commandList, HDRRenderTargetBuffer(), MsaaRenderTargetBuffer());
 		}
 		else {
-			//RenderFonts(std::to_wstring(time), m_resourceDescriptors, m_spriteBatch, m_font, m_commandList);
+			RenderFonts(std::to_wstring(time), m_resourceDescriptors, m_spriteBatch, m_font, m_commandList);
 		}
 	}
 }

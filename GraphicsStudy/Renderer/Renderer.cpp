@@ -57,7 +57,7 @@ namespace Renderer {
 		defaultSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		defaultSignature.Initialize(1, 3, &defaultSampler);
-		computeSignature.InitializeUAV(1, 0, nullptr);
+		computeSignature.InitializeUAV(1, 1, nullptr);
 		cubeMapSignature.Initialize(1, 1, &defaultSampler);
 
 		GraphicsPSO msaaPso("Msaa");
