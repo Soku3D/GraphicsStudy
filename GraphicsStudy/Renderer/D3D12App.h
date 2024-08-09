@@ -48,6 +48,9 @@ namespace Renderer {
 		void CreateConstantBuffer();
 		void CreateTextures();
 		void CreateCubeMapTextures();
+		void CreateExrTexture();
+		void CreateExrBuffer(std::wstring& path, ComPtr<ID3D12Resource>& upload, ComPtr<ID3D12Resource>& texture, UINT offset);
+		//void CreateExrBuffer(std::wstring& path, ComPtr<ID3D12Resource>& upload, ComPtr<ID3D12Resource>& texture, UINT offset, std::vector<uint16_t>& image);
 		void CreateFontFromFile(const std::wstring& fileName, std::shared_ptr<DirectX::SpriteFont>& font, std::shared_ptr<DirectX::SpriteBatch>& spriteBatch, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors, bool bUseMsaa, DXGI_FORMAT& rtFormat, DXGI_FORMAT& dsFormat);
 
 	protected:
@@ -117,14 +120,20 @@ namespace Renderer {
 		ComPtr<ID3D12Resource> m_psConstantBuffer;
 		UINT8* m_pPSDataBegin = nullptr;
 
-		ComPtr<ID3D12Resource> m_uploadHeap;
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
 		std::shared_ptr<Core::StaticMesh> m_cubeMap;
 
 		std::wstring textureBasePath;
 		std::wstring cubeMapTextureBasePath;
+		std::wstring exrTextureBasePath;
+
 		std::vector<ComPtr<ID3D12Resource>> m_textureResources;
 		std::vector<ComPtr<ID3D12Resource>> m_cubeMaptextureResources;
+		
+		std::vector<ComPtr<ID3D12Resource>> m_exrUploadResources;
+		std::vector<ComPtr<ID3D12Resource>> m_exrResources;
+		ComPtr<ID3D12DescriptorHeap> m_exrSrvHeap;
+
 		std::map<std::wstring, unsigned int> m_textureMap;
 
 	protected:
