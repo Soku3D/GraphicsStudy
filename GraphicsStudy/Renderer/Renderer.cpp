@@ -4,6 +4,9 @@
 #include "TestPS.h"
 #include "TestCS.h"
 
+#include "CubeMapVS.h"
+#include "CubeMapPS.h"
+
 namespace Renderer {
 
 	UINT msaaCount = 4;
@@ -14,14 +17,20 @@ namespace Renderer {
 
 	std::map<std::string, GraphicsPSO > grphicsPsoList;
 	std::vector<std::string> graphicsPsoListNames;
+	std::vector<std::string> cubePsoListNames;
+
+	std::map<std::string, GraphicsPSO > cubePsoList;
 
 	std::map<std::string, ComputePSO > computePsoList;
 	std::vector<std::string> computePsoListNames;
 
 	RootSignature defaultSignature;
 	RootSignature computeSignature;
+	RootSignature cubeMapSignature;
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;
+	std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElement;
+
 	D3D12_STATIC_SAMPLER_DESC defaultSampler;
 
 	D3D12_RASTERIZER_DESC defaultRasterizer;
@@ -49,9 +58,13 @@ namespace Renderer {
 
 		defaultSignature.Initialize(1, 3, &defaultSampler);
 		computeSignature.InitializeUAV(1, 0, nullptr);
+		cubeMapSignature.Initialize(1, 1, &defaultSampler);
 
 		GraphicsPSO msaaPso("Msaa");
 		GraphicsPSO wirePso("Wire");
+		GraphicsPSO cubeMapPso("DefaultCubeMap");
+		GraphicsPSO msaaCubeMapPso("MsaaCubeMap");
+		GraphicsPSO wireCubeMapPso("WireCubeMap");
 		
 		defaultElement =
 		{
@@ -59,10 +72,19 @@ namespace Renderer {
 			{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 			{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 		};
-		
+		simpleElement =
+		{
+			{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+		};
+
 		defaultRasterizer = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		wireRasterizer = defaultRasterizer;
 		wireRasterizer.FillMode = D3D12_FILL_MODE_WIREFRAME;
+		
+		D3D12_RASTERIZER_DESC cubeMapRasterizer = defaultRasterizer;
+		//cubeMapRasterizer.FrontCounterClockwise = TRUE;
+		//cubeMapRasterizer.FillMode = D3D12_FILL_MODE_WIREFRAME;
+		//cubeMapRasterizer.CullMode = D3D12_CULL_MODE_BACK;
 
 		defaultBlender = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		alphaBlender = defaultBlender;
@@ -85,9 +107,7 @@ namespace Renderer {
 		defaultPso.SetDepthStencilState(CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT));
 		defaultPso.SetSampleMask(UINT_MAX);
 		defaultPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
-		
 		defaultPso.SetRenderTargetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
-		
 		defaultPso.SetRootSignature(&defaultSignature);
 		
 		computePso.SetRootSignature(&computeSignature);
@@ -99,9 +119,27 @@ namespace Renderer {
 		wirePso = defaultPso;
 		wirePso.SetRasterizerState(wireRasterizer);
 
+		cubeMapPso = defaultPso;
+		cubeMapPso.SetInputLayout((UINT)simpleElement.size(), simpleElement.data());
+		cubeMapPso.SetRootSignature(&cubeMapSignature);
+		cubeMapPso.SetVertexShader(g_pCubeMapVS, sizeof(g_pCubeMapVS));
+		cubeMapPso.SetPixelShader(g_pCubeMapPS, sizeof(g_pCubeMapPS));
+		cubeMapPso.SetRasterizerState(cubeMapRasterizer);
+		cubeMapPso.SetRenderTargetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+
+		wireCubeMapPso = cubeMapPso;
+		wireCubeMapPso.SetRasterizerState(wireRasterizer);
+
+		msaaCubeMapPso = cubeMapPso;
+		msaaCubeMapPso.SetRenderTargetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
+
 		grphicsPsoList[defaultPso.GetName()] = defaultPso;
 		grphicsPsoList[wirePso.GetName()] = wirePso;
 		grphicsPsoList[msaaPso.GetName()] = msaaPso;
+		
+		cubePsoList[cubeMapPso.GetName()] = cubeMapPso;
+		cubePsoList[msaaCubeMapPso.GetName()] = msaaCubeMapPso;
+		cubePsoList[wireCubeMapPso.GetName()] = wireCubeMapPso;
 
 		computePsoList[computePso.GetName()] = computePso;
 
@@ -111,19 +149,21 @@ namespace Renderer {
 	{
 		defaultSignature.Finalize(device);
 		computeSignature.Finalize(device);
+		cubeMapSignature.Finalize(device);
 
 		for (auto& pso : grphicsPsoList) {
 			pso.second.Finalize(device);
 			graphicsPsoListNames.push_back(pso.first);
+		}
+		for (auto& pso : cubePsoList) {
+			pso.second.Finalize(device);
+			cubePsoListNames.push_back(pso.first);
 		}
 
 		for (auto& pso : computePsoList) {
 			pso.second.Finalize(device);
 			computePsoListNames.push_back(pso.first);
 		}
-	
 	}
-
 }
-
 

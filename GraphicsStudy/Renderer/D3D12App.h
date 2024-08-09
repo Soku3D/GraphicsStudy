@@ -35,6 +35,10 @@ namespace Renderer {
 		void Render(float& deltaTime) override;
 		void RenderGUI(float& deltaTime) override;
 
+		void RenderMeshes(float& deltaTime);
+
+		void RenderCubeMap(float& deltaTime);
+
 		void CreateCommandObjects();
 		void CreateDescriptorHeaps();
 		void FlushCommandQueue();
@@ -43,6 +47,7 @@ namespace Renderer {
 		void RenderFonts(const std::wstring& output, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors, std::shared_ptr<DirectX::SpriteBatch>& spriteBatch, std::shared_ptr<DirectX::SpriteFont>& font, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 		void CreateConstantBuffer();
 		void CreateTextures();
+		void CreateCubeMapTextures();
 		void CreateFontFromFile(const std::wstring& fileName, std::shared_ptr<DirectX::SpriteFont>& font, std::shared_ptr<DirectX::SpriteBatch>& spriteBatch, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors, bool bUseMsaa, DXGI_FORMAT& rtFormat, DXGI_FORMAT& dsFormat);
 
 	protected:
@@ -97,7 +102,8 @@ namespace Renderer {
 		ComPtr<ID3D12DescriptorHeap> m_rtvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_dsvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_cbvHeap;
-		ComPtr<ID3D12DescriptorHeap> m_srvHeap;
+		ComPtr<ID3D12DescriptorHeap> m_textureHeap;
+		ComPtr<ID3D12DescriptorHeap> m_cubeMapTextureHeap;
 
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;
@@ -106,15 +112,19 @@ namespace Renderer {
 		ComPtr<ID3D12Resource> m_passConstantBuffer;
 		UINT8* m_pCbvDataBegin = nullptr;
 		
+
 		PSConstantData* m_psConstantData;
 		ComPtr<ID3D12Resource> m_psConstantBuffer;
 		UINT8* m_pPSDataBegin = nullptr;
 
 		ComPtr<ID3D12Resource> m_uploadHeap;
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
+		std::shared_ptr<Core::StaticMesh> m_cubeMap;
 
 		std::wstring textureBasePath;
+		std::wstring cubeMapTextureBasePath;
 		std::vector<ComPtr<ID3D12Resource>> m_textureResources;
+		std::vector<ComPtr<ID3D12Resource>> m_cubeMaptextureResources;
 		std::map<std::wstring, unsigned int> m_textureMap;
 
 	protected:

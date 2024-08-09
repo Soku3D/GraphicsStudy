@@ -67,6 +67,30 @@ SimpleMeshData GeometryGenerator::SimpleBox(const float& length)
 	return data;
 }
 
+
+SimpleMeshData GeometryGenerator::SimpleCubeMapBox(const float& length)
+{
+	SimpleMeshData data;
+
+	float l = length / 2.f;
+
+	std::vector<Renderer::SimpleVertex> vertices = {
+		{Vector3(-l, -l, -l)},{Vector3(-l, l, -l)},{Vector3(l, l, -l)},{Vector3(l, -l, -l)},
+		{Vector3(-l, -l, l)},{Vector3(-l, l, l)},{Vector3(l, l, l)},{Vector3(l, -l, l)}
+	};
+	std::vector<uint32_t> indices = {
+		0, 2, 1, 0, 3, 2,
+		7, 5, 6, 7, 4, 5,
+		4, 1, 5, 4, 0, 1,
+		4, 3, 0, 4, 7, 3,
+		3, 6, 2, 3, 7, 6,
+		1, 6, 5, 1, 2, 6
+	};
+	data.Initialize(vertices, indices);
+
+	return data;
+}
+
 BasicMeshData GeometryGenerator::Box(const float& length, const std::wstring& texturePath)
 {
 	return Box(length, length, length, texturePath);

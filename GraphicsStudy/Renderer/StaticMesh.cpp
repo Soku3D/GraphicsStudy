@@ -8,13 +8,14 @@ Core::StaticMesh::StaticMesh():
 {
 }
 
-void Core::StaticMesh::Render(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
+void Core::StaticMesh::Render(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bIsCubeMap)
 {
 	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 	commandList->IASetIndexBuffer(&m_indexBufferView);
-
-	commandList->SetGraphicsRootConstantBufferView(1, m_objectConstantBuffer->GetGPUVirtualAddress());
 	
+	if (!bIsCubeMap) {
+		commandList->SetGraphicsRootConstantBufferView(1, m_objectConstantBuffer->GetGPUVirtualAddress());
+	}
 	commandList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
 }
 

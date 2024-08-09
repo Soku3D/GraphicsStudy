@@ -31,7 +31,7 @@ void Renderer::RootSignature::InitializeUAV(UINT uavCount, UINT cbCount, D3D12_S
 	rangeTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, uavCount, 0);
 	paramenters.resize(cbCount + 1);
 	
-	paramenters[0].InitAsDescriptorTable(uavCount, &rangeTable);
+	paramenters[0].InitAsDescriptorTable(1, &rangeTable);
 
 	for (UINT i = 1; i <= cbCount; i++)
 	{
@@ -56,7 +56,7 @@ void Renderer::RootSignature::Initialize(UINT srvCount, UINT cbCount, D3D12_STAT
 	rangeTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, srvCount, 0);
 
 	paramenters.resize(cbCount+1);
-	paramenters[0].InitAsDescriptorTable(1, &rangeTable, D3D12_SHADER_VISIBILITY_PIXEL);
+	paramenters[0].InitAsDescriptorTable(1 , &rangeTable, D3D12_SHADER_VISIBILITY_PIXEL);
 
 	for (UINT i = 1; i <= cbCount; i++)
 	{

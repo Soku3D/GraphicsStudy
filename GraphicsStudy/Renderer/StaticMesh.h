@@ -52,7 +52,7 @@ namespace Core {
 			m_texturePath = meshData.GetTexturePath();
 		}
 
-		void Render(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
+		void Render(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bIsCubeMap = false);
 		void Update(float& deltaTime);
 		std::wstring GetTexturePath() const { return m_texturePath; }
 	private:

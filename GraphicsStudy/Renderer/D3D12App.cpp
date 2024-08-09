@@ -13,7 +13,9 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 {
 	m_passConstantData = new GlobalVertexConstantData();
 	m_psConstantData = new PSConstantData();
+	
 	textureBasePath = L"Textures/";
+	cubeMapTextureBasePath = L"Textures/CubeMaps/";
 
 	m_psConstantData->light->position = DirectX::SimpleMath::Vector3(3.f, 3.f, -2.f);
 	m_psConstantData->material.shineiness = 40.f;
@@ -24,6 +26,9 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	gui_shineness = m_psConstantData->material.shineiness;
 	gui_diffuse = m_psConstantData->material.diffuse.x;
 	gui_specular = m_psConstantData->material.specular.x;
+
+	//bUseGUI = false;
+
 }
 
 Renderer::D3D12App::~D3D12App()
@@ -51,6 +56,7 @@ bool Renderer::D3D12App::Initialize()
 	Renderer::Finalize(m_device);
 
 	CreateTextures();
+	CreateCubeMapTextures();
 	CreateVertexAndIndexBuffer();
 
 	CreateFontFromFile(L"Fonts/default.spritefont", m_font, m_spriteBatch, m_resourceDescriptors, false, m_backbufferFormat, m_depthStencilFormat);
@@ -283,6 +289,7 @@ void Renderer::D3D12App::Update( float& deltaTime )
 	m_psConstantData->material.specular = DirectX::SimpleMath::Vector3(gui_specular);
 
 	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
+	
 	memcpy(m_pPSDataBegin, m_psConstantData, sizeof(PSConstantData));
 
 	for (auto& mesh : m_staticMeshes) {
@@ -316,81 +323,37 @@ void Renderer::D3D12App::UpdateGUI(float& deltaTime)
 
 void Renderer::D3D12App::Render(float& deltaTime)
 {
-	auto& pso = grphicsPsoList[currRenderMode];
-	bool msaaMode = false;
-	if (currRenderMode == "Msaa") {
-		msaaMode = true;
-	}
+	RenderMeshes(deltaTime);
 
-	ThrowIfFailed(m_commandAllocator->Reset());
-	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
-	
-	{
-		FLOAT clearColor[4] = { 1.f,1.f,1.f,1.f };
-		if (msaaMode) {
-			m_commandList->ClearRenderTargetView(MsaaRenderTargetView(), clearColor, 0, nullptr);
-			m_commandList->ClearDepthStencilView(MsaaDepthStencilView(),
-				D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-				1.f, 0, 0, NULL);
-			m_commandList->OMSetRenderTargets(1, &MsaaRenderTargetView(), true, &MsaaDepthStencilView());
-		}
-		else {
-			m_commandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
-			m_commandList->ClearDepthStencilView(HDRDepthStencilView(),
-				D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-				1.f, 0, 0, NULL);
-			m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
-		}
-
-		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_commandList->RSSetScissorRects(1, &m_scissorRect);
-		m_commandList->RSSetViewports(1, &m_viewport);
-		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
-
-		// View Proj Matrix Constant Buffer 
-		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
-		m_commandList->SetGraphicsRootConstantBufferView(3, m_psConstantBuffer->GetGPUVirtualAddress());
-
-		// Texture SRV Heap 
-		ID3D12DescriptorHeap* ppSrvHeaps[] = { m_srvHeap.Get() };
-		m_commandList->SetDescriptorHeaps(_countof(ppSrvHeaps), ppSrvHeaps);
-
-		for (int i = 0; i < m_staticMeshes.size(); ++i) {
-			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_srvHeap->GetGPUDescriptorHandleForHeapStart());
-
-			if (m_textureMap.count(m_staticMeshes[i]->GetTexturePath()) > 0) {
-				handle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath()], m_csuHeapSize);
-			}
-			else {
-				handle.Offset(m_textureMap[L"default.png"], m_csuHeapSize);
-			}
-			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
-
-			m_staticMeshes[i]->Render(deltaTime, m_commandList);
-		}
-
-	}
-	int time = (int)m_timer.GetElapsedTime();
-	
-	if (msaaMode) {
-		RenderFonts(std::to_wstring(time), m_msaaResourceDescriptors, m_msaaSpriteBatch, m_msaaFont, m_commandList);
-		ResolveSubresource(m_commandList, HDRRenderTargetBuffer(), MsaaRenderTargetBuffer());
-	}
-	else {
-		RenderFonts(std::to_wstring(time), m_resourceDescriptors, m_spriteBatch, m_font, m_commandList);
-		//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
-	}
-	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 
 	ThrowIfFailed(m_commandList->Close());
 
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
 
-	//ThrowIfFailed(m_swapChain->Present(0, 0));
-	//m_frameIndex = (m_frameIndex + 1) % m_swapChainCount;
-	
 	FlushCommandQueue();
+
+	RenderCubeMap(deltaTime);
+	
+	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* plists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
+
+	FlushCommandQueue();
+
+	//
+
+
+	/*ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* cubelists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(cubelists), cubelists);
+
+	FlushCommandQueue();*/
 }
 
 void Renderer::D3D12App::RenderGUI(float& deltaTime)
@@ -437,6 +400,119 @@ void Renderer::D3D12App::RenderGUI(float& deltaTime)
 	m_frameIndex = (m_frameIndex + 1) % m_swapChainCount;
 
 	FlushCommandQueue();
+}
+
+void Renderer::D3D12App::RenderMeshes(float& deltaTime) {
+	auto& pso = grphicsPsoList[currRenderMode];
+	bool msaaMode = false;
+	if (currRenderMode == "Msaa") {
+		msaaMode = true;
+	}
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+
+	{
+		FLOAT clearColor[4] = { 1.f,1.f,1.f,1.f };
+		if (msaaMode) {
+			m_commandList->ClearRenderTargetView(MsaaRenderTargetView(), clearColor, 0, nullptr);
+			m_commandList->ClearDepthStencilView(MsaaDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+				1.f, 0, 0, nullptr);
+
+			m_commandList->OMSetRenderTargets(1, &MsaaRenderTargetView(), true, &MsaaDepthStencilView());
+		}
+		else {
+			m_commandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
+			m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+				1.f, 0, 0, nullptr);
+			m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
+		}
+
+		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_commandList->RSSetScissorRects(1, &m_scissorRect);
+		m_commandList->RSSetViewports(1, &m_viewport);
+		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+
+		// View Proj Matrix Constant Buffer 
+		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
+		m_commandList->SetGraphicsRootConstantBufferView(3, m_psConstantBuffer->GetGPUVirtualAddress());
+
+		// Texture SRV Heap 
+		ID3D12DescriptorHeap* ppSrvHeaps[] = { m_textureHeap.Get() };
+		m_commandList->SetDescriptorHeaps(_countof(ppSrvHeaps), ppSrvHeaps);
+
+		for (int i = 0; i < m_staticMeshes.size(); ++i) {
+			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
+
+			if (m_textureMap.count(m_staticMeshes[i]->GetTexturePath()) > 0) {
+				handle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath()], m_csuHeapSize);
+			}
+			else {
+				handle.Offset(m_textureMap[L"default.png"], m_csuHeapSize);
+			}
+			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
+
+			m_staticMeshes[i]->Render(deltaTime, m_commandList, false);
+		}
+
+		if (msaaMode) {
+			//RenderFonts(std::to_wstring(time), m_msaaResourceDescriptors, m_msaaSpriteBatch, m_msaaFont, m_commandList);
+			//ResolveSubresource(m_commandList, HDRRenderTargetBuffer(), MsaaRenderTargetBuffer());
+		}
+		else {
+			//RenderFonts(std::to_wstring(time), m_resourceDescriptors, m_spriteBatch, m_font, m_commandList);
+		}
+	}
+}
+void Renderer::D3D12App::RenderCubeMap(float& deltaTime) 
+{
+	auto& pso = cubePsoList[(currRenderMode+"CubeMap")];
+	bool msaaMode = false;
+	if (currRenderMode == "Msaa") {
+		msaaMode = true;
+	}
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+
+	{
+		if (msaaMode) {
+
+			m_commandList->OMSetRenderTargets(1, &MsaaRenderTargetView(), true, &MsaaDepthStencilView());
+		}
+		else {
+	
+			m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
+		}
+
+		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+		m_commandList->RSSetScissorRects(1, &m_scissorRect);
+		m_commandList->RSSetViewports(1, &m_viewport);
+
+		// View Proj Matrix Constant Buffer 
+		m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer->GetGPUVirtualAddress());
+
+		// CubeMap Heap 
+		ID3D12DescriptorHeap* ppCubeHeaps[] = { m_cubeMapTextureHeap.Get() };
+		m_commandList->SetDescriptorHeaps(_countof(ppCubeHeaps), ppCubeHeaps);
+
+		m_commandList->SetGraphicsRootDescriptorTable(0, m_cubeMapTextureHeap->GetGPUDescriptorHandleForHeapStart());
+
+		m_cubeMap->Render(deltaTime, m_commandList, true);
+
+	}
+	//Render Font GUI
+	{
+		int time = (int)m_timer.GetElapsedTime();
+
+		if (msaaMode) {
+			RenderFonts(std::to_wstring(time), m_msaaResourceDescriptors, m_msaaSpriteBatch, m_msaaFont, m_commandList);
+			ResolveSubresource(m_commandList, HDRRenderTargetBuffer(), MsaaRenderTargetBuffer());
+		}
+		else {
+			RenderFonts(std::to_wstring(time), m_resourceDescriptors, m_spriteBatch, m_font, m_commandList);
+		}
+	}
 }
 
 void Renderer::D3D12App::CreateCommandObjects()
@@ -550,13 +626,15 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 	
 	m_staticMeshes.push_back(sphere);
 	m_staticMeshes.push_back(plane);
-	auto meshes = GeometryGenerator::ReadFromFile("zelda.fbx");
+	/*auto meshes = GeometryGenerator::ReadFromFile("zelda.fbx");
 	for (auto& mesh : meshes) {
 		std::shared_ptr<StaticMesh> newMesh = std::make_shared<StaticMesh>();
 		newMesh->Initialize(mesh, m_device, m_commandList, Vector3(0.f, -0.05f, 0.f));
 		m_staticMeshes.push_back(newMesh);
-	}
+	}*/
 
+	m_cubeMap = std::make_shared<StaticMesh>();
+	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(10.f), m_device, m_commandList);
 }
 
 void Renderer::D3D12App::RenderFonts(
@@ -601,6 +679,7 @@ void Renderer::D3D12App::CreateConstantBuffer()
 	ThrowIfFailed(m_passConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
 	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
 
+	
 	std::vector<PSConstantData> psConstantData = {
 		*m_psConstantData
 	};
@@ -622,6 +701,7 @@ void Renderer::D3D12App::CreateTextures() {
 		for (const auto& entry : fs::directory_iterator(path)) {
 			if (fs::is_regular_file(entry.status())) {
 				++file_count;
+				//std::cout << entry.path().filename().string() << '\n';
 			}
 		}
 	}
@@ -635,18 +715,62 @@ void Renderer::D3D12App::CreateTextures() {
 	srvHeapDesc.NodeMask = 0;
 	srvHeapDesc.NumDescriptors = file_count	;
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	m_device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_srvHeap));
+	m_device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_textureHeap));
 
 	m_textureResources.resize(file_count);
 	int mapIdx = 0;
 	if (fs::exists(path) && fs::is_directory(path)) {
 		for (const auto& entry : fs::directory_iterator(path)) {
-			std::wstring fileName = entry.path().filename().wstring();
-			Utility::CreateTextureBuffer(textureBasePath + fileName, m_textureResources[mapIdx], m_srvHeap, m_device, m_commandQueue, mapIdx, m_csuHeapSize);
-			m_textureMap.emplace(fileName, mapIdx++);
+			if (fs::is_regular_file(entry.status())) {
+				std::wstring fileName = entry.path().filename().wstring();
+				Utility::CreateTextureBuffer(textureBasePath + fileName, m_textureResources[mapIdx], m_textureHeap, m_device, m_commandQueue, mapIdx, m_csuHeapSize);
+				m_textureMap.emplace(fileName, mapIdx++);
+			}
 		}
 	}
 }
+
+void Renderer::D3D12App::CreateCubeMapTextures() {
+	namespace fs = std::filesystem;
+
+	fs::path path = fs::current_path();
+	path.append(cubeMapTextureBasePath);
+
+	int file_count = 0;
+	if (fs::exists(path) && fs::is_directory(path)) {
+		for (const auto& entry : fs::directory_iterator(path)) {
+			if (fs::is_regular_file(entry.status())) {
+				++file_count;
+				std::cout << entry.path().filename().string() << '\n';
+			}
+		}
+	}
+	else {
+		std::cerr << "현재 경로가 존재하지 않거나 디렉토리가 아닙니다." << std::endl;
+		return;
+	}
+	m_textureNum = file_count;
+	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
+	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	srvHeapDesc.NodeMask = 0;
+	srvHeapDesc.NumDescriptors = file_count;
+	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	m_device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_cubeMapTextureHeap));
+
+	bool IsCubeMap = true;
+	m_cubeMaptextureResources.resize(file_count);
+	int mapIdx = 0;
+	if (fs::exists(path) && fs::is_directory(path)) {
+		for (const auto& entry : fs::directory_iterator(path)) {
+			if (fs::is_regular_file(entry.status())) {
+				std::wstring fileName = entry.path().filename().wstring();
+				Utility::CreateTextureBuffer(cubeMapTextureBasePath + fileName, m_cubeMaptextureResources[mapIdx], m_cubeMapTextureHeap, m_device, m_commandQueue, mapIdx, m_csuHeapSize, &IsCubeMap);
+				m_textureMap.emplace(fileName, mapIdx++);
+			}
+		}
+	}
+}
+
 
 void Renderer::D3D12App::CreateFontFromFile(const std::wstring& fileName,
 	std::shared_ptr<DirectX::SpriteFont> & font, 

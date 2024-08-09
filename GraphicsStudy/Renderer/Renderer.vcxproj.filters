@@ -160,6 +160,8 @@
     <FxCompile Include="TestVS.hlsl" />
     <FxCompile Include="TestPS.hlsl" />
     <FxCompile Include="TestCS.hlsl" />
+    <FxCompile Include="CubeMapVS.hlsl" />
+    <FxCompile Include="CubeMapPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />

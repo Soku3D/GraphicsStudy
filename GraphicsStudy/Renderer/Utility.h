@@ -175,7 +175,6 @@ namespace Renderer {
 		}
 		
 		// Texture Buffer를 만들고 Texture에 대한 Descriptor를 Heap에 넣는다
-		static void CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Resource>& texture, ComPtr<ID3D12DescriptorHeap>& heap, 
-			ComPtr<ID3D12Device>& device, ComPtr<ID3D12CommandQueue>& commandQueue, int offset = 0 , int descriptorSize = 0);
+		static void CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Resource>& texture, ComPtr<ID3D12DescriptorHeap>& heap, ComPtr<ID3D12Device>& device, ComPtr<ID3D12CommandQueue>& commandQueue, int offset, int descriptorSize, bool* bIsCubeMap = nullptr);
 };
 }

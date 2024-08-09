@@ -29,6 +29,7 @@ namespace Renderer {
         this->m_psoDesc = pso.m_psoDesc;
         this->m_rootSignature = pso.m_rootSignature;
         this->m_pso = pso.m_pso;
+        //this->m_Name = pso.m_Name;
     }
 
     void GraphicsPSO::SetBlendState(const D3D12_BLEND_DESC& BlendDesc)
@@ -126,6 +127,7 @@ namespace Renderer {
         this->m_psoDesc = pso.m_psoDesc;
         this->m_rootSignature = pso.m_rootSignature;
         this->m_pso = pso.m_pso;
+        //this->m_Name = pso.m_Name;
     }
 
     void ComputePSO::Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device)

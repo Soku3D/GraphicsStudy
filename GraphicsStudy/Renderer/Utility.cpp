@@ -22,7 +22,7 @@ std::wstring DxException::ToString()const
 }
 
 void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Resource>& texture, ComPtr<ID3D12DescriptorHeap>& heap,
-    ComPtr<ID3D12Device>& device, ComPtr<ID3D12CommandQueue>& commandQueue, int offset, int descriptorSize)
+    ComPtr<ID3D12Device>& device, ComPtr<ID3D12CommandQueue>& commandQueue, int offset, int descriptorSize, bool* bIsCubeMap)
 {
     using namespace DirectX;
     
@@ -30,9 +30,17 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
 
     resourceUpload.Begin();
     if (path.substr(path.size() - 3) == L"dds") {
-        ThrowIfFailed(
-            CreateDDSTextureFromFile(device.Get(), resourceUpload, path.c_str(),
-                texture.ReleaseAndGetAddressOf()));
+        if (bIsCubeMap!=nullptr && *bIsCubeMap) {
+            ThrowIfFailed(
+                CreateDDSTextureFromFile(device.Get(), resourceUpload, path.c_str(),
+                    texture.ReleaseAndGetAddressOf(), false, 0, nullptr, bIsCubeMap));
+        }
+        else {
+            ThrowIfFailed(
+                CreateDDSTextureFromFile(device.Get(), resourceUpload, path.c_str(),
+                    texture.ReleaseAndGetAddressOf()));
+        }
+       
     }
     else {
         ThrowIfFailed(
@@ -44,6 +52,10 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Format = texture->GetDesc().Format;
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    if (bIsCubeMap!=nullptr) {
+        if(*bIsCubeMap == true)
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+    }
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     srvDesc.Texture2D.MostDetailedMip = 0;
     srvDesc.Texture2D.MipLevels = texture->GetDesc().MipLevels;
