@@ -29,7 +29,6 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
 
 	ResourceUploadBatch resourceUpload(device.Get());
 
-
 	resourceUpload.Begin();
 	if (path.substr(path.size() - 3) == L"dds") {
 		if (bIsCubeMap != nullptr && *bIsCubeMap) {
@@ -42,7 +41,6 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
 				CreateDDSTextureFromFile(device.Get(), resourceUpload, path.c_str(),
 					texture.ReleaseAndGetAddressOf()));
 		}
-
 	}
 	else {
 		ThrowIfFailed(
@@ -53,6 +51,7 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = texture->GetDesc().Format;
+	int width = texture->GetDesc().Width;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	if (bIsCubeMap != nullptr) {
 		if (*bIsCubeMap == true)

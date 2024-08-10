@@ -55,6 +55,7 @@ float4 ComputePhongShading(float2 uv, float3 worldPosition, float3 normal)
 {
     float4 ambient = g_basic.Sample(g_sampler, uv);
 
+    
     float3 toLight = normalize(light[0].position - worldPosition);
     float3 toEye = normalize(eyePosition - worldPosition);
     

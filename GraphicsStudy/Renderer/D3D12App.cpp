@@ -2,6 +2,7 @@
 #include "GeometryGenerator.h"
 #include "Renderer.h"
 #include <DirectXTexEXR.h>
+#include "directxtk12/DDSTextureLoader.h"
 using namespace Core;
 
 Renderer::D3D12App::D3D12App(const int& width, const int& height)
@@ -18,7 +19,7 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	cubeMapTextureBasePath = L"Textures/CubeMaps/";
 	exrTextureBasePath = L"Textures/HDR/";
 
-	m_psConstantData->light->position = DirectX::SimpleMath::Vector3(3.f, 3.f, -2.f);
+	m_psConstantData->light->position = DirectX::SimpleMath::Vector3(-3.f, 3.f, 0.f);
 	m_psConstantData->material.shineiness = 40.f;
 	m_psConstantData->material.diffuse = DirectX::SimpleMath::Vector3(0.2f);
 	m_psConstantData->material.specular = DirectX::SimpleMath::Vector3(0.8f);
@@ -59,11 +60,11 @@ bool Renderer::D3D12App::Initialize()
 	CreateTextures();
 	CreateCubeMapTextures();
 	CreateExrTexture();
-		
+
 	CreateVertexAndIndexBuffer();
 
-	CreateFontFromFile(L"Fonts/default.spritefont", m_font, m_spriteBatch, m_resourceDescriptors, false, m_backbufferFormat, m_depthStencilFormat);
-	CreateFontFromFile(L"Fonts/default.spritefont", m_msaaFont, m_msaaSpriteBatch, m_msaaResourceDescriptors, true, m_msaaFormat, m_depthStencilFormat);
+	CreateFontFromFile(L"Fonts/default.spritefont", m_font, m_spriteBatch, m_resourceDescriptors, false, m_hdrFormat, m_depthStencilFormat);
+	CreateFontFromFile(L"Fonts/default.spritefont", m_msaaFont, m_msaaSpriteBatch, m_msaaResourceDescriptors, true, m_hdrFormat, m_depthStencilFormat);
 
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
@@ -218,7 +219,12 @@ void Renderer::D3D12App::OnResize()
 
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
+	D3D12_UNORDERED_ACCESS_VIEW_DESC swapChainuavDesc;
+	swapChainuavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+	swapChainuavDesc.Format = m_backbufferFormat;
+	swapChainuavDesc.Texture2D.MipSlice = 0;
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(m_swapChainRtvHeap->GetCPUDescriptorHandleForHeapStart());
 	for (int i = 0; i < m_swapChainCount; i++)
 	{
 		m_swapChain->GetBuffer(i, IID_PPV_ARGS(m_renderTargets[i].ReleaseAndGetAddressOf()));
@@ -238,7 +244,7 @@ void Renderer::D3D12App::OnResize()
 	D3D12_RESOURCE_FLAGS rtvFlag = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
 	CreateRenderTargetBuffer(m_msaaRenderTarget, m_msaaFormat, true, rtvFlag);
-	CreateRenderTargetBuffer(m_hdrRenderTarget, m_backbufferFormat, false, uavFlag);
+	CreateRenderTargetBuffer(m_hdrRenderTarget, m_hdrFormat, false, uavFlag);
 
 	D3D12_RENDER_TARGET_VIEW_DESC msaaRtvDesc;
 	ZeroMemory(&msaaRtvDesc, sizeof(msaaRtvDesc));
@@ -252,18 +258,25 @@ void Renderer::D3D12App::OnResize()
 	ZeroMemory(&hdrRtvDesc, sizeof(hdrRtvDesc));
 
 	hdrRtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-	hdrRtvDesc.Format = m_backbufferFormat;
+	hdrRtvDesc.Format = m_hdrFormat;
 	hdrRtvDesc.Texture2D.MipSlice = 0;
-
+	
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
 	ZeroMemory(&uavDesc, sizeof(uavDesc));
 
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-	uavDesc.Format = m_backbufferFormat;
+	uavDesc.Format = m_hdrFormat;
 	uavDesc.Texture2D.MipSlice = 0;
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = m_hdrFormat;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
 
 	m_device->CreateRenderTargetView(m_hdrRenderTarget.Get(), &hdrRtvDesc, m_hdrRtvHeap->GetCPUDescriptorHandleForHeapStart());
 	m_device->CreateUnorderedAccessView(m_hdrRenderTarget.Get(), nullptr, &uavDesc, m_hdrUavHeap->GetCPUDescriptorHandleForHeapStart());
+	m_device->CreateShaderResourceView(m_hdrRenderTarget.Get(), &srvDesc, m_hdrSrvHeap->GetCPUDescriptorHandleForHeapStart());
 
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* cmdsLists[] = { m_commandList.Get() };
@@ -337,7 +350,7 @@ void Renderer::D3D12App::Render(float& deltaTime)
 
 	RenderCubeMap(deltaTime);
 
-	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 
 	ThrowIfFailed(m_commandList->Close());
 
@@ -345,8 +358,6 @@ void Renderer::D3D12App::Render(float& deltaTime)
 	m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
 
 	FlushCommandQueue();
-
-
 }
 
 void Renderer::D3D12App::RenderGUI(float& deltaTime)
@@ -397,7 +408,7 @@ void Renderer::D3D12App::RenderGUI(float& deltaTime)
 
 void Renderer::D3D12App::RenderMeshes(float& deltaTime) {
 	auto& pso = grphicsPsoList[currRenderMode];
-	bool msaaMode = false;
+	msaaMode = false;
 	if (currRenderMode == "Msaa") {
 		msaaMode = true;
 	}
@@ -431,7 +442,7 @@ void Renderer::D3D12App::RenderMeshes(float& deltaTime) {
 		m_commandList->SetGraphicsRootConstantBufferView(3, m_psConstantBuffer->GetGPUVirtualAddress());
 
 		// Texture SRV Heap 
-		ID3D12DescriptorHeap* ppSrvHeaps[] = { m_textureHeap.Get()};
+		ID3D12DescriptorHeap* ppSrvHeaps[] = { m_textureHeap.Get() };
 		m_commandList->SetDescriptorHeaps(_countof(ppSrvHeaps), ppSrvHeaps);
 
 		for (int i = 0; i < m_staticMeshes.size(); ++i) {
@@ -445,54 +456,52 @@ void Renderer::D3D12App::RenderMeshes(float& deltaTime) {
 			}
 			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
 
-			m_staticMeshes[i]->Render(deltaTime, m_commandList, false);
+			m_staticMeshes[i]->Render(deltaTime, m_commandList, true);
 		}
 
-		//if (msaaMode) {
-		//	//RenderFonts(std::to_wstring(time), m_msaaResourceDescriptors, m_msaaSpriteBatch, m_msaaFont, m_commandList);
-		//	//ResolveSubresource(m_commandList, HDRRenderTargetBuffer(), MsaaRenderTargetBuffer());
-		//}
-		//else {
-		//	//RenderFonts(std::to_wstring(time), m_resourceDescriptors, m_spriteBatch, m_font, m_commandList);
-		//}
+		if (msaaMode && !bUseCubeMap) {
+			ResolveSubresource(m_commandList, HDRRenderTargetBuffer(), MsaaRenderTargetBuffer());
+		}
 	}
 }
 void Renderer::D3D12App::RenderCubeMap(float& deltaTime)
 {
-	auto& pso = cubePsoList[(currRenderMode + "CubeMap")];
-	bool msaaMode = false;
-	if (currRenderMode == "Msaa") {
-		msaaMode = true;
-	}
-	ThrowIfFailed(m_commandAllocator->Reset());
-	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
-
+	if(bUseCubeMap)
 	{
-		if (msaaMode) {
-
-			m_commandList->OMSetRenderTargets(1, &MsaaRenderTargetView(), true, &MsaaDepthStencilView());
+		auto& pso = cubePsoList[(currRenderMode + "CubeMap")];
+		if (currRenderMode == "Msaa") {
+			msaaMode = true;
 		}
-		else {
+		ThrowIfFailed(m_commandAllocator->Reset());
+		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 
-			m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
+		{
+			if (msaaMode) {
+
+				m_commandList->OMSetRenderTargets(1, &MsaaRenderTargetView(), true, &MsaaDepthStencilView());
+			}
+			else {
+
+				m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
+			}
+
+			m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+			m_commandList->RSSetScissorRects(1, &m_scissorRect);
+			m_commandList->RSSetViewports(1, &m_viewport);
+
+			// View Proj Matrix Constant Buffer 
+			m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer->GetGPUVirtualAddress());
+
+			// CubeMap Heap 
+			ID3D12DescriptorHeap* ppCubeHeaps[] = { m_cubeMapTextureHeap.Get() };
+			m_commandList->SetDescriptorHeaps(_countof(ppCubeHeaps), ppCubeHeaps);
+
+			m_commandList->SetGraphicsRootDescriptorTable(0, m_cubeMapTextureHeap->GetGPUDescriptorHandleForHeapStart());
+
+			m_cubeMap->Render(deltaTime, m_commandList, false);
+
 		}
-
-		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
-		m_commandList->RSSetScissorRects(1, &m_scissorRect);
-		m_commandList->RSSetViewports(1, &m_viewport);
-
-		// View Proj Matrix Constant Buffer 
-		m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer->GetGPUVirtualAddress());
-
-		// CubeMap Heap 
-		ID3D12DescriptorHeap* ppCubeHeaps[] = { m_cubeMapTextureHeap.Get() };
-		m_commandList->SetDescriptorHeaps(_countof(ppCubeHeaps), ppCubeHeaps);
-
-		m_commandList->SetGraphicsRootDescriptorTable(0, m_cubeMapTextureHeap->GetGPUDescriptorHandleForHeapStart());
-
-		m_cubeMap->Render(deltaTime, m_commandList, true);
-
 	}
 	//Render Font GUI
 	{
@@ -550,7 +559,7 @@ void Renderer::D3D12App::CreateDescriptorHeaps() {
 	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
-	ThrowIfFailed(m_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_rtvHeap)));
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_swapChainRtvHeap)));
 
 	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
 	dsvHeapDesc.NumDescriptors = 2;
@@ -591,6 +600,15 @@ void Renderer::D3D12App::CreateDescriptorHeaps() {
 	uavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(m_device->CreateDescriptorHeap(
 		&uavHeapDesc, IID_PPV_ARGS(m_hdrUavHeap.GetAddressOf())));
+
+	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc;
+	ZeroMemory(&srvHeapDesc, sizeof(srvHeapDesc));
+	srvHeapDesc.NumDescriptors = 1;
+	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	ThrowIfFailed(m_device->CreateDescriptorHeap(
+		&srvHeapDesc, IID_PPV_ARGS(m_hdrSrvHeap.GetAddressOf())));
+	
 }
 
 void Renderer::D3D12App::FlushCommandQueue() {
@@ -619,15 +637,18 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 
 	m_staticMeshes.push_back(sphere);
 	m_staticMeshes.push_back(plane);
-	/*auto meshes = GeometryGenerator::ReadFromFile("zelda.fbx");
+	auto meshes = GeometryGenerator::ReadFromFile("rubber2.fbx");
 	for (auto& mesh : meshes) {
 		std::shared_ptr<StaticMesh> newMesh = std::make_shared<StaticMesh>();
 		newMesh->Initialize(mesh, m_device, m_commandList, Vector3(0.f, -0.05f, 0.f));
 		m_staticMeshes.push_back(newMesh);
-	}*/
+	}
 
 	m_cubeMap = std::make_shared<StaticMesh>();
 	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(10.f), m_device, m_commandList);
+
+	m_screenMesh = std::make_shared<Core::StaticMesh>();
+	m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
 }
 
 void Renderer::D3D12App::RenderFonts(
@@ -711,11 +732,14 @@ void Renderer::D3D12App::CreateTextures() {
 	m_device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_textureHeap));
 
 	m_textureResources.resize(file_count);
+	m_uploadResources.resize(file_count);
+
 	int mapIdx = 0;
 	if (fs::exists(path) && fs::is_directory(path)) {
 		for (const auto& entry : fs::directory_iterator(path)) {
 			if (fs::is_regular_file(entry.status())) {
 				std::wstring fileName = entry.path().filename().wstring();
+				
 				Utility::CreateTextureBuffer(textureBasePath + fileName, m_textureResources[mapIdx], m_textureHeap, m_device, m_commandQueue, m_commandList, mapIdx, m_csuHeapSize, nullptr);
 				m_textureMap.emplace(fileName, mapIdx++);
 			}
@@ -759,7 +783,7 @@ void Renderer::D3D12App::CreateCubeMapTextures() {
 			if (fs::is_regular_file(entry.status())) {
 				std::wstring fileName = entry.path().filename().wstring();
 				Utility::CreateTextureBuffer(cubeMapTextureBasePath + fileName, m_cubeMaptextureResources[mapIdx], m_cubeMapTextureHeap, m_device, m_commandQueue, m_commandList, mapIdx, m_csuHeapSize, &IsCubeMap);
-
+				
 				m_textureMap.emplace(fileName, mapIdx++);
 			}
 		}
@@ -796,7 +820,7 @@ void Renderer::D3D12App::CreateExrTexture() {
 
 	m_exrResources.resize(file_count);
 	m_exrUploadResources.resize(file_count);
-	
+
 	int mapIdx = 0;
 	if (fs::exists(path) && fs::is_directory(path)) {
 		for (const auto& entry : fs::directory_iterator(path)) {
@@ -811,11 +835,11 @@ void Renderer::D3D12App::CreateExrTexture() {
 
 void Renderer::D3D12App::CreateExrBuffer(std::wstring& path, ComPtr<ID3D12Resource>& upload, ComPtr<ID3D12Resource>& texture, UINT offset)
 {
-	
 	DirectX::TexMetadata metaData;
 	if (FAILED(DirectX::GetMetadataFromEXRFile(path.c_str(), metaData))) {
 		std::wcout << "GetMetadataFromEXRFile() failed: " << path << std::endl;
 	}
+	
 	DirectX::ScratchImage scratchImage;
 	if (FAILED(DirectX::LoadFromEXRFile(path.c_str(), nullptr, scratchImage))) {
 		std::wcout << "LoadFromEXRFile() failed: " << path << std::endl;
@@ -827,8 +851,8 @@ void Renderer::D3D12App::CreateExrBuffer(std::wstring& path, ComPtr<ID3D12Resour
 	D3D12_RESOURCE_DESC textureDesc = {};
 	textureDesc.MipLevels = 1;
 	textureDesc.Format = metaData.format;
-	textureDesc.Width = metaData.width;
-	textureDesc.Height = metaData.height;
+	textureDesc.Width = (UINT64)metaData.width;
+	textureDesc.Height = (UINT)metaData.height;
 	textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 	textureDesc.DepthOrArraySize = 1;
 	textureDesc.SampleDesc.Count = 1;
@@ -868,7 +892,7 @@ void Renderer::D3D12App::CreateExrBuffer(std::wstring& path, ComPtr<ID3D12Resour
 	srvDesc.Format = textureDesc.Format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_exrSrvHeap->GetCPUDescriptorHandleForHeapStart(),offset,m_csuHeapSize);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_exrSrvHeap->GetCPUDescriptorHandleForHeapStart(), offset, m_csuHeapSize);
 	m_device->CreateShaderResourceView(texture.Get(), &srvDesc, handle);
 }
 
@@ -909,7 +933,7 @@ void Renderer::D3D12App::CreateFontFromFile(const std::wstring& fileName,
 D3D12_CPU_DESCRIPTOR_HANDLE Renderer::D3D12App::CurrentBackBufferView() const
 {
 	return CD3DX12_CPU_DESCRIPTOR_HANDLE(
-		m_rtvHeap->GetCPUDescriptorHandleForHeapStart(),
+		m_swapChainRtvHeap->GetCPUDescriptorHandleForHeapStart(),
 		m_frameIndex,
 		m_rtvHeapSize
 	);
@@ -970,7 +994,7 @@ void  Renderer::D3D12App::ResolveSubresource(ComPtr<ID3D12GraphicsCommandList>& 
 		D3D12_RESOURCE_STATE_RENDER_TARGET,
 		D3D12_RESOURCE_STATE_RESOLVE_SOURCE));
 
-	commandList->ResolveSubresource(dest, 0, src, 0, m_backbufferFormat);
+	commandList->ResolveSubresource(dest, 0, src, 0, m_hdrFormat);
 
 	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 		src,

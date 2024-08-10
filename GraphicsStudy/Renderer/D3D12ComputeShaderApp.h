@@ -19,7 +19,11 @@ namespace Renderer {
 		void Render(float& deltaTime) override;
 		void RenderGUI(float& deltaTime) override;
 
+		void CopyResourceToSwapChain(float& deltaTime);
+
 	private:
+
+
 		CSConstantData* psConstantData;
 		UINT8* m_pCbufferBegin = nullptr;
 		ComPtr<ID3D12Resource> m_csBuffer;

@@ -85,7 +85,9 @@ namespace Renderer {
 
 		UINT m_numQualityLevels = 0;
 		UINT m_sampleCount = 4;
-		DXGI_FORMAT m_backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		DXGI_FORMAT m_backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		//DXGI_FORMAT m_backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		DXGI_FORMAT m_hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		DXGI_FORMAT m_msaaFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		DXGI_FORMAT m_depthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
@@ -102,7 +104,9 @@ namespace Renderer {
 		UINT m_dsvHeapSize = 0;
 		UINT m_csuHeapSize = 0;
 
-		ComPtr<ID3D12DescriptorHeap> m_rtvHeap;
+		ComPtr<ID3D12DescriptorHeap> m_swapChainRtvHeap;
+		ComPtr<ID3D12DescriptorHeap> m_swapChainUavHeap;
+
 		ComPtr<ID3D12DescriptorHeap> m_dsvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_cbvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_textureHeap;
@@ -122,12 +126,14 @@ namespace Renderer {
 
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
 		std::shared_ptr<Core::StaticMesh> m_cubeMap;
+		std::shared_ptr<Core::StaticMesh> m_screenMesh;
 
 		std::wstring textureBasePath;
 		std::wstring cubeMapTextureBasePath;
 		std::wstring exrTextureBasePath;
 
 		std::vector<ComPtr<ID3D12Resource>> m_textureResources;
+		std::vector<ComPtr<ID3D12Resource>> m_uploadResources;
 		std::vector<ComPtr<ID3D12Resource>> m_cubeMaptextureResources;
 		
 		std::vector<ComPtr<ID3D12Resource>> m_exrUploadResources;
@@ -163,9 +169,11 @@ namespace Renderer {
 		ComPtr<ID3D12DescriptorHeap> m_hdrRtvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_hdrDepthHeap;
 		ComPtr<ID3D12DescriptorHeap> m_hdrUavHeap;
+		ComPtr<ID3D12DescriptorHeap> m_hdrSrvHeap;
 
 	protected:
 		std::string currRenderMode = "Msaa";
+		bool msaaMode = true;
 		DirectX::SimpleMath::Vector3 gui_lightPos;
 		float gui_shineness;
 		float gui_diffuse;

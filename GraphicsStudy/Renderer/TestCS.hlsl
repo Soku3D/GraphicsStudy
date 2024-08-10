@@ -1,4 +1,4 @@
-RWTexture2D<float4> gOutput : register(u0);
+RWTexture2D<float4> gOutput : register(u0); // swapChain
 
 cbuffer g_csConstant : register(b0)
 {
@@ -7,11 +7,9 @@ cbuffer g_csConstant : register(b0)
 [numthreads(32, 32, 1)]
 void main( int3 gID : SV_GroupID ,uint3 DTid : SV_DispatchThreadID )
 {
-    float4 yellow = float4(1.f, 1.f, 0.f, 1.f);
-    float4 green = float4(0.f, 1.f, 0.f, 1.f);
-    if (DTid.x < time*32.f)
-    {
-        gOutput[DTid.xy] = yellow;
-    }
-    
+    float expose = 1.f;
+    float gamma = 2.2f;
+    float invGamma = 1.f / gamma;
+    gOutput[DTid.xy] = float4(pow(gOutput[DTid.xy].rgb, invGamma), gOutput[DTid.xy].a);
+        
 }

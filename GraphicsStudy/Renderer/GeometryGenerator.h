@@ -12,6 +12,7 @@ public:
 	static SimpleMeshData SimpleRectangle(const float& length);
 	static SimpleMeshData SimpleBox(const float& length);
 	static SimpleMeshData SimpleCubeMapBox(const float& length);
+	static BasicMeshData Rectangle(const float& length, const std::wstring& texturePath = L"");
 	static BasicMeshData Box(const float& length, const std::wstring& texturePath = L"");
 	static BasicMeshData Box(const float& x, const float& y, const float& z, const std::wstring& texturePath);
 	static BasicMeshData Grid(const float& xLength, const float& yLength, const int& x, const int& y, const std::wstring& texturePath = L"");

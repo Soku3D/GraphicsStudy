@@ -91,6 +91,31 @@ SimpleMeshData GeometryGenerator::SimpleCubeMapBox(const float& length)
 	return data;
 }
 
+BasicMeshData GeometryGenerator::Rectangle(const float& length, const std::wstring& texturePath)
+{
+	BasicMeshData data;
+
+	float hX = length / 2.f;
+	float hY = length / 2.f;
+	
+
+	std::vector<Renderer::Vertex> vertices = {
+		{Vector3(-hX, -hY, 0.f), Vector3(0.f,0.f,-1.f), Vector2(0.f, 1.f)},
+		{Vector3(-hX, hY,  0.f), Vector3(0.f,0.f,-1.f), Vector2(0.f, 0.f)},
+		{Vector3(hX, hY,  0.f), Vector3(0.f,0.f,-1.f), Vector2(1.f, 0.f)},
+		{Vector3(hX, -hY,  0.f), Vector3(0.f,0.f,-1.f), Vector2(1.f, 1.f)},
+
+	};
+	std::vector<uint32_t> indices = {
+		0,1,2,0,2,3
+	};
+
+
+	data.Initialize(vertices, indices, texturePath);
+
+	return data;
+}
+
 BasicMeshData GeometryGenerator::Box(const float& length, const std::wstring& texturePath)
 {
 	return Box(length, length, length, texturePath);
@@ -340,13 +365,13 @@ std::vector<BasicMeshData> GeometryGenerator::ReadFromFile(std::string filename)
     float cx = (vmax.x + vmin.x) * 0.5f, cy = (vmax.y + vmin.y) * 0.5f,
           cz = (vmax.z + vmin.z) * 0.5f;
 
-    for (auto &mesh : meshes) {
-        for (auto &v : mesh.m_vertices) {
-            v.position.x = (v.position.x - cx) / dl;
-            v.position.y = (v.position.y - cy) / dl;
-            v.position.z = (v.position.z - cz) / dl;
-        }
-    }
+	for (auto& mesh : meshes) {
+		for (auto& v : mesh.m_vertices) {
+			v.position.x = (v.position.x - cx) / dl;
+			v.position.y = (v.position.y - cy) / dl;
+			v.position.z = (v.position.z - cz) / dl;
+		}
+	}
 
     return meshes;
 }

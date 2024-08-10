@@ -7,8 +7,14 @@
 #include "CubeMapVS.h"
 #include "CubeMapPS.h"
 
-namespace Renderer {
+#include "CopyVS.h"
+#include "CopyPS.h"
 
+namespace Renderer {
+	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+	DXGI_FORMAT hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	
 	UINT msaaCount = 4;
 	UINT msaaQuality = 0;
 
@@ -16,10 +22,12 @@ namespace Renderer {
 	ComputePSO computePso("Compute");
 
 	std::map<std::string, GraphicsPSO > grphicsPsoList;
+	std::map<std::string, GraphicsPSO > cubePsoList;
+	std::map<std::string, GraphicsPSO > utilityPsoList;
+
 	std::vector<std::string> graphicsPsoListNames;
 	std::vector<std::string> cubePsoListNames;
-
-	std::map<std::string, GraphicsPSO > cubePsoList;
+	std::vector<std::string> utilityPsoListNames;
 
 	std::map<std::string, ComputePSO > computePsoList;
 	std::vector<std::string> computePsoListNames;
@@ -27,6 +35,8 @@ namespace Renderer {
 	RootSignature defaultSignature;
 	RootSignature computeSignature;
 	RootSignature cubeMapSignature;
+    RootSignature copySignature;
+
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElement;
@@ -56,9 +66,11 @@ namespace Renderer {
 		defaultSampler.RegisterSpace = 0;
 		defaultSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
+		// Init Signatures
 		defaultSignature.Initialize(1, 3, &defaultSampler);
-		computeSignature.InitializeUAV(1, 1, nullptr);
+		computeSignature.InitializeUAV(1,1, nullptr);
 		cubeMapSignature.Initialize(1, 1, &defaultSampler);
+		copySignature.Initialize(1, 0, &defaultSampler);
 
 		GraphicsPSO msaaPso("Msaa");
 		GraphicsPSO wirePso("Wire");
@@ -66,6 +78,8 @@ namespace Renderer {
 		GraphicsPSO msaaCubeMapPso("MsaaCubeMap");
 		GraphicsPSO wireCubeMapPso("WireCubeMap");
 		
+		GraphicsPSO copyPso("Copy");
+				
 		defaultElement =
 		{
 			{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
@@ -107,14 +121,14 @@ namespace Renderer {
 		defaultPso.SetDepthStencilState(CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT));
 		defaultPso.SetSampleMask(UINT_MAX);
 		defaultPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
-		defaultPso.SetRenderTargetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		defaultPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 		defaultPso.SetRootSignature(&defaultSignature);
 		
 		computePso.SetRootSignature(&computeSignature);
 		computePso.SetComputeShader(g_pTestCS, sizeof(g_pTestCS));
 
 		msaaPso = defaultPso;
-		msaaPso.SetRenderTargetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
+		msaaPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
 		
 		wirePso = defaultPso;
 		wirePso.SetRasterizerState(wireRasterizer);
@@ -125,17 +139,25 @@ namespace Renderer {
 		cubeMapPso.SetVertexShader(g_pCubeMapVS, sizeof(g_pCubeMapVS));
 		cubeMapPso.SetPixelShader(g_pCubeMapPS, sizeof(g_pCubeMapPS));
 		cubeMapPso.SetRasterizerState(cubeMapRasterizer);
-		cubeMapPso.SetRenderTargetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		cubeMapPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 
 		wireCubeMapPso = cubeMapPso;
 		wireCubeMapPso.SetRasterizerState(wireRasterizer);
 
 		msaaCubeMapPso = cubeMapPso;
-		msaaCubeMapPso.SetRenderTargetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
+		msaaCubeMapPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
+
+		copyPso = defaultPso;
+		copyPso.SetRenderTargetFormat(backbufferFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
+		copyPso.SetRootSignature(&copySignature);
+		copyPso.SetVertexShader(g_pCopyVS, sizeof(g_pCopyVS));
+		copyPso.SetPixelShader(g_pCopyPS, sizeof(g_pCopyPS));
 
 		grphicsPsoList[defaultPso.GetName()] = defaultPso;
 		grphicsPsoList[wirePso.GetName()] = wirePso;
 		grphicsPsoList[msaaPso.GetName()] = msaaPso;
+		
+		utilityPsoList[copyPso.GetName()] = copyPso;
 		
 		cubePsoList[cubeMapPso.GetName()] = cubeMapPso;
 		cubePsoList[msaaCubeMapPso.GetName()] = msaaCubeMapPso;
@@ -150,6 +172,7 @@ namespace Renderer {
 		defaultSignature.Finalize(device);
 		computeSignature.Finalize(device);
 		cubeMapSignature.Finalize(device);
+		copySignature.Finalize(device);
 
 		for (auto& pso : grphicsPsoList) {
 			pso.second.Finalize(device);
@@ -159,7 +182,10 @@ namespace Renderer {
 			pso.second.Finalize(device);
 			cubePsoListNames.push_back(pso.first);
 		}
-
+		for (auto& pso : utilityPsoList) {
+			pso.second.Finalize(device);
+			utilityPsoListNames.push_back(pso.first);
+		}
 		for (auto& pso : computePsoList) {
 			pso.second.Finalize(device);
 			computePsoListNames.push_back(pso.first);

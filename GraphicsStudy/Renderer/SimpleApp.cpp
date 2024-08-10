@@ -198,7 +198,7 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
         if (raw.data.mouse.usButtonFlags == RI_MOUSE_RIGHT_BUTTON_DOWN) {
             if (!bIsFPSMode) {
                 GetCursorPos(&m_fpsModeCursorPos);
-                std::cout << m_fpsModeCursorPos.x << " " << m_fpsModeCursorPos.y << std::endl;
+                //std::cout << m_fpsModeCursorPos.x << " " << m_fpsModeCursorPos.y << std::endl;
                 bIsFPSMode = true;
                 ShowCursor(FALSE);
             }         
