@@ -113,6 +113,9 @@ namespace Renderer {
 
                 vertex.normal.Normalize();
             }
+            else {
+                std::cout << "NULL Normals" << std::endl;
+            }
          
 
             if (mesh->mTextureCoords[0]) {

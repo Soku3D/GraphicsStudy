@@ -637,7 +637,7 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 
 	m_staticMeshes.push_back(sphere);
 	m_staticMeshes.push_back(plane);
-	auto meshes = GeometryGenerator::ReadFromFile("rubber2.fbx");
+	auto meshes = GeometryGenerator::ReadFromFile("tower2.fbx");
 	for (auto& mesh : meshes) {
 		std::shared_ptr<StaticMesh> newMesh = std::make_shared<StaticMesh>();
 		newMesh->Initialize(mesh, m_device, m_commandList, Vector3(0.f, -0.05f, 0.f));
