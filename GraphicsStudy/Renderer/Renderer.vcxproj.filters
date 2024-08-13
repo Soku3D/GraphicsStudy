@@ -164,8 +164,14 @@
     <FxCompile Include="CubeMapPS.hlsl" />
     <FxCompile Include="CopyVS.hlsl" />
     <FxCompile Include="CopyPS.hlsl" />
+    <FxCompile Include="GeometryPassVS.hlsl" />
+    <FxCompile Include="GeometryPassPS.hlsl" />
+    <FxCompile Include="LightPassPS.hlsl" />
+    <FxCompile Include="LightPassVS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />
+    <None Include="GeometryPass.hlsli" />
+    <None Include="LightPass.hlsli" />
   </ItemGroup>
 </Project>

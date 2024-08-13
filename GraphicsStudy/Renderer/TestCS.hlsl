@@ -4,6 +4,7 @@ cbuffer g_csConstant : register(b0)
 {
     float time;
 }
+
 [numthreads(32, 32, 1)]
 void main( int3 gID : SV_GroupID ,uint3 DTid : SV_DispatchThreadID )
 {
@@ -11,5 +12,4 @@ void main( int3 gID : SV_GroupID ,uint3 DTid : SV_DispatchThreadID )
     float gamma = 2.2f;
     float invGamma = 1.f / gamma;
     gOutput[DTid.xy] = float4(pow(gOutput[DTid.xy].rgb, invGamma), gOutput[DTid.xy].a);
-        
 }
