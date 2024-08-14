@@ -2,6 +2,7 @@
 #include "directxtk/SimpleMath.h"
 #include "ModelLoader.h"
 
+
 using DirectX::SimpleMath::Vector3;
 using DirectX::SimpleMath::Vector2;
 using namespace Renderer;
@@ -338,16 +339,15 @@ BasicMeshData GeometryGenerator::Sphere(const float& radius, const int& x, const
 	return data;
 }
 						   
-std::vector<BasicMeshData> GeometryGenerator::ReadFromFile(std::string filename) {
+std::tuple<std::vector<BasicMeshData>, Animation::AnimationData> GeometryGenerator::ReadFromFile(std::string filename, bool loadAnimation) {
 
     using namespace DirectX;
 
     ModelLoader modelLoader;
-    modelLoader.Load(filename);
+    modelLoader.Load(filename, loadAnimation);
     std::vector<BasicMeshData> &meshes = modelLoader.meshes;
-
-    // Normalize vertices
-    Vector3 vmin(1000, 1000, 1000);
+	   
+    /*Vector3 vmin(1000, 1000, 1000);
     Vector3 vmax(-1000, -1000, -1000);
     for (auto &mesh : meshes) {
         for (auto &v : mesh.m_vertices) {
@@ -361,17 +361,17 @@ std::vector<BasicMeshData> GeometryGenerator::ReadFromFile(std::string filename)
     }
 
     float dx = vmax.x - vmin.x, dy = vmax.y - vmin.y, dz = vmax.z - vmin.z;
-    float dl = XMMax(XMMax(dx, dy), dz);
-    float cx = (vmax.x + vmin.x) * 0.5f, cy = (vmax.y + vmin.y) * 0.5f,
-          cz = (vmax.z + vmin.z) * 0.5f;
+	float scale = 1.f / XMMax(XMMax(dx, dy), dz);
+    
+	Vector3 translation = -(vmin + vmax) * 0.5f;
 
 	for (auto& mesh : meshes) {
 		for (auto& v : mesh.m_vertices) {
-			v.position.x = (v.position.x - cx) / dl;
-			v.position.y = (v.position.y - cy) / dl;
-			v.position.z = (v.position.z - cz) / dl;
+			v.position = (v.position + translation) * scale;
 		}
 	}
-
-    return meshes;
+	modelLoader.m_animeData.defaultTransform =
+		DirectX::SimpleMath::Matrix::CreateTranslation(translation) * DirectX::SimpleMath::Matrix::CreateScale(scale);*/
+	return { meshes, modelLoader.m_animeData };
 }
+

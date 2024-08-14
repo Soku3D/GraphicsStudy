@@ -2,9 +2,11 @@
 
 #include <vector>
 #include <string>
+#include <tuple>
 
 #include "Vertex.h"
 #include "MeshData.h"
+#include "AnimationClip.h"
 
 class GeometryGenerator {
 public:
@@ -18,6 +20,6 @@ public:
 	static BasicMeshData Grid(const float& xLength, const float& yLength, const int& x, const int& y, const std::wstring& texturePath = L"");
 	static BasicMeshData Cyilinder(const float& topRadius, const float& bottomRadius, const float& height, const int& x, const int& y, const std::wstring& texturePath = L"");
 	static BasicMeshData Sphere(const float& radius, const int& x, const int& y, const std::wstring& texturePath = L"");
-	static std::vector<BasicMeshData> ReadFromFile(std::string filename);
+	static std::tuple<std::vector<BasicMeshData>, Animation::AnimationData> ReadFromFile(std::string filename, bool loadAnimation = false);
 };
 

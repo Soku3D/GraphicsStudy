@@ -13,6 +13,7 @@ public:
 	std::vector<Vertex> m_vertices;
 	std::vector<uint32_t> m_indices;
 	std::wstring m_texturePath;
+	std::string m_name;
 };
 //typedef MeshData<Renderer::SimpleVertex> SimpleMeshData;
 using SimpleMeshData = MeshData<Renderer::SimpleVertex>;

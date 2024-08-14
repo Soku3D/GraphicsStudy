@@ -2,14 +2,15 @@
 namespace Core {
 
 	Camera::Camera() :
-		m_position(DirectX::SimpleMath::Vector3(0.f, 0.f, -1.f)),
-		m_forwardDirection(DirectX::SimpleMath::Vector3(0.f, 0.f, 1.f)),
+		m_position(DirectX::SimpleMath::Vector3(0.f, 1.f, -2.f)),
+		m_forwardDirection(DirectX::SimpleMath::Vector3(0.f, -0.3f, 1.f)),
 		m_upDirection(DirectX::SimpleMath::Vector3(0.f, 1.f, 0.f)),
 		m_rightDirection(DirectX::SimpleMath::Vector3(1.f, 0.f, 0.f)),
 		m_farZ(100.f),
 		m_nearZ(0.1f),
 		Actor()
 	{
+		m_forwardDirection.Normalize();
 		m_fov = DirectX::XMConvertToRadians(70.f);
 		m_delTheta = DirectX::XMConvertToRadians(0.2f);
 		m_delSine = sin(m_delTheta / 2.f);
@@ -32,11 +33,11 @@ namespace Core {
 	void Camera::SetRotation(int deltaX, int deltaY) {
 		m_xTheta += deltaY * m_aspectRatio * m_delTheta;
 		m_yTheta += (float)deltaX * m_delTheta;
-
-		if (m_xTheta >= DirectX::XM_PIDIV2) {
-			m_xTheta = DirectX::XM_PIDIV2 - 0.001f;
+		// TODO: 기준 방향벡터에 대해 90 도 회전한 경우로 수정
+		if (m_xTheta >= DirectX::XM_PIDIV2 - 0.5f) {
+			m_xTheta = DirectX::XM_PIDIV2 - 0.5f;
 		}
-		if (m_xTheta <= -DirectX::XM_PIDIV2) {
+		if (m_xTheta <= -DirectX::XM_PIDIV2 + 0.001f) {
 			m_xTheta = -DirectX::XM_PIDIV2 + 0.001f;
 		}
 	}

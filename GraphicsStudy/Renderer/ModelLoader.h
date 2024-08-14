@@ -9,18 +9,21 @@
 
 #include "MeshData.h"
 #include "Vertex.h"
+#include "AnimationClip.h"
 
 namespace Renderer {
 
     class ModelLoader {
     public:
         ModelLoader();
-        void Load(std::string filename);
+        void Load(std::string filename, bool loadAnimation = false);
+        void ReadAnimation(const aiScene* pScene);
         //void Load(std::string basePath, std::string filename);
 
         void ProcessNode(aiNode* node, const aiScene* scene,
             DirectX::SimpleMath::Matrix tr);
-
+        
+        Animation::AnimationData m_animeData;
         BasicMeshData ProcessMesh(aiMesh* mesh, const aiScene* scene);
 
     public:

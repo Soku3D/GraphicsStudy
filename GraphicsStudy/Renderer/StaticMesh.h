@@ -19,6 +19,13 @@ namespace Core {
 			m_indexUpload.Reset();
 			m_indexGpu.Reset();
 		};
+		std::vector<Animation::AnimationClip::Key> m_keys;
+		std::string m_name;
+		double m_secondPerFrames = 0.f;
+		double m_animationSpeed = 1.f;
+		DirectX::SimpleMath::Matrix m_invertTranspose = DirectX::SimpleMath::Matrix();
+		DirectX::SimpleMath::Matrix m_transformFBXAnimation = DirectX::SimpleMath::Matrix();
+		bool m_loopAnimation = false;
 
 		template <typename Vertex>
 		void Initialize(MeshData<Vertex>& meshData,
@@ -27,6 +34,8 @@ namespace Core {
 			const DirectX::SimpleMath::Vector3& modelPosition = DirectX::SimpleMath::Vector3::Zero, 
 			Material& material = Material())
 		{
+			m_name = meshData.m_name;
+
 			Renderer::Utility::CreateBuffer(meshData.m_vertices, m_vertexUpload, m_vertexGpu, device, commandList);
 			Renderer::Utility::CreateBuffer(meshData.m_indices, m_indexUpload, m_indexGpu, device, commandList);
 
@@ -40,6 +49,7 @@ namespace Core {
 			m_objectConstantData = new ObjectConstantData();
 			
 			m_objectConstantData->Model = DirectX::XMMatrixTranslation(modelPosition.x, modelPosition.y, modelPosition.z);
+			m_transformFBXAnimation = m_objectConstantData->Model;
 			m_objectConstantData->Model = m_objectConstantData->Model.Transpose();
 
 			std::vector<ObjectConstantData> constantData = { *m_objectConstantData	};
@@ -52,9 +62,23 @@ namespace Core {
 			m_texturePath = meshData.GetTexturePath();
 		}
 
-		void Render(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat = true);
-		void Update(float& deltaTime);
+		void InitAnimation(std::vector<Animation::AnimationClip::Key>& keys, 
+			double& tickPerSecond, 
+			double animationSpeed = 1.0,
+			bool bLoop = false) 
+		{
+			m_keys = keys;
+			m_invertTranspose = m_keys[0].GetTransform().Invert();
+			m_secondPerFrames = 1.0 / tickPerSecond;
+			m_animationSpeed = animationSpeed;
+			m_loopAnimation = bLoop;
+		}
+
+		void Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat = true);
+		void Update(const float& deltaTime);
+	
 		std::wstring GetTexturePath() const { return m_texturePath; }
+
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_objectConstantBuffer;
 		ObjectConstantData* m_objectConstantData;

@@ -3,12 +3,10 @@ SamplerState g_sampler : register(s0);
 
 struct Material
 {
-    float3 ambient;
-    float shineiness;
-    float3 diffuse;
-    float dummy1;
-    float3 specular;
-    float dummy2;
+    float ambient;
+    float diffuse;
+    float specular;
+    float shininess;
 };
 
 cbuffer cbPerObject : register(b0)
@@ -42,6 +40,6 @@ struct PSOutput
 {
     float4 position : SV_Target0;
     float4 normal : SV_Target1;
-    float4 diffuseColor : SV_Target2;
-    float4 ambientColor : SV_Target3;
+    float4 ambientColor : SV_Target2;
+    float4 specularColor : SV_Target3;
 };

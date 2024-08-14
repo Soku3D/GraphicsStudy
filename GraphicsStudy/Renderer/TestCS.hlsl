@@ -11,5 +11,14 @@ void main( int3 gID : SV_GroupID ,uint3 DTid : SV_DispatchThreadID )
     float expose = 1.f;
     float gamma = 2.2f;
     float invGamma = 1.f / gamma;
-    gOutput[DTid.xy] = float4(pow(gOutput[DTid.xy].rgb, invGamma), gOutput[DTid.xy].a);
+    if (DTid.x > 500)
+    {
+        gOutput[DTid.xy] = float4(pow(gOutput[DTid.xy].rgb, invGamma), gOutput[DTid.xy].a);
+        
+    }
+    else
+    {
+        gOutput[DTid.xy] = gOutput[DTid.xy];
+        
+    }
 }

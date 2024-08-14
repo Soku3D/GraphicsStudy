@@ -10,11 +10,21 @@
 #include "CopyVS.h"
 #include "CopyPS.h"
 
+#include "GeometryPassVS.h"
+#include "GeometryPassPS.h"
+
 namespace Renderer {
 	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_FORMAT hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	
+	DXGI_FORMAT geometryPassFormats[geometryPassNum] =
+	{
+		DXGI_FORMAT_R16G16B16A16_FLOAT,
+		DXGI_FORMAT_R16G16B16A16_FLOAT,
+		DXGI_FORMAT_R16G16B16A16_FLOAT,
+		DXGI_FORMAT_R16G16B16A16_FLOAT
+	};
+
 	UINT msaaCount = 4;
 	UINT msaaQuality = 0;
 
@@ -33,6 +43,7 @@ namespace Renderer {
 	std::vector<std::string> computePsoListNames;
 
 	RootSignature defaultSignature;
+	RootSignature geometryPassSignature;
 	RootSignature computeSignature;
 	RootSignature cubeMapSignature;
     RootSignature copySignature;
@@ -71,13 +82,20 @@ namespace Renderer {
 		computeSignature.InitializeUAV(1,1, nullptr);
 		cubeMapSignature.Initialize(1, 1, &defaultSampler);
 		copySignature.Initialize(1, 0, &defaultSampler);
+		
+		geometryPassSignature.Initialize(1, 2, &defaultSampler);
 
 		GraphicsPSO msaaPso("Msaa");
 		GraphicsPSO wirePso("Wire");
+
 		GraphicsPSO cubeMapPso("DefaultCubeMap");
 		GraphicsPSO msaaCubeMapPso("MsaaCubeMap");
 		GraphicsPSO wireCubeMapPso("WireCubeMap");
 		
+		GraphicsPSO defaultGeometryPassPso("DefaultGeometryPass");
+		GraphicsPSO msaaGeometryPassPso("MsaaGeometryPass");
+		GraphicsPSO wireGeometryPassPso("WireGeometryPass");
+
 		GraphicsPSO copyPso("Copy");
 				
 		defaultElement =
@@ -95,6 +113,8 @@ namespace Renderer {
 		wireRasterizer = defaultRasterizer;
 		wireRasterizer.FillMode = D3D12_FILL_MODE_WIREFRAME;
 		
+		//D3D12_DEPTH_STENCILOP_DESC depthStencilDesc;
+
 		D3D12_RASTERIZER_DESC cubeMapRasterizer = defaultRasterizer;
 		//cubeMapRasterizer.FrontCounterClockwise = TRUE;
 		//cubeMapRasterizer.FillMode = D3D12_FILL_MODE_WIREFRAME;
@@ -124,6 +144,18 @@ namespace Renderer {
 		defaultPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 		defaultPso.SetRootSignature(&defaultSignature);
 		
+		defaultGeometryPassPso = defaultPso;
+		defaultGeometryPassPso.SetRootSignature(&geometryPassSignature);
+		defaultGeometryPassPso.SetVertexShader(g_pGeometryPassVS, sizeof(g_pGeometryPassVS));
+		defaultGeometryPassPso.SetPixelShader(g_pGeometryPassPS, sizeof(g_pGeometryPassPS));
+		defaultGeometryPassPso.SetRenderTargetFormats(geometryPassNum, geometryPassFormats, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+
+		msaaGeometryPassPso = defaultGeometryPassPso;
+		msaaGeometryPassPso.SetRenderTargetFormats(geometryPassNum, geometryPassFormats, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
+
+		wireGeometryPassPso = defaultGeometryPassPso;
+		wireGeometryPassPso.SetRasterizerState(wireRasterizer);
+
 		computePso.SetRootSignature(&computeSignature);
 		computePso.SetComputeShader(g_pTestCS, sizeof(g_pTestCS));
 
@@ -157,6 +189,11 @@ namespace Renderer {
 		grphicsPsoList[wirePso.GetName()] = wirePso;
 		grphicsPsoList[msaaPso.GetName()] = msaaPso;
 		
+		grphicsPsoList[defaultGeometryPassPso.GetName()] = defaultGeometryPassPso;
+		grphicsPsoList[wireGeometryPassPso.GetName()] = wireGeometryPassPso;
+		grphicsPsoList[msaaGeometryPassPso.GetName()] = msaaGeometryPassPso;
+
+
 		utilityPsoList[copyPso.GetName()] = copyPso;
 		
 		cubePsoList[cubeMapPso.GetName()] = cubeMapPso;
@@ -173,6 +210,7 @@ namespace Renderer {
 		computeSignature.Finalize(device);
 		cubeMapSignature.Finalize(device);
 		copySignature.Finalize(device);
+		geometryPassSignature.Finalize(device);
 
 		for (auto& pso : grphicsPsoList) {
 			pso.second.Finalize(device);

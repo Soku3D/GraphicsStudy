@@ -10,13 +10,13 @@ struct Light {
 };
 
 struct Material {
-	DirectX::SimpleMath::Vector3 ambient = DirectX::SimpleMath::Vector3(0.2f);
-	float shineiness = 0.f;
-	DirectX::SimpleMath::Vector3 diffuse = DirectX::SimpleMath::Vector3(0.8f, 0.8f, 0.8f);
-	float dummy1;
-	DirectX::SimpleMath::Vector3 specular = DirectX::SimpleMath::Vector3(1.f);
-	float dummy2;
+	float ambient = 0.2f;
+	float diffuse = 0.8f;
+	float specular = 1.f;
+	float shininess = 40.f;
+	
 };
+
 
 __declspec(align(256)) struct GlobalVertexConstantData
 {
@@ -27,11 +27,14 @@ __declspec(align(256)) struct GlobalVertexConstantData
 __declspec(align(256)) struct ObjectConstantData {
 	DirectX::SimpleMath::Matrix Model = DirectX::SimpleMath::Matrix();
 };
-
-
-__declspec(align(256)) struct PSConstantData {
-	Light light[1];
+__declspec(align(256)) struct ObjectConstantData2 {
+	DirectX::SimpleMath::Matrix Model = DirectX::SimpleMath::Matrix();
 	Material material;
+};
+
+__declspec(align(256)) struct LightPassConstantData {
+	Light light[1];
+
 	DirectX::SimpleMath::Vector3 eyePos = DirectX::SimpleMath::Vector3(0.f,0.f,-1.f);
 };
 

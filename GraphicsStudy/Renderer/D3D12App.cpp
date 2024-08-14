@@ -1,8 +1,12 @@
 #include "D3D12App.h"
 #include "GeometryGenerator.h"
 #include "Renderer.h"
-#include <DirectXTexEXR.h>
 #include "directxtk12/DDSTextureLoader.h"
+#include "AnimationClip.h"
+
+#include <DirectXTexEXR.h>
+#include <tuple>
+
 using namespace Core;
 
 Renderer::D3D12App::D3D12App(const int& width, const int& height)
@@ -13,24 +17,13 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	m_scissorRect(D3D12_RECT())
 {
 	m_passConstantData = new GlobalVertexConstantData();
-	m_psConstantData = new PSConstantData();
+	m_ligthPassConstantData = new LightPassConstantData();
 
 	textureBasePath = L"Textures/";
 	cubeMapTextureBasePath = L"Textures/CubeMaps/";
 	exrTextureBasePath = L"Textures/HDR/";
 
-	m_psConstantData->light->position = DirectX::SimpleMath::Vector3(-3.f, 3.f, 0.f);
-	m_psConstantData->material.shineiness = 40.f;
-	m_psConstantData->material.diffuse = DirectX::SimpleMath::Vector3(0.2f);
-	m_psConstantData->material.specular = DirectX::SimpleMath::Vector3(0.8f);
-
-	gui_lightPos = m_psConstantData->light->position;
-	gui_shineness = m_psConstantData->material.shineiness;
-	gui_diffuse = m_psConstantData->material.diffuse.x;
-	gui_specular = m_psConstantData->material.specular.x;
-
-	//bUseGUI = false;
-
+	bUseGUI = true;
 }
 
 Renderer::D3D12App::~D3D12App()
@@ -246,6 +239,7 @@ void Renderer::D3D12App::OnResize()
 	CreateRenderTargetBuffer(m_msaaRenderTarget, m_msaaFormat, true, rtvFlag);
 	CreateRenderTargetBuffer(m_hdrRenderTarget, m_hdrFormat, false, uavFlag);
 
+
 	D3D12_RENDER_TARGET_VIEW_DESC msaaRtvDesc;
 	ZeroMemory(&msaaRtvDesc, sizeof(msaaRtvDesc));
 	msaaRtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
@@ -256,11 +250,10 @@ void Renderer::D3D12App::OnResize()
 
 	D3D12_RENDER_TARGET_VIEW_DESC hdrRtvDesc;
 	ZeroMemory(&hdrRtvDesc, sizeof(hdrRtvDesc));
-
 	hdrRtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	hdrRtvDesc.Format = m_hdrFormat;
 	hdrRtvDesc.Texture2D.MipSlice = 0;
-	
+
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
 	ZeroMemory(&uavDesc, sizeof(uavDesc));
 
@@ -277,6 +270,19 @@ void Renderer::D3D12App::OnResize()
 	m_device->CreateRenderTargetView(m_hdrRenderTarget.Get(), &hdrRtvDesc, m_hdrRtvHeap->GetCPUDescriptorHandleForHeapStart());
 	m_device->CreateUnorderedAccessView(m_hdrRenderTarget.Get(), nullptr, &uavDesc, m_hdrUavHeap->GetCPUDescriptorHandleForHeapStart());
 	m_device->CreateShaderResourceView(m_hdrRenderTarget.Get(), &srvDesc, m_hdrSrvHeap->GetCPUDescriptorHandleForHeapStart());
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE gPass_rtvHeapHandle(m_geometryPassRtvHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE gPass_srvHeapHandle(m_geometryPassSrvHeap->GetCPUDescriptorHandleForHeapStart());
+	for (UINT i = 0; i < geometryPassRtvNum; i++)
+	{
+		CreateRenderTargetBuffer(m_geometryPassResources[i], m_hdrFormat, false, rtvFlag);
+
+		m_device->CreateRenderTargetView(m_geometryPassResources[i].Get(), &hdrRtvDesc, gPass_rtvHeapHandle);
+		m_device->CreateShaderResourceView(m_geometryPassResources[i].Get(), &srvDesc, gPass_srvHeapHandle);
+
+		gPass_rtvHeapHandle.Offset(1, m_rtvHeapSize);
+		gPass_srvHeapHandle.Offset(1, m_csuHeapSize);
+	}
 
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* cmdsLists[] = { m_commandList.Get() };
@@ -298,18 +304,14 @@ void Renderer::D3D12App::Update(float& deltaTime)
 	m_passConstantData->ViewMat = m_passConstantData->ViewMat.Transpose();
 	m_passConstantData->ProjMat = m_passConstantData->ProjMat.Transpose();
 
-	m_psConstantData->eyePos = m_camera->GetPosition();
-	m_psConstantData->light->position = gui_lightPos;
-	m_psConstantData->material.shineiness = gui_shineness;
-	m_psConstantData->material.diffuse = DirectX::SimpleMath::Vector3(gui_diffuse);
-	m_psConstantData->material.specular = DirectX::SimpleMath::Vector3(gui_specular);
+	m_ligthPassConstantData->eyePos = m_camera->GetPosition();
 
 	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
+	memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
 
-	memcpy(m_pPSDataBegin, m_psConstantData, sizeof(PSConstantData));
 
 	for (auto& mesh : m_staticMeshes) {
-		//mesh->Update(deltaTime);
+		mesh->Update(deltaTime);
 	}
 }
 
@@ -335,6 +337,7 @@ void Renderer::D3D12App::UpdateGUI(float& deltaTime)
 	ImGui::SliderFloat("Material Shineness", &gui_shineness, 1.f, 100.f);
 	ImGui::SliderFloat("Material Diffuse", &gui_diffuse, 0.f, 1.f);
 	ImGui::SliderFloat("Material Specualr", &gui_specular, 0.f, 1.f);
+	//ImGui::SliderFloat("Frame", &gui_frame, 0.f, 49.f);
 }
 
 void Renderer::D3D12App::Render(float& deltaTime)
@@ -358,6 +361,14 @@ void Renderer::D3D12App::Render(float& deltaTime)
 	m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
 
 	FlushCommandQueue();
+	/*GeometryPass(deltaTime);
+	CopyResource(m_commandList, CurrentBackBuffer(), m_geometryPassResources[1].Get());
+
+	ThrowIfFailed(m_commandList->Close());
+	ID3D12CommandList* lists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
+
+	FlushCommandQueue();*/
 }
 
 void Renderer::D3D12App::RenderGUI(float& deltaTime)
@@ -407,6 +418,7 @@ void Renderer::D3D12App::RenderGUI(float& deltaTime)
 }
 
 void Renderer::D3D12App::RenderMeshes(float& deltaTime) {
+
 	auto& pso = grphicsPsoList[currRenderMode];
 	msaaMode = false;
 	if (currRenderMode == "Msaa") {
@@ -417,7 +429,7 @@ void Renderer::D3D12App::RenderMeshes(float& deltaTime) {
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 
 	{
-		FLOAT clearColor[4] = { 1.f,1.f,1.f,1.f };
+		FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
 		if (msaaMode) {
 			m_commandList->ClearRenderTargetView(MsaaRenderTargetView(), clearColor, 0, nullptr);
 			m_commandList->ClearDepthStencilView(MsaaDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
@@ -439,7 +451,7 @@ void Renderer::D3D12App::RenderMeshes(float& deltaTime) {
 
 		// View Proj Matrix Constant Buffer 
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
-		m_commandList->SetGraphicsRootConstantBufferView(3, m_psConstantBuffer->GetGPUVirtualAddress());
+		m_commandList->SetGraphicsRootConstantBufferView(3, m_ligthPassConstantBuffer->GetGPUVirtualAddress());
 
 		// Texture SRV Heap 
 		ID3D12DescriptorHeap* ppSrvHeaps[] = { m_textureHeap.Get() };
@@ -464,9 +476,60 @@ void Renderer::D3D12App::RenderMeshes(float& deltaTime) {
 		}
 	}
 }
+
+void Renderer::D3D12App::GeometryPass(float& deltaTime) {
+
+	auto& pso = grphicsPsoList["DefaultGeometryPass"];
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+	{
+		FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(GeometryPassRTV());
+		for (UINT i = 0; i < geometryPassRtvNum; i++)
+		{
+			m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+			rtvHandle.Offset(1, m_rtvHeapSize);
+		}
+		m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+			1.f, 0, 0, nullptr);
+
+		m_commandList->OMSetRenderTargets(geometryPassRtvNum, &GeometryPassRTV(), true, &HDRDepthStencilView());
+
+		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_commandList->RSSetScissorRects(1, &m_scissorRect);
+		m_commandList->RSSetViewports(1, &m_viewport);
+		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+
+		// View Proj Matrix Constant Buffer 
+		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
+		//m_commandList->SetGraphicsRootConstantBufferView(3, m_ligthPassConstantBuffer->GetGPUVirtualAddress());
+
+		// Texture SRV Heap 
+		ID3D12DescriptorHeap* ppSrvHeaps[] = { m_textureHeap.Get() };
+		m_commandList->SetDescriptorHeaps(_countof(ppSrvHeaps), ppSrvHeaps);
+
+		for (int i = 0; i < m_staticMeshes.size(); ++i) {
+			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
+
+			if (m_textureMap.count(m_staticMeshes[i]->GetTexturePath()) > 0) {
+				handle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath()], m_csuHeapSize);
+			}
+			else {
+				handle.Offset(m_textureMap[L"default.png"], m_csuHeapSize);
+			}
+			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
+
+			m_staticMeshes[i]->Render(deltaTime, m_commandList, true);
+		}
+
+	}
+}
+
 void Renderer::D3D12App::RenderCubeMap(float& deltaTime)
 {
-	if(bUseCubeMap)
+	if (bUseCubeMap)
 	{
 		auto& pso = cubePsoList[(currRenderMode + "CubeMap")];
 		if (currRenderMode == "Msaa") {
@@ -608,7 +671,24 @@ void Renderer::D3D12App::CreateDescriptorHeaps() {
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(m_device->CreateDescriptorHeap(
 		&srvHeapDesc, IID_PPV_ARGS(m_hdrSrvHeap.GetAddressOf())));
-	
+
+
+	D3D12_DESCRIPTOR_HEAP_DESC geometryRtvHeapDesc;
+	ZeroMemory(&geometryRtvHeapDesc, sizeof(geometryRtvHeapDesc));
+	geometryRtvHeapDesc.NumDescriptors = geometryPassRtvNum;
+	geometryRtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	geometryRtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	ThrowIfFailed(m_device->CreateDescriptorHeap(
+		&geometryRtvHeapDesc, IID_PPV_ARGS(m_geometryPassRtvHeap.GetAddressOf())));
+
+	D3D12_DESCRIPTOR_HEAP_DESC geometrySrvHeapDesc;
+	ZeroMemory(&geometrySrvHeapDesc, sizeof(geometrySrvHeapDesc));
+	geometrySrvHeapDesc.NumDescriptors = geometryPassRtvNum;
+	geometrySrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	geometrySrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	ThrowIfFailed(m_device->CreateDescriptorHeap(
+		&geometrySrvHeapDesc, IID_PPV_ARGS(m_geometryPassSrvHeap.GetAddressOf())));
+
 }
 
 void Renderer::D3D12App::FlushCommandQueue() {
@@ -629,23 +709,31 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 {
 	using DirectX::SimpleMath::Vector3;
 
-	std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
-	sphere->Initialize(GeometryGenerator::Sphere(0.8f, 100, 100, L"earth.jpg"), m_device, m_commandList, Vector3(-1.f, 0.f, 0.f));
+	/*std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
+	sphere->Initialize(GeometryGenerator::Sphere(0.8f, 100, 100, L"earth.jpg"), m_device, m_commandList, Vector3(-1.f, 0.f, 0.f));*/
 
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
-	plane->Initialize(GeometryGenerator::Box(4, 1, 4, L"Metal.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f));
+	plane->Initialize(GeometryGenerator::Box(5, 1, 5, L"Metal.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f));
 
-	m_staticMeshes.push_back(sphere);
+	//m_staticMeshes.push_back(sphere);
 	m_staticMeshes.push_back(plane);
-	auto meshes = GeometryGenerator::ReadFromFile("tower2.fbx");
-	for (auto& mesh : meshes) {
+
+	auto [meshes, animation] = GeometryGenerator::ReadFromFile("box_destruction.fbx", true);
+	for (auto& mesh : meshes) 
+	{
 		std::shared_ptr<StaticMesh> newMesh = std::make_shared<StaticMesh>();
-		newMesh->Initialize(mesh, m_device, m_commandList, Vector3(0.f, -0.05f, 0.f));
+		newMesh->Initialize(mesh, m_device, m_commandList, Vector3(0.f,1.5f,0.f));
+
+		newMesh->InitAnimation(animation.clips[0].keys[animation.meshNameToId[newMesh->m_name]],
+			animation.clips[0].ticksPerSec,
+			0.3f,
+			false);
+
 		m_staticMeshes.push_back(newMesh);
 	}
 
 	m_cubeMap = std::make_shared<StaticMesh>();
-	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(10.f), m_device, m_commandList);
+	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(100.f), m_device, m_commandList);
 
 	m_screenMesh = std::make_shared<Core::StaticMesh>();
 	m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
@@ -693,14 +781,12 @@ void Renderer::D3D12App::CreateConstantBuffer()
 	ThrowIfFailed(m_passConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
 	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
 
-
-	std::vector<PSConstantData> psConstantData = {
-		*m_psConstantData
+	std::vector<LightPassConstantData> psConstantData = {
+		*m_ligthPassConstantData
 	};
-	Utility::CreateUploadBuffer(psConstantData, m_psConstantBuffer, m_device);
+	Utility::CreateUploadBuffer(psConstantData, m_ligthPassConstantBuffer, m_device);
 
-	ThrowIfFailed(m_psConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pPSDataBegin)));
-	memcpy(m_pPSDataBegin, m_psConstantData, sizeof(PSConstantData));
+	ThrowIfFailed(m_ligthPassConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pLPCDataBegin)));
 }
 
 
@@ -739,7 +825,7 @@ void Renderer::D3D12App::CreateTextures() {
 		for (const auto& entry : fs::directory_iterator(path)) {
 			if (fs::is_regular_file(entry.status())) {
 				std::wstring fileName = entry.path().filename().wstring();
-				
+
 				Utility::CreateTextureBuffer(textureBasePath + fileName, m_textureResources[mapIdx], m_textureHeap, m_device, m_commandQueue, m_commandList, mapIdx, m_csuHeapSize, nullptr);
 				m_textureMap.emplace(fileName, mapIdx++);
 			}
@@ -783,7 +869,7 @@ void Renderer::D3D12App::CreateCubeMapTextures() {
 			if (fs::is_regular_file(entry.status())) {
 				std::wstring fileName = entry.path().filename().wstring();
 				Utility::CreateTextureBuffer(cubeMapTextureBasePath + fileName, m_cubeMaptextureResources[mapIdx], m_cubeMapTextureHeap, m_device, m_commandQueue, m_commandList, mapIdx, m_csuHeapSize, &IsCubeMap);
-				
+
 				m_textureMap.emplace(fileName, mapIdx++);
 			}
 		}
@@ -839,7 +925,7 @@ void Renderer::D3D12App::CreateExrBuffer(std::wstring& path, ComPtr<ID3D12Resour
 	if (FAILED(DirectX::GetMetadataFromEXRFile(path.c_str(), metaData))) {
 		std::wcout << "GetMetadataFromEXRFile() failed: " << path << std::endl;
 	}
-	
+
 	DirectX::ScratchImage scratchImage;
 	if (FAILED(DirectX::LoadFromEXRFile(path.c_str(), nullptr, scratchImage))) {
 		std::wcout << "LoadFromEXRFile() failed: " << path << std::endl;
@@ -1107,13 +1193,13 @@ void Renderer::D3D12App::CreateRenderTargetBuffer(ComPtr<ID3D12Resource>& buffer
 	rtDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	rtDesc.Flags = flag;
 
-	FLOAT color[4] = { 1.f, 1.f, 1.f, 1.f };
+	FLOAT color[4] = { 0.f, 0.f, 0.f, 0.f };
 	D3D12_CLEAR_VALUE optClearRtv;
 	optClearRtv.Format = format;
-	optClearRtv.Color[0] = 1.f;
-	optClearRtv.Color[1] = 1.f;
-	optClearRtv.Color[2] = 1.f;
-	optClearRtv.Color[3] = 1.f;
+	optClearRtv.Color[0] = 0.f;
+	optClearRtv.Color[1] = 0.f;
+	optClearRtv.Color[2] = 0.f;
+	optClearRtv.Color[3] = 0.f;
 
 	ThrowIfFailed(m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
@@ -1122,4 +1208,9 @@ void Renderer::D3D12App::CreateRenderTargetBuffer(ComPtr<ID3D12Resource>& buffer
 		D3D12_RESOURCE_STATE_RENDER_TARGET,
 		&optClearRtv,
 		IID_PPV_ARGS(buffer.GetAddressOf())));
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE Renderer::D3D12App::GeometryPassRTV() const
+{
+	return m_geometryPassRtvHeap->GetCPUDescriptorHandleForHeapStart();
 }

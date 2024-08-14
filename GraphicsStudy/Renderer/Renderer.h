@@ -15,7 +15,9 @@ namespace Renderer {
 	extern std::vector<std::string> graphicsPsoListNames;
 	extern std::vector<std::string> cubePsoListNames;
 	extern std::vector<std::string> utilityPsoListNames;
-
+	
+	static const int geometryPassNum = 4;
+	extern DXGI_FORMAT geometryPassFormats[geometryPassNum];
 	extern DXGI_FORMAT backbufferFormat;
 	extern DXGI_FORMAT hdrFormat;
 
@@ -31,7 +33,8 @@ namespace Renderer {
 	extern RootSignature defaultSignature;
 	extern RootSignature computeSignature;
 	extern RootSignature cubeMapSignature;
-	
+	extern RootSignature geometryPassSignature;
+
 	extern RootSignature copySignature;
 	
 	extern std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;

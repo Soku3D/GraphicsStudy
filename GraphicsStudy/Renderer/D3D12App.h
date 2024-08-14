@@ -37,6 +37,8 @@ namespace Renderer {
 
 		void RenderMeshes(float& deltaTime);
 
+		void GeometryPass(float& deltaTime);
+
 		void RenderCubeMap(float& deltaTime);
 
 		void CreateCommandObjects();
@@ -120,9 +122,9 @@ namespace Renderer {
 		UINT8* m_pCbvDataBegin = nullptr;
 		
 
-		PSConstantData* m_psConstantData;
-		ComPtr<ID3D12Resource> m_psConstantBuffer;
-		UINT8* m_pPSDataBegin = nullptr;
+		LightPassConstantData* m_ligthPassConstantData;
+		ComPtr<ID3D12Resource> m_ligthPassConstantBuffer;
+		UINT8* m_pLPCDataBegin = nullptr;
 
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
 		std::shared_ptr<Core::StaticMesh> m_cubeMap;
@@ -172,11 +174,25 @@ namespace Renderer {
 		ComPtr<ID3D12DescriptorHeap> m_hdrSrvHeap;
 
 	protected:
-		std::string currRenderMode = "Msaa";
+		std::string currRenderMode = "Default";
 		bool msaaMode = true;
 		DirectX::SimpleMath::Vector3 gui_lightPos;
 		float gui_shineness;
 		float gui_diffuse;
 		float gui_specular;
+
+		float gui_frame = 0.f;
+
+
+	protected:
+		// GeometryPass
+		static const UINT geometryPassRtvNum = 4;
+		ComPtr<ID3D12DescriptorHeap> m_geometryPassRtvHeap;
+		ComPtr<ID3D12DescriptorHeap> m_geometryPassSrvHeap;
+		ComPtr<ID3D12Resource> m_geometryPassResources[geometryPassRtvNum];
+
+		D3D12_CPU_DESCRIPTOR_HANDLE GeometryPassRTV() const;
+
+
 	};
 }

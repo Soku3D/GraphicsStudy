@@ -11,7 +11,7 @@ struct Light
 struct Material
 {
     float3 ambient;
-    float shineiness;    
+    float shininess;
     float3 diffuse;
     float dummy1;
     float3 specular;
@@ -32,7 +32,6 @@ cbuffer cbPass : register(b1)
 cbuffer cbLight : register(b2)
 {
     Light light[1];
-    Material material;
     float3 eyePosition;
 }
 
@@ -54,7 +53,10 @@ struct PSInput
 float4 ComputePhongShading(float2 uv, float3 worldPosition, float3 normal)
 {
     float4 ambient = g_basic.Sample(g_sampler, uv);
-
+    
+    return ambient;
+    
+    ambient.rgb *= 0.8f;
     
     float3 toLight = normalize(light[0].position - worldPosition);
     float3 toEye = normalize(eyePosition - worldPosition);
@@ -62,15 +64,14 @@ float4 ComputePhongShading(float2 uv, float3 worldPosition, float3 normal)
     float dotNormalLight = dot(toLight, normal);
     float diffuseStrength = clamp(dotNormalLight, 0.f, 1.f);
     
-    float3 diffuseColor = material.diffuse * diffuseStrength;
+    float3 diffuseColor = 0.8f * diffuseStrength;
     float3 specularColor = float3(0.f, 0.f, 0.f);
     
     if (dotNormalLight > 0.f)
     {
         float3 reflectionDir = normalize((normal * diffuseStrength * 2.f) - toLight);
-        float shineiness = clamp(material.shineiness, 1.f, 100.f);
-        float specularStrength = pow(clamp(dot(toEye, reflectionDir), 0.f, 1.f), shineiness);
-        specularColor = specularStrength * material.specular;
+        float specularStrength = pow(clamp(dot(toEye, reflectionDir), 0.f, 1.f), 30.f);
+        specularColor = specularStrength * 1.f;
     }
     
     ambient.xyz += diffuseColor + specularColor;

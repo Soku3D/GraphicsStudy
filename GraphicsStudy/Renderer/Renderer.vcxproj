@@ -144,12 +144,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Actor.cpp" />
+    <ClCompile Include="AnimationClip.cpp" />
     <ClCompile Include="BoxComponent.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Command.cpp" />
     <ClCompile Include="D3D11App.cpp" />
     <ClCompile Include="D3D12App.cpp" />
     <ClCompile Include="D3D12ComputeShaderApp.cpp" />
+    <ClCompile Include="D3D12PassApp.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="main.cpp" />
@@ -167,6 +169,7 @@
   <ItemGroup>
     <ClInclude Include="Actor.h" />
     <ClInclude Include="ActorComponent.h" />
+    <ClInclude Include="AnimationClip.h" />
     <ClInclude Include="BoxComponent.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CameraComponent.h" />
@@ -175,6 +178,7 @@
     <ClInclude Include="D3D11App.h" />
     <ClInclude Include="D3D12App.h" />
     <ClInclude Include="D3D12ComputeShaderApp.h" />
+    <ClInclude Include="D3D12PassApp.h" />
     <ClInclude Include="GenerateGeometry.h" />
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="InputHandler.h" />

@@ -11,7 +11,12 @@ namespace Renderer {
         basePath += "/Models/";
     }
 
-    void ModelLoader::Load(std::string filename) {
+    void ModelLoader::Load(std::string filename, bool loadAnimation) {
+
+        if (loadAnimation)
+        {
+            basePath += "Animations/";
+        }
 
         Assimp::Importer importer;
 
@@ -26,6 +31,18 @@ namespace Renderer {
         }
         Matrix tr; // Initial transformation
         ProcessNode(pScene->mRootNode, pScene, tr);
+
+        m_animeData.offsetMatrices.resize(m_animeData.meshNameToId.size());
+        m_animeData.meshTransforms.resize(m_animeData.meshNameToId.size());
+
+        for (auto& mesh : m_animeData.meshNameToId) 
+        {
+            std::cout << mesh.first << " : " << mesh.second << "\n";
+        }
+        if (loadAnimation) 
+        {
+            ReadAnimation(pScene);
+        }
 
         // 노멀 벡터가 없는 경우를 대비하여 다시 계산
         // 한 위치에는 한 버텍스만 있어야 연결 관계를 찾을 수 있음
@@ -64,7 +81,43 @@ namespace Renderer {
         }*/
     }
 
+    void ModelLoader::ReadAnimation(const aiScene* pScene) {
+
+        m_animeData.clips.resize(pScene->mNumAnimations);
+
+        for (uint32_t i = 0; i < pScene->mNumAnimations; i++) {
+
+            auto& clip = m_animeData.clips[i];
+
+            const aiAnimation* ani = pScene->mAnimations[i];
+
+            clip.duration = ani->mDuration;
+            clip.ticksPerSec = ani->mTicksPerSecond;
+            clip.keys.resize(m_animeData.meshNameToId.size());
+            clip.numChannels = ani->mNumChannels;
+
+            // i번쨰 노드(채널 / 메쉬)
+            for (uint32_t c = 0; c < ani->mNumChannels; c++) {
+                const aiNodeAnim* nodeAnim = ani->mChannels[c];
+                const int meshId =
+                    m_animeData.meshNameToId[nodeAnim->mNodeName.C_Str()];
+
+                clip.keys[meshId].resize(nodeAnim->mNumPositionKeys);
+                for (uint32_t k = 0; k < nodeAnim->mNumPositionKeys; k++) {
+                    const auto pos = nodeAnim->mPositionKeys[k].mValue;
+                    const auto rot = nodeAnim->mRotationKeys[k].mValue;
+                    const auto scale = nodeAnim->mScalingKeys[k].mValue;
+                    auto& key = clip.keys[meshId][k];
+                    key.pos = { pos.x, pos.y, pos.z };
+                    key.rot = Quaternion(rot.x, rot.y, rot.z, rot.w);
+                    key.scale = { scale.x, scale.y, scale.z };
+                }
+            }
+        }
+    }
+
     void ModelLoader::ProcessNode(aiNode* node, const aiScene* scene, Matrix tr) {
+        static int meshCount = 0;
 
         Matrix m;
         ai_real* temp = &node->mTransformation.a1;
@@ -75,11 +128,11 @@ namespace Renderer {
         m = m.Transpose() * tr;
 
         for (UINT i = 0; i < node->mNumMeshes; i++) {
-
-
+            
             aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+            m_animeData.meshNameToId[mesh->mName.C_Str()] = meshCount++;
             auto newMesh = this->ProcessMesh(mesh, scene);
-
+            newMesh.m_name = mesh->mName.C_Str();
 
             for (auto& v : newMesh.m_vertices) {
                 v.position = DirectX::SimpleMath::Vector3::Transform(v.position, m);
