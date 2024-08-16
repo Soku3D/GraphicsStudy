@@ -33,6 +33,7 @@ cbuffer cbLight : register(b2)
 {
     Light light[1];
     float3 eyePosition;
+    float lod;
 }
 
 struct VSInput
@@ -52,7 +53,7 @@ struct PSInput
 
 float4 ComputePhongShading(float2 uv, float3 worldPosition, float3 normal)
 {
-    float4 ambient = g_basic.Sample(g_sampler, uv);
+    float4 ambient = g_basic.SampleLevel(g_sampler, uv, lod);
     
     return ambient;
     

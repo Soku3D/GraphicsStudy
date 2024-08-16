@@ -54,7 +54,7 @@ void Utils::Timer::Tick()
 		m_currTime = currTime;
 
 		m_deltaTime = delTime * m_secondPerCount;
-		//std::cout << 1 / m_deltaTime << ' ';
+		//std::cout << m_deltaTime << ' ';
 		m_prevTime = m_currTime;
 	}
 }

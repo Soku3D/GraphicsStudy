@@ -128,7 +128,7 @@ void Renderer::D3D12ComputeShaderApp::RenderGUI(float& deltaTime)
 
 void Renderer::D3D12ComputeShaderApp::CopyResourceToSwapChain(float& deltaTime)
 {
-	auto& pso = utilityPsoList["Copy"];
+	auto& pso = utilityPsoLists["Copy"];
 	{
 		ThrowIfFailed(m_commandAllocator->Reset());
 		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));

@@ -10,7 +10,7 @@ struct Light {
 };
 
 struct Material {
-	float ambient = 0.2f;
+	float ambient = 0.8f;
 	float diffuse = 0.8f;
 	float specular = 1.f;
 	float shininess = 40.f;
@@ -26,16 +26,16 @@ __declspec(align(256)) struct GlobalVertexConstantData
 
 __declspec(align(256)) struct ObjectConstantData {
 	DirectX::SimpleMath::Matrix Model = DirectX::SimpleMath::Matrix();
+	Material Material;
 };
 __declspec(align(256)) struct ObjectConstantData2 {
 	DirectX::SimpleMath::Matrix Model = DirectX::SimpleMath::Matrix();
-	Material material;
 };
 
 __declspec(align(256)) struct LightPassConstantData {
 	Light light[1];
-
 	DirectX::SimpleMath::Vector3 eyePos = DirectX::SimpleMath::Vector3(0.f,0.f,-1.f);
+	float lod = 0.f;
 };
 
 __declspec(align(256)) struct CSConstantData {

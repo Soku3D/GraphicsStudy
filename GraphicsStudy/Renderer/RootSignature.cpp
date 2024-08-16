@@ -1,7 +1,7 @@
 #include "RootSignature.h"
 #include "Utility.h"
 
-void Renderer::RootSignature::Initialize(UINT srvCount, UINT uavCount, UINT cbCount, D3D12_STATIC_SAMPLER_DESC* sampler)
+void Renderer::RootSignature::Initialize(UINT srvCount, UINT uavCount, UINT cbCount, int numSamplers, D3D12_STATIC_SAMPLER_DESC* sampler)
 {
 	CD3DX12_DESCRIPTOR_RANGE1 rangeTable[2];
 	rangeTable[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, srvCount, 0);
@@ -18,7 +18,7 @@ void Renderer::RootSignature::Initialize(UINT srvCount, UINT uavCount, UINT cbCo
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	
 	m_sampler = sampler;
-	if (m_sampler == NULL) {
+	if (m_sampler == nullptr) {
 		m_rootSignatureDesc.Init_1_1(cbCount + 1, paramenters.data(), 0, nullptr, rootSignatureFlags);
 	}
 	else
@@ -26,7 +26,7 @@ void Renderer::RootSignature::Initialize(UINT srvCount, UINT uavCount, UINT cbCo
 		m_rootSignatureDesc.Init_1_1(cbCount + 1, paramenters.data(), 1, m_sampler, rootSignatureFlags);
 	}
 }
-void Renderer::RootSignature::InitializeUAV(UINT uavCount, UINT cbCount, D3D12_STATIC_SAMPLER_DESC* sampler) {
+void Renderer::RootSignature::InitializeUAV(UINT uavCount, UINT cbCount, int numSamplers, D3D12_STATIC_SAMPLER_DESC* sampler) {
 	
 	rangeTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, uavCount, 0);
 	paramenters.resize(cbCount + 1);
@@ -42,7 +42,7 @@ void Renderer::RootSignature::InitializeUAV(UINT uavCount, UINT cbCount, D3D12_S
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 	m_sampler = sampler;
-	if (m_sampler == NULL) {
+	if (m_sampler == nullptr) {
 		m_rootSignatureDesc.Init_1_1(cbCount + 1, paramenters.data(), 0, nullptr, rootSignatureFlags);
 	}
 	else
@@ -51,7 +51,7 @@ void Renderer::RootSignature::InitializeUAV(UINT uavCount, UINT cbCount, D3D12_S
 	}
 }
 
-void Renderer::RootSignature::Initialize(UINT srvCount, UINT cbCount, D3D12_STATIC_SAMPLER_DESC* sampler)
+void Renderer::RootSignature::Initialize(UINT srvCount, UINT cbCount, int numSamplers, D3D12_STATIC_SAMPLER_DESC* sampler)
 {
 	rangeTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, srvCount, 0);
 
@@ -67,7 +67,7 @@ void Renderer::RootSignature::Initialize(UINT srvCount, UINT cbCount, D3D12_STAT
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 	m_sampler = sampler;
-	if (m_sampler == NULL) {
+	if (m_sampler == nullptr) {
 		m_rootSignatureDesc.Init_1_1(cbCount + 1, paramenters.data(), 0, nullptr, rootSignatureFlags);
 	}
 	else

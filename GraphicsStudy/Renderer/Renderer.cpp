@@ -31,11 +31,13 @@ namespace Renderer {
 	GraphicsPSO defaultPso("Default");
 	ComputePSO computePso("Compute");
 
-	std::map<std::string, GraphicsPSO > grphicsPsoList;
-	std::map<std::string, GraphicsPSO > cubePsoList;
-	std::map<std::string, GraphicsPSO > utilityPsoList;
+	std::map<std::string, GraphicsPSO > modePsoLists;
+	std::map<std::string, GraphicsPSO > passPsoLists;
+	std::map<std::string, GraphicsPSO > cubePsoLists;
+	std::map<std::string, GraphicsPSO > utilityPsoLists;
 
-	std::vector<std::string> graphicsPsoListNames;
+	std::vector<std::string> modePsoListNames;
+	std::vector<std::string> passPsoListNames; 
 	std::vector<std::string> cubePsoListNames;
 	std::vector<std::string> utilityPsoListNames;
 
@@ -47,6 +49,7 @@ namespace Renderer {
 	RootSignature computeSignature;
 	RootSignature cubeMapSignature;
     RootSignature copySignature;
+	RootSignature lightPassSignature;
 
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;
@@ -63,12 +66,12 @@ namespace Renderer {
 	void Initialize(void)
 	{
 		defaultSampler = {};
-		defaultSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+		defaultSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 		defaultSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		defaultSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		defaultSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		defaultSampler.MipLODBias = 0;
-		defaultSampler.MaxAnisotropy = 0;
+		defaultSampler.MaxAnisotropy = 1.f;
 		defaultSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 		defaultSampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 		defaultSampler.MinLOD = 0.0f;
@@ -78,12 +81,14 @@ namespace Renderer {
 		defaultSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		// Init Signatures
-		defaultSignature.Initialize(1, 3, &defaultSampler);
-		computeSignature.InitializeUAV(1,1, nullptr);
-		cubeMapSignature.Initialize(1, 1, &defaultSampler);
-		copySignature.Initialize(1, 0, &defaultSampler);
+		defaultSignature.Initialize(1, 3, 1, &defaultSampler);
+		computeSignature.InitializeUAV(1,1, 0, nullptr);
+		cubeMapSignature.Initialize(1, 1, 1, &defaultSampler);
+		copySignature.Initialize(1, 0, 1, &defaultSampler);
+		copySignature.Initialize(1, 0, 1, &defaultSampler);
 		
-		geometryPassSignature.Initialize(1, 2, &defaultSampler);
+		geometryPassSignature.Initialize(1, 2, 1, &defaultSampler);
+		//lightPassSignature.Initialize(1, 0, 1, &defaultSampler);
 
 		GraphicsPSO msaaPso("Msaa");
 		GraphicsPSO wirePso("Wire");
@@ -97,6 +102,8 @@ namespace Renderer {
 		GraphicsPSO wireGeometryPassPso("WireGeometryPass");
 
 		GraphicsPSO copyPso("Copy");
+		//GraphicsPSO lightPassPso("LightPass");
+		
 				
 		defaultElement =
 		{
@@ -177,7 +184,8 @@ namespace Renderer {
 		wireCubeMapPso.SetRasterizerState(wireRasterizer);
 
 		msaaCubeMapPso = cubeMapPso;
-		msaaCubeMapPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
+		//msaaCubeMapPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
+		msaaCubeMapPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 
 		copyPso = defaultPso;
 		copyPso.SetRenderTargetFormat(backbufferFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
@@ -185,20 +193,20 @@ namespace Renderer {
 		copyPso.SetVertexShader(g_pCopyVS, sizeof(g_pCopyVS));
 		copyPso.SetPixelShader(g_pCopyPS, sizeof(g_pCopyPS));
 
-		grphicsPsoList[defaultPso.GetName()] = defaultPso;
-		grphicsPsoList[wirePso.GetName()] = wirePso;
-		grphicsPsoList[msaaPso.GetName()] = msaaPso;
+		modePsoLists[defaultPso.GetName()] = defaultPso;
+		modePsoLists[wirePso.GetName()] = wirePso;
+		modePsoLists[msaaPso.GetName()] = msaaPso;
 		
-		grphicsPsoList[defaultGeometryPassPso.GetName()] = defaultGeometryPassPso;
-		grphicsPsoList[wireGeometryPassPso.GetName()] = wireGeometryPassPso;
-		grphicsPsoList[msaaGeometryPassPso.GetName()] = msaaGeometryPassPso;
+		passPsoLists[defaultGeometryPassPso.GetName()] = defaultGeometryPassPso;
+		passPsoLists[wireGeometryPassPso.GetName()] = wireGeometryPassPso;
+		passPsoLists[msaaGeometryPassPso.GetName()] = msaaGeometryPassPso;
 
 
-		utilityPsoList[copyPso.GetName()] = copyPso;
+		utilityPsoLists[copyPso.GetName()] = copyPso;
 		
-		cubePsoList[cubeMapPso.GetName()] = cubeMapPso;
-		cubePsoList[msaaCubeMapPso.GetName()] = msaaCubeMapPso;
-		cubePsoList[wireCubeMapPso.GetName()] = wireCubeMapPso;
+		cubePsoLists[cubeMapPso.GetName()] = cubeMapPso;
+		cubePsoLists[msaaCubeMapPso.GetName()] = msaaCubeMapPso;
+		cubePsoLists[wireCubeMapPso.GetName()] = wireCubeMapPso;
 
 		computePsoList[computePso.GetName()] = computePso;
 
@@ -212,15 +220,19 @@ namespace Renderer {
 		copySignature.Finalize(device);
 		geometryPassSignature.Finalize(device);
 
-		for (auto& pso : grphicsPsoList) {
+		for (auto& pso : modePsoLists) {
 			pso.second.Finalize(device);
-			graphicsPsoListNames.push_back(pso.first);
+			modePsoListNames.push_back(pso.first);
 		}
-		for (auto& pso : cubePsoList) {
+		for (auto& pso : cubePsoLists) {
 			pso.second.Finalize(device);
 			cubePsoListNames.push_back(pso.first);
 		}
-		for (auto& pso : utilityPsoList) {
+		for (auto& pso : passPsoLists) {
+			pso.second.Finalize(device);
+			passPsoListNames.push_back(pso.first);
+		}
+		for (auto& pso : utilityPsoLists) {
 			pso.second.Finalize(device);
 			utilityPsoListNames.push_back(pso.first);
 		}

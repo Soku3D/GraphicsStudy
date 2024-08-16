@@ -11,6 +11,11 @@ namespace Renderer {
         basePath += "/Models/";
     }
 
+    ModelLoader::~ModelLoader()
+    {
+       
+    }
+
     void ModelLoader::Load(std::string filename, bool loadAnimation) {
 
         if (loadAnimation)
@@ -117,7 +122,7 @@ namespace Renderer {
     }
 
     void ModelLoader::ProcessNode(aiNode* node, const aiScene* scene, Matrix tr) {
-        static int meshCount = 0;
+        
 
         Matrix m;
         ai_real* temp = &node->mTransformation.a1;

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "D3D12App.h"
+#include "Renderer.h"
+#include <DirectXTexEXR.h>
 
 namespace Renderer {
 
@@ -17,9 +19,18 @@ namespace Renderer {
 		void Update(float& deltaTime) override;
 		void UpdateGUI(float& deltaTime) override;
 		void Render(float& deltaTime) override;
+		void GeometryPass(float& deltaTime);
+		void LightPass(float& deltaTime);
+		void RenderCubeMap(float& deltaTime) override;
 		void RenderGUI(float& deltaTime) override;
+
+		void CopyResourceToSwapChain(float& deltaTime);
 
 		virtual void PostProcessing(float& deltaTime);
 
+	protected:
+		CSConstantData* psConstantData;
+		UINT8* m_pCbufferBegin = nullptr;
+		ComPtr<ID3D12Resource> m_csBuffer;
 	};
 }

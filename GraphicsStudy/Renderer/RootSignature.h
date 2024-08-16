@@ -8,9 +8,9 @@ namespace Renderer {
 	public:
 		RootSignature(): m_sampler(&CD3DX12_STATIC_SAMPLER_DESC()){};
 		~RootSignature() {}
-		void Initialize(UINT srvCount, UINT uavCount, UINT cbCount, D3D12_STATIC_SAMPLER_DESC* sampler);
-		void InitializeUAV(UINT uavCount, UINT cbCount, D3D12_STATIC_SAMPLER_DESC* sampler);
-		void Initialize(UINT srvCount, UINT cbCount, D3D12_STATIC_SAMPLER_DESC* sampler);
+		void Initialize(UINT srvCount, UINT uavCount, UINT cbCount, int numSamplers = 0, D3D12_STATIC_SAMPLER_DESC* sampler = nullptr);
+		void InitializeUAV(UINT uavCount, UINT cbCount, int numSamplers = 0, D3D12_STATIC_SAMPLER_DESC* sampler = nullptr);
+		void Initialize(UINT srvCount, UINT cbCount, int numSamplers = 0, D3D12_STATIC_SAMPLER_DESC* sampler = nullptr);
 		void Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device);
 		ID3D12RootSignature* Get()const { return m_rootSignature.Get(); }
 		

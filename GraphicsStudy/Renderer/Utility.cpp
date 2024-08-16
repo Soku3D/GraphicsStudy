@@ -38,29 +38,34 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
 		}
 		else {
 			ThrowIfFailed(
-				CreateDDSTextureFromFile(device.Get(), resourceUpload, path.c_str(),
-					texture.ReleaseAndGetAddressOf()));
+				CreateDDSTextureFromFile(device.Get(), resourceUpload, path.c_str()
+					,texture.ReleaseAndGetAddressOf(),true));
 		}
 	}
 	else {
-		ThrowIfFailed(
-			CreateWICTextureFromFile(device.Get(), resourceUpload, path.c_str(),
-				texture.ReleaseAndGetAddressOf())
-		);
+		ThrowIfFailed(CreateWICTextureFromFileEx(device.Get(), resourceUpload, path.c_str(), 0,
+			D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE,
+			WIC_LOADER_FLAGS::WIC_LOADER_FORCE_RGBA32 | WIC_LOADER_MIP_AUTOGEN,
+			texture.ReleaseAndGetAddressOf()));
 	}
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = texture->GetDesc().Format;
-	int width = texture->GetDesc().Width;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	if (bIsCubeMap != nullptr) {
-		if (*bIsCubeMap == true)
-			srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-	}
+
+	std::wcout << path.c_str() << ' ' << texture->GetDesc().MipLevels << std::endl;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = 1;
-	srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
+
+	if (bIsCubeMap != nullptr && *bIsCubeMap == true) {
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+		srvDesc.TextureCube.MipLevels = texture->GetDesc().MipLevels;
+		srvDesc.TextureCube.MostDetailedMip = 0.f;
+	}
+	else {
+		srvDesc.Texture2D.MipLevels = texture->GetDesc().MipLevels;
+		srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	}
+
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart());
 	handle.Offset(offset, descriptorSize);

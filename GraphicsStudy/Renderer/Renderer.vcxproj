@@ -152,6 +152,7 @@
     <ClCompile Include="D3D12App.cpp" />
     <ClCompile Include="D3D12ComputeShaderApp.cpp" />
     <ClCompile Include="D3D12PassApp.cpp" />
+    <ClCompile Include="FBX.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="main.cpp" />
@@ -179,6 +180,7 @@
     <ClInclude Include="D3D12App.h" />
     <ClInclude Include="D3D12ComputeShaderApp.h" />
     <ClInclude Include="D3D12PassApp.h" />
+    <ClInclude Include="FBX.h" />
     <ClInclude Include="GenerateGeometry.h" />
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="InputHandler.h" />

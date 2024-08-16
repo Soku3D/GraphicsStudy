@@ -81,6 +81,9 @@
     <ClCompile Include="AnimationClip.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="FBX.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3D12App.h">
@@ -165,6 +168,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="AnimationClip.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="FBX.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

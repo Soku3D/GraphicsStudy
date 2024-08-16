@@ -1,7 +1,7 @@
 #include "GeometryGenerator.h"
 #include "directxtk/SimpleMath.h"
 #include "ModelLoader.h"
-
+#include <memory>
 
 using DirectX::SimpleMath::Vector3;
 using DirectX::SimpleMath::Vector2;
@@ -153,10 +153,10 @@ BasicMeshData GeometryGenerator::Box(const float& x, const float& y, const float
 		{Vector3(hX, -hY, hZ), Vector3(1.f,0.f,0.f), Vector2(0.f, 1.f)},
 
 		// 윗 면 (xz 평면)
-		{Vector3(-hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(0.f, z)},
+		{Vector3(-hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(0.f, 1.f)},
 		{Vector3(-hX, hY, hZ), Vector3(0.f, 1.f, 0.f), Vector2(0.f, 0.f)},
-		{Vector3(hX, hY, hZ), Vector3(0.f, 1.f, 0.f), Vector2(x, 0.f)},
-		{Vector3(hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(x, z)},
+		{Vector3(hX, hY, hZ), Vector3(0.f, 1.f, 0.f), Vector2(1.f, 0.f)},
+		{Vector3(hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(1.f, 1.f)},
 
 		// 아랫 면
 		{Vector3(hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(1.f, 1.f)},
@@ -343,9 +343,10 @@ std::tuple<std::vector<BasicMeshData>, Animation::AnimationData> GeometryGenerat
 
     using namespace DirectX;
 
-    ModelLoader modelLoader;
-    modelLoader.Load(filename, loadAnimation);
-    std::vector<BasicMeshData> &meshes = modelLoader.meshes;
+	std::shared_ptr<ModelLoader> modelLoader = std::make_shared<ModelLoader>();
+	
+    modelLoader->Load(filename, loadAnimation);
+    std::vector<BasicMeshData> &meshes = modelLoader->meshes;
 	   
     /*Vector3 vmin(1000, 1000, 1000);
     Vector3 vmax(-1000, -1000, -1000);
@@ -372,6 +373,6 @@ std::tuple<std::vector<BasicMeshData>, Animation::AnimationData> GeometryGenerat
 	}
 	modelLoader.m_animeData.defaultTransform =
 		DirectX::SimpleMath::Matrix::CreateTranslation(translation) * DirectX::SimpleMath::Matrix::CreateScale(scale);*/
-	return { meshes, modelLoader.m_animeData };
+	return { meshes, modelLoader->m_animeData };
 }
 

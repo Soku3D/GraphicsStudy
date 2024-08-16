@@ -5,6 +5,7 @@
 #include "SimpleApp.h"
 #include "Constants.h"
 #include "StaticMesh.h"
+#include "FBX.h"
 
 #include "directxtk12/DescriptorHeap.h"
 #include "directxtk12/SpriteFont.h"
@@ -20,6 +21,15 @@ namespace Renderer {
 		Count
 
 	};
+
+	enum DescriptorType {
+		RTV,
+		UAV,
+		SRV,
+		DSV,
+		CBV
+	};
+
 	class D3D12App :public SimpleApp {
 	public:
 		D3D12App(const int& width, const int& height);
@@ -37,9 +47,7 @@ namespace Renderer {
 
 		void RenderMeshes(float& deltaTime);
 
-		void GeometryPass(float& deltaTime);
-
-		void RenderCubeMap(float& deltaTime);
+		virtual void RenderCubeMap(float& deltaTime);
 
 		void CreateCommandObjects();
 		void CreateDescriptorHeaps();
@@ -52,6 +60,7 @@ namespace Renderer {
 		void CreateCubeMapTextures();
 		void CreateExrTexture();
 		void CreateExrBuffer(std::wstring& path, ComPtr<ID3D12Resource>& upload, ComPtr<ID3D12Resource>& texture, UINT offset);
+		void CreateCubeMapBuffer(std::wstring& path, ComPtr<ID3D12Resource>& upload, ComPtr<ID3D12Resource>& texture, UINT offset);
 		//void CreateExrBuffer(std::wstring& path, ComPtr<ID3D12Resource>& upload, ComPtr<ID3D12Resource>& texture, UINT offset, std::vector<uint16_t>& image);
 		void CreateFontFromFile(const std::wstring& fileName, std::shared_ptr<DirectX::SpriteFont>& font, std::shared_ptr<DirectX::SpriteBatch>& spriteBatch, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors, bool bUseMsaa, DXGI_FORMAT& rtFormat, DXGI_FORMAT& dsFormat);
 
@@ -69,13 +78,21 @@ namespace Renderer {
 		
 		D3D12_CPU_DESCRIPTOR_HANDLE HDRRendertargetView() const;
 
-		void ResolveSubresource(ComPtr<ID3D12GraphicsCommandList>& commandList, ID3D12Resource* dest, ID3D12Resource* src);
+		void ResolveSubresource(ComPtr<ID3D12GraphicsCommandList>& commandList, ID3D12Resource* dest, ID3D12Resource* src,
+			D3D12_RESOURCE_STATES destState = D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATES srcState = D3D12_RESOURCE_STATE_RENDER_TARGET,
+			DXGI_FORMAT format = DXGI_FORMAT_R16G16B16A16_FLOAT);
 
-		void CopyResource(ComPtr<ID3D12GraphicsCommandList>& commandList, ID3D12Resource* dest, ID3D12Resource* src);
+		void CopyResource(ComPtr<ID3D12GraphicsCommandList>& commandList, ID3D12Resource* dest, ID3D12Resource* src,
+			D3D12_RESOURCE_STATES destState = D3D12_RESOURCE_STATE_PRESENT,
+			D3D12_RESOURCE_STATES srcState = D3D12_RESOURCE_STATE_RENDER_TARGET);
+
 
 		void CreateDepthBuffer(ComPtr<ID3D12Resource>& buffer, D3D12_CPU_DESCRIPTOR_HANDLE& handle, bool bUseMsaa);
-		void CreateRenderTargetBuffer(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_RESOURCE_FLAGS flag);
-		
+		void CreateResourceBuffer(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_RESOURCE_FLAGS flag);
+		void CreateResourceView(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_CPU_DESCRIPTOR_HANDLE& handle, ComPtr<ID3D12Device>& deivce, const Renderer::DescriptorType& type);
+		void CreateDescriporHeap(ComPtr<ID3D12Device>& deivce, ComPtr<ID3D12DescriptorHeap>& heap, const Renderer::DescriptorType& type, int Numdescriptors,
+			D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 
 	protected:
 		bool bUseWarpAdapter;
@@ -126,6 +143,8 @@ namespace Renderer {
 		ComPtr<ID3D12Resource> m_ligthPassConstantBuffer;
 		UINT8* m_pLPCDataBegin = nullptr;
 
+		std::vector<std::shared_ptr<Animation::FBX>> m_fbxList;
+
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
 		std::shared_ptr<Core::StaticMesh> m_cubeMap;
 		std::shared_ptr<Core::StaticMesh> m_screenMesh;
@@ -137,6 +156,7 @@ namespace Renderer {
 		std::vector<ComPtr<ID3D12Resource>> m_textureResources;
 		std::vector<ComPtr<ID3D12Resource>> m_uploadResources;
 		std::vector<ComPtr<ID3D12Resource>> m_cubeMaptextureResources;
+		std::vector<ComPtr<ID3D12Resource>> m_cubeMaptextureUpload;
 		
 		std::vector<ComPtr<ID3D12Resource>> m_exrUploadResources;
 		std::vector<ComPtr<ID3D12Resource>> m_exrResources;
@@ -175,13 +195,14 @@ namespace Renderer {
 
 	protected:
 		std::string currRenderMode = "Default";
-		bool msaaMode = true;
+		bool msaaMode = false;
 		DirectX::SimpleMath::Vector3 gui_lightPos;
 		float gui_shineness;
 		float gui_diffuse;
 		float gui_specular;
 
 		float gui_frame = 0.f;
+		float gui_lod = 0.f;
 
 
 	protected:
@@ -191,7 +212,11 @@ namespace Renderer {
 		ComPtr<ID3D12DescriptorHeap> m_geometryPassSrvHeap;
 		ComPtr<ID3D12Resource> m_geometryPassResources[geometryPassRtvNum];
 
+		ComPtr<ID3D12DescriptorHeap> m_geometryPassMsaaRtvHeap;
+		ComPtr<ID3D12Resource> m_geometryPassMsaaResources[geometryPassRtvNum];
+
 		D3D12_CPU_DESCRIPTOR_HANDLE GeometryPassRTV() const;
+		D3D12_CPU_DESCRIPTOR_HANDLE GeometryPassMsaaRTV() const;
 
 
 	};

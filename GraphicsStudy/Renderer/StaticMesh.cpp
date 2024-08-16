@@ -19,31 +19,28 @@ void Core::StaticMesh::Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3
 	commandList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
 }
 
-void Core::StaticMesh::Update(const float& deltaTime)
+void Core::StaticMesh::UpdateAnimation(const float& deltaTime, Animation::AnimationData& animationData)
 {
-
-	if (m_keys.size() > 0) {
-		static float frame = 0.f;
-		if (m_keys.size() <= (int)frame)
-		{
-			if (m_loopAnimation)
-			{
-				frame = (int)frame % m_keys.size();
-			}
-			else {
-				frame = m_keys.size() - 1;
-			}
-		}
-		m_objectConstantData->Model = m_invertTranspose * m_keys[(int)frame].GetTransform() * m_transformFBXAnimation;
+	if (animationData.clips[0].keys.size() > 0) {
+		
+		m_objectConstantData->Model = m_inverseMat * animationData.Get(animationData.meshNameToId[m_name]) * m_transformFBXAnimation;
 		m_objectConstantData->Model = m_objectConstantData->Model.Transpose();
 
 		CD3DX12_RANGE range(0, 0);
 		ThrowIfFailed(m_objectConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
 		memcpy(m_pCbvDataBegin, m_objectConstantData, sizeof(ObjectConstantData));
 
-		if (frame != (m_keys.size() - 1))
-		{
-			frame += m_secondPerFrames * m_animationSpeed;
-		}
-	}
+	}	
+}
+
+
+void Core::StaticMesh::Update(const float& deltaTime)
+{
+	/*m_objectConstantData->Model = m_objectConstantData->Model.Transpose();
+
+	CD3DX12_RANGE range(0, 0);
+	ThrowIfFailed(m_objectConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
+	memcpy(m_pCbvDataBegin, m_objectConstantData, sizeof(ObjectConstantData));*/
+
+
 }

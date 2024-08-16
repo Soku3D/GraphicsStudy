@@ -29,12 +29,12 @@ namespace Animation {
 			}
 		};
 
-		string name;              // Name of this animation clip
+		string name;              
 		vector<vector<Key>> keys; // m_key[meshIdx][frameIdx]
-		int numChannels;          // Number of meshes
-		int numKeys;              // Number of frames of this animation clip
-		double duration;          // Duration of animation in ticks
-		double ticksPerSec;       // Frames per second
+		int numChannels;         
+		int numKeys;              
+		double duration;          
+		double ticksPerSec;      
 	};
 
 	struct AnimationData {
@@ -48,40 +48,19 @@ namespace Animation {
 		Matrix accumulatedRootTransform = Matrix();
 		Vector3 prevPos = Vector3(0.0f);
 
-		Matrix Get(int clipId, int meshId, int frame) {
+		Matrix Get(int meshId) {
 			return meshTransforms[meshId];
 		}
+		
+		void Update(int frame) {
 
-		void Update(int clipId, int meshId, int frame) {
-			
-			auto& clip = clips[clipId];
+			auto& clip = clips[0];
 
-			for (int boneId = 0; boneId < meshTransforms.size(); boneId++) {
+			for (int meshId = 0; meshId < meshTransforms.size(); meshId++) {
 
-				auto& keys = clip.keys[boneId];
-
-				const Matrix parentMatrix = accumulatedRootTransform;
-
-				auto key = keys.size() > 0
-					? keys[frame % keys.size()]
-					: AnimationClip::Key(); 
-
-
-				if (frame != 0) {
-					accumulatedRootTransform =
-						Matrix::CreateTranslation(key.pos - prevPos) *
-						accumulatedRootTransform;
-				}
-				else {
-					auto temp = Vector3(0, 0, 0);
-					accumulatedRootTransform.Translation(temp);
-				}
-
-				prevPos = key.pos;
-				key.pos = Vector3(0.0f);
-
-
-				meshTransforms[boneId] = key.GetTransform() * parentMatrix;
+				auto& keys = clip.keys[meshId];
+				auto key = keys[frame % keys.size()];
+				meshTransforms[meshId] = key.GetTransform();
 			}
 		}
 	};

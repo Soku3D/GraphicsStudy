@@ -3,6 +3,9 @@ Texture2D g_normal : register(t1);
 Texture2D g_ambientColor : register(t2);
 Texture2D g_specularColor : register(t3); // rgb : ambient,diffuse,specular, a : shineness
 
+TextureCube g_diffuseCube : register(t4);
+TextureCube g_specularCube : register(t5);
+
 SamplerState g_sampler : register(s0);
 
 #define LIGHT_NUM 30

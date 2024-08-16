@@ -16,6 +16,7 @@ namespace Renderer {
     class ModelLoader {
     public:
         ModelLoader();
+        ~ModelLoader();
         void Load(std::string filename, bool loadAnimation = false);
         void ReadAnimation(const aiScene* pScene);
         //void Load(std::string basePath, std::string filename);
@@ -25,7 +26,7 @@ namespace Renderer {
         
         Animation::AnimationData m_animeData;
         BasicMeshData ProcessMesh(aiMesh* mesh, const aiScene* scene);
-
+        int meshCount = 0;
     public:
         std::string basePath;
         std::vector<BasicMeshData> meshes;

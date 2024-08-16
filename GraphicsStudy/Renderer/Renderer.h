@@ -8,11 +8,13 @@
 
 namespace Renderer {
 	
-	extern std::map<std::string, GraphicsPSO > grphicsPsoList;
-	extern std::map<std::string, GraphicsPSO > cubePsoList;
-	extern std::map<std::string, GraphicsPSO > utilityPsoList;
+	extern std::map<std::string, GraphicsPSO > modePsoLists;
+	extern std::map<std::string, GraphicsPSO > passPsoLists;
+	extern std::map<std::string, GraphicsPSO > cubePsoLists;
+	extern std::map<std::string, GraphicsPSO > utilityPsoLists;
 
-	extern std::vector<std::string> graphicsPsoListNames;
+	extern std::vector<std::string> modePsoListNames;
+	extern std::vector<std::string> passPsoListNames;
 	extern std::vector<std::string> cubePsoListNames;
 	extern std::vector<std::string> utilityPsoListNames;
 	
@@ -34,6 +36,7 @@ namespace Renderer {
 	extern RootSignature computeSignature;
 	extern RootSignature cubeMapSignature;
 	extern RootSignature geometryPassSignature;
+	extern RootSignature lightPassSignature;
 
 	extern RootSignature copySignature;
 	

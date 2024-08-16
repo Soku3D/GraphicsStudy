@@ -9,6 +9,6 @@ struct PSInput
 
 float4 main(PSInput input) : SV_Target
 {
-    return g_cubeMap.Sample(g_sampler, input.worldPoition);
+    return g_cubeMap.SampleLevel(g_sampler, input.worldPoition, 0.f);
     //return float4(1.f, 0.f, 0.f, 1.f);
 }
