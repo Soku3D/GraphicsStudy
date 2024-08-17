@@ -86,6 +86,41 @@ namespace Renderer {
         }*/
     }
 
+    void ModelLoader::LoadPbr(std::string filename, bool loadAnimation)
+    {
+
+        if (loadAnimation)
+        {
+            basePath += "Animations/";
+        }
+
+        Assimp::Importer importer;
+
+        const aiScene* pScene = importer.ReadFile(
+            this->basePath + filename,
+            aiProcess_Triangulate | aiProcess_ConvertToLeftHanded);
+
+        if (pScene == nullptr)
+        {
+            std::cout << "Can't Load Model " + basePath + filename << std::endl;
+            return;
+        }
+        Matrix tr; 
+        ProcessNode(pScene->mRootNode, pScene, tr);
+
+        m_animeData.offsetMatrices.resize(m_animeData.meshNameToId.size());
+        m_animeData.meshTransforms.resize(m_animeData.meshNameToId.size());
+
+        for (auto& mesh : m_animeData.meshNameToId)
+        {
+            std::cout << mesh.first << " : " << mesh.second << "\n";
+        }
+        if (loadAnimation)
+        {
+            ReadAnimation(pScene);
+        }
+    }
+
     void ModelLoader::ReadAnimation(const aiScene* pScene) {
 
         m_animeData.clips.resize(pScene->mNumAnimations);
@@ -123,7 +158,6 @@ namespace Renderer {
 
     void ModelLoader::ProcessNode(aiNode* node, const aiScene* scene, Matrix tr) {
         
-
         Matrix m;
         ai_real* temp = &node->mTransformation.a1;
         float* mTemp = &m._11;
@@ -144,6 +178,35 @@ namespace Renderer {
             }
 
             meshes.push_back(newMesh);
+        }
+
+        for (UINT i = 0; i < node->mNumChildren; i++) {
+            this->ProcessNode(node->mChildren[i], scene, m);
+        }
+    }
+
+    void ModelLoader::ProcessPbrNode(aiNode* node, const aiScene* scene, DirectX::SimpleMath::Matrix tr)
+    {
+        Matrix m;
+        ai_real* temp = &node->mTransformation.a1;
+        float* mTemp = &m._11;
+        for (int t = 0; t < 16; t++) {
+            mTemp[t] = float(temp[t]);
+        }
+        m = m.Transpose() * tr;
+
+        for (UINT i = 0; i < node->mNumMeshes; i++) {
+
+            aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+            m_animeData.meshNameToId[mesh->mName.C_Str()] = meshCount++;
+            auto newMesh = this->ProcessPbrMesh(mesh, scene);
+            newMesh.m_name = mesh->mName.C_Str();
+
+            for (auto& v : newMesh.m_vertices) {
+                v.position = DirectX::SimpleMath::Vector3::Transform(v.position, m);
+            }
+
+            pbrMeshes.push_back(newMesh);
         }
 
         for (UINT i = 0; i < node->mNumChildren; i++) {
@@ -191,6 +254,78 @@ namespace Renderer {
         }
 
         BasicMeshData newMesh;
+        newMesh.m_vertices = vertices;
+        newMesh.m_indices = indices;
+
+        if (mesh->mMaterialIndex >= 0) {
+            aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+
+            if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
+                aiString filepath;
+                material->GetTexture(aiTextureType_DIFFUSE, 0, &filepath);
+
+                std::wstring fullPath =
+                    std::wstring(std::filesystem::path(filepath.C_Str())
+                        .filename()
+                        .wstring());
+
+                newMesh.m_texturePath = fullPath;
+                std::wcout << fullPath << std::endl;
+            }
+        }
+        return newMesh;
+    }
+    PbrMeshData ModelLoader::ProcessPbrMesh(aiMesh* mesh, const aiScene* scene)
+    {
+        // Data to fill
+        std::vector<PbrVertex> vertices;
+        std::vector<uint32_t> indices;
+
+        // Walk through each of the mesh's vertices
+        for (UINT i = 0; i < mesh->mNumVertices; i++) {
+            PbrVertex vertex;
+
+            vertex.position.x = mesh->mVertices[i].x;
+            vertex.position.y = mesh->mVertices[i].y;
+            vertex.position.z = mesh->mVertices[i].z;
+
+            if (mesh->mNormals != nullptr) {
+                vertex.normal.x = mesh->mNormals[i].x;
+                vertex.normal.y = mesh->mNormals[i].y;
+                vertex.normal.z = mesh->mNormals[i].z;
+
+                vertex.normal.Normalize();
+            }
+            else {
+                std::cout << "NULL Normals" << std::endl;
+            }
+
+            if (mesh->mTangents != nullptr) {
+                vertex.tangent.x = mesh->mTangents[i].x;
+                vertex.tangent.y = mesh->mTangents[i].y;
+                vertex.tangent.z = mesh->mTangents[i].z;
+
+                vertex.tangent.Normalize();
+            }
+            else {
+                std::cout << "NULL Tagents" << std::endl;
+            }
+
+            if (mesh->mTextureCoords[0]) {
+                vertex.texcoord.x = (float)mesh->mTextureCoords[0][i].x;
+                vertex.texcoord.y = (float)mesh->mTextureCoords[0][i].y;
+            }
+
+            vertices.push_back(vertex);
+        }
+
+        for (UINT i = 0; i < mesh->mNumFaces; i++) {
+            aiFace face = mesh->mFaces[i];
+            for (UINT j = 0; j < face.mNumIndices; j++)
+                indices.push_back(face.mIndices[j]);
+        }
+
+        PbrMeshData newMesh;
         newMesh.m_vertices = vertices;
         newMesh.m_indices = indices;
 

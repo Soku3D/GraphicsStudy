@@ -186,10 +186,14 @@
     <FxCompile Include="GeometryPassPS.hlsl" />
     <FxCompile Include="LightPassPS.hlsl" />
     <FxCompile Include="LightPassVS.hlsl" />
+    <FxCompile Include="DrawNormalPassGS.hlsl" />
+    <FxCompile Include="DrawNormalPassPS.hlsl" />
+    <FxCompile Include="DrawNormalPassVS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />
     <None Include="GeometryPass.hlsli" />
     <None Include="LightPass.hlsli" />
+    <None Include="DrawNormalPass.hlsli" />
   </ItemGroup>
 </Project>

@@ -13,6 +13,14 @@
 #include "GeometryPassVS.h"
 #include "GeometryPassPS.h"
 
+#include "LightPassVS.h"
+#include "LightPassPS.h"
+
+#include "DrawNormalPassVS.h"
+#include "DrawNormalPassGS.h"
+#include "DrawNormalPassPS.h"
+
+
 namespace Renderer {
 	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -50,12 +58,16 @@ namespace Renderer {
 	RootSignature cubeMapSignature;
     RootSignature copySignature;
 	RootSignature lightPassSignature;
+	RootSignature NormalPassSignature;
 
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElement;
+	std::vector<D3D12_INPUT_ELEMENT_DESC> pbrElement;
 
-	D3D12_STATIC_SAMPLER_DESC defaultSampler;
+	D3D12_STATIC_SAMPLER_DESC wrapLinearSampler;
+	D3D12_STATIC_SAMPLER_DESC clampLinearSampler;
+	std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;
 
 	D3D12_RASTERIZER_DESC defaultRasterizer;
 	D3D12_RASTERIZER_DESC wireRasterizer;
@@ -65,30 +77,38 @@ namespace Renderer {
 
 	void Initialize(void)
 	{
-		defaultSampler = {};
-		defaultSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-		defaultSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		defaultSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		defaultSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		defaultSampler.MipLODBias = 0;
-		defaultSampler.MaxAnisotropy = 1.f;
-		defaultSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-		defaultSampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-		defaultSampler.MinLOD = 0.0f;
-		defaultSampler.MaxLOD = D3D12_FLOAT32_MAX;
-		defaultSampler.ShaderRegister = 0;
-		defaultSampler.RegisterSpace = 0;
-		defaultSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
+		wrapLinearSampler = {};
+		wrapLinearSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+		wrapLinearSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		wrapLinearSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		wrapLinearSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		wrapLinearSampler.MipLODBias = 0;
+		wrapLinearSampler.MaxAnisotropy = 1.f;
+		wrapLinearSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+		wrapLinearSampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+		wrapLinearSampler.MinLOD = 0.0f;
+		wrapLinearSampler.MaxLOD = D3D12_FLOAT32_MAX;
+		wrapLinearSampler.ShaderRegister = 0;
+		wrapLinearSampler.RegisterSpace = 0;
+		wrapLinearSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+		clampLinearSampler = wrapLinearSampler;
+		clampLinearSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		clampLinearSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		clampLinearSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+
+		//samplers.push_back(wrapLinearSampler);
+		//samplers.push_back(clampLinearSampler);
 		// Init Signatures
-		defaultSignature.Initialize(1, 3, 1, &defaultSampler);
-		computeSignature.InitializeUAV(1,1, 0, nullptr);
-		cubeMapSignature.Initialize(1, 1, 1, &defaultSampler);
-		copySignature.Initialize(1, 0, 1, &defaultSampler);
-		copySignature.Initialize(1, 0, 1, &defaultSampler);
+		defaultSignature.Initialize(1, 3, 1, &wrapLinearSampler);
+		computeSignature.InitializeUAV(1, 1, 0, nullptr);
+		cubeMapSignature.Initialize(1, 1, 1, &wrapLinearSampler);
+		copySignature.Initialize(1, 0, 1, &wrapLinearSampler);
 		
-		geometryPassSignature.Initialize(1, 2, 1, &defaultSampler);
-		//lightPassSignature.Initialize(1, 0, 1, &defaultSampler);
+		geometryPassSignature.Initialize(2, 2, 1, &wrapLinearSampler);
+		lightPassSignature.InitializeDoubleSrvHeap(4, 4, 0, &wrapLinearSampler);
+		NormalPassSignature.Initialize(2);
 
 		GraphicsPSO msaaPso("Msaa");
 		GraphicsPSO wirePso("Wire");
@@ -101,8 +121,11 @@ namespace Renderer {
 		GraphicsPSO msaaGeometryPassPso("MsaaGeometryPass");
 		GraphicsPSO wireGeometryPassPso("WireGeometryPass");
 
+		GraphicsPSO lightPassPso("LightPass");
+
+		GraphicsPSO DrawNormalPassPso("NormalPass");
+
 		GraphicsPSO copyPso("Copy");
-		//GraphicsPSO lightPassPso("LightPass");
 		
 				
 		defaultElement =
@@ -114,6 +137,13 @@ namespace Renderer {
 		simpleElement =
 		{
 			{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+		};
+		pbrElement =
+		{
+			{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+			{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+			{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+			{"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 		};
 
 		defaultRasterizer = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -156,12 +186,29 @@ namespace Renderer {
 		defaultGeometryPassPso.SetVertexShader(g_pGeometryPassVS, sizeof(g_pGeometryPassVS));
 		defaultGeometryPassPso.SetPixelShader(g_pGeometryPassPS, sizeof(g_pGeometryPassPS));
 		defaultGeometryPassPso.SetRenderTargetFormats(geometryPassNum, geometryPassFormats, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		defaultGeometryPassPso.SetInputLayout((UINT)pbrElement.size(), pbrElement.data());
 
 		msaaGeometryPassPso = defaultGeometryPassPso;
 		msaaGeometryPassPso.SetRenderTargetFormats(geometryPassNum, geometryPassFormats, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
 
 		wireGeometryPassPso = defaultGeometryPassPso;
 		wireGeometryPassPso.SetRasterizerState(wireRasterizer);
+
+		lightPassPso = defaultPso;
+		lightPassPso.SetRootSignature(&lightPassSignature);
+		lightPassPso.SetVertexShader(g_pLightPassVS, sizeof(g_pLightPassVS));
+		lightPassPso.SetPixelShader(g_pLightPassPS, sizeof(g_pLightPassPS));
+		lightPassPso.SetInputLayout((UINT)simpleElement.size(), simpleElement.data());
+		lightPassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
+
+		DrawNormalPassPso = defaultPso;
+		DrawNormalPassPso.SetVertexShader(g_pDrawNormalPassVS, sizeof(g_pDrawNormalPassVS));
+		DrawNormalPassPso.SetPixelShader(g_pDrawNormalPassPS, sizeof(g_pDrawNormalPassPS));
+		DrawNormalPassPso.SetInputLayout((UINT)pbrElement.size(), pbrElement.data());
+		DrawNormalPassPso.SetGeometryShader(g_pDrawNormalPassGS, sizeof(g_pDrawNormalPassGS));
+		DrawNormalPassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		DrawNormalPassPso.SetRootSignature(&NormalPassSignature);
+		DrawNormalPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
 
 		computePso.SetRootSignature(&computeSignature);
 		computePso.SetComputeShader(g_pTestCS, sizeof(g_pTestCS));
@@ -200,7 +247,8 @@ namespace Renderer {
 		passPsoLists[defaultGeometryPassPso.GetName()] = defaultGeometryPassPso;
 		passPsoLists[wireGeometryPassPso.GetName()] = wireGeometryPassPso;
 		passPsoLists[msaaGeometryPassPso.GetName()] = msaaGeometryPassPso;
-
+		passPsoLists[lightPassPso.GetName()] = lightPassPso;
+		passPsoLists[DrawNormalPassPso.GetName()] = DrawNormalPassPso;
 
 		utilityPsoLists[copyPso.GetName()] = copyPso;
 		
@@ -219,6 +267,8 @@ namespace Renderer {
 		cubeMapSignature.Finalize(device);
 		copySignature.Finalize(device);
 		geometryPassSignature.Finalize(device);
+		lightPassSignature.Finalize(device);
+		NormalPassSignature.Finalize(device);
 
 		for (auto& pso : modePsoLists) {
 			pso.second.Finalize(device);

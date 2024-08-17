@@ -33,7 +33,8 @@ namespace Core {
 			Microsoft::WRL::ComPtr<ID3D12Device>& device,
 			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList,
 			const DirectX::SimpleMath::Vector3& modelPosition = DirectX::SimpleMath::Vector3::Zero, 
-			Material& material = Material())
+			Material& material = Material(),
+			bool bUseNormalMap = false)
 		{
 			m_name = meshData.m_name;
 			
@@ -51,8 +52,10 @@ namespace Core {
 			m_objectConstantData = new ObjectConstantData();
 			
 			m_objectConstantData->Material = material;
+			m_objectConstantData->bUseNormalMap = bUseNormalMap;
 			m_objectConstantData->Model = DirectX::XMMatrixTranslation(modelPosition.x, modelPosition.y, modelPosition.z);
 			m_transformFBXAnimation = m_objectConstantData->Model;
+			m_objectConstantData->invTranspose = m_objectConstantData->Model.Invert();
 			m_objectConstantData->Model = m_objectConstantData->Model.Transpose();
 
 			std::vector<ObjectConstantData> constantData = { *m_objectConstantData	};
@@ -68,6 +71,7 @@ namespace Core {
 	
 
 		void Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat = true);
+		void RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat);
 		void UpdateAnimation(const float& deltaTime, Animation::AnimationData& animationData);
 		void Update(const float& deltaTime);
 	

@@ -1,12 +1,15 @@
 Texture2D g_worldPosition : register(t0);
 Texture2D g_normal : register(t1);
-Texture2D g_ambientColor : register(t2);
+Texture2D g_albedoColor : register(t2);
 Texture2D g_specularColor : register(t3); // rgb : ambient,diffuse,specular, a : shineness
 
-TextureCube g_diffuseCube : register(t4);
-TextureCube g_specularCube : register(t5);
+Texture2D g_brdf : register(t4);
+TextureCube g_irradianceCube : register(t5);
+TextureCube g_albedoCube : register(t6);
+TextureCube g_specularCube : register(t7);
 
-SamplerState g_sampler : register(s0);
+SamplerState g_wrapLinearSampler : register(s0);
+//SamplerState g_clampLinearSampler : register(s1);
 
 #define LIGHT_NUM 30
 
@@ -24,13 +27,19 @@ cbuffer cbLight : register(b0)
     float3 eyePosition;
 }
 
+struct PSInput
+{
+    float4 position : SV_Position;
+    float2 uv : TEXCOORD;
+};
+
 float4 ComputeLight(int lightIndex, float2 uv)
 {
     float4 lightColor = float4(0, 0, 0, 0);
-    float3 position = g_worldPosition.Sample(g_sampler, uv).xyz;
-    float3 normal = g_normal.Sample(g_sampler, uv).xyz;
-    float4 ambient = g_ambientColor.Sample(g_sampler, uv);
-    float4 specular = g_specularColor.Sample(g_sampler, uv);
+    float3 position = g_worldPosition.Sample(g_wrapLinearSampler, uv).xyz;
+    float3 normal = g_normal.Sample(g_wrapLinearSampler, uv).xyz;
+    float4 ambient = g_albedoColor.Sample(g_wrapLinearSampler, uv);
+    float4 specular = g_specularColor.Sample(g_wrapLinearSampler, uv);
     
     float3 toLightDir = normalize(light[lightIndex].position - position);
     float diffuseStrength = clamp(dot(toLightDir, normal), 0.f, 1.f);

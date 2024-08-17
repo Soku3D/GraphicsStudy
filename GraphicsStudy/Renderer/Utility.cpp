@@ -39,20 +39,21 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
 		else {
 			ThrowIfFailed(
 				CreateDDSTextureFromFile(device.Get(), resourceUpload, path.c_str()
-					,texture.ReleaseAndGetAddressOf(),true));
+					,texture.ReleaseAndGetAddressOf(), false));
 		}
 	}
 	else {
 		ThrowIfFailed(CreateWICTextureFromFileEx(device.Get(), resourceUpload, path.c_str(), 0,
 			D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE,
-			WIC_LOADER_FLAGS::WIC_LOADER_FORCE_RGBA32 | WIC_LOADER_MIP_AUTOGEN,
+			WIC_LOADER_MIP_AUTOGEN | WIC_LOADER_FORCE_SRGB,
 			texture.ReleaseAndGetAddressOf()));
 	}
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = texture->GetDesc().Format;
 
-	std::wcout << path.c_str() << ' ' << texture->GetDesc().MipLevels << std::endl;
+	std::wcout << path.c_str() << ' ' << texture->GetDesc().MipLevels << ' ' 
+		<< texture->GetDesc().Format << std::endl;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
 	if (bIsCubeMap != nullptr && *bIsCubeMap == true) {

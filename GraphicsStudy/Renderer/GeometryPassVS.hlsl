@@ -11,7 +11,11 @@ PSInput main(VSInput input)
     output.svPosition = pos;
     
     output.uv = input.uv;
-    output.normal = input.normal;
+    float3 normal = mul(float4(input.normal, 0.f), invTranspose).xyz;
+    output.normal = normalize(normal);
+    
+    float3 tangent = mul(float4(input.tangent, 0.f), Model).xyz;
+    output.tangent = normalize(tangent);
     
     return output;
 }

@@ -18,17 +18,22 @@ namespace Renderer {
         ModelLoader();
         ~ModelLoader();
         void Load(std::string filename, bool loadAnimation = false);
+        void LoadPbr(std::string filename, bool loadAnimation = false);
         void ReadAnimation(const aiScene* pScene);
         //void Load(std::string basePath, std::string filename);
 
         void ProcessNode(aiNode* node, const aiScene* scene,
             DirectX::SimpleMath::Matrix tr);
-        
+        void ProcessPbrNode(aiNode* node, const aiScene* scene,
+            DirectX::SimpleMath::Matrix tr);
+
         Animation::AnimationData m_animeData;
         BasicMeshData ProcessMesh(aiMesh* mesh, const aiScene* scene);
+        PbrMeshData ProcessPbrMesh(aiMesh* mesh, const aiScene* scene);
         int meshCount = 0;
     public:
         std::string basePath;
         std::vector<BasicMeshData> meshes;
+        std::vector<PbrMeshData> pbrMeshes;
     };
 }

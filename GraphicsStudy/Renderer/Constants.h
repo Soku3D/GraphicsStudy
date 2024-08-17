@@ -26,7 +26,10 @@ __declspec(align(256)) struct GlobalVertexConstantData
 
 __declspec(align(256)) struct ObjectConstantData {
 	DirectX::SimpleMath::Matrix Model = DirectX::SimpleMath::Matrix();
+	DirectX::SimpleMath::Matrix invTranspose = DirectX::SimpleMath::Matrix();
 	Material Material;
+	bool bUseNormalMap;
+	DirectX::SimpleMath::Vector3 dummy;
 };
 __declspec(align(256)) struct ObjectConstantData2 {
 	DirectX::SimpleMath::Matrix Model = DirectX::SimpleMath::Matrix();

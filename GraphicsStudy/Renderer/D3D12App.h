@@ -51,9 +51,10 @@ namespace Renderer {
 
 		void CreateCommandObjects();
 		void CreateDescriptorHeaps();
+
 		void FlushCommandQueue();
 
-		void CreateVertexAndIndexBuffer();
+		virtual void CreateVertexAndIndexBuffer();
 		void RenderFonts(const std::wstring& output, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors, std::shared_ptr<DirectX::SpriteBatch>& spriteBatch, std::shared_ptr<DirectX::SpriteFont>& font, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 		void CreateConstantBuffer();
 		void CreateTextures();
@@ -91,7 +92,7 @@ namespace Renderer {
 		void CreateDepthBuffer(ComPtr<ID3D12Resource>& buffer, D3D12_CPU_DESCRIPTOR_HANDLE& handle, bool bUseMsaa);
 		void CreateResourceBuffer(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_RESOURCE_FLAGS flag);
 		void CreateResourceView(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_CPU_DESCRIPTOR_HANDLE& handle, ComPtr<ID3D12Device>& deivce, const Renderer::DescriptorType& type);
-		void CreateDescriporHeap(ComPtr<ID3D12Device>& deivce, ComPtr<ID3D12DescriptorHeap>& heap, const Renderer::DescriptorType& type, int Numdescriptors,
+		void CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce, ComPtr<ID3D12DescriptorHeap>& heap, const Renderer::DescriptorType& type, int Numdescriptors,
 			D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 
 	protected:
@@ -163,6 +164,7 @@ namespace Renderer {
 		ComPtr<ID3D12DescriptorHeap> m_exrSrvHeap;
 
 		std::map<std::wstring, unsigned int> m_textureMap;
+		std::map<std::wstring, unsigned int> m_cubeTextureMap;
 
 	protected:
 		// GUI용 
@@ -214,6 +216,7 @@ namespace Renderer {
 
 		ComPtr<ID3D12DescriptorHeap> m_geometryPassMsaaRtvHeap;
 		ComPtr<ID3D12Resource> m_geometryPassMsaaResources[geometryPassRtvNum];
+
 
 		D3D12_CPU_DESCRIPTOR_HANDLE GeometryPassRTV() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE GeometryPassMsaaRTV() const;

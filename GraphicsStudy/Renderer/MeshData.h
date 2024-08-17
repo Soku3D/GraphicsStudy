@@ -18,6 +18,7 @@ public:
 //typedef MeshData<Renderer::SimpleVertex> SimpleMeshData;
 using SimpleMeshData = MeshData<Renderer::SimpleVertex>;
 using BasicMeshData = MeshData<Renderer::Vertex>;
+using PbrMeshData = MeshData<Renderer::PbrVertex>;
 
 template<typename Vertex>
 inline void MeshData<Vertex>::Initialize(std::vector<Vertex>& vertices, std::vector<uint32_t> indices, const std::wstring& texturePath)

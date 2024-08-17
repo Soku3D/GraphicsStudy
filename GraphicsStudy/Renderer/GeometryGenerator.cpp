@@ -376,3 +376,176 @@ std::tuple<std::vector<BasicMeshData>, Animation::AnimationData> GeometryGenerat
 	return { meshes, modelLoader->m_animeData };
 }
 
+PbrMeshData GeometryGenerator::PbrRectangle(const float& length, const std::wstring& texturePath)
+{
+	return PbrMeshData();
+}
+
+PbrMeshData GeometryGenerator::PbrBox(const float& length, const std::wstring& texturePath)
+{
+	return PbrMeshData();
+}
+
+PbrMeshData GeometryGenerator::PbrBox(const float& x, const float& y, const float& z, const std::wstring& texturePath)
+{
+	PbrMeshData data;
+
+	float hX = x / 2.f;
+	float hY = y / 2.f;
+	float hZ = z / 2.f;
+
+	std::vector<PbrVertex> vertices = {
+		{Vector3(-hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(0.f, 1.f),Vector3::Zero},
+		{Vector3(-hX, hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(0.f, 0.f),Vector3::Zero},
+		{Vector3(hX, hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(1.f, 0.f),Vector3::Zero},
+		{Vector3(hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(1.f, 1.f),Vector3::Zero},
+
+		{Vector3(hX, -hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(1.f, 1.f),Vector3::Zero},
+		{Vector3(hX, hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(1.f, 0.f),Vector3::Zero},
+		{Vector3(-hX, hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(0.f, 0.f),Vector3::Zero},
+		{Vector3(-hX, -hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(0.f, 1.f),Vector3::Zero},
+
+		{Vector3(-hX, -hY, hZ), Vector3(-1.f,0.f,0.f), Vector2(0.f, 1.f),Vector3::Zero},
+		{Vector3(-hX, hY, hZ), Vector3(-1.f,0.f, 0.f), Vector2(0.f, 0.f),Vector3::Zero},
+		{Vector3(-hX, hY, -hZ), Vector3(-1.f,0.f, 0.f), Vector2(1.f, 0.f),Vector3::Zero},
+		{Vector3(-hX, -hY, -hZ), Vector3(-1.f,0.f, 0.f), Vector2(1.f, 1.f),Vector3::Zero},
+
+		{Vector3(hX, -hY, -hZ), Vector3(1.f,0.f,0.f), Vector2(1.f, 1.f),Vector3::Zero},
+		{Vector3(hX, hY, -hZ), Vector3(1.f,0.f,0.f), Vector2(1.f, 0.f),Vector3::Zero},
+		{Vector3(hX, hY, hZ), Vector3(1.f,0.f,0.f), Vector2(0.f, 0.f),Vector3::Zero},
+		{Vector3(hX, -hY, hZ), Vector3(1.f,0.f,0.f), Vector2(0.f, 1.f),Vector3::Zero},
+
+		// 윗 면 (xz 평면)
+		{Vector3(-hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(0.f, 1.f),Vector3::Zero},
+		{Vector3(-hX, hY, hZ), Vector3(0.f, 1.f, 0.f), Vector2(0.f, 0.f),Vector3::Zero},
+		{Vector3(hX, hY, hZ), Vector3(0.f, 1.f, 0.f), Vector2(1.f, 0.f),Vector3::Zero},
+		{Vector3(hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(1.f, 1.f),Vector3::Zero},
+
+		// 아랫 면
+		{Vector3(hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(1.f, 1.f),Vector3::Zero},
+		{Vector3(hX, -hY, hZ), Vector3(0.f, -1.f, 0.f), Vector2(1.f, 0.f),Vector3::Zero},
+		{Vector3(-hX, -hY, hZ), Vector3(0.f, -1.f, 0.f), Vector2(0.f, 0.f),Vector3::Zero},
+		{Vector3(-hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(0.f, 1.f),Vector3::Zero}
+	};
+	std::vector<uint32_t> indices;
+
+	for (int i = 0; i < 6; i++)
+	{
+		int idx = i * 4;
+		indices.push_back(idx);
+		indices.push_back(idx + 1);
+		indices.push_back(idx + 2);
+		ComputeTangent(vertices[idx], vertices[idx + 1], vertices[idx + 2]);
+
+		indices.push_back(idx);
+		indices.push_back(idx + 2);
+		indices.push_back(idx + 3);
+		ComputeTangent(vertices[idx], vertices[idx + 2], vertices[idx + 3]);
+
+	}
+	data.Initialize(vertices, indices, texturePath);
+
+	return data;
+}
+
+PbrMeshData GeometryGenerator::PbrGrid(const float& xLength, const float& yLength, const int& x, const int& y, const std::wstring& texturePath)
+{
+	return PbrMeshData();
+}
+
+PbrMeshData GeometryGenerator::PbrCyilinder(const float& topRadius, const float& bottomRadius, const float& height, const int& x, const int& y, const std::wstring& texturePath)
+{
+	return PbrMeshData();
+}
+
+PbrMeshData GeometryGenerator::PbrSphere(const float& radius, const int& x, const int& y, const std::wstring& texturePath)
+{
+	PbrMeshData data;
+	if (x == 0 || y == 0)
+	{
+		return data;
+	}
+	Vector3 basePosition(Vector3(0.f, radius / 2.f, 0.f));
+
+
+	float delYTheta = DirectX::XM_2PI / x;
+	float delZTheta = DirectX::XM_PI / y;
+
+	float uvDelX = 1.f / x;
+	float uvDelY = 1.f / y;
+
+	int index = 0;
+
+	std::vector<PbrVertex> vertices;
+	std::vector<uint32_t> indices;
+	for (int j = 0; j < y + 1; ++j)
+	{
+		Vector3 position = Vector3::Transform(basePosition, DirectX::XMMatrixRotationZ(-delZTheta * j));
+		for (int i = 0; i < x + 1; ++i)
+		{
+			PbrVertex v;
+			v.position = Vector3::Transform(position, DirectX::XMMatrixRotationY(-delYTheta * i));
+			v.texcoord = Vector2(i * uvDelX, j * uvDelY);
+			v.normal = v.position;
+			v.normal.Normalize();
+
+			vertices.push_back(v);
+		}
+	}
+
+	for (int i = 0; i < y; i++)
+	{
+		int index = i * (x + 1);
+		for (int j = 0; j < x; j++)
+		{
+			int idx = index + j;
+			indices.push_back(idx + x + 1);
+			indices.push_back(idx);
+			indices.push_back(idx + 1);
+			ComputeTangent(vertices[idx + x + 1], vertices[idx], vertices[idx + 1]);
+
+			indices.push_back(idx + x + 1);
+			indices.push_back(idx + 1);
+			indices.push_back(idx + x + 2);
+			ComputeTangent(vertices[idx + x + 1], vertices[idx + 1], vertices[idx + x + 2]);
+
+		}
+	}
+	data.Initialize(vertices, indices, texturePath);
+
+	return data;
+}
+
+std::tuple<std::vector<PbrMeshData>, Animation::AnimationData> GeometryGenerator::ReadFromFile_Pbr(std::string filename, bool loadAnimation)
+{
+	using namespace DirectX;
+
+	std::shared_ptr<ModelLoader> modelLoader = std::make_shared<ModelLoader>();
+
+	modelLoader->LoadPbr(filename, loadAnimation);
+	std::vector<PbrMeshData>& meshes = modelLoader->pbrMeshes;
+	
+	return { meshes, modelLoader->m_animeData };
+}
+
+void GeometryGenerator::ComputeTangent(Renderer::PbrVertex& v0, Renderer::PbrVertex& v1, Renderer::PbrVertex& v2) {
+	Vector2 t0 = v1.texcoord - v0.texcoord;
+	Vector2 t1 = v2.texcoord - v0.texcoord;
+
+	Vector3 e0 = v1.position - v0.position;
+	Vector3 e1 = v2.position - v0.position;
+
+	float a = t0.x;
+	float b = t0.y;
+	float c = t1.x;
+	float d = t1.y;
+
+	float det = a * d - b * c;
+	float invDet = 1.f / det;
+
+	Vector3 tangent = invDet * (e0 * d - b * e1);
+
+	v0.tangent = tangent;
+	v1.tangent = tangent;
+	v2.tangent = tangent;
+}

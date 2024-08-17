@@ -446,7 +446,7 @@ void Renderer::D3D12App::RenderMeshes(float& deltaTime) {
 		for (int i = 0; i < m_staticMeshes.size(); ++i) {
 			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_exrSrvHeap->GetGPUDescriptorHandleForHeapStart());
 			handle.Offset(m_textureMap[L"test.exr"], m_csuHeapSize);
-			
+
 			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
 
 			m_staticMeshes[i]->Render(deltaTime, m_commandList, true);
@@ -456,7 +456,7 @@ void Renderer::D3D12App::RenderMeshes(float& deltaTime) {
 			m_fbxList[i]->Render(deltaTime, m_commandList, true, m_textureHeap, m_textureMap, m_csuHeapSize);
 		}
 
-		if (msaaMode && !bUseCubeMap) {
+		if (msaaMode && !bRenderCubeMap) {
 			ResolveSubresource(m_commandList, HDRRenderTargetBuffer(), MsaaRenderTargetBuffer());
 		}
 	}
@@ -465,7 +465,7 @@ void Renderer::D3D12App::RenderMeshes(float& deltaTime) {
 
 void Renderer::D3D12App::RenderCubeMap(float& deltaTime)
 {
-	if (bUseCubeMap)
+	if (bRenderCubeMap)
 	{
 		auto& pso = cubePsoLists[(currRenderMode + "CubeMap")];
 		if (currRenderMode == "Msaa") {
@@ -560,17 +560,17 @@ void Renderer::D3D12App::CreateDescriptorHeaps() {
 	m_rtvHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	m_dsvHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	m_csuHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	CreateDescriporHeap(m_device, m_swapChainRtvHeap, DescriptorType::RTV, m_swapChainCount);
-	CreateDescriporHeap(m_device, m_dsvHeap, DescriptorType::DSV, 2);
-	CreateDescriporHeap(m_device, m_cbvHeap, DescriptorType::CBV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-	CreateDescriporHeap(m_device, m_msaaRtvHeap, DescriptorType::RTV, 1);
-	CreateDescriporHeap(m_device, m_hdrRtvHeap, DescriptorType::RTV, 1);
-	CreateDescriporHeap(m_device, m_hdrUavHeap, DescriptorType::UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-	CreateDescriporHeap(m_device, m_hdrSrvHeap, DescriptorType::SRV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-	CreateDescriporHeap(m_device, m_geometryPassRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
-	CreateDescriporHeap(m_device, m_geometryPassSrvHeap, DescriptorType::SRV, geometryPassRtvNum, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-	CreateDescriporHeap(m_device, m_geometryPassMsaaRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
+	
+	CreateDescriptorHeap(m_device, m_swapChainRtvHeap, DescriptorType::RTV, m_swapChainCount);
+	CreateDescriptorHeap(m_device, m_dsvHeap, DescriptorType::DSV, 2);
+	CreateDescriptorHeap(m_device, m_cbvHeap, DescriptorType::CBV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	CreateDescriptorHeap(m_device, m_msaaRtvHeap, DescriptorType::RTV, 1);
+	CreateDescriptorHeap(m_device, m_hdrRtvHeap, DescriptorType::RTV, 1);
+	CreateDescriptorHeap(m_device, m_hdrUavHeap, DescriptorType::UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	CreateDescriptorHeap(m_device, m_hdrSrvHeap, DescriptorType::SRV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	CreateDescriptorHeap(m_device, m_geometryPassRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
+	CreateDescriptorHeap(m_device, m_geometryPassSrvHeap, DescriptorType::SRV, geometryPassRtvNum + 12, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	CreateDescriptorHeap(m_device, m_geometryPassMsaaRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
 
 }
 
@@ -592,14 +592,15 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 {
 	using DirectX::SimpleMath::Vector3;
 
-	/*std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
-	sphere->Initialize(GeometryGenerator::Sphere(0.8f, 100, 100, L"earth.jpg"), m_device, m_commandList, Vector3(-1.f, 0.f, 0.f));*/
+	std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
+	sphere->Initialize(GeometryGenerator::Sphere(0.8f, 100, 100, L"Bricks075A_4K-PNG0_Color.png"),
+		m_device, m_commandList, Vector3(0.f, 0.f, 0.f), Material(), true);
 
-	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
-	plane->Initialize(GeometryGenerator::Box(5, 1, 5, L"Metal.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f));
+	/*std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
+	plane->Initialize(GeometryGenerator::Box(5, 1, 5, L"Bricks075A_4K-PNG_Color.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f));*/
 
-	//m_staticMeshes.push_back(sphere);
-	m_staticMeshes.push_back(plane);
+	m_staticMeshes.push_back(sphere);
+	//m_staticMeshes.push_back(plane);
 
 	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile("box_destruction.fbx", true);
 	std::shared_ptr<Animation::FBX> wallDistructionFbx = std::make_shared<Animation::FBX>();
@@ -738,17 +739,29 @@ void Renderer::D3D12App::CreateCubeMapTextures() {
 	m_cubeMaptextureResources.resize(file_count);
 	m_cubeMaptextureUpload.resize(file_count);
 
+
 	int mapIdx = 0;
 	if (fs::exists(path) && fs::is_directory(path)) {
 		for (const auto& entry : fs::directory_iterator(path)) {
 			if (fs::is_regular_file(entry.status())) {
 				std::wstring fileName = entry.path().filename().wstring();
+				IsCubeMap = true;
+				if (fileName.substr(fileName.size() - 8, 4) == L"Brdf") {
+					IsCubeMap = false;
+				}
 				Utility::CreateTextureBuffer(cubeMapTextureBasePath + fileName, m_cubeMaptextureResources[mapIdx], m_cubeMapTextureHeap, m_device, m_commandQueue, m_commandList, mapIdx, m_csuHeapSize, &IsCubeMap);
 				//CreateCubeMapBuffer(cubeMapTextureBasePath + fileName, m_cubeMaptextureUpload[mapIdx], m_cubeMaptextureResources[mapIdx], mapIdx);
-				m_textureMap.emplace(fileName, mapIdx++);
+				m_cubeTextureMap.emplace(fileName, mapIdx++);
+
+
 			}
 		}
 	}
+	CD3DX12_CPU_DESCRIPTOR_HANDLE gPass_srvHeapHandle(m_geometryPassSrvHeap->GetCPUDescriptorHandleForHeapStart(), 4, m_csuHeapSize);
+
+	UINT numDescriptors = m_cubeMapTextureHeap->GetDesc().NumDescriptors;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE srcHandle(m_cubeMapTextureHeap->GetCPUDescriptorHandleForHeapStart());
+	m_device->CopyDescriptorsSimple(numDescriptors, gPass_srvHeapHandle, srcHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
 void Renderer::D3D12App::CreateExrTexture() {
@@ -810,16 +823,16 @@ void Renderer::D3D12App::CreateExrBuffer(std::wstring& path, ComPtr<ID3D12Resour
 
 	DirectX::ScratchImage mipChain;
 
-	ThrowIfFailed(GenerateMipMaps(scratchImage.GetImages(), 
+	ThrowIfFailed(GenerateMipMaps(scratchImage.GetImages(),
 		scratchImage.GetImageCount(),
-		scratchImage.GetMetadata(), 
-		DirectX::TEX_FILTER_DEFAULT, 
-		0, 
+		scratchImage.GetMetadata(),
+		DirectX::TEX_FILTER_DEFAULT,
+		0,
 		mipChain));
 
 	const Image* images = mipChain.GetImages();
 	const TexMetadata& mipChainMetadata = mipChain.GetMetadata();
-	
+
 	/*std::vector<uint16_t> image;
 	image.resize(images[0].slicePitch);
 	memcpy(image.data(), images[0].pixels, image.size());*/
@@ -880,14 +893,14 @@ void Renderer::D3D12App::CreateExrBuffer(std::wstring& path, ComPtr<ID3D12Resour
 	m_device->CreateShaderResourceView(texture.Get(), &srvDesc, handle);
 }
 
-void Renderer::D3D12App::CreateCubeMapBuffer(std::wstring& path, ComPtr<ID3D12Resource>& upload, ComPtr<ID3D12Resource>& texture, 
+void Renderer::D3D12App::CreateCubeMapBuffer(std::wstring& path, ComPtr<ID3D12Resource>& upload, ComPtr<ID3D12Resource>& texture,
 	UINT offset)
 {
 	using namespace DirectX;
 	TexMetadata metadata;
 	ScratchImage scratchImage;
 	ThrowIfFailed(LoadFromDDSFile(path.c_str(), DDS_FLAGS_ALLOW_LARGE_FILES, &metadata, scratchImage));
-	
+
 
 	// 2. Mipmap 생성
 	ScratchImage mipChain;
@@ -934,7 +947,7 @@ void Renderer::D3D12App::CreateCubeMapBuffer(std::wstring& path, ComPtr<ID3D12Re
 		nullptr,
 		IID_PPV_ARGS(&upload)
 	));
-	
+
 	// 6. 텍스처 데이터를 업로드 힙에 복사
 	D3D12_SUBRESOURCE_DATA textureData = {};
 	textureData.pData = images[0].pixels;
@@ -1248,7 +1261,7 @@ void Renderer::D3D12App::CreateResourceView(ComPtr<ID3D12Resource>& buffer,
 	}
 }
 
-void Renderer::D3D12App::CreateDescriporHeap(ComPtr<ID3D12Device>& deivce,
+void Renderer::D3D12App::CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce,
 	ComPtr<ID3D12DescriptorHeap>& heap,
 	const Renderer::DescriptorType& type,
 	int Numdescriptors,

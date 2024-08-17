@@ -21,5 +21,16 @@ public:
 	static BasicMeshData Cyilinder(const float& topRadius, const float& bottomRadius, const float& height, const int& x, const int& y, const std::wstring& texturePath = L"");
 	static BasicMeshData Sphere(const float& radius, const int& x, const int& y, const std::wstring& texturePath = L"");
 	static std::tuple<std::vector<BasicMeshData>, Animation::AnimationData> ReadFromFile(std::string filename, bool loadAnimation = false);
+
+	static PbrMeshData PbrRectangle(const float& length, const std::wstring& texturePath = L"");
+	static PbrMeshData PbrBox(const float& length, const std::wstring& texturePath = L"");
+	static PbrMeshData PbrBox(const float& x, const float& y, const float& z, const std::wstring& texturePath);
+	static PbrMeshData PbrGrid(const float& xLength, const float& yLength, const int& x, const int& y, const std::wstring& texturePath = L"");
+	static PbrMeshData PbrCyilinder(const float& topRadius, const float& bottomRadius, const float& height, const int& x, const int& y, const std::wstring& texturePath = L"");
+	static PbrMeshData PbrSphere(const float& radius, const int& x, const int& y, const std::wstring& texturePath = L"");
+	static std::tuple<std::vector<PbrMeshData>, Animation::AnimationData> ReadFromFile_Pbr(std::string filename, bool loadAnimation = false);
+
+	static void ComputeTangent(Renderer::PbrVertex& v0, Renderer::PbrVertex& v1, Renderer::PbrVertex& v2);
+
 };
 

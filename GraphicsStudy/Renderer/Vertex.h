@@ -11,4 +11,10 @@ namespace Renderer {
 		DirectX::SimpleMath::Vector3 normal;
 		DirectX::SimpleMath::Vector2 texcoord;
 	};
+	struct PbrVertex {
+		DirectX::SimpleMath::Vector3 position;
+		DirectX::SimpleMath::Vector3 normal;
+		DirectX::SimpleMath::Vector2 texcoord;
+		DirectX::SimpleMath::Vector3 tangent;
+	};
 }

@@ -37,13 +37,17 @@ namespace Renderer {
 	extern RootSignature cubeMapSignature;
 	extern RootSignature geometryPassSignature;
 	extern RootSignature lightPassSignature;
+	extern RootSignature NormalPassSignature;
 
 	extern RootSignature copySignature;
 	
 	extern std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;
 	extern std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElement;
+	extern std::vector<D3D12_INPUT_ELEMENT_DESC> pbrElement;
 
-	extern D3D12_STATIC_SAMPLER_DESC defaultSampler;
+	extern D3D12_STATIC_SAMPLER_DESC wrapLinearSampler;
+	extern D3D12_STATIC_SAMPLER_DESC clampLinearSampler;
+	extern std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;
 
 	extern D3D12_RASTERIZER_DESC defaultRasterizer;
 	extern D3D12_RASTERIZER_DESC wireRasterizer;
