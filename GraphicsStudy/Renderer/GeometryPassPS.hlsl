@@ -20,7 +20,7 @@ PSOutput main(PSInput input)
         
         output.normal = float4(normalize(normal), 1.f);
     }
-    output.specularColor = float4(material.albedo, material.diffuse, material.specular, material.shininess);
+    output.material = float4(material.albedo, material.metalic, material.roughness, 0.f);
     
     return output;
 }

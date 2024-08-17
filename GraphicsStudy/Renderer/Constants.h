@@ -10,11 +10,10 @@ struct Light {
 };
 
 struct Material {
-	float ambient = 0.8f;
-	float diffuse = 0.8f;
-	float specular = 1.f;
-	float shininess = 40.f;
-	
+	float albedo = 0.8f;
+	float metalic = 0.8f;
+	float roughness = 1.f;
+	float dummy;
 };
 
 
@@ -44,4 +43,10 @@ __declspec(align(256)) struct LightPassConstantData {
 __declspec(align(256)) struct CSConstantData {
 	float time;
 	float dummy[3];
+};
+
+__declspec(align(256)) struct CubeMapConstantData {
+	float expose;
+	float lodLevel;
+	DirectX::SimpleMath::Vector2 dummy;
 };

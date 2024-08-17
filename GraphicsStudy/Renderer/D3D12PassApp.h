@@ -19,6 +19,7 @@ namespace Renderer {
 		virtual ~D3D12PassApp() {}
 
 		bool Initialize() override;
+		void InitConstantBuffers();
 		bool InitGUI() override;
 		bool InitDirectX() override;
 		void OnResize() override;
@@ -42,9 +43,22 @@ namespace Renderer {
 		UINT8* m_pCbufferBegin = nullptr;
 		ComPtr<ID3D12Resource> m_csBuffer;
 
+		CubeMapConstantData* m_pCubeMapConstantData;
+		UINT8* m_pCubeMapCbufferBegin = nullptr;
+		ComPtr<ID3D12Resource> m_cubeMapConstantBuffer;
+
 	private:
 		bool bRenderMeshes = true;
 		bool bRenderFbx = true;
 		bool bRenderNormal = true;
+
+		float gui_cubeMapLod = 0.f;
+		float gui_cubeMapExpose = 1.f;
+		DirectX::SimpleMath::Vector3 gui_lightPos;
+		float gui_shineness;
+		float gui_diffuse;
+		float gui_specular;
+
+		float gui_lod = 0.f;
 	};
 }

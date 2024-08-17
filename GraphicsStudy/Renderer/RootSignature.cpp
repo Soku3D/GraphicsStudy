@@ -102,7 +102,7 @@ void Renderer::RootSignature::InitializeDoubleSrvHeap(UINT srvCount1, UINT srvCo
 
 	for (UINT i = 2; i <= cbCount+1; i++)
 	{
-		paramenters[i].InitAsConstantBufferView(i - 1);
+		paramenters[i].InitAsConstantBufferView(i - 2);
 	}
 
 	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =

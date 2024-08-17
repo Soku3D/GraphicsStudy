@@ -19,7 +19,6 @@ namespace Renderer {
 	{
 		MyFont,
 		Count
-
 	};
 
 	enum DescriptorType {
@@ -104,9 +103,9 @@ namespace Renderer {
 		ComPtr<ID3D12Device> m_device;
 
 		UINT m_numQualityLevels = 0;
-		UINT m_sampleCount = 4;
-		DXGI_FORMAT m_backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-		//DXGI_FORMAT m_backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		UINT m_sampleCount = 8;
+		//DXGI_FORMAT m_backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		DXGI_FORMAT m_backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		DXGI_FORMAT m_hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		DXGI_FORMAT m_msaaFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		DXGI_FORMAT m_depthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -130,6 +129,7 @@ namespace Renderer {
 		ComPtr<ID3D12DescriptorHeap> m_dsvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_cbvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_textureHeap;
+		ComPtr<ID3D12DescriptorHeap> m_cubeMapTextureHeapNSV;
 		ComPtr<ID3D12DescriptorHeap> m_cubeMapTextureHeap;
 
 		D3D12_VIEWPORT m_viewport;
@@ -198,15 +198,7 @@ namespace Renderer {
 	protected:
 		std::string currRenderMode = "Default";
 		bool msaaMode = false;
-		DirectX::SimpleMath::Vector3 gui_lightPos;
-		float gui_shineness;
-		float gui_diffuse;
-		float gui_specular;
-
-		float gui_frame = 0.f;
-		float gui_lod = 0.f;
-
-
+		
 	protected:
 		// GeometryPass
 		static const UINT geometryPassRtvNum = 4;

@@ -81,7 +81,7 @@ bool Renderer::D3D12App::InitGUI()
 	// io.Fonts->TexID = (ImTextureID)m_guiFont->GetSpriteSheet().ptr;
 
 	ImGui::StyleColorsLight();
-	const char* fontPath = "Fonts/Hack-Regular.ttf";
+	const char* fontPath = "Fonts/Hack-Bold.ttf";
 	float fontSize = 15.0f;
 	// 폰트 로드
 	io.Fonts->AddFontFromFileTTF(fontPath, fontSize);
@@ -150,7 +150,7 @@ bool Renderer::D3D12App::InitDirectX()
 	msaaData.SampleCount = m_sampleCount;
 
 	ThrowIfFailed(device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msaaData, sizeof(msaaData)));
-	//std::cout << "Msaa Num Quality Level : " << msaaData.NumQualityLevels << std::endl;
+	std::cout << "Msaa Num Quality Level : " << msaaData.NumQualityLevels << std::endl;
 	m_numQualityLevels = msaaData.NumQualityLevels;
 	msaaQuality = m_numQualityLevels;
 	m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
@@ -285,7 +285,7 @@ void Renderer::D3D12App::Update(float& deltaTime)
 	m_passConstantData->ProjMat = m_passConstantData->ProjMat.Transpose();
 
 	m_ligthPassConstantData->eyePos = m_camera->GetPosition();
-	m_ligthPassConstantData->lod = gui_lod;
+	m_ligthPassConstantData->lod = 0.f;
 
 	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
 	memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
@@ -321,7 +321,7 @@ void Renderer::D3D12App::UpdateGUI(float& deltaTime)
 	/*ImGui::SliderFloat("Material Shineness", &gui_shineness, 1.f, 100.f);
 	ImGui::SliderFloat("Material Diffuse", &gui_diffuse, 0.f, 1.f);
 	ImGui::SliderFloat("Material Specualr", &gui_specular, 0.f, 1.f);*/
-	ImGui::SliderFloat("LOD", &gui_lod, 0.f, 10.f);
+	//ImGui::SliderFloat("LOD", &gui_lod, 0.f, 10.f);
 	//ImGui::SliderFloat("Frame", &gui_frame, 0.f, 49.f);
 }
 
@@ -728,12 +728,9 @@ void Renderer::D3D12App::CreateCubeMapTextures() {
 		return;
 	}
 	m_textureNum = file_count;
-	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	srvHeapDesc.NodeMask = 0;
-	srvHeapDesc.NumDescriptors = file_count;
-	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	m_device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_cubeMapTextureHeap));
+	
+	CreateDescriptorHeap(m_device, m_cubeMapTextureHeapNSV, DescriptorType::SRV, file_count, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
+	CreateDescriptorHeap(m_device, m_cubeMapTextureHeap, DescriptorType::SRV, file_count, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
 	bool IsCubeMap = true;
 	m_cubeMaptextureResources.resize(file_count);
@@ -749,7 +746,7 @@ void Renderer::D3D12App::CreateCubeMapTextures() {
 				if (fileName.substr(fileName.size() - 8, 4) == L"Brdf") {
 					IsCubeMap = false;
 				}
-				Utility::CreateTextureBuffer(cubeMapTextureBasePath + fileName, m_cubeMaptextureResources[mapIdx], m_cubeMapTextureHeap, m_device, m_commandQueue, m_commandList, mapIdx, m_csuHeapSize, &IsCubeMap);
+				Utility::CreateTextureBuffer(cubeMapTextureBasePath + fileName, m_cubeMaptextureResources[mapIdx], m_cubeMapTextureHeapNSV, m_device, m_commandQueue, m_commandList, mapIdx, m_csuHeapSize, &IsCubeMap);
 				//CreateCubeMapBuffer(cubeMapTextureBasePath + fileName, m_cubeMaptextureUpload[mapIdx], m_cubeMaptextureResources[mapIdx], mapIdx);
 				m_cubeTextureMap.emplace(fileName, mapIdx++);
 
@@ -757,11 +754,14 @@ void Renderer::D3D12App::CreateCubeMapTextures() {
 			}
 		}
 	}
-	CD3DX12_CPU_DESCRIPTOR_HANDLE gPass_srvHeapHandle(m_geometryPassSrvHeap->GetCPUDescriptorHandleForHeapStart(), 4, m_csuHeapSize);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dest_gPassHeapHandle(m_geometryPassSrvHeap->GetCPUDescriptorHandleForHeapStart(), 4, m_csuHeapSize);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dest_CubeHandle(m_cubeMapTextureHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE src_CubeHandle(m_cubeMapTextureHeapNSV->GetCPUDescriptorHandleForHeapStart());
 
-	UINT numDescriptors = m_cubeMapTextureHeap->GetDesc().NumDescriptors;
-	CD3DX12_CPU_DESCRIPTOR_HANDLE srcHandle(m_cubeMapTextureHeap->GetCPUDescriptorHandleForHeapStart());
-	m_device->CopyDescriptorsSimple(numDescriptors, gPass_srvHeapHandle, srcHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	UINT numDescriptors = m_cubeMapTextureHeapNSV->GetDesc().NumDescriptors;
+	m_device->CopyDescriptorsSimple(numDescriptors, dest_gPassHeapHandle, src_CubeHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	m_device->CopyDescriptorsSimple(numDescriptors, dest_CubeHandle, src_CubeHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		
 }
 
 void Renderer::D3D12App::CreateExrTexture() {
@@ -968,7 +968,7 @@ void Renderer::D3D12App::CreateCubeMapBuffer(std::wstring& path, ComPtr<ID3D12Re
 	srvDesc.Format = textureDesc.Format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 	srvDesc.TextureCube.MipLevels = 1;
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_cubeMapTextureHeap->GetCPUDescriptorHandleForHeapStart(), offset, m_csuHeapSize);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_cubeMapTextureHeapNSV->GetCPUDescriptorHandleForHeapStart(), offset, m_csuHeapSize);
 	m_device->CreateShaderResourceView(texture.Get(), &srvDesc, handle);
 
 }
@@ -1093,6 +1093,8 @@ void  Renderer::D3D12App::CopyResource(ComPtr<ID3D12GraphicsCommandList>& comman
 	D3D12_RESOURCE_STATES srcState
 )
 {
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 		dest,
 		destState,
@@ -1114,6 +1116,12 @@ void  Renderer::D3D12App::CopyResource(ComPtr<ID3D12GraphicsCommandList>& comman
 		dest,
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		destState));
+
+	ThrowIfFailed(m_commandList->Close());
+	ID3D12CommandList* lists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
+
+	FlushCommandQueue();
 }
 
 

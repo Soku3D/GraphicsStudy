@@ -7,7 +7,7 @@ Renderer::D3D12PassApp::D3D12PassApp(const int& width, const int& height)
 	:D3D12App(width, height)
 {
 	bUseGUI = true;
-	bRenderCubeMap = false;
+	bRenderCubeMap = true;
 	bRenderMeshes = true;
 	bRenderFbx = false;
 	bRenderNormal = false;
@@ -17,7 +17,13 @@ bool Renderer::D3D12PassApp::Initialize()
 {
 	if (!D3D12App::Initialize())
 		return false;
+	gui_lightPos = DirectX::SimpleMath::Vector3(-1.f, 1.f, 0.f);
+	InitConstantBuffers();
 
+	return true;
+}
+
+void Renderer::D3D12PassApp::InitConstantBuffers() {
 	psConstantData = new CSConstantData();
 	psConstantData->time = 0;
 
@@ -33,7 +39,22 @@ bool Renderer::D3D12PassApp::Initialize()
 	ThrowIfFailed(m_csBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbufferBegin)));
 	memcpy(m_pCbufferBegin, psConstantData, sizeof(CSConstantData));
 
-	return true;
+
+	m_pCubeMapConstantData = new CubeMapConstantData();
+	m_pCubeMapConstantData->expose = gui_cubeMapExpose;
+	m_pCubeMapConstantData->lodLevel = gui_cubeMapLod;
+
+	m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(sizeof(CubeMapConstantData)),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&m_cubeMapConstantBuffer));
+
+	ThrowIfFailed(m_cubeMapConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCubeMapCbufferBegin)));
+	memcpy(m_pCubeMapCbufferBegin, m_pCubeMapConstantData, sizeof(CubeMapConstantData));
+
 }
 
 void Renderer::D3D12PassApp::CreateVertexAndIndexBuffer()
@@ -41,15 +62,15 @@ void Renderer::D3D12PassApp::CreateVertexAndIndexBuffer()
 	using DirectX::SimpleMath::Vector3;
 	using namespace Core;
 
-	//std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
-	//sphere->Initialize(GeometryGenerator::PbrSphere(0.8f, 100, 100, L"Bricks075A_4K-PNG0_Color.png"),
-	//	m_device, m_commandList, Vector3(0.f, 0.f, 0.f), Material(), true);
+	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
+	sphere->Initialize(GeometryGenerator::PbrSphere(1.f, 100, 100, L"Bricks075A_4K-PNG0_Color.png"),
+		m_device, m_commandList, Vector3(0.f, 0.f, 0.f), Material(), true);
 
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
-	plane->Initialize(GeometryGenerator::PbrBox(5, 1, 5, L"Bricks075A_4K-PNG0_Color.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f),
+	plane->Initialize(GeometryGenerator::PbrBox(10, 1, 10, L"Bricks075A_4K-PNG0_Color.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f),
 		 Material(), true);
 
-	//m_staticMeshes.push_back(sphere);
+	m_staticMeshes.push_back(sphere);
 	m_staticMeshes.push_back(plane);
 
 	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile("box_destruction.fbx", true);
@@ -85,18 +106,70 @@ void Renderer::D3D12PassApp::OnResize()
 
 void Renderer::D3D12PassApp::Update(float& deltaTime)
 {
-	D3D12App::Update(deltaTime);
+	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
 
+	{
+		m_passConstantData->ViewMat = m_camera->GetViewMatrix();
+		m_passConstantData->ProjMat = m_camera->GetProjMatrix();
+
+		m_passConstantData->ViewMat = m_passConstantData->ViewMat.Transpose();
+		m_passConstantData->ProjMat = m_passConstantData->ProjMat.Transpose();
+		memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
+	}
+
+	// LightPass ConstantBuffer
+	{
+		m_ligthPassConstantData->eyePos = m_camera->GetPosition();
+		m_ligthPassConstantData->lod = gui_lod;
+		m_ligthPassConstantData->light[0].position = gui_lightPos;
+		memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
+	}
+
+
+	for (auto& mesh : m_staticMeshes) {
+		mesh->Update(deltaTime);
+	}
+	for (auto& fbx : m_fbxList) {
+		fbx->Update(deltaTime);
+	}
+
+	// ComputeShader(PostProcessing)
 	psConstantData->time = (float)m_timer.GetElapsedTime();
 	memcpy(m_pCbufferBegin, psConstantData, sizeof(CSConstantData));
+
+	// CubeMap ConstantBuffer
+	m_pCubeMapConstantData->expose = gui_cubeMapExpose;
+	m_pCubeMapConstantData->lodLevel = gui_cubeMapLod;
+	memcpy(m_pCubeMapCbufferBegin, m_pCubeMapConstantData, sizeof(CubeMapConstantData));
 }
 
 void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 {
-	D3D12App::UpdateGUI(deltaTime);
+	if (ImGui::BeginCombo("Mode", currRenderMode.c_str())) // The second parameter is the label previewed before opening the combo.
+	{
+		for (int n = 0; n < modePsoListNames.size(); n++)
+		{
+			bool is_selected = (currRenderMode == modePsoListNames[n]); // You can store your selection however you want, outside or inside your objects
+			if (ImGui::Selectable(modePsoListNames[n].c_str(), is_selected)) {
+				currRenderMode = modePsoListNames[n];
+			}
+			if (is_selected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
 
-	ImGui::Checkbox("Draw Normal", &bRenderNormal);
-	ImGui::Checkbox("Draw CubeMap", &bRenderCubeMap);
+	ImGui::SliderFloat("LOD", &gui_lod, 0.f, 10.f);
+	ImGui::SliderFloat("CubeMap LodLevel", &gui_cubeMapLod, 0.f, 10.f);
+	ImGui::SliderFloat("CubeMap Expose", &gui_cubeMapExpose, 0.f, 10.f);
+	ImGui::SliderFloat3("CubeMap Expose", (float*)(&gui_lightPos), -10.f, 10.f);
+
+
+	ImGui::Checkbox("Render Normal", &bRenderNormal);
+	ImGui::Checkbox("Render CubeMap", &bRenderCubeMap);
+	ImGui::Checkbox("Render FBX", &bRenderFbx);
 }
 
 void Renderer::D3D12PassApp::Render(float& deltaTime)
@@ -105,8 +178,10 @@ void Renderer::D3D12PassApp::Render(float& deltaTime)
 	LightPass(deltaTime);
 	DrawNormalPass(deltaTime);
 	RenderCubeMap(deltaTime);
-	PostProcessing(deltaTime);
-	CopyResourceToSwapChain(deltaTime);
+	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+
+	//PostProcessing(deltaTime);
+	//CopyResourceToSwapChain(deltaTime);
 }
 
 void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
@@ -230,12 +305,11 @@ void Renderer::D3D12PassApp::LightPass(float& deltaTime) {
 		ID3D12DescriptorHeap* ppSrvHeaps[] = { m_geometryPassSrvHeap.Get() };
 		m_commandList->SetDescriptorHeaps(_countof(ppSrvHeaps), ppSrvHeaps);
 
-		// 첫 번째 Descriptor Heap에 대한 Root Descriptor Table 설정
 		m_commandList->SetGraphicsRootDescriptorTable(0, m_geometryPassSrvHeap->GetGPUDescriptorHandleForHeapStart());
 
 		CD3DX12_GPU_DESCRIPTOR_HANDLE cubeMapHandle(m_geometryPassSrvHeap->GetGPUDescriptorHandleForHeapStart(), 4, m_csuHeapSize);
 		m_commandList->SetGraphicsRootDescriptorTable(1, cubeMapHandle);
-		
+		m_commandList->SetGraphicsRootConstantBufferView(2, m_ligthPassConstantBuffer->GetGPUVirtualAddress());
 		m_screenMesh->Render(deltaTime, m_commandList, false);
 	}
 	
@@ -317,16 +391,20 @@ void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 			// View Proj Matrix Constant Buffer 
 			m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer->GetGPUVirtualAddress());
 
+			//CubeMap Expose & LodLevel
+			m_commandList->SetGraphicsRootConstantBufferView(2, m_cubeMapConstantBuffer->GetGPUVirtualAddress());
+
 			// CubeMap Heap 
 			ID3D12DescriptorHeap* ppCubeHeaps[] = { m_cubeMapTextureHeap.Get() };
 			m_commandList->SetDescriptorHeaps(_countof(ppCubeHeaps), ppCubeHeaps);
-			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_cubeMapTextureHeap->GetGPUDescriptorHandleForHeapStart(), 
+			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_cubeMapTextureHeap->GetGPUDescriptorHandleForHeapStart(),
 				m_cubeTextureMap[L"DefaultEnvHDR.dds"], m_csuHeapSize);
 			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
 
 			m_cubeMap->Render(deltaTime, m_commandList, false);
 
 		}
+
 		ThrowIfFailed(m_commandList->Close());
 
 		ID3D12CommandList* plists[] = { m_commandList.Get() };

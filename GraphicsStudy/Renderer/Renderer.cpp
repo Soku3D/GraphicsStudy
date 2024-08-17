@@ -22,8 +22,8 @@
 
 
 namespace Renderer {
-	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+	DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_FORMAT hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	DXGI_FORMAT geometryPassFormats[geometryPassNum] =
 	{
@@ -33,7 +33,7 @@ namespace Renderer {
 		DXGI_FORMAT_R16G16B16A16_FLOAT
 	};
 
-	UINT msaaCount = 4;
+	UINT msaaCount = 8;
 	UINT msaaQuality = 0;
 
 	GraphicsPSO defaultPso("Default");
@@ -84,7 +84,7 @@ namespace Renderer {
 		wrapLinearSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		wrapLinearSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		wrapLinearSampler.MipLODBias = 0;
-		wrapLinearSampler.MaxAnisotropy = 1.f;
+		wrapLinearSampler.MaxAnisotropy = 1;
 		wrapLinearSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 		wrapLinearSampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 		wrapLinearSampler.MinLOD = 0.0f;
@@ -103,11 +103,11 @@ namespace Renderer {
 		// Init Signatures
 		defaultSignature.Initialize(1, 3, 1, &wrapLinearSampler);
 		computeSignature.InitializeUAV(1, 1, 0, nullptr);
-		cubeMapSignature.Initialize(1, 1, 1, &wrapLinearSampler);
+		cubeMapSignature.Initialize(1, 2, 1, &wrapLinearSampler);
 		copySignature.Initialize(1, 0, 1, &wrapLinearSampler);
 		
 		geometryPassSignature.Initialize(2, 2, 1, &wrapLinearSampler);
-		lightPassSignature.InitializeDoubleSrvHeap(4, 4, 0, &wrapLinearSampler);
+		lightPassSignature.InitializeDoubleSrvHeap(4, 4, 1, &wrapLinearSampler);
 		NormalPassSignature.Initialize(2);
 
 		GraphicsPSO msaaPso("Msaa");
