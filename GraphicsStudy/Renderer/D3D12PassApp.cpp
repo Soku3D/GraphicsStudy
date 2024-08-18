@@ -63,15 +63,20 @@ void Renderer::D3D12PassApp::CreateVertexAndIndexBuffer()
 	using namespace Core;
 
 	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
-	sphere->Initialize(GeometryGenerator::PbrSphere(1.f, 100, 100, L"Bricks075A_4K-PNG0_Color.png"),
-		m_device, m_commandList, Vector3(0.f, 0.f, 0.f), Material(), true);
+	sphere->Initialize(GeometryGenerator::PbrSphere(1.f, 100, 100, L"DiamondPlate008C_4K-PNG_Albedo.png",
+		3.f, 3.f),
+		m_device, m_commandList, Vector3(0.f, 0.f, 0.f), Material(1.f, 2.f, 3.f, 4.f),
+		true,
+		false,
+		true, 
+		true,
+		true);
+	m_staticMeshes.push_back(sphere);
 
-	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
+	/*std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
 	plane->Initialize(GeometryGenerator::PbrBox(10, 1, 10, L"Bricks075A_4K-PNG0_Color.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f),
 		 Material(), true);
-
-	m_staticMeshes.push_back(sphere);
-	m_staticMeshes.push_back(plane);
+	m_staticMeshes.push_back(plane);*/
 
 	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile("box_destruction.fbx", true);
 	std::shared_ptr<Animation::FBX> wallDistructionFbx = std::make_shared<Animation::FBX>();
@@ -80,6 +85,7 @@ void Renderer::D3D12PassApp::CreateVertexAndIndexBuffer()
 
 	m_cubeMap = std::make_shared<Core::StaticMesh>();
 	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(100.f), m_device, m_commandList);
+	m_cubeMap->SetTexturePath(std::wstring(L"OutdoorEnvHDR.dds"));
 
 	m_screenMesh = std::make_shared<Core::StaticMesh>();
 	m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
@@ -122,6 +128,11 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		m_ligthPassConstantData->eyePos = m_camera->GetPosition();
 		m_ligthPassConstantData->lod = gui_lod;
 		m_ligthPassConstantData->light[0].position = gui_lightPos;
+
+		m_ligthPassConstantData->ao = gui_ao;
+		m_ligthPassConstantData->metalic = gui_metalic;
+		m_ligthPassConstantData->roughness = gui_roughness;
+
 		memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
 	}
 
@@ -160,6 +171,10 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 		}
 		ImGui::EndCombo();
 	}
+	ImGui::SliderFloat("AO", &gui_ao, 0.f, 1.f);
+	ImGui::SliderFloat("Metalic", &gui_metalic, 0.f, 1.f);
+	ImGui::SliderFloat("Roughness", &gui_roughness, 0.f, 1.f);
+
 
 	ImGui::SliderFloat("LOD", &gui_lod, 0.f, 10.f);
 	ImGui::SliderFloat("CubeMap LodLevel", &gui_cubeMapLod, 0.f, 10.f);
@@ -307,7 +322,8 @@ void Renderer::D3D12PassApp::LightPass(float& deltaTime) {
 
 		m_commandList->SetGraphicsRootDescriptorTable(0, m_geometryPassSrvHeap->GetGPUDescriptorHandleForHeapStart());
 
-		CD3DX12_GPU_DESCRIPTOR_HANDLE cubeMapHandle(m_geometryPassSrvHeap->GetGPUDescriptorHandleForHeapStart(), 4, m_csuHeapSize);
+		int cubeMapOffset = m_cubeTextureMap[m_cubeMap->GetTexturePath()] - 2;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE cubeMapHandle(m_geometryPassSrvHeap->GetGPUDescriptorHandleForHeapStart(), geometryPassRtvNum + cubeMapOffset, m_csuHeapSize);
 		m_commandList->SetGraphicsRootDescriptorTable(1, cubeMapHandle);
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_ligthPassConstantBuffer->GetGPUVirtualAddress());
 		m_screenMesh->Render(deltaTime, m_commandList, false);
@@ -397,10 +413,16 @@ void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 			// CubeMap Heap 
 			ID3D12DescriptorHeap* ppCubeHeaps[] = { m_cubeMapTextureHeap.Get() };
 			m_commandList->SetDescriptorHeaps(_countof(ppCubeHeaps), ppCubeHeaps);
-			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_cubeMapTextureHeap->GetGPUDescriptorHandleForHeapStart(),
-				m_cubeTextureMap[L"DefaultEnvHDR.dds"], m_csuHeapSize);
-			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
+			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_cubeMapTextureHeap->GetGPUDescriptorHandleForHeapStart());
 
+			if (m_cubeTextureMap.count(m_cubeMap->GetTexturePath()) > 0) {
+				handle.Offset(m_cubeTextureMap[m_cubeMap->GetTexturePath()], m_csuHeapSize);
+			}
+			else {
+				handle.Offset(m_cubeTextureMap[L"DefaultEnvHDR.dds"], m_csuHeapSize);
+			}
+			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
+			
 			m_cubeMap->Render(deltaTime, m_commandList, false);
 
 		}

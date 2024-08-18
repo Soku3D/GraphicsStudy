@@ -2,8 +2,8 @@
 namespace Core {
 
 	Camera::Camera() :
-		m_position(DirectX::SimpleMath::Vector3(0.f, 1.f, -2.f)),
-		m_forwardDirection(DirectX::SimpleMath::Vector3(0.f, -0.3f, 1.f)),
+		m_position(DirectX::SimpleMath::Vector3(0.f, 0.f, -1.f)),
+		m_forwardDirection(DirectX::SimpleMath::Vector3(0.f, 0.0f, 1.f)),
 		m_upDirection(DirectX::SimpleMath::Vector3(0.f, 1.f, 0.f)),
 		m_rightDirection(DirectX::SimpleMath::Vector3(1.f, 0.f, 0.f)),
 		m_farZ(100.f),
@@ -34,8 +34,8 @@ namespace Core {
 		m_xTheta += deltaY * m_aspectRatio * m_delTheta;
 		m_yTheta += (float)deltaX * m_delTheta;
 		// TODO: 기준 방향벡터에 대해 90 도 회전한 경우로 수정
-		if (m_xTheta >= DirectX::XM_PIDIV2 - 0.5f) {
-			m_xTheta = DirectX::XM_PIDIV2 - 0.5f;
+		if (m_xTheta >= DirectX::XM_PIDIV2 - 0.001f) {
+			m_xTheta = DirectX::XM_PIDIV2 - 0.001f;
 		}
 		if (m_xTheta <= -DirectX::XM_PIDIV2 + 0.001f) {
 			m_xTheta = -DirectX::XM_PIDIV2 + 0.001f;

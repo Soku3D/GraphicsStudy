@@ -60,5 +60,11 @@ namespace Renderer {
 		float gui_specular;
 
 		float gui_lod = 0.f;
+
+		float gui_ao = 0.f;
+		float gui_metalic = 0.f;
+		float gui_roughness = 0.f;
+
+
 	};
 }

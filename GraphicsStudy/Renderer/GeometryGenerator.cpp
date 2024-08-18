@@ -1,5 +1,4 @@
 #include "GeometryGenerator.h"
-#include "directxtk/SimpleMath.h"
 #include "ModelLoader.h"
 #include <memory>
 
@@ -458,7 +457,7 @@ PbrMeshData GeometryGenerator::PbrCyilinder(const float& topRadius, const float&
 	return PbrMeshData();
 }
 
-PbrMeshData GeometryGenerator::PbrSphere(const float& radius, const int& x, const int& y, const std::wstring& texturePath)
+PbrMeshData GeometryGenerator::PbrSphere(const float& radius, const int& x, const int& y, const std::wstring& texturePath, float uvDeltaX, float uvDeltaY)
 {
 	PbrMeshData data;
 	if (x == 0 || y == 0)
@@ -471,8 +470,8 @@ PbrMeshData GeometryGenerator::PbrSphere(const float& radius, const int& x, cons
 	float delYTheta = DirectX::XM_2PI / x;
 	float delZTheta = DirectX::XM_PI / y;
 
-	float uvDelX = 1.f / x;
-	float uvDelY = 1.f / y;
+	float uvDelX = 1.f / x * uvDeltaX;
+	float uvDelY = 1.f / y * uvDeltaY;
 
 	int index = 0;
 
@@ -502,15 +501,20 @@ PbrMeshData GeometryGenerator::PbrSphere(const float& radius, const int& x, cons
 			indices.push_back(idx + x + 1);
 			indices.push_back(idx);
 			indices.push_back(idx + 1);
-			ComputeTangent(vertices[idx + x + 1], vertices[idx], vertices[idx + 1]);
+			if(i!=0)
+				ComputeTangent(vertices[idx + x + 1], vertices[idx], vertices[idx + 1]);
 
 			indices.push_back(idx + x + 1);
 			indices.push_back(idx + 1);
 			indices.push_back(idx + x + 2);
-			ComputeTangent(vertices[idx + x + 1], vertices[idx + 1], vertices[idx + x + 2]);
+			if(i!=y-1)
+				ComputeTangent(vertices[idx + x + 1], vertices[idx + 1], vertices[idx + x + 2]);
 
 		}
 	}
+	/*for (auto& v : vertices) {
+		std::cout << v.tangent.x << ' '<< v.tangent.y << ' ' << v.tangent.z << '\n';
+	}*/
 	data.Initialize(vertices, indices, texturePath);
 
 	return data;
@@ -529,11 +533,11 @@ std::tuple<std::vector<PbrMeshData>, Animation::AnimationData> GeometryGenerator
 }
 
 void GeometryGenerator::ComputeTangent(Renderer::PbrVertex& v0, Renderer::PbrVertex& v1, Renderer::PbrVertex& v2) {
-	Vector2 t0 = v1.texcoord - v0.texcoord;
-	Vector2 t1 = v2.texcoord - v0.texcoord;
+	DirectX::SimpleMath::Vector2 t0 = v1.texcoord - v0.texcoord;
+	DirectX::SimpleMath::Vector2 t1 = v2.texcoord - v0.texcoord;
 
 	Vector3 e0 = v1.position - v0.position;
-	Vector3 e1 = v2.position - v0.position;
+	Vector3 e1 = (v2.position - v0.position);
 
 	float a = t0.x;
 	float b = t0.y;
@@ -544,8 +548,10 @@ void GeometryGenerator::ComputeTangent(Renderer::PbrVertex& v0, Renderer::PbrVer
 	float invDet = 1.f / det;
 
 	Vector3 tangent = invDet * (e0 * d - b * e1);
+	tangent.Normalize();
 
 	v0.tangent = tangent;
 	v1.tangent = tangent;
 	v2.tangent = tangent;
+
 }

@@ -91,7 +91,7 @@ namespace Renderer {
 		wrapLinearSampler.MaxLOD = D3D12_FLOAT32_MAX;
 		wrapLinearSampler.ShaderRegister = 0;
 		wrapLinearSampler.RegisterSpace = 0;
-		wrapLinearSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		wrapLinearSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 		clampLinearSampler = wrapLinearSampler;
 		clampLinearSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -106,7 +106,7 @@ namespace Renderer {
 		cubeMapSignature.Initialize(1, 2, 1, &wrapLinearSampler);
 		copySignature.Initialize(1, 0, 1, &wrapLinearSampler);
 		
-		geometryPassSignature.Initialize(2, 2, 1, &wrapLinearSampler);
+		geometryPassSignature.Initialize(6, 2, 1, &wrapLinearSampler);
 		lightPassSignature.InitializeDoubleSrvHeap(4, 4, 1, &wrapLinearSampler);
 		NormalPassSignature.Initialize(2);
 

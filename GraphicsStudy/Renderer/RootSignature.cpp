@@ -55,8 +55,9 @@ void Renderer::RootSignature::Initialize(UINT srvCount, UINT cbCount, int numSam
 {
 	rangeTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, srvCount, 0, 0,  D3D12_DESCRIPTOR_RANGE_FLAG_NONE);
 
-	paramenters.resize(cbCount+1);
-	paramenters[0].InitAsDescriptorTable(1 , &rangeTable, D3D12_SHADER_VISIBILITY_PIXEL);
+	paramenters.resize(cbCount+ 1);
+
+	paramenters[0].InitAsDescriptorTable(1 , &rangeTable, D3D12_SHADER_VISIBILITY_ALL);
 
 	for (UINT i = 1; i <= cbCount; i++)
 	{

@@ -11,9 +11,9 @@ struct Light {
 
 struct Material {
 	float albedo = 0.8f;
+	float ao = 1.f;
 	float metalic = 0.8f;
 	float roughness = 1.f;
-	float dummy;
 };
 
 
@@ -27,17 +27,25 @@ __declspec(align(256)) struct ObjectConstantData {
 	DirectX::SimpleMath::Matrix Model = DirectX::SimpleMath::Matrix();
 	DirectX::SimpleMath::Matrix invTranspose = DirectX::SimpleMath::Matrix();
 	Material Material;
-	bool bUseNormalMap;
-	DirectX::SimpleMath::Vector3 dummy;
-};
-__declspec(align(256)) struct ObjectConstantData2 {
-	DirectX::SimpleMath::Matrix Model = DirectX::SimpleMath::Matrix();
+
+	float bUseAoMap = false;
+	float bUseHeightMap = false;
+	float bUseMetalnessMap = false;
+	float bUseNormalMap = false;
+	float bUseRoughnessMap = false;
+	float dummy[3];
+
 };
 
 __declspec(align(256)) struct LightPassConstantData {
 	Light light[1];
 	DirectX::SimpleMath::Vector3 eyePos = DirectX::SimpleMath::Vector3(0.f,0.f,-1.f);
 	float lod = 0.f;
+
+	float ao = 0.f;
+	float metalic = 0.f;
+	float roughness = 0.f;
+	float dummy;
 };
 
 __declspec(align(256)) struct CSConstantData {

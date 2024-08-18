@@ -1,7 +1,7 @@
 Texture2D g_worldPosition : register(t0);
 Texture2D g_normal : register(t1);
 Texture2D g_albedoColor : register(t2);
-Texture2D g_material : register(t3); // rgb : albedo, metalic, roughness
+Texture2D g_material : register(t3); // rgb : ao, metalic, roughness
 
 Texture2D g_brdf : register(t4);
 TextureCube g_irradianceCube : register(t5);
@@ -26,6 +26,11 @@ cbuffer cbLight : register(b0)
     Light light[LIGHT_NUM];
     float3 eyePosition;
     float lodLevel;
+    
+    float gui_ao;
+    float gui_metalic;
+    float gui_roughness;
+    float dummy;
 }
 
 struct PSInput

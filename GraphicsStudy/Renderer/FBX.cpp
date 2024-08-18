@@ -56,11 +56,11 @@ void Animation::FBX::Update(float& deltaTime)
 			m_frame = 0;
 		}
 		else {
-			m_frame = m_lastFrame;
+			m_frame = (float)m_lastFrame;
 		}
 	}
 	else {
-		m_frame += m_animationSpeed * m_framPerSecond * deltaTime;
+		m_frame += (float)(m_animationSpeed * m_framPerSecond * deltaTime);
 	}
 	//std::cout << (int)m_frame << ' ' << (int)deltaTime << ' ';
 }

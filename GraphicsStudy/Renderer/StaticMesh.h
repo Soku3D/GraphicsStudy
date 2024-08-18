@@ -32,12 +32,16 @@ namespace Core {
 		void Initialize(MeshData<Vertex>& meshData,
 			Microsoft::WRL::ComPtr<ID3D12Device>& device,
 			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList,
-			const DirectX::SimpleMath::Vector3& modelPosition = DirectX::SimpleMath::Vector3::Zero, 
+			const DirectX::SimpleMath::Vector3& modelPosition = DirectX::SimpleMath::Vector3::Zero,
 			Material& material = Material(),
-			bool bUseNormalMap = false)
+			bool bUseAoMap = false,
+			bool bUseHeightMap = false,
+			bool bUseMetalnessMap = false,
+			bool bUseNormalMap = false,
+			bool bUseRoughnessMap = false)
 		{
 			m_name = meshData.m_name;
-			
+
 
 			Renderer::Utility::CreateBuffer(meshData.m_vertices, m_vertexUpload, m_vertexGpu, device, commandList);
 			Renderer::Utility::CreateBuffer(meshData.m_indices, m_indexUpload, m_indexGpu, device, commandList);
@@ -50,15 +54,20 @@ namespace Core {
 			m_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
 			m_indexBufferView.SizeInBytes = UINT(sizeof(uint32_t) * meshData.m_indices.size());
 			m_objectConstantData = new ObjectConstantData();
-			
+
 			m_objectConstantData->Material = material;
+			m_objectConstantData->bUseAoMap = bUseAoMap;
+			m_objectConstantData->bUseHeightMap = bUseHeightMap;
+			m_objectConstantData->bUseMetalnessMap = bUseMetalnessMap;
 			m_objectConstantData->bUseNormalMap = bUseNormalMap;
+			m_objectConstantData->bUseRoughnessMap = bUseRoughnessMap;
+
 			m_objectConstantData->Model = DirectX::XMMatrixTranslation(modelPosition.x, modelPosition.y, modelPosition.z);
 			m_transformFBXAnimation = m_objectConstantData->Model;
 			m_objectConstantData->invTranspose = m_objectConstantData->Model.Invert();
 			m_objectConstantData->Model = m_objectConstantData->Model.Transpose();
 
-			std::vector<ObjectConstantData> constantData = { *m_objectConstantData	};
+			std::vector<ObjectConstantData> constantData = { *m_objectConstantData };
 			Renderer::Utility::CreateUploadBuffer(constantData, m_objectConstantBuffer, device);
 			indexCount = (UINT)meshData.m_indices.size();
 
@@ -68,14 +77,15 @@ namespace Core {
 			m_texturePath = meshData.GetTexturePath();
 		}
 
-	
+
 
 		void Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat = true);
 		void RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat);
 		void UpdateAnimation(const float& deltaTime, Animation::AnimationData& animationData);
 		void Update(const float& deltaTime);
-	
+
 		std::wstring GetTexturePath() const { return m_texturePath; }
+		void SetTexturePath(std::wstring path) { m_texturePath = path; }
 
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_objectConstantBuffer;
