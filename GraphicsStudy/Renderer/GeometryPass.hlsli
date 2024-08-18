@@ -6,6 +6,7 @@ Texture2D g_normal : register(t4);
 Texture2D g_roughness : register(t5);
 
 SamplerState g_sampler : register(s0);
+SamplerState g_clampSampler : register(s1);
 
 struct Material
 {

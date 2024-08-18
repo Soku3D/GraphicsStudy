@@ -210,9 +210,12 @@ namespace Renderer {
 		ComPtr<ID3D12Resource> m_geometryPassMsaaResources[geometryPassRtvNum];
 
 
+		void CreateSamplers();
+
 		D3D12_CPU_DESCRIPTOR_HANDLE GeometryPassRTV() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE GeometryPassMsaaRTV() const;
-
+	protected:
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> samplerHeap;
 
 	};
 }

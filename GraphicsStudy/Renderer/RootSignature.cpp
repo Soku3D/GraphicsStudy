@@ -77,6 +77,32 @@ void Renderer::RootSignature::Initialize(UINT srvCount, UINT cbCount, int numSam
 	}
 }
 
+void Renderer::RootSignature::Initialize(UINT srvCount, UINT cbCount, std::vector<D3D12_STATIC_SAMPLER_DESC>& sampler)
+{
+	rangeTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, srvCount, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_NONE);
+
+	paramenters.resize(cbCount + 1);
+
+	paramenters[0].InitAsDescriptorTable(1, &rangeTable, D3D12_SHADER_VISIBILITY_ALL);
+
+	for (UINT i = 1; i <= cbCount; i++)
+	{
+		paramenters[i].InitAsConstantBufferView(i - 1);
+	}
+
+	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+	m_samplerArray = sampler;
+	if (m_samplerArray.empty()) {
+		m_rootSignatureDesc.Init_1_1(cbCount + 1, paramenters.data(), 0, nullptr, rootSignatureFlags);
+	}
+	else
+	{
+		m_rootSignatureDesc.Init_1_1(cbCount + 1, paramenters.data(), m_samplerArray.size(),
+			m_samplerArray.data(), rootSignatureFlags);
+	}
+}
 void Renderer::RootSignature::Initialize(UINT cbCount)
 {
 	paramenters.resize(cbCount);
@@ -92,7 +118,8 @@ void Renderer::RootSignature::Initialize(UINT cbCount)
 	m_rootSignatureDesc.Init_1_1(cbCount, paramenters.data(), 0, nullptr, rootSignatureFlags);
 }
 
-void Renderer::RootSignature::InitializeDoubleSrvHeap(UINT srvCount1, UINT srvCount2, UINT cbCount, D3D12_STATIC_SAMPLER_DESC* sampler)
+void Renderer::RootSignature::InitializeDoubleSrvHeap(UINT srvCount1, UINT srvCount2, UINT cbCount, 
+	std::vector<D3D12_STATIC_SAMPLER_DESC> & sampler)
 {
 	rangeTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, srvCount1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_NONE);
 	rangeTable2.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, srvCount2, srvCount1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_NONE);
@@ -109,13 +136,14 @@ void Renderer::RootSignature::InitializeDoubleSrvHeap(UINT srvCount1, UINT srvCo
 	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-	m_sampler = sampler;
-	if (m_sampler == nullptr) {
+	m_samplerArray = sampler;
+	if (m_samplerArray.empty()) {
 		m_rootSignatureDesc.Init_1_1(cbCount + 2, paramenters.data(), 0 , nullptr, rootSignatureFlags);
 	}
 	else
 	{
-		m_rootSignatureDesc.Init_1_1(cbCount + 2, paramenters.data(), 1, m_sampler, rootSignatureFlags);
+		m_rootSignatureDesc.Init_1_1(cbCount + 2, paramenters.data(), m_samplerArray.size(),
+			m_samplerArray.data(), rootSignatureFlags);
 	}
 }
 void Renderer::RootSignature::Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device)

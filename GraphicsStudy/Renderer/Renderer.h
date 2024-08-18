@@ -49,6 +49,7 @@ namespace Renderer {
 	extern D3D12_STATIC_SAMPLER_DESC clampLinearSampler;
 	extern std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;
 
+
 	extern D3D12_RASTERIZER_DESC defaultRasterizer;
 	extern D3D12_RASTERIZER_DESC wireRasterizer;
 

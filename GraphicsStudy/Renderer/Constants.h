@@ -12,7 +12,7 @@ struct Light {
 struct Material {
 	float albedo = 0.8f;
 	float ao = 1.f;
-	float metalic = 0.8f;
+	float metallic = 0.8f;
 	float roughness = 1.f;
 };
 
@@ -43,9 +43,9 @@ __declspec(align(256)) struct LightPassConstantData {
 	float lod = 0.f;
 
 	float ao = 0.f;
-	float metalic = 0.f;
+	float metallic = 0.f;
 	float roughness = 0.f;
-	float dummy;
+	float expose = 1.f;
 };
 
 __declspec(align(256)) struct CSConstantData {

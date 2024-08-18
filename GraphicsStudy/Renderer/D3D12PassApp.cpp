@@ -62,21 +62,19 @@ void Renderer::D3D12PassApp::CreateVertexAndIndexBuffer()
 	using DirectX::SimpleMath::Vector3;
 	using namespace Core;
 
-	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
-	sphere->Initialize(GeometryGenerator::PbrSphere(1.f, 100, 100, L"DiamondPlate008C_4K-PNG_Albedo.png",
-		3.f, 3.f),
-		m_device, m_commandList, Vector3(0.f, 0.f, 0.f), Material(1.f, 2.f, 3.f, 4.f),
-		true,
-		false,
-		true, 
-		true,
-		true);
-	m_staticMeshes.push_back(sphere);
+	/*std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
+	sphere->Initialize(GeometryGenerator::PbrSphere(1.f, 100, 100, L"worn-painted-metal_albedo.png",
+		2.f, 2.f),
+		m_device, m_commandList, Vector3(0.f, 0.f, 0.f), 
+		Material(1.f, 1.f, 1.f, 1.f),
+		true, true,	true, true,	true);
+	m_staticMeshes.push_back(sphere);*/
 
-	/*std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
-	plane->Initialize(GeometryGenerator::PbrBox(10, 1, 10, L"Bricks075A_4K-PNG0_Color.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f),
-		 Material(), true);
-	m_staticMeshes.push_back(plane);*/
+	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
+	plane->Initialize(GeometryGenerator::PbrBox(10, 1, 10, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f),
+		Material(1.f, 1.f, 1.f, 1.f),
+		true, true, true, true, true);
+	m_staticMeshes.push_back(plane);
 
 	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile("box_destruction.fbx", true);
 	std::shared_ptr<Animation::FBX> wallDistructionFbx = std::make_shared<Animation::FBX>();
@@ -85,7 +83,7 @@ void Renderer::D3D12PassApp::CreateVertexAndIndexBuffer()
 
 	m_cubeMap = std::make_shared<Core::StaticMesh>();
 	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(100.f), m_device, m_commandList);
-	m_cubeMap->SetTexturePath(std::wstring(L"OutdoorEnvHDR.dds"));
+	m_cubeMap->SetTexturePath(std::wstring(L"Outdoor")+ L"EnvHDR.dds");
 
 	m_screenMesh = std::make_shared<Core::StaticMesh>();
 	m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
@@ -130,8 +128,9 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		m_ligthPassConstantData->light[0].position = gui_lightPos;
 
 		m_ligthPassConstantData->ao = gui_ao;
-		m_ligthPassConstantData->metalic = gui_metalic;
+		m_ligthPassConstantData->metallic = gui_metallic;
 		m_ligthPassConstantData->roughness = gui_roughness;
+		m_ligthPassConstantData->expose = gui_cubeMapExpose;
 
 		memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
 	}
@@ -172,14 +171,14 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 		ImGui::EndCombo();
 	}
 	ImGui::SliderFloat("AO", &gui_ao, 0.f, 1.f);
-	ImGui::SliderFloat("Metalic", &gui_metalic, 0.f, 1.f);
+	ImGui::SliderFloat("Metalic", &gui_metallic, 0.f, 1.f);
 	ImGui::SliderFloat("Roughness", &gui_roughness, 0.f, 1.f);
 
 
 	ImGui::SliderFloat("LOD", &gui_lod, 0.f, 10.f);
 	ImGui::SliderFloat("CubeMap LodLevel", &gui_cubeMapLod, 0.f, 10.f);
 	ImGui::SliderFloat("CubeMap Expose", &gui_cubeMapExpose, 0.f, 10.f);
-	ImGui::SliderFloat3("CubeMap Expose", (float*)(&gui_lightPos), -10.f, 10.f);
+	ImGui::SliderFloat3("Light Position", (float*)(&gui_lightPos), -10.f, 10.f);
 
 
 	ImGui::Checkbox("Render Normal", &bRenderNormal);
@@ -369,7 +368,6 @@ void Renderer::D3D12PassApp::DrawNormalPass(float& deltaTime) {
 		m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
 
 		FlushCommandQueue();
-		
 	}
 
 }

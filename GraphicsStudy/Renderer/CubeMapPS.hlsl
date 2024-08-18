@@ -14,6 +14,8 @@ cbuffer CubeMapConstant : register(b1)
 
 float4 main(PSInput input) : SV_Target
 {
-    return expose * g_cubeMap.SampleLevel(g_sampler, input.worldPoition, lodLevel);
+    float4 cubeColor = g_cubeMap.SampleLevel(g_sampler, input.worldPoition, lodLevel);
+    
+    return float4((expose * cubeColor.rgb), 1.f);
     //return float4(1.f, 0.f, 0.f, 1.f);
 }

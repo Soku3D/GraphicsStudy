@@ -53,8 +53,7 @@ bool Renderer::D3D12App::Initialize()
 
 	CreateTextures();
 	CreateCubeMapTextures();
-	CreateExrTexture();
-
+	//CreateExrTexture();
 	CreateVertexAndIndexBuffer();
 
 	CreateFontFromFile(L"Fonts/default.spritefont", m_font, m_spriteBatch, m_resourceDescriptors, false, m_hdrFormat, m_depthStencilFormat);
@@ -569,7 +568,7 @@ void Renderer::D3D12App::CreateDescriptorHeaps() {
 	CreateDescriptorHeap(m_device, m_hdrUavHeap, DescriptorType::UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	CreateDescriptorHeap(m_device, m_hdrSrvHeap, DescriptorType::SRV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	CreateDescriptorHeap(m_device, m_geometryPassRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
-	CreateDescriptorHeap(m_device, m_geometryPassSrvHeap, DescriptorType::SRV, geometryPassRtvNum + 12, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	CreateDescriptorHeap(m_device, m_geometryPassSrvHeap, DescriptorType::SRV, geometryPassRtvNum + 16, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	CreateDescriptorHeap(m_device, m_geometryPassMsaaRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
 
 }
@@ -1295,6 +1294,24 @@ void Renderer::D3D12App::CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce,
 
 	ThrowIfFailed(deivce->CreateDescriptorHeap(
 		&heapDesc, IID_PPV_ARGS(heap.GetAddressOf())));
+}
+
+void Renderer::D3D12App::CreateSamplers() {
+	/*D3D12_SAMPLER_DESC clampSampler = {};
+	clampSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	clampSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	clampSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	clampSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	clampSampler.MipLODBias = 0;
+	clampSampler.MaxAnisotropy = 1;
+	clampSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	clampSampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+	clampSampler.MinLOD = 0.0f;
+	clampSampler.MaxLOD = D3D12_FLOAT32_MAX;
+	clampSampler.ShaderRegister = 0;
+	clampSampler.RegisterSpace = 0;
+	clampSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	m_device->CreateSampler()*/
 }
 D3D12_CPU_DESCRIPTOR_HANDLE Renderer::D3D12App::GeometryPassRTV() const
 {

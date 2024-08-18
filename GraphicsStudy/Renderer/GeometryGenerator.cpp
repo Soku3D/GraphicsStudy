@@ -512,6 +512,7 @@ PbrMeshData GeometryGenerator::PbrSphere(const float& radius, const int& x, cons
 
 		}
 	}
+	vertices[0].tangent = Vector3(0.f, 0.f, 1.f);
 	/*for (auto& v : vertices) {
 		std::cout << v.tangent.x << ' '<< v.tangent.y << ' ' << v.tangent.z << '\n';
 	}*/

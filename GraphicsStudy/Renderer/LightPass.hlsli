@@ -9,7 +9,7 @@ TextureCube g_albedoCube : register(t6);
 TextureCube g_specularCube : register(t7);
 
 SamplerState g_wrapLinearSampler : register(s0);
-//SamplerState g_clampLinearSampler : register(s1);
+SamplerState g_clampLinearSampler : register(s1);
 
 #define LIGHT_NUM 1
 
@@ -28,9 +28,9 @@ cbuffer cbLight : register(b0)
     float lodLevel;
     
     float gui_ao;
-    float gui_metalic;
+    float gui_metallic;
     float gui_roughness;
-    float dummy;
+    float gui_cubeMapExpose;
 }
 
 struct PSInput
@@ -38,6 +38,43 @@ struct PSInput
     float4 position : SV_Position;
     float2 uv : TEXCOORD;
 };
+
+float3 FresnelSchrick(float3 F0, float VoH)
+{
+    float Fc = pow(1 - VoH, 5.f);
+    return F0 + (1 - F0) * Fc;
+}
+float3 EnvBRDFIrradiance(float3 irradiance, float3 albedo, float VoH, float metallic)
+{
+    float F0 = lerp(0.04, albedo, metallic);
+    float3 F = FresnelSchrick(F0, VoH);
+    
+    // Specluar가 커지면 Irradiance는 작아진다 ( 에너지 보존 법칙 )
+    float3 kd = lerp((1.f - F), 0, metallic);
+    
+    return kd * irradiance * albedo;
+}
+float3 EnvBRDFSpecular(float3 specluar, float3 albedo, float NoV, float metallic, float roughness)
+{
+    float3 F0 = lerp(0.04, albedo, metallic);
+    float2 LUT = g_brdf.Sample(g_clampLinearSampler, float2(NoV, 1 - roughness)).rg;
+    
+    return specluar * (LUT.r * F0 + LUT.g);
+    //return specluar* (LUT.r * F0 + LUT.g);
+    //return (LUT.r * F0);
+    // LUT.g NoV가 0인 지점에서 roughness가 낮으면 높은값을 갖는다
+    //return LUT.g;
+
+}
+float3 EnvBRDF(float3 irradiance, float3 specluar, float3 albedo, float ao, float VoH, float NoV, float metallic, float roughness)
+{
+    float3 irradianceColor = EnvBRDFIrradiance(irradiance, albedo, VoH, metallic);
+    //return irradianceColor;
+    float3 specularColor = EnvBRDFSpecular(specluar, albedo, NoV, metallic, roughness);
+    //return specularColor;
+    
+    return (irradianceColor + specularColor) *ao;
+}
 
 float4 ComputeLight(int lightIndex, float2 uv)
 {

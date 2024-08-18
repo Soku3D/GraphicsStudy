@@ -53,7 +53,7 @@ namespace Renderer {
 		bool bRenderNormal = true;
 
 		float gui_cubeMapLod = 0.f;
-		float gui_cubeMapExpose = 1.f;
+		float gui_cubeMapExpose = 1.7f;
 		DirectX::SimpleMath::Vector3 gui_lightPos;
 		float gui_shineness;
 		float gui_diffuse;
@@ -61,8 +61,8 @@ namespace Renderer {
 
 		float gui_lod = 0.f;
 
-		float gui_ao = 0.f;
-		float gui_metalic = 0.f;
+		float gui_ao = 1.f;
+		float gui_metallic = 0.f;
 		float gui_roughness = 0.f;
 
 

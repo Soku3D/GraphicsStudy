@@ -97,17 +97,19 @@ namespace Renderer {
 		clampLinearSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		clampLinearSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		clampLinearSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		clampLinearSampler.ShaderRegister = 1;
 
-		//samplers.push_back(wrapLinearSampler);
-		//samplers.push_back(clampLinearSampler);
+		samplers.push_back(wrapLinearSampler);
+		samplers.push_back(clampLinearSampler);
+		
 		// Init Signatures
 		defaultSignature.Initialize(1, 3, 1, &wrapLinearSampler);
 		computeSignature.InitializeUAV(1, 1, 0, nullptr);
 		cubeMapSignature.Initialize(1, 2, 1, &wrapLinearSampler);
 		copySignature.Initialize(1, 0, 1, &wrapLinearSampler);
 		
-		geometryPassSignature.Initialize(6, 2, 1, &wrapLinearSampler);
-		lightPassSignature.InitializeDoubleSrvHeap(4, 4, 1, &wrapLinearSampler);
+		geometryPassSignature.Initialize(6, 2, samplers);
+		lightPassSignature.InitializeDoubleSrvHeap(4, 4, 1, samplers);
 		NormalPassSignature.Initialize(2);
 
 		GraphicsPSO msaaPso("Msaa");
