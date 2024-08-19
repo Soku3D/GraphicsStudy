@@ -11,6 +11,8 @@
 #include "CopyPS.h"
 
 #include "GeometryPassVS.h"
+#include "GeometryPassHS.h"
+#include "GeometryPassDS.h"
 #include "GeometryPassPS.h"
 
 #include "LightPassVS.h"
@@ -186,9 +188,12 @@ namespace Renderer {
 		defaultGeometryPassPso = defaultPso;
 		defaultGeometryPassPso.SetRootSignature(&geometryPassSignature);
 		defaultGeometryPassPso.SetVertexShader(g_pGeometryPassVS, sizeof(g_pGeometryPassVS));
+		defaultGeometryPassPso.SetHullShader(g_pGeometryPassHS, sizeof(g_pGeometryPassHS));
+		defaultGeometryPassPso.SetDomainShader(g_pGeometryPassDS, sizeof(g_pGeometryPassDS));
 		defaultGeometryPassPso.SetPixelShader(g_pGeometryPassPS, sizeof(g_pGeometryPassPS));
 		defaultGeometryPassPso.SetRenderTargetFormats(geometryPassNum, geometryPassFormats, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 		defaultGeometryPassPso.SetInputLayout((UINT)pbrElement.size(), pbrElement.data());
+		defaultGeometryPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH);
 
 		msaaGeometryPassPso = defaultGeometryPassPso;
 		msaaGeometryPassPso.SetRenderTargetFormats(geometryPassNum, geometryPassFormats, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);

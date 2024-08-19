@@ -65,6 +65,19 @@ namespace Renderer {
 		float gui_metallic = 0.f;
 		float gui_roughness = 0.f;
 
+		float gui_edge0 = 1.f;
+		float gui_edge1 = 1.f;
+		float gui_edge2 = 1.f;
+		float gui_edge3 = 1.f;
+		float gui_inside0 = 1.f;
+		float gui_inside1 = 1.f;
+
+	private:
+		const wchar_t* geomeytyPassEvent = L"Geometry Pass ";
+		const wchar_t* lightPassEvent = L"Light Pass ";
+		const wchar_t* drawNormalPassEvent = L"DrawNormal Pass ";
+		const wchar_t* cubeMapPassEvent = L"CubeMap Pass ";
+		const wchar_t* copyResourceToSwapChainEvent = L"CopyResourceoSwapChain Pass ";
 
 	};
 }

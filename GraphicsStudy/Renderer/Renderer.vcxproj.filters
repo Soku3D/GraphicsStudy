@@ -189,11 +189,14 @@
     <FxCompile Include="DrawNormalPassGS.hlsl" />
     <FxCompile Include="DrawNormalPassPS.hlsl" />
     <FxCompile Include="DrawNormalPassVS.hlsl" />
+    <FxCompile Include="GeometryPassDS.hlsl" />
+    <FxCompile Include="GeometryPassHS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />
     <None Include="GeometryPass.hlsli" />
     <None Include="LightPass.hlsli" />
     <None Include="DrawNormalPass.hlsli" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

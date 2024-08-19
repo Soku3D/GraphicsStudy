@@ -7,6 +7,7 @@
 
 #include <DirectXTexEXR.h>
 #include <tuple>
+#include "pix3.h"
 
 using namespace Core;
 
@@ -354,6 +355,9 @@ void Renderer::D3D12App::RenderGUI(float& deltaTime)
 		{
 			ThrowIfFailed(m_guiCommandAllocator->Reset());
 			ThrowIfFailed(m_guiCommandList->Reset(m_guiCommandAllocator.Get(), nullptr));
+			
+			PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 255, 255), guiPassEvent);
+
 
 			m_guiCommandList->ResourceBarrier(1,
 				&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -374,7 +378,6 @@ void Renderer::D3D12App::RenderGUI(float& deltaTime)
 					D3D12_RESOURCE_STATE_PRESENT
 				));
 		}
-
 		m_guiCommandList->Close();
 		ID3D12CommandList* lists[] = { m_guiCommandList.Get() };
 		m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
@@ -383,6 +386,7 @@ void Renderer::D3D12App::RenderGUI(float& deltaTime)
 	m_frameIndex = (m_frameIndex + 1) % m_swapChainCount;
 
 	FlushCommandQueue();
+	PIXEndEvent(m_commandQueue.Get());
 }
 
 void Renderer::D3D12App::RenderMeshes(float& deltaTime) {
@@ -559,7 +563,7 @@ void Renderer::D3D12App::CreateDescriptorHeaps() {
 	m_rtvHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	m_dsvHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	m_csuHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	
+
 	CreateDescriptorHeap(m_device, m_swapChainRtvHeap, DescriptorType::RTV, m_swapChainCount);
 	CreateDescriptorHeap(m_device, m_dsvHeap, DescriptorType::DSV, 2);
 	CreateDescriptorHeap(m_device, m_cbvHeap, DescriptorType::CBV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
@@ -727,7 +731,7 @@ void Renderer::D3D12App::CreateCubeMapTextures() {
 		return;
 	}
 	m_textureNum = file_count;
-	
+
 	CreateDescriptorHeap(m_device, m_cubeMapTextureHeapNSV, DescriptorType::SRV, file_count, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 	CreateDescriptorHeap(m_device, m_cubeMapTextureHeap, DescriptorType::SRV, file_count, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
@@ -760,7 +764,7 @@ void Renderer::D3D12App::CreateCubeMapTextures() {
 	UINT numDescriptors = m_cubeMapTextureHeapNSV->GetDesc().NumDescriptors;
 	m_device->CopyDescriptorsSimple(numDescriptors, dest_gPassHeapHandle, src_CubeHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	m_device->CopyDescriptorsSimple(numDescriptors, dest_CubeHandle, src_CubeHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		
+
 }
 
 void Renderer::D3D12App::CreateExrTexture() {
@@ -1094,33 +1098,45 @@ void  Renderer::D3D12App::CopyResource(ComPtr<ID3D12GraphicsCommandList>& comman
 {
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		dest,
-		destState,
-		D3D12_RESOURCE_STATE_COPY_DEST));
 
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		src,
-		srcState,
-		D3D12_RESOURCE_STATE_COPY_SOURCE));
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 255, 0), copyResourceEvent);
+
+	D3D12_RESOURCE_BARRIER startBarrierList[2] = {
+		CD3DX12_RESOURCE_BARRIER::Transition(
+			dest,
+			destState,
+			D3D12_RESOURCE_STATE_COPY_DEST),
+		
+		CD3DX12_RESOURCE_BARRIER::Transition(
+			src,
+			srcState,
+			D3D12_RESOURCE_STATE_COPY_SOURCE)
+	};
+	D3D12_RESOURCE_BARRIER endBarrierList[2] = {
+		CD3DX12_RESOURCE_BARRIER::Transition(
+			src,
+			D3D12_RESOURCE_STATE_COPY_SOURCE,
+			srcState),
+	
+		CD3DX12_RESOURCE_BARRIER::Transition(
+			dest,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			destState)
+	};
+	commandList->ResourceBarrier(2, startBarrierList);
 
 	commandList->CopyResource(dest, src);
 
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		src,
-		D3D12_RESOURCE_STATE_COPY_SOURCE,
-		srcState));
+	commandList->ResourceBarrier(2, endBarrierList);
 
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		dest,
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		destState));
 
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
 
 	FlushCommandQueue();
+	PIXEndEvent(m_commandQueue.Get());
+
 }
 
 

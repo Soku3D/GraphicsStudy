@@ -21,6 +21,8 @@ __declspec(align(256)) struct GlobalVertexConstantData
 {
 	DirectX::SimpleMath::Matrix ViewMat = DirectX::SimpleMath::Matrix();
 	DirectX::SimpleMath::Matrix ProjMat = DirectX::SimpleMath::Matrix();
+	DirectX::SimpleMath::Vector3 eyePosition;
+	float dummy;
 };
 
 __declspec(align(256)) struct ObjectConstantData {
@@ -32,8 +34,10 @@ __declspec(align(256)) struct ObjectConstantData {
 	float bUseHeightMap = false;
 	float bUseMetalnessMap = false;
 	float bUseNormalMap = false;
+	
 	float bUseRoughnessMap = false;
-	float dummy[3];
+	float bUseTesslation = false;
+	float dummy[2];
 
 };
 

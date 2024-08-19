@@ -8,6 +8,13 @@ Texture2D g_roughness : register(t5);
 SamplerState g_sampler : register(s0);
 SamplerState g_clampSampler : register(s1);
 
+#define NUM_CONTROL_POINTS 4
+static const float MAX_TESSLATION = 64.f;
+static const float MIN_TESSLATION = 1.f;
+static const float FallOfStart = 1.0f;
+static const float FallOfEnd = 10.f;
+
+
 struct Material
 {
     float albedo;
@@ -27,16 +34,39 @@ cbuffer cbPerObject : register(b0)
     bool useMetalnessMap;
     bool useNormalMap;
     bool useRoughnessMap;
-    //float3 dummy;
+    
+    bool useTesslation;
 }
 
 cbuffer cbPass : register(b1)
 {
     matrix View;
     matrix Projection;
+    float3 eyePosition;
 }
 
 struct VSInput
+{
+    float3 position : POSITION;
+    float3 normal : NORMAL;
+    float2 uv : TEXCOORD;
+    float3 tangent : TANGENT;
+};
+struct VSOutput
+{
+    float3 position : POSITION;
+    float3 normal : NORMAL;
+    float2 uv : TEXCOORD;
+    float3 tangent : TANGENT;
+};
+
+struct HS_CONSTANT_DATA_OUTPUT
+{
+    float edges[4] : SV_TessFactor;
+    float inside[2] : SV_InsideTessFactor;
+};
+
+struct DSInput
 {
     float3 position : POSITION;
     float3 normal : NORMAL;
@@ -60,3 +90,23 @@ struct PSOutput
     float4 albedoColor : SV_Target2; 
     float4 material : SV_Target3; // ao, metalic, roughness
 };
+
+float customSaturate(float min, float max, float fallOfStart, float fallOfEnd, float d)
+{
+    if (d <= fallOfStart)
+    {
+        return max;
+    }
+    else if (d >= fallOfEnd)
+    {
+        return min;
+    }
+    else
+    {
+        float dy = min - max;
+        float dx = fallOfEnd - fallOfStart;
+        
+        return (dy / dx) * (d - fallOfEnd) + min;
+
+    }
+}

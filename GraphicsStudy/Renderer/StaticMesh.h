@@ -38,7 +38,8 @@ namespace Core {
 			bool bUseHeightMap = false,
 			bool bUseMetalnessMap = false,
 			bool bUseNormalMap = false,
-			bool bUseRoughnessMap = false)
+			bool bUseRoughnessMap = false, 
+			bool bUseTesslation = false)
 		{
 			m_name = meshData.m_name;
 
@@ -61,6 +62,7 @@ namespace Core {
 			m_objectConstantData->bUseMetalnessMap = bUseMetalnessMap;
 			m_objectConstantData->bUseNormalMap = bUseNormalMap;
 			m_objectConstantData->bUseRoughnessMap = bUseRoughnessMap;
+			m_objectConstantData->bUseTesslation = bUseTesslation;
 
 			m_objectConstantData->Model = DirectX::XMMatrixTranslation(modelPosition.x, modelPosition.y, modelPosition.z);
 			m_transformFBXAnimation = m_objectConstantData->Model;
@@ -77,12 +79,12 @@ namespace Core {
 			m_texturePath = meshData.GetTexturePath();
 		}
 
-
-
 		void Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat = true);
 		void RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat);
 		void UpdateAnimation(const float& deltaTime, Animation::AnimationData& animationData);
 		void Update(const float& deltaTime);
+
+		//void UpdateDomain(const float& deltaTime, float gui_edge0, float gui_edge1, float gui_edge2, float gui_edge3, float gui_inside0, float gui_inside1);
 
 		std::wstring GetTexturePath() const { return m_texturePath; }
 		void SetTexturePath(std::wstring path) { m_texturePath = path; }

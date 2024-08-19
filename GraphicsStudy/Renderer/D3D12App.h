@@ -217,5 +217,9 @@ namespace Renderer {
 	protected:
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> samplerHeap;
 
+	private:
+		const wchar_t* copyResourceEvent = L"CopyResource Pass ";
+		const wchar_t* guiPassEvent = L"GUI Pass ";
+
 	};
 }

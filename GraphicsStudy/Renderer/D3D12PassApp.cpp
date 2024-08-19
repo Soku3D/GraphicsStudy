@@ -1,6 +1,7 @@
 #include "D3D12PassApp.h"
 #include "Renderer.h"
 #include <DirectXTexEXR.h>
+#include "pix3.h"
 
 
 Renderer::D3D12PassApp::D3D12PassApp(const int& width, const int& height)
@@ -17,9 +18,11 @@ bool Renderer::D3D12PassApp::Initialize()
 {
 	if (!D3D12App::Initialize())
 		return false;
+	
 	gui_lightPos = DirectX::SimpleMath::Vector3(-1.f, 1.f, 0.f);
 	InitConstantBuffers();
 
+	
 	return true;
 }
 
@@ -62,18 +65,19 @@ void Renderer::D3D12PassApp::CreateVertexAndIndexBuffer()
 	using DirectX::SimpleMath::Vector3;
 	using namespace Core;
 
-	/*std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
-	sphere->Initialize(GeometryGenerator::PbrSphere(1.f, 100, 100, L"worn-painted-metal_albedo.png",
-		2.f, 2.f),
+	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
+	sphere->Initialize(GeometryGenerator::PbrUseTesslationSphere(1.f,6, 6, L"worn-painted-metal_albedo.png",
+		1.f, 1.f),
 		m_device, m_commandList, Vector3(0.f, 0.f, 0.f), 
 		Material(1.f, 1.f, 1.f, 1.f),
-		true, true,	true, true,	true);
-	m_staticMeshes.push_back(sphere);*/
+		true, false ,	true, true,	true, true);
+	m_staticMeshes.push_back(sphere);
 
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
-	plane->Initialize(GeometryGenerator::PbrBox(10, 1, 10, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f),
+	plane->Initialize(GeometryGenerator::PbrUseTesslationBox(1, 1, 1, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.f, -1.f, -1.f),
 		Material(1.f, 1.f, 1.f, 1.f),
-		true, true, true, true, true);
+		true, true, true, true, true, true);
+
 	m_staticMeshes.push_back(plane);
 
 	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile("box_destruction.fbx", true);
@@ -115,6 +119,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	{
 		m_passConstantData->ViewMat = m_camera->GetViewMatrix();
 		m_passConstantData->ProjMat = m_camera->GetProjMatrix();
+		m_passConstantData->eyePosition = m_camera->GetPosition();
 
 		m_passConstantData->ViewMat = m_passConstantData->ViewMat.Transpose();
 		m_passConstantData->ProjMat = m_passConstantData->ProjMat.Transpose();
@@ -134,7 +139,6 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 		memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
 	}
-
 
 	for (auto& mesh : m_staticMeshes) {
 		mesh->Update(deltaTime);
@@ -170,6 +174,14 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 		}
 		ImGui::EndCombo();
 	}
+	
+	/*ImGui::SliderFloat("edge0", &gui_edge0, 1.f, 64.f);
+	ImGui::SliderFloat("edge1", &gui_edge1, 1.f, 64.f);
+	ImGui::SliderFloat("edge2", &gui_edge2, 1.f, 64.f);
+	ImGui::SliderFloat("edge3", &gui_edge3, 1.f, 64.f);
+	ImGui::SliderFloat("inside0", &gui_inside0, 1.f, 64.f);
+	ImGui::SliderFloat("inside1", &gui_inside1, 1.f, 64.f);*/
+
 	ImGui::SliderFloat("AO", &gui_ao, 0.f, 1.f);
 	ImGui::SliderFloat("Metalic", &gui_metallic, 0.f, 1.f);
 	ImGui::SliderFloat("Roughness", &gui_roughness, 0.f, 1.f);
@@ -188,7 +200,9 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 
 void Renderer::D3D12PassApp::Render(float& deltaTime)
 {
+	
 	GeometryPass(deltaTime);
+
 	LightPass(deltaTime);
 	DrawNormalPass(deltaTime);
 	RenderCubeMap(deltaTime);
@@ -208,10 +222,12 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 	else {
 		msaaMode = false;
 	}
+	
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 	{
+		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), geomeytyPassEvent);
 		FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
 
 		if (msaaMode) {
@@ -241,7 +257,7 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 		}
 		//m_commandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
 
-		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
 		m_commandList->RSSetScissorRects(1, &m_scissorRect);
 		m_commandList->RSSetViewports(1, &m_viewport);
 		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
@@ -296,9 +312,9 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 
 	ID3D12CommandList* plists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
-
+		
 	FlushCommandQueue();
-
+	PIXEndEvent(m_commandQueue.Get());
 }
 
 void Renderer::D3D12PassApp::LightPass(float& deltaTime) {
@@ -307,6 +323,8 @@ void Renderer::D3D12PassApp::LightPass(float& deltaTime) {
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 	{
+		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), lightPassEvent);
+
 		FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
 		m_commandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
 
@@ -335,6 +353,8 @@ void Renderer::D3D12PassApp::LightPass(float& deltaTime) {
 	m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
 
 	FlushCommandQueue();
+	PIXEndEvent(m_commandQueue.Get());
+
 }
 
 
@@ -347,6 +367,9 @@ void Renderer::D3D12PassApp::DrawNormalPass(float& deltaTime) {
 		ThrowIfFailed(m_commandAllocator->Reset());
 		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 		{
+			PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), drawNormalPassEvent);
+
+
 			m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
 
 			m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
@@ -362,12 +385,14 @@ void Renderer::D3D12PassApp::DrawNormalPass(float& deltaTime) {
 				}
 			}
 		}
+
 		ThrowIfFailed(m_commandList->Close());
 
 		ID3D12CommandList* plists[] = { m_commandList.Get() };
 		m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
 
 		FlushCommandQueue();
+		PIXEndEvent(m_commandQueue.Get());
 	}
 
 }
@@ -387,6 +412,8 @@ void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 
 		{
+			PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), cubeMapPassEvent);
+
 			/*if (msaaMode) {
 
 				m_commandList->OMSetRenderTargets(1, &MsaaRenderTargetView(), true, &MsaaDepthStencilView());
@@ -424,13 +451,14 @@ void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 			m_cubeMap->Render(deltaTime, m_commandList, false);
 
 		}
-
 		ThrowIfFailed(m_commandList->Close());
 
 		ID3D12CommandList* plists[] = { m_commandList.Get() };
 		m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
 
 		FlushCommandQueue();
+		PIXEndEvent(m_commandQueue.Get());
+
 	}
 	//Render Font GUI
 	//{
@@ -458,6 +486,8 @@ void Renderer::D3D12PassApp::PostProcessing(float& deltaTime) {
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 
 	{
+		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 0, 255), cubeMapPassEvent);
+
 		m_commandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(
 				HDRRenderTargetBuffer(),
@@ -489,6 +519,8 @@ void Renderer::D3D12PassApp::PostProcessing(float& deltaTime) {
 		m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
 
 		FlushCommandQueue();
+		PIXEndEvent(m_commandQueue.Get());
+
 	}
 
 }
@@ -498,8 +530,6 @@ void Renderer::D3D12PassApp::RenderGUI(float& deltaTime)
 	D3D12App::RenderGUI(deltaTime);
 }
 
-
-
 void Renderer::D3D12PassApp::CopyResourceToSwapChain(float& deltaTime)
 {
 	auto& pso = utilityPsoLists["Copy"];
@@ -507,6 +537,7 @@ void Renderer::D3D12PassApp::CopyResourceToSwapChain(float& deltaTime)
 		ThrowIfFailed(m_commandAllocator->Reset());
 		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 
+		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 255, 0), copyResourceToSwapChainEvent);
 		m_commandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(
 				CurrentBackBuffer(),
@@ -539,10 +570,13 @@ void Renderer::D3D12PassApp::CopyResourceToSwapChain(float& deltaTime)
 				D3D12_RESOURCE_STATE_PRESENT
 			));
 	}
+
 	ThrowIfFailed(m_commandList->Close());
 
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
 
 	FlushCommandQueue();
+	PIXEndEvent(m_commandQueue.Get());
+
 }
