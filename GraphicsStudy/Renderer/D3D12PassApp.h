@@ -29,12 +29,11 @@ namespace Renderer {
 		void UpdateGUI(float& deltaTime) override;
 		void Render(float& deltaTime) override;
 		void GeometryPass(float& deltaTime);
+		void FbxGeometryPass(float& deltaTime);
 		void LightPass(float& deltaTime);
 		void DrawNormalPass(float& deltaTime);
 		void RenderCubeMap(float& deltaTime) override;
 		void RenderGUI(float& deltaTime) override;
-
-		void CopyResourceToSwapChain(float& deltaTime);
 
 		virtual void PostProcessing(float& deltaTime);
 
@@ -74,10 +73,10 @@ namespace Renderer {
 
 	private:
 		const wchar_t* geomeytyPassEvent = L"Geometry Pass ";
+		const wchar_t* fbxGeomeytyPassEvent = L"FBX Geometry Pass ";
 		const wchar_t* lightPassEvent = L"Light Pass ";
 		const wchar_t* drawNormalPassEvent = L"DrawNormal Pass ";
 		const wchar_t* cubeMapPassEvent = L"CubeMap Pass ";
-		const wchar_t* copyResourceToSwapChainEvent = L"CopyResourceoSwapChain Pass ";
 
 	};
 }

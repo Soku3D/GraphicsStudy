@@ -13,7 +13,10 @@
 #include "GeometryPassVS.h"
 #include "GeometryPassHS.h"
 #include "GeometryPassDS.h"
+#include "GeometryPassTriangleHS.h"
+#include "GeometryPassTriangleDS.h"
 #include "GeometryPassPS.h"
+#include "FbxGeometryPassVS.h"
 
 #include "LightPassVS.h"
 #include "LightPassPS.h"
@@ -22,6 +25,10 @@
 #include "DrawNormalPassGS.h"
 #include "DrawNormalPassPS.h"
 
+#include "SimulationParticlesVS.h"
+#include "SimulationParticlesGS.h"
+#include "SimulationParticlesPS.h"
+#include "SimulationParticlesCS.h"
 
 namespace Renderer {
 	DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -47,7 +54,7 @@ namespace Renderer {
 	std::map<std::string, GraphicsPSO > utilityPsoLists;
 
 	std::vector<std::string> modePsoListNames;
-	std::vector<std::string> passPsoListNames; 
+	std::vector<std::string> passPsoListNames;
 	std::vector<std::string> cubePsoListNames;
 	std::vector<std::string> utilityPsoListNames;
 
@@ -56,12 +63,14 @@ namespace Renderer {
 
 	RootSignature defaultSignature;
 	RootSignature geometryPassSignature;
-	RootSignature computeSignature;
 	RootSignature cubeMapSignature;
-    RootSignature copySignature;
+	RootSignature copySignature;
 	RootSignature lightPassSignature;
 	RootSignature NormalPassSignature;
 
+	RootSignature computeSignature;
+	RootSignature simulationComputeSignature;
+	RootSignature simulationSignature;
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElement;
@@ -103,16 +112,19 @@ namespace Renderer {
 
 		samplers.push_back(wrapLinearSampler);
 		samplers.push_back(clampLinearSampler);
-		
+
 		// Init Signatures
 		defaultSignature.Initialize(1, 3, 1, &wrapLinearSampler);
 		computeSignature.InitializeUAV(1, 1, 0, nullptr);
 		cubeMapSignature.Initialize(1, 2, 1, &wrapLinearSampler);
 		copySignature.Initialize(1, 0, 1, &wrapLinearSampler);
-		
+
 		geometryPassSignature.Initialize(6, 2, samplers);
 		lightPassSignature.InitializeDoubleSrvHeap(4, 4, 1, samplers);
 		NormalPassSignature.Initialize(2);
+		
+		simulationComputeSignature.InitializeUAV(1,0, 0, nullptr);
+		simulationSignature.Initialize(1, 0, 0, nullptr);
 
 		GraphicsPSO msaaPso("Msaa");
 		GraphicsPSO wirePso("Wire");
@@ -120,18 +132,23 @@ namespace Renderer {
 		GraphicsPSO cubeMapPso("DefaultCubeMap");
 		GraphicsPSO msaaCubeMapPso("MsaaCubeMap");
 		GraphicsPSO wireCubeMapPso("WireCubeMap");
-		
+
 		GraphicsPSO defaultGeometryPassPso("DefaultGeometryPass");
 		GraphicsPSO msaaGeometryPassPso("MsaaGeometryPass");
 		GraphicsPSO wireGeometryPassPso("WireGeometryPass");
+		GraphicsPSO fbxGeometryPassPso("DefaultFbxGeometryPass");
+		GraphicsPSO fbxMsaaGeometryPassPso("MsaaFbxGeometryPass");
+		GraphicsPSO fbxWireGeometryPassPso("WireFbxGeometryPass");
 
 		GraphicsPSO lightPassPso("LightPass");
 
 		GraphicsPSO DrawNormalPassPso("NormalPass");
 
 		GraphicsPSO copyPso("Copy");
-		
-				
+
+		ComputePSO simulationComputePso("SimulationCompute");
+		GraphicsPSO simulationRenderPso("SimulationRenderPass");
+
 		defaultElement =
 		{
 			{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
@@ -153,7 +170,7 @@ namespace Renderer {
 		defaultRasterizer = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		wireRasterizer = defaultRasterizer;
 		wireRasterizer.FillMode = D3D12_FILL_MODE_WIREFRAME;
-		
+
 		//D3D12_DEPTH_STENCILOP_DESC depthStencilDesc;
 
 		D3D12_RASTERIZER_DESC cubeMapRasterizer = defaultRasterizer;
@@ -177,14 +194,14 @@ namespace Renderer {
 		defaultPso.SetPixelShader(g_pTestPS, sizeof(g_pTestPS));
 		defaultPso.SetInputLayout((UINT)defaultElement.size(), defaultElement.data());
 		defaultPso.SetRasterizerState(CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT));
-		
+
 		defaultPso.SetBlendState(alphaBlender);
 		defaultPso.SetDepthStencilState(CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT));
 		defaultPso.SetSampleMask(UINT_MAX);
 		defaultPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 		defaultPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 		defaultPso.SetRootSignature(&defaultSignature);
-		
+
 		defaultGeometryPassPso = defaultPso;
 		defaultGeometryPassPso.SetRootSignature(&geometryPassSignature);
 		defaultGeometryPassPso.SetVertexShader(g_pGeometryPassVS, sizeof(g_pGeometryPassVS));
@@ -195,11 +212,25 @@ namespace Renderer {
 		defaultGeometryPassPso.SetInputLayout((UINT)pbrElement.size(), pbrElement.data());
 		defaultGeometryPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH);
 
+		fbxGeometryPassPso = defaultPso;
+		fbxGeometryPassPso.SetRootSignature(&geometryPassSignature);
+		fbxGeometryPassPso.SetVertexShader(g_pFbxGeometryPassVS, sizeof(g_pFbxGeometryPassVS));
+		fbxGeometryPassPso.SetPixelShader(g_pGeometryPassPS, sizeof(g_pGeometryPassPS));
+		fbxGeometryPassPso.SetRenderTargetFormats(geometryPassNum, geometryPassFormats, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		fbxGeometryPassPso.SetInputLayout((UINT)pbrElement.size(), pbrElement.data());
+		fbxGeometryPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+
 		msaaGeometryPassPso = defaultGeometryPassPso;
 		msaaGeometryPassPso.SetRenderTargetFormats(geometryPassNum, geometryPassFormats, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
 
+		fbxMsaaGeometryPassPso = fbxGeometryPassPso;
+		fbxMsaaGeometryPassPso.SetRenderTargetFormats(geometryPassNum, geometryPassFormats, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
+
 		wireGeometryPassPso = defaultGeometryPassPso;
 		wireGeometryPassPso.SetRasterizerState(wireRasterizer);
+
+		fbxWireGeometryPassPso = fbxGeometryPassPso;
+		fbxWireGeometryPassPso.SetRasterizerState(wireRasterizer);
 
 		lightPassPso = defaultPso;
 		lightPassPso.SetRootSignature(&lightPassSignature);
@@ -222,7 +253,7 @@ namespace Renderer {
 
 		msaaPso = defaultPso;
 		msaaPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
-		
+
 		wirePso = defaultPso;
 		wirePso.SetRasterizerState(wireRasterizer);
 
@@ -247,23 +278,39 @@ namespace Renderer {
 		copyPso.SetVertexShader(g_pCopyVS, sizeof(g_pCopyVS));
 		copyPso.SetPixelShader(g_pCopyPS, sizeof(g_pCopyPS));
 
+		simulationRenderPso = defaultPso;
+		simulationRenderPso.SetRootSignature(&simulationSignature);
+		simulationRenderPso.SetVertexShader(g_pSimulationParticlesVS, sizeof(g_pSimulationParticlesVS));
+		simulationRenderPso.SetGeometryShader(g_pSimulationParticlesGS, sizeof(g_pSimulationParticlesGS));
+		simulationRenderPso.SetPixelShader(g_pSimulationParticlesPS, sizeof(g_pSimulationParticlesPS));
+		simulationRenderPso.SetRenderTargetFormat(backbufferFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		simulationRenderPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+
+		simulationComputePso.SetComputeShader(g_pSimulationParticlesCS, sizeof(g_pSimulationParticlesCS));
+		simulationComputePso.SetRootSignature(&simulationComputeSignature);
+
 		modePsoLists[defaultPso.GetName()] = defaultPso;
 		modePsoLists[wirePso.GetName()] = wirePso;
 		modePsoLists[msaaPso.GetName()] = msaaPso;
-		
+
 		passPsoLists[defaultGeometryPassPso.GetName()] = defaultGeometryPassPso;
 		passPsoLists[wireGeometryPassPso.GetName()] = wireGeometryPassPso;
 		passPsoLists[msaaGeometryPassPso.GetName()] = msaaGeometryPassPso;
+		passPsoLists[fbxGeometryPassPso.GetName()] = fbxGeometryPassPso;
+		passPsoLists[fbxMsaaGeometryPassPso.GetName()] = fbxMsaaGeometryPassPso;
+		passPsoLists[fbxMsaaGeometryPassPso.GetName()] = fbxMsaaGeometryPassPso;
 		passPsoLists[lightPassPso.GetName()] = lightPassPso;
 		passPsoLists[DrawNormalPassPso.GetName()] = DrawNormalPassPso;
+		passPsoLists[simulationRenderPso.GetName()] = simulationRenderPso;
 
 		utilityPsoLists[copyPso.GetName()] = copyPso;
-		
+
 		cubePsoLists[cubeMapPso.GetName()] = cubeMapPso;
 		cubePsoLists[msaaCubeMapPso.GetName()] = msaaCubeMapPso;
 		cubePsoLists[wireCubeMapPso.GetName()] = wireCubeMapPso;
 
 		computePsoList[computePso.GetName()] = computePso;
+		computePsoList[simulationComputePso.GetName()] = simulationComputePso;
 
 	}
 
@@ -276,6 +323,8 @@ namespace Renderer {
 		geometryPassSignature.Finalize(device);
 		lightPassSignature.Finalize(device);
 		NormalPassSignature.Finalize(device);
+		simulationComputeSignature.Finalize(device);
+		simulationSignature.Finalize(device);
 
 		for (auto& pso : modePsoLists) {
 			pso.second.Finalize(device);

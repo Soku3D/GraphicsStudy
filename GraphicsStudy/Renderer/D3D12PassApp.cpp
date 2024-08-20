@@ -1,7 +1,7 @@
 #include "D3D12PassApp.h"
 #include "Renderer.h"
 #include <DirectXTexEXR.h>
-#include "pix3.h"
+
 
 
 Renderer::D3D12PassApp::D3D12PassApp(const int& width, const int& height)
@@ -9,8 +9,8 @@ Renderer::D3D12PassApp::D3D12PassApp(const int& width, const int& height)
 {
 	bUseGUI = true;
 	bRenderCubeMap = true;
-	bRenderMeshes = true;
-	bRenderFbx = false;
+	bRenderMeshes = false;
+	bRenderFbx = true;
 	bRenderNormal = false;
 }
 
@@ -18,11 +18,10 @@ bool Renderer::D3D12PassApp::Initialize()
 {
 	if (!D3D12App::Initialize())
 		return false;
-	
+
 	gui_lightPos = DirectX::SimpleMath::Vector3(-1.f, 1.f, 0.f);
 	InitConstantBuffers();
 
-	
 	return true;
 }
 
@@ -42,11 +41,9 @@ void Renderer::D3D12PassApp::InitConstantBuffers() {
 	ThrowIfFailed(m_csBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbufferBegin)));
 	memcpy(m_pCbufferBegin, psConstantData, sizeof(CSConstantData));
 
-
 	m_pCubeMapConstantData = new CubeMapConstantData();
 	m_pCubeMapConstantData->expose = gui_cubeMapExpose;
 	m_pCubeMapConstantData->lodLevel = gui_cubeMapLod;
-
 	m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
@@ -65,13 +62,13 @@ void Renderer::D3D12PassApp::CreateVertexAndIndexBuffer()
 	using DirectX::SimpleMath::Vector3;
 	using namespace Core;
 
-	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
+	/*std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
 	sphere->Initialize(GeometryGenerator::PbrUseTesslationSphere(1.f,6, 6, L"worn-painted-metal_albedo.png",
 		1.f, 1.f),
-		m_device, m_commandList, Vector3(0.f, 0.f, 0.f), 
+		m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
 		true, false ,	true, true,	true, true);
-	m_staticMeshes.push_back(sphere);
+	m_staticMeshes.push_back(sphere);*/
 
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
 	plane->Initialize(GeometryGenerator::PbrUseTesslationBox(1, 1, 1, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.f, -1.f, -1.f),
@@ -80,14 +77,19 @@ void Renderer::D3D12PassApp::CreateVertexAndIndexBuffer()
 
 	m_staticMeshes.push_back(plane);
 
-	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile("box_destruction.fbx", true);
+	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile_Pbr("uvtest4.fbx", true);
 	std::shared_ptr<Animation::FBX> wallDistructionFbx = std::make_shared<Animation::FBX>();
-	wallDistructionFbx->Initialize(box_destruction, box_destruction_animation, m_device, m_commandList, true, 1.f);
+	wallDistructionFbx->Initialize(box_destruction, box_destruction_animation, m_device, m_commandList, 
+		true /*loopAnimation*/,
+		1.5f /*animationSpeed*/, 
+		Vector3(0.f, 1.f, 0.f),
+		L"uvtest_DefaultMaterial_Albedo.png");
+
 	m_fbxList.push_back(wallDistructionFbx);
 
 	m_cubeMap = std::make_shared<Core::StaticMesh>();
 	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(100.f), m_device, m_commandList);
-	m_cubeMap->SetTexturePath(std::wstring(L"Outdoor")+ L"EnvHDR.dds");
+	m_cubeMap->SetTexturePath(std::wstring(L"Outdoor") + L"EnvHDR.dds");
 
 	m_screenMesh = std::make_shared<Core::StaticMesh>();
 	m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
@@ -174,7 +176,7 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 		}
 		ImGui::EndCombo();
 	}
-	
+
 	/*ImGui::SliderFloat("edge0", &gui_edge0, 1.f, 64.f);
 	ImGui::SliderFloat("edge1", &gui_edge1, 1.f, 64.f);
 	ImGui::SliderFloat("edge2", &gui_edge2, 1.f, 64.f);
@@ -200,9 +202,9 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 
 void Renderer::D3D12PassApp::Render(float& deltaTime)
 {
-	
-	GeometryPass(deltaTime);
 
+	GeometryPass(deltaTime);
+	FbxGeometryPass(deltaTime);
 	LightPass(deltaTime);
 	DrawNormalPass(deltaTime);
 	RenderCubeMap(deltaTime);
@@ -222,7 +224,7 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 	else {
 		msaaMode = false;
 	}
-	
+
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
@@ -272,7 +274,7 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 		if (bRenderMeshes) {
 			for (int i = 0; i < m_staticMeshes.size(); ++i) {
 				CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
-				
+
 				if (m_textureMap.count(m_staticMeshes[i]->GetTexturePath()) > 0) {
 					handle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath()], m_csuHeapSize);
 				}
@@ -285,12 +287,78 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 			}
 
 		}
-		if (bRenderFbx) {
+		/*if (bRenderFbx) {
 			for (int i = 0; i < m_fbxList.size(); ++i) {
 				m_fbxList[i]->Render(deltaTime, m_commandList, true, m_textureHeap, m_textureMap, m_csuHeapSize);
 			}
+		}*/
+
+	}
+
+	/*if (msaaMode) {
+		for (UINT i = 0; i < geometryPassRtvNum; i++)
+		{
+			ResolveSubresource(m_commandList, m_geometryPassResources[i].Get(), m_geometryPassMsaaResources[i].Get());
 		}
-		
+		ResolveSubresource(m_commandList, m_hdrDepthStencilBuffer.Get(), m_msaaDepthStencilBuffer.Get(),
+			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			DXGI_FORMAT_R24_UNORM_X8_TYPELESS);
+	}*/
+
+	//CopyResource(m_commandList, HDRRenderTargetBuffer(), m_geometryPassResources[GeometryPassType::albedoColor].Get(),
+	//	D3D12_RESOURCE_STATE_RENDER_TARGET,
+	//	D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* plists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
+
+	FlushCommandQueue();
+	PIXEndEvent(m_commandQueue.Get());
+}
+
+// FBX 렌더의 경우 Domain & Hull Shader를 사용하지 않고, NormalMap도 사용하지 않는다
+void Renderer::D3D12PassApp::FbxGeometryPass(float& deltaTime) {
+
+	auto& pso = passPsoLists[currRenderMode + "FbxGeometryPass"];
+	if (currRenderMode == "Msaa") {
+		msaaMode = true;
+	}
+	else {
+		msaaMode = false;
+	}
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), fbxGeomeytyPassEvent);
+
+	if (bRenderFbx) {
+
+		if (msaaMode) {
+			m_commandList->OMSetRenderTargets(geometryPassRtvNum, &GeometryPassMsaaRTV(), true, &MsaaDepthStencilView());
+		}
+		else {
+			m_commandList->OMSetRenderTargets(geometryPassRtvNum, &GeometryPassRTV(), true, &HDRDepthStencilView());
+		}
+
+		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_commandList->RSSetScissorRects(1, &m_scissorRect);
+		m_commandList->RSSetViewports(1, &m_viewport);
+		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+
+		// View Proj Matrix Constant Buffer 
+		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
+		//m_commandList->SetGraphicsRootConstantBufferView(3, m_ligthPassConstantBuffer->GetGPUVirtualAddress());
+
+		// Texture SRV Heap 
+		ID3D12DescriptorHeap* ppSrvHeaps[] = { m_textureHeap.Get() };
+		m_commandList->SetDescriptorHeaps(_countof(ppSrvHeaps), ppSrvHeaps);
+
+		for (int i = 0; i < m_fbxList.size(); ++i) {
+			m_fbxList[i]->Render(deltaTime, m_commandList, true, m_textureHeap, m_textureMap, m_csuHeapSize);
+		}
 	}
 
 	if (msaaMode) {
@@ -304,15 +372,11 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 			DXGI_FORMAT_R24_UNORM_X8_TYPELESS);
 	}
 
-	//CopyResource(m_commandList, HDRRenderTargetBuffer(), m_geometryPassResources[GeometryPassType::albedoColor].Get(),
-	//	D3D12_RESOURCE_STATE_RENDER_TARGET,
-	//	D3D12_RESOURCE_STATE_RENDER_TARGET);
-
 	ThrowIfFailed(m_commandList->Close());
 
 	ID3D12CommandList* plists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
-		
+
 	FlushCommandQueue();
 	PIXEndEvent(m_commandQueue.Get());
 }
@@ -333,7 +397,7 @@ void Renderer::D3D12PassApp::LightPass(float& deltaTime) {
 		m_commandList->RSSetScissorRects(1, &m_scissorRect);
 		m_commandList->RSSetViewports(1, &m_viewport);
 		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
-		
+
 		ID3D12DescriptorHeap* ppSrvHeaps[] = { m_geometryPassSrvHeap.Get() };
 		m_commandList->SetDescriptorHeaps(_countof(ppSrvHeaps), ppSrvHeaps);
 
@@ -345,7 +409,7 @@ void Renderer::D3D12PassApp::LightPass(float& deltaTime) {
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_ligthPassConstantBuffer->GetGPUVirtualAddress());
 		m_screenMesh->Render(deltaTime, m_commandList, false);
 	}
-	
+
 
 	ThrowIfFailed(m_commandList->Close());
 
@@ -447,7 +511,7 @@ void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 				handle.Offset(m_cubeTextureMap[L"DefaultEnvHDR.dds"], m_csuHeapSize);
 			}
 			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
-			
+
 			m_cubeMap->Render(deltaTime, m_commandList, false);
 
 		}
@@ -472,7 +536,7 @@ void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 	//		//RenderFonts(std::to_wstring(time), m_resourceDescriptors, m_spriteBatch, m_font, m_commandList);
 	//	}
 	//}
-	
+
 }
 
 
@@ -528,55 +592,4 @@ void Renderer::D3D12PassApp::PostProcessing(float& deltaTime) {
 void Renderer::D3D12PassApp::RenderGUI(float& deltaTime)
 {
 	D3D12App::RenderGUI(deltaTime);
-}
-
-void Renderer::D3D12PassApp::CopyResourceToSwapChain(float& deltaTime)
-{
-	auto& pso = utilityPsoLists["Copy"];
-	{
-		ThrowIfFailed(m_commandAllocator->Reset());
-		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
-
-		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 255, 0), copyResourceToSwapChainEvent);
-		m_commandList->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(
-				CurrentBackBuffer(),
-				D3D12_RESOURCE_STATE_PRESENT,
-				D3D12_RESOURCE_STATE_RENDER_TARGET
-			));
-		FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
-
-
-		m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
-		m_commandList->OMSetRenderTargets(1, &CurrentBackBufferView(), false, nullptr);
-		m_commandList->RSSetScissorRects(1, &m_scissorRect);
-		m_commandList->RSSetViewports(1, &m_viewport);
-		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
-		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		ID3D12DescriptorHeap* pHeaps[] = { m_hdrSrvHeap.Get() };
-		m_commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(pHeaps)), pHeaps);
-		m_commandList->SetGraphicsRootDescriptorTable(0, m_hdrSrvHeap->GetGPUDescriptorHandleForHeapStart());
-
-		/*ID3D12DescriptorHeap* pHeaps[] = { m_exrSrvHeap.Get() };
-		m_commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(pHeaps)), pHeaps);
-		m_commandList->SetGraphicsRootDescriptorTable(0, m_exrSrvHeap->GetGPUDescriptorHandleForHeapStart());*/
-
-		m_screenMesh->Render(deltaTime, m_commandList, false);
-		m_commandList->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(
-				CurrentBackBuffer(),
-				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_PRESENT
-			));
-	}
-
-	ThrowIfFailed(m_commandList->Close());
-
-	ID3D12CommandList* lists[] = { m_commandList.Get() };
-	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
-
-	FlushCommandQueue();
-	PIXEndEvent(m_commandQueue.Get());
-
 }

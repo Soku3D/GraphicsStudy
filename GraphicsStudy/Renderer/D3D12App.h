@@ -11,6 +11,7 @@
 #include "directxtk12/SpriteFont.h"
 #include "directxtk12/ResourceUploadBatch.h"
 #include "directxtk12/GraphicsMemory.h"
+#include "pix3.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -21,13 +22,7 @@ namespace Renderer {
 		Count
 	};
 
-	enum DescriptorType {
-		RTV,
-		UAV,
-		SRV,
-		DSV,
-		CBV
-	};
+
 
 	class D3D12App :public SimpleApp {
 	public:
@@ -88,11 +83,13 @@ namespace Renderer {
 			D3D12_RESOURCE_STATES srcState = D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 
+		void CopyResourceToSwapChain(float& deltaTime);
+
 		void CreateDepthBuffer(ComPtr<ID3D12Resource>& buffer, D3D12_CPU_DESCRIPTOR_HANDLE& handle, bool bUseMsaa);
 		void CreateResourceBuffer(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_RESOURCE_FLAGS flag);
 		void CreateResourceView(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_CPU_DESCRIPTOR_HANDLE& handle, ComPtr<ID3D12Device>& deivce, const Renderer::DescriptorType& type);
-		void CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce, ComPtr<ID3D12DescriptorHeap>& heap, const Renderer::DescriptorType& type, int Numdescriptors,
-			D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
+		/*void CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce, ComPtr<ID3D12DescriptorHeap>& heap, const Renderer::DescriptorType& type, int Numdescriptors,
+			D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);*/
 
 	protected:
 		bool bUseWarpAdapter;
@@ -218,8 +215,11 @@ namespace Renderer {
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> samplerHeap;
 
 	private:
+		const wchar_t* copyResourceToSwapChainEvent = L"CopyResourceoSwapChain Pass ";
 		const wchar_t* copyResourceEvent = L"CopyResource Pass ";
 		const wchar_t* guiPassEvent = L"GUI Pass ";
 
+	protected:
+		bool bUseTextureApp = true;
 	};
 }

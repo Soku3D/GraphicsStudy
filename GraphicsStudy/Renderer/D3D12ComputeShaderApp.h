@@ -18,9 +18,6 @@ namespace Renderer {
 		void UpdateGUI(float& deltaTime) override;
 		void Render(float& deltaTime) override;
 		void RenderGUI(float& deltaTime) override;
-
-		void CopyResourceToSwapChain(float& deltaTime);
-
 	private:
 
 

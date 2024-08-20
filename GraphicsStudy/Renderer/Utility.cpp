@@ -78,3 +78,31 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
 	uploadResourcesFinished.wait();
 
 }
+
+void Renderer::Utility::CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce,
+	ComPtr<ID3D12DescriptorHeap>& heap,
+	const Renderer::DescriptorType& type,
+	int Numdescriptors,
+	D3D12_DESCRIPTOR_HEAP_FLAGS flag)
+{
+	D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
+	ZeroMemory(&heapDesc, sizeof(heapDesc));
+	heapDesc.NumDescriptors = Numdescriptors;
+
+	if (type == DescriptorType::DSV)
+		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	else if (type == DescriptorType::RTV)
+		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	else if (type == DescriptorType::SRV)
+		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	else if (type == DescriptorType::UAV)
+		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	else if (type == DescriptorType::CBV)
+		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+
+	heapDesc.Flags = flag;
+	heapDesc.NodeMask = 0;
+
+	ThrowIfFailed(deivce->CreateDescriptorHeap(
+		&heapDesc, IID_PPV_ARGS(heap.GetAddressOf())));
+}

@@ -51,6 +51,13 @@ public:
 	int LineNumber = -1;
 };
 namespace Renderer {
+	enum DescriptorType {
+		RTV,
+		UAV,
+		SRV,
+		DSV,
+		CBV
+	};
 
 	using Microsoft::WRL::ComPtr;
 
@@ -176,5 +183,7 @@ namespace Renderer {
 		
 		// Texture Buffer를 만들고 Texture에 대한 Descriptor를 Heap에 넣는다
 		static void CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Resource>& texture, ComPtr<ID3D12DescriptorHeap>& heap, ComPtr<ID3D12Device>& device, ComPtr<ID3D12CommandQueue>& commandQueue, ComPtr<ID3D12GraphicsCommandList>& commandList, int offset, int descriptorSize, bool* bIsCubeMap);
+
+		static void CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce, ComPtr<ID3D12DescriptorHeap>& heap, const Renderer::DescriptorType& type, int Numdescriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 };
 }

@@ -33,7 +33,7 @@ namespace Renderer {
 	extern ComputePSO computePso;
 
 	extern RootSignature defaultSignature;
-	extern RootSignature computeSignature;
+
 	extern RootSignature cubeMapSignature;
 	extern RootSignature geometryPassSignature;
 	extern RootSignature lightPassSignature;
@@ -41,6 +41,11 @@ namespace Renderer {
 
 	extern RootSignature copySignature;
 	
+	extern RootSignature computeSignature;
+	extern RootSignature simulationComputeSignature;
+	extern RootSignature simulationSignature;
+
+
 	extern std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;
 	extern std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElement;
 	extern std::vector<D3D12_INPUT_ELEMENT_DESC> pbrElement;

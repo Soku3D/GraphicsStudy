@@ -2,15 +2,32 @@
 
 
 
-void Animation::FBX::Initialize(std::vector<BasicMeshData>& meshData, AnimationData& animationData, Microsoft::WRL::ComPtr<ID3D12Device>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList,
-	bool loopAnimation, float animationSpeed )
+void Animation::FBX::Initialize(std::vector<PbrMeshData>& meshData, AnimationData& animationData, Microsoft::WRL::ComPtr<ID3D12Device>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList,
+	bool loopAnimation, float animationSpeed,const Vector3 & ModelTranslation,const std::wstring & texture )
 {
 	using namespace Core;
 
 	for (auto& mesh : meshData)
 	{
+		/*static int i = 0;
+		std::cout << i << " : ";
+		for (auto& i : mesh.m_vertices) {
+			std::cout << i.tangent.x << ", ";
+		}
+		std::cout << std::endl;
+		std::vector<uint32_t> indices;	*/
 		std::shared_ptr<Core::StaticMesh> newMesh = std::make_shared<Core::StaticMesh>();
-		newMesh->Initialize(mesh, device, commandList, Vector3(0.f, 1.5f, 0.f));
+		if (texture != L"") 
+		{
+			mesh.m_texturePath = texture;
+		}
+		if (mesh.m_texturePath != L"") {
+			newMesh->Initialize(mesh, device, commandList, ModelTranslation, Material(),
+				true, false, true, false /*normalMap*/, true, true);
+		}
+		else {
+			newMesh->Initialize(mesh, device, commandList, ModelTranslation, Material());
+		}
 		newMesh->m_inverseMat = animationData.clips[0].keys[animationData.meshNameToId[newMesh->m_name]][0].GetTransform().Invert();
 		m_staticMeshes.push_back(newMesh);
 	}
@@ -42,8 +59,8 @@ void Animation::FBX::Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D1
 
 void Animation::FBX::Update(float& deltaTime)
 {
-	m_animationData.Update((int)m_frame);
-	
+	//m_animationData.Update((int)m_frame);
+	m_animationData.Update((int)1);
 	for (auto& mesh : m_staticMeshes) {
 		mesh->UpdateAnimation(deltaTime, m_animationData);
 	}

@@ -84,6 +84,12 @@
     <ClCompile Include="FBX.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="D3D12SimulationApp.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Particle.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3D12App.h">
@@ -173,6 +179,12 @@
     <ClInclude Include="FBX.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="D3D12SimulationApp.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Particle.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="TestVS.hlsl" />
@@ -191,6 +203,13 @@
     <FxCompile Include="DrawNormalPassVS.hlsl" />
     <FxCompile Include="GeometryPassDS.hlsl" />
     <FxCompile Include="GeometryPassHS.hlsl" />
+    <FxCompile Include="GeometryPassTriangleDS.hlsl" />
+    <FxCompile Include="GeometryPassTriangleHS.hlsl" />
+    <FxCompile Include="FbxGeometryPassVS.hlsl" />
+    <FxCompile Include="SimulationParticlesCS.hlsl" />
+    <FxCompile Include="SimulationParticlesVS.hlsl" />
+    <FxCompile Include="SimulationParticlesPS.hlsl" />
+    <FxCompile Include="SimulationParticlesGS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />
@@ -198,5 +217,6 @@
     <None Include="LightPass.hlsli" />
     <None Include="DrawNormalPass.hlsli" />
     <None Include="packages.config" />
+    <None Include="SimulationParticles.hlsli" />
   </ItemGroup>
 </Project>

@@ -42,7 +42,7 @@ namespace Renderer {
 
         for (auto& mesh : m_animeData.meshNameToId) 
         {
-            std::cout << mesh.first << " : " << mesh.second << "\n";
+            //std::cout << mesh.first << " : " << mesh.second << "\n";
         }
         if (loadAnimation) 
         {
@@ -106,7 +106,7 @@ namespace Renderer {
             return;
         }
         Matrix tr; 
-        ProcessNode(pScene->mRootNode, pScene, tr);
+        ProcessPbrNode(pScene->mRootNode, pScene, tr);
 
         m_animeData.offsetMatrices.resize(m_animeData.meshNameToId.size());
         m_animeData.meshTransforms.resize(m_animeData.meshNameToId.size());
@@ -210,7 +210,7 @@ namespace Renderer {
         }
 
         for (UINT i = 0; i < node->mNumChildren; i++) {
-            this->ProcessNode(node->mChildren[i], scene, m);
+            this->ProcessPbrNode(node->mChildren[i], scene, m);
         }
     }
 
@@ -235,7 +235,7 @@ namespace Renderer {
                 vertex.normal.Normalize();
             }
             else {
-                std::cout << "NULL Normals" << std::endl;
+                //std::cout << "NULL Normals" << std::endl;
             }
          
 
@@ -297,7 +297,7 @@ namespace Renderer {
                 vertex.normal.Normalize();
             }
             else {
-                std::cout << "NULL Normals" << std::endl;
+                //std::cout << "NULL Normals" << std::endl;
             }
 
             if (mesh->mTangents != nullptr) {
@@ -308,7 +308,7 @@ namespace Renderer {
                 vertex.tangent.Normalize();
             }
             else {
-                std::cout << "NULL Tagents" << std::endl;
+                //std::cout << "NULL Tagents" << std::endl;
             }
 
             if (mesh->mTextureCoords[0]) {

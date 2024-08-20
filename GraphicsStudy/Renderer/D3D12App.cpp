@@ -52,9 +52,11 @@ bool Renderer::D3D12App::Initialize()
 	Renderer::Initialize();
 	Renderer::Finalize(m_device);
 
-	CreateTextures();
-	CreateCubeMapTextures();
-	//CreateExrTexture();
+	if (bUseTextureApp) {
+		CreateTextures();
+		CreateCubeMapTextures();
+		//CreateExrTexture();
+	}
 	CreateVertexAndIndexBuffer();
 
 	CreateFontFromFile(L"Fonts/default.spritefont", m_font, m_spriteBatch, m_resourceDescriptors, false, m_hdrFormat, m_depthStencilFormat);
@@ -564,16 +566,16 @@ void Renderer::D3D12App::CreateDescriptorHeaps() {
 	m_dsvHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	m_csuHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	CreateDescriptorHeap(m_device, m_swapChainRtvHeap, DescriptorType::RTV, m_swapChainCount);
-	CreateDescriptorHeap(m_device, m_dsvHeap, DescriptorType::DSV, 2);
-	CreateDescriptorHeap(m_device, m_cbvHeap, DescriptorType::CBV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-	CreateDescriptorHeap(m_device, m_msaaRtvHeap, DescriptorType::RTV, 1);
-	CreateDescriptorHeap(m_device, m_hdrRtvHeap, DescriptorType::RTV, 1);
-	CreateDescriptorHeap(m_device, m_hdrUavHeap, DescriptorType::UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-	CreateDescriptorHeap(m_device, m_hdrSrvHeap, DescriptorType::SRV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-	CreateDescriptorHeap(m_device, m_geometryPassRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
-	CreateDescriptorHeap(m_device, m_geometryPassSrvHeap, DescriptorType::SRV, geometryPassRtvNum + 16, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-	CreateDescriptorHeap(m_device, m_geometryPassMsaaRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
+	Utility::CreateDescriptorHeap(m_device, m_swapChainRtvHeap, DescriptorType::RTV, m_swapChainCount);
+	Utility::CreateDescriptorHeap(m_device, m_dsvHeap, DescriptorType::DSV, 2);
+	Utility::CreateDescriptorHeap(m_device, m_cbvHeap, DescriptorType::CBV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	Utility::CreateDescriptorHeap(m_device, m_msaaRtvHeap, DescriptorType::RTV, 1);
+	Utility::CreateDescriptorHeap(m_device, m_hdrRtvHeap, DescriptorType::RTV, 1);
+	Utility::CreateDescriptorHeap(m_device, m_hdrUavHeap, DescriptorType::UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	Utility::CreateDescriptorHeap(m_device, m_hdrSrvHeap, DescriptorType::SRV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	Utility::CreateDescriptorHeap(m_device, m_geometryPassRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
+	Utility::CreateDescriptorHeap(m_device, m_geometryPassSrvHeap, DescriptorType::SRV, geometryPassRtvNum + 16, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	Utility::CreateDescriptorHeap(m_device, m_geometryPassMsaaRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
 
 }
 
@@ -605,7 +607,7 @@ void Renderer::D3D12App::CreateVertexAndIndexBuffer()
 	m_staticMeshes.push_back(sphere);
 	//m_staticMeshes.push_back(plane);
 
-	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile("box_destruction.fbx", true);
+	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile_Pbr("box_destruction.fbx", true);
 	std::shared_ptr<Animation::FBX> wallDistructionFbx = std::make_shared<Animation::FBX>();
 	wallDistructionFbx->Initialize(box_destruction, box_destruction_animation, m_device, m_commandList, true, 1.f);
 	m_fbxList.push_back(wallDistructionFbx);
@@ -732,8 +734,8 @@ void Renderer::D3D12App::CreateCubeMapTextures() {
 	}
 	m_textureNum = file_count;
 
-	CreateDescriptorHeap(m_device, m_cubeMapTextureHeapNSV, DescriptorType::SRV, file_count, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
-	CreateDescriptorHeap(m_device, m_cubeMapTextureHeap, DescriptorType::SRV, file_count, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	Utility::CreateDescriptorHeap(m_device, m_cubeMapTextureHeapNSV, DescriptorType::SRV, file_count, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
+	Utility::CreateDescriptorHeap(m_device, m_cubeMapTextureHeap, DescriptorType::SRV, file_count, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
 	bool IsCubeMap = true;
 	m_cubeMaptextureResources.resize(file_count);
@@ -1139,7 +1141,56 @@ void  Renderer::D3D12App::CopyResource(ComPtr<ID3D12GraphicsCommandList>& comman
 
 }
 
+void Renderer::D3D12App::CopyResourceToSwapChain(float& deltaTime)
+{
+	auto& pso = utilityPsoLists["Copy"];
+	{
+		ThrowIfFailed(m_commandAllocator->Reset());
+		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 
+		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 255, 0), copyResourceToSwapChainEvent);
+		m_commandList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				CurrentBackBuffer(),
+				D3D12_RESOURCE_STATE_PRESENT,
+				D3D12_RESOURCE_STATE_RENDER_TARGET
+			));
+		FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
+
+
+		m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
+		m_commandList->OMSetRenderTargets(1, &CurrentBackBufferView(), false, nullptr);
+		m_commandList->RSSetScissorRects(1, &m_scissorRect);
+		m_commandList->RSSetViewports(1, &m_viewport);
+		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		ID3D12DescriptorHeap* pHeaps[] = { m_hdrSrvHeap.Get() };
+		m_commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(pHeaps)), pHeaps);
+		m_commandList->SetGraphicsRootDescriptorTable(0, m_hdrSrvHeap->GetGPUDescriptorHandleForHeapStart());
+
+		/*ID3D12DescriptorHeap* pHeaps[] = { m_exrSrvHeap.Get() };
+		m_commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(pHeaps)), pHeaps);
+		m_commandList->SetGraphicsRootDescriptorTable(0, m_exrSrvHeap->GetGPUDescriptorHandleForHeapStart());*/
+
+		m_screenMesh->Render(deltaTime, m_commandList, false);
+		m_commandList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				CurrentBackBuffer(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_PRESENT
+			));
+	}
+
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* lists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
+
+	FlushCommandQueue();
+	PIXEndEvent(m_commandQueue.Get());
+
+}
 void Renderer::D3D12App::CreateDepthBuffer(ComPtr<ID3D12Resource>& buffer,
 	D3D12_CPU_DESCRIPTOR_HANDLE& handle, bool bUseMsaa)
 {
@@ -1284,33 +1335,6 @@ void Renderer::D3D12App::CreateResourceView(ComPtr<ID3D12Resource>& buffer,
 	}
 }
 
-void Renderer::D3D12App::CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce,
-	ComPtr<ID3D12DescriptorHeap>& heap,
-	const Renderer::DescriptorType& type,
-	int Numdescriptors,
-	D3D12_DESCRIPTOR_HEAP_FLAGS flag)
-{
-	D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
-	ZeroMemory(&heapDesc, sizeof(heapDesc));
-	heapDesc.NumDescriptors = Numdescriptors;
-
-	if (type == DescriptorType::DSV)
-		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	else if (type == DescriptorType::RTV)
-		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	else if (type == DescriptorType::SRV)
-		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	else if (type == DescriptorType::UAV)
-		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	else if (type == DescriptorType::CBV)
-		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-
-	heapDesc.Flags = flag;
-	heapDesc.NodeMask = 0;
-
-	ThrowIfFailed(deivce->CreateDescriptorHeap(
-		&heapDesc, IID_PPV_ARGS(heap.GetAddressOf())));
-}
 
 void Renderer::D3D12App::CreateSamplers() {
 	/*D3D12_SAMPLER_DESC clampSampler = {};
