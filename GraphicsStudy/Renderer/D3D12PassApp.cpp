@@ -184,20 +184,23 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 	ImGui::SliderFloat("inside0", &gui_inside0, 1.f, 64.f);
 	ImGui::SliderFloat("inside1", &gui_inside1, 1.f, 64.f);*/
 
-	ImGui::SliderFloat("AO", &gui_ao, 0.f, 1.f);
+	/*ImGui::SliderFloat("AO", &gui_ao, 0.f, 1.f);
 	ImGui::SliderFloat("Metalic", &gui_metallic, 0.f, 1.f);
-	ImGui::SliderFloat("Roughness", &gui_roughness, 0.f, 1.f);
-
-
-	ImGui::SliderFloat("LOD", &gui_lod, 0.f, 10.f);
+	ImGui::SliderFloat("Roughness", &gui_roughness, 0.f, 1.f);*/
+	//ImGui::SliderFloat("LOD", &gui_lod, 0.f, 10.f);
+	
 	ImGui::SliderFloat("CubeMap LodLevel", &gui_cubeMapLod, 0.f, 10.f);
 	ImGui::SliderFloat("CubeMap Expose", &gui_cubeMapExpose, 0.f, 10.f);
 	ImGui::SliderFloat3("Light Position", (float*)(&gui_lightPos), -10.f, 10.f);
 
 
 	ImGui::Checkbox("Render Normal", &bRenderNormal);
+	ImGui::SameLine();
 	ImGui::Checkbox("Render CubeMap", &bRenderCubeMap);
+	
 	ImGui::Checkbox("Render FBX", &bRenderFbx);
+	ImGui::SameLine();
+	ImGui::Checkbox("Render Mesh", &bRenderMeshes);
 }
 
 void Renderer::D3D12PassApp::Render(float& deltaTime)
@@ -517,14 +520,25 @@ void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 		}
 		if(bRenderFPS)
 		{
-			int fps = (int)m_timer.GetFrameRate();
+			DirectX::SimpleMath::Vector3 p = m_camera->GetPosition();
+			DirectX::SimpleMath::Vector3 d = m_camera->GetDirection();
+			std::wstringstream wss;
+
+			/*wss << L"Position - x: " << p.x
+				<< L", y: " << p.y
+				<< L", z: " << p.z 
+				<< '\n'  
+				<< L"Directon - x: " << d.x
+				<< L", y: " << d.y
+				<< L", z: " << d.z;*/
+			wss << L"FPS : " << (int)m_timer.GetFrameRate();
 
 			if (msaaMode) {
-				RenderFonts(std::to_wstring(fps), m_msaaResourceDescriptors, m_msaaSpriteBatch, m_msaaFont, m_commandList);
+				RenderFonts(wss.str(), m_msaaResourceDescriptors, m_msaaSpriteBatch, m_msaaFont, m_commandList);
 				//ResolveSubresource(m_commandList, HDRRenderTargetBuffer(), MsaaRenderTargetBuffer());
 			}
 			else {
-				RenderFonts(std::to_wstring(fps), m_resourceDescriptors, m_spriteBatch, m_font, m_commandList);
+				RenderFonts(wss.str(), m_resourceDescriptors, m_spriteBatch, m_font, m_commandList);
 			}
 		}
 		ThrowIfFailed(m_commandList->Close());

@@ -186,7 +186,6 @@
     <ClInclude Include="D3D12PhysxSimulationApp.h" />
     <ClInclude Include="D3D12SimulationApp.h" />
     <ClInclude Include="FBX.h" />
-    <ClInclude Include="GenerateGeometry.h" />
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="MeshData.h" />

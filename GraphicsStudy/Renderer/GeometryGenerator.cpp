@@ -450,46 +450,47 @@ PbrMeshData GeometryGenerator::PbrUseTesslationBox(const float& length, const st
 {
 	return PbrUseTesslationBox(length, length, length, texturePath);
 }
-PbrMeshData GeometryGenerator::PbrUseTesslationBox(const float& x, const float& y, const float& z, const std::wstring& texturePath)
+PbrMeshData GeometryGenerator::PbrUseTesslationBox(const float& x, const float& y, const float& z, const std::wstring& texturePath, const float maxUVX,const float maxUVY, const float maxUVZ)
 {
 	PbrMeshData data;
 
-	float hX = x / 2.f;
-	float hY = y / 2.f;
-	float hZ = z / 2.f;
+	float hX = x;
+	float hY = y;
+	float hZ = z;
 
 	std::vector<PbrVertex> vertices = {
-		{Vector3(-hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(0.f, 1.f),Vector3::Zero},
+		// 앞 면
+		{Vector3(-hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(0.f, maxUVY),Vector3::Zero},
 		{Vector3(-hX, hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(0.f, 0.f),Vector3::Zero},
-		{Vector3(hX, hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(1.f, 1.f),Vector3::Zero},
-		{Vector3(hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(1.f, 0.f),Vector3::Zero},
+		{Vector3(hX, hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(maxUVX, maxUVY),Vector3::Zero},
+		{Vector3(hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(maxUVX, 0.f),Vector3::Zero},
 
-		{Vector3(hX, -hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(1.f, 1.f),Vector3::Zero},
-		{Vector3(hX, hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(1.f, 0.f),Vector3::Zero},
+		{Vector3(hX, -hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(maxUVX, maxUVY),Vector3::Zero},
+		{Vector3(hX, hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(maxUVX, 0.f),Vector3::Zero},
 		{Vector3(-hX, hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(0.f, 0.f),Vector3::Zero},
-		{Vector3(-hX, -hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(0.f, 1.f),Vector3::Zero},
+		{Vector3(-hX, -hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(0.f, maxUVY),Vector3::Zero},
 
-		{Vector3(-hX, -hY, hZ), Vector3(-1.f,0.f,0.f), Vector2(0.f, 1.f),Vector3::Zero},
+		{Vector3(-hX, -hY, hZ), Vector3(-1.f,0.f,0.f), Vector2(0.f, maxUVZ),Vector3::Zero},
 		{Vector3(-hX, hY, hZ), Vector3(-1.f,0.f, 0.f), Vector2(0.f, 0.f),Vector3::Zero},
-		{Vector3(-hX, hY, -hZ), Vector3(-1.f,0.f, 0.f), Vector2(1.f, 0.f),Vector3::Zero},
-		{Vector3(-hX, -hY, -hZ), Vector3(-1.f,0.f, 0.f), Vector2(1.f, 1.f),Vector3::Zero},
+		{Vector3(-hX, hY, -hZ), Vector3(-1.f,0.f, 0.f), Vector2(maxUVY, 0.f),Vector3::Zero},
+		{Vector3(-hX, -hY, -hZ), Vector3(-1.f,0.f, 0.f), Vector2(maxUVY, maxUVZ),Vector3::Zero},
 
-		{Vector3(hX, -hY, -hZ), Vector3(1.f,0.f,0.f), Vector2(1.f, 1.f),Vector3::Zero},
-		{Vector3(hX, hY, -hZ), Vector3(1.f,0.f,0.f), Vector2(1.f, 0.f),Vector3::Zero},
+		{Vector3(hX, -hY, -hZ), Vector3(1.f,0.f,0.f), Vector2(maxUVY, maxUVZ),Vector3::Zero},
+		{Vector3(hX, hY, -hZ), Vector3(1.f,0.f,0.f), Vector2(maxUVY, 0.f),Vector3::Zero},
 		{Vector3(hX, hY, hZ), Vector3(1.f,0.f,0.f), Vector2(0.f, 0.f),Vector3::Zero},
-		{Vector3(hX, -hY, hZ), Vector3(1.f,0.f,0.f), Vector2(0.f, 1.f),Vector3::Zero},
+		{Vector3(hX, -hY, hZ), Vector3(1.f,0.f,0.f), Vector2(0.f, maxUVZ),Vector3::Zero},
 
 		// 윗 면 (xz 평면)
-		{Vector3(-hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(0.f, 1.f),Vector3::Zero},
-		{Vector3(-hX, hY, hZ), Vector3(0.f, 1.f, 0.f), Vector2(0.f, 0.f),Vector3::Zero},
-		{Vector3(hX, hY, hZ), Vector3(0.f, 1.f, 0.f), Vector2(1.f, 0.f),Vector3::Zero},
-		{Vector3(hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(1.f, 1.f),Vector3::Zero},
+		{Vector3(-hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(0.f, maxUVZ),Vector3::Zero},
+		{Vector3(-hX, hY, hZ), Vector3(0.f, 1.f, 0.f), Vector2(0.f, 0.f), Vector3::Zero},
+		{Vector3(hX, hY, hZ), Vector3(0.f, 1.f, 0.f), Vector2(maxUVX, 0.f),Vector3::Zero},
+		{Vector3(hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(maxUVX, maxUVZ),Vector3::Zero},
 
 		// 아랫 면
-		{Vector3(hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(1.f, 1.f),Vector3::Zero},
-		{Vector3(hX, -hY, hZ), Vector3(0.f, -1.f, 0.f), Vector2(1.f, 0.f),Vector3::Zero},
+		{Vector3(hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(maxUVX, maxUVZ),Vector3::Zero},
+		{Vector3(hX, -hY, hZ), Vector3(0.f, -1.f, 0.f), Vector2(maxUVX, 0.f),Vector3::Zero},
 		{Vector3(-hX, -hY, hZ), Vector3(0.f, -1.f, 0.f), Vector2(0.f, 0.f),Vector3::Zero},
-		{Vector3(-hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(0.f, 1.f),Vector3::Zero}
+		{Vector3(-hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(0.f, maxUVZ),Vector3::Zero}
 	};
 	std::vector<uint32_t> indices;
 

@@ -26,7 +26,7 @@ public:
 	static PbrMeshData PbrBox(const float& length, const std::wstring& texturePath = L"");
 	static PbrMeshData PbrBox(const float& x, const float& y, const float& z, const std::wstring& texturePath);
 	static PbrMeshData PbrUseTesslationBox(const float& length, const std::wstring& texturePath = L"");
-	static PbrMeshData PbrUseTesslationBox(const float& x, const float& y, const float& z, const std::wstring& texturePath);
+	static PbrMeshData PbrUseTesslationBox(const float& x, const float& y, const float& z, const std::wstring& texturePath, const float maxUVX = 1.f, const float maxUVY = 1.f, const float maxUVZ = 1.f);
 	static PbrMeshData PbrGrid(const float& xLength, const float& yLength, const int& x, const int& y, const std::wstring& texturePath = L"");
 	static PbrMeshData PbrCyilinder(const float& topRadius, const float& bottomRadius, const float& height, const int& x, const int& y, const std::wstring& texturePath = L"");
 	static PbrMeshData PbrSphere(const float& radius, const int& x, const int& y, const std::wstring& texturePath, 

@@ -212,6 +212,7 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
         if (m_camera != nullptr && bIsFPSMode)
         {
             m_camera->SetRotation(deltaX, deltaY);
+           // m_camera->SetQuaternion(deltaX, deltaY);
         }
 
   

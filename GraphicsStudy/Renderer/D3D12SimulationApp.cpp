@@ -5,6 +5,7 @@ Renderer::D3D12SimulationApp::D3D12SimulationApp(const int& width, const int& he
 	:D3D12App(width, height)
 {
 	bUseTextureApp = false;
+	bUseCubeMapApp = false;
 	bUseGUI = false;
 }
 
@@ -84,7 +85,7 @@ void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
 	//m_commandList->ClearUnorderedAccessViewUint()
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, particle.GetUavHandle());
-	m_commandList->Dispatch(particle.GetParticleCount()/ 768.f, 1, 1);
+	m_commandList->Dispatch(particle.GetParticleCount() / 768, 1, 1);
 	//m_commandList->ExecuteIndirect(,)
 	ThrowIfFailed(m_commandList->Close());
 	

@@ -11,8 +11,8 @@ SamplerState g_clampSampler : register(s1);
 #define NUM_CONTROL_POINTS 4
 static const float MAX_TESSLATION = 64.f;
 static const float MIN_TESSLATION = 1.f;
-static const float FallOfStart = 1.0f;
-static const float FallOfEnd = 10.f;
+static const float FallOfStart = 10.0f;
+static const float FallOfEnd = 50.f;
 
 
 struct Material

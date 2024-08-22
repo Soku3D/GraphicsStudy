@@ -54,8 +54,9 @@ bool Renderer::D3D12App::Initialize()
 
 	if (bUseTextureApp) {
 		CreateTextures();
+	}
+	if (bUseCubeMapApp) {
 		CreateCubeMapTextures();
-		//CreateExrTexture();
 	}
 	InitScene();
 
@@ -648,7 +649,7 @@ void Renderer::D3D12App::RenderFonts(
 		DirectX::SimpleMath::Vector2 origin = font->MeasureString(output.c_str());
 		origin.y = 0.f;
 
-		DirectX::XMVECTORF32 color = DirectX::Colors::Black;
+		DirectX::XMVECTORF32 color = DirectX::Colors::White;
 		font->DrawString(spriteBatch.get(), output.c_str(),
 			m_fontPos, color, 0.f, origin);
 

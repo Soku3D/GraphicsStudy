@@ -42,7 +42,7 @@ void Renderer::D3D12PhysxSimulationApp::OnResize()
 
 void Renderer::D3D12PhysxSimulationApp::Update(float& deltaTime)
 {
-    gScene->simulate(1.0f / 60.0f);
+    gScene->simulate(min(deltaTime, 1/300.f));
     gScene->fetchResults(true);
 
     // gScene->getActors()
@@ -58,8 +58,6 @@ void Renderer::D3D12PhysxSimulationApp::Update(float& deltaTime)
 
     PxShape* shapes[MAX_NUM_ACTOR_SHAPES];
 
-    int count = 0;
-
     for (PxU32 i = 0; i < nbActors; i++) {
 
         const PxU32 nbShapes = actors[i]->getNbShapes();
@@ -71,17 +69,14 @@ void Renderer::D3D12PhysxSimulationApp::Update(float& deltaTime)
 
             if (actors[i]->is<PxRigidDynamic>()) {
 
-                bool speeping = actors[i]->is<PxRigidDynamic>() &&
+                bool sleeping = actors[i]->is<PxRigidDynamic>() &&
                     actors[i]->is<PxRigidDynamic>()->isSleeping();
-                // cout << i << " : " << shapePose.getPosition().y << " sleeping
-                // "
-                //      << speeping << endl;
-
-                m_staticMeshes[count]->UpdateWorldRow(DirectX::SimpleMath::Matrix(shapePose.front()) *
+                if (sleeping) {
+                    m_staticMeshes[i]->UpdateMaterial(Material(1, 0, 1, 1));
+                }
+                m_staticMeshes[i]->UpdateWorldRow(DirectX::SimpleMath::Matrix(shapePose.front()) *
                     DirectX::SimpleMath::Matrix::CreateScale(1.00f));
-               
-                count++;
-            }
+           }
         }
     }
 
@@ -113,33 +108,35 @@ physx::PxRigidDynamic* Renderer::D3D12PhysxSimulationApp::createDynamic(const Px
     return dynamic;
 }
 
-void Renderer::D3D12PhysxSimulationApp::createStack(const PxTransform& t, PxU32 size, PxReal halfExtent)
+void Renderer::D3D12PhysxSimulationApp::CreateStack(const PxTransform& t, PxU32 size, PxReal halfExtent)
 {
-    std::vector<PbrMeshData> box = { GeometryGenerator::PbrBox(halfExtent) };
-
-    PxShape* shape = gPhysics->createShape(
-        PxBoxGeometry(halfExtent, halfExtent, halfExtent), *gMaterial);
-
-    for (PxU32 i = 2; i < size; i++) {
-        for (PxU32 j = 0; j < size - i; j++) {
-            PxTransform localTm(PxVec3(PxReal(j * 2) - PxReal(size - i),
-                PxReal(i * 2 + 1), 0) *
-                halfExtent);
-            PxRigidDynamic* body =
-                gPhysics->createRigidDynamic(t.transform(localTm));
+    PbrMeshData box = GeometryGenerator::PbrUseTesslationBox(halfExtent);
+    PxShape* shape =
+        gPhysics->createShape(PxBoxGeometry(halfExtent, halfExtent, halfExtent), *gMaterial);
+    //PxReal dx = halfExtent * 3.f / 2.f;
+    for (PxU32 i = 0; i < size; i++)
+    {
+        for (PxU32 j = 0; j < size - i; j++)
+        {
+            //PxTransform localTm(PxVec3(PxReal(j * 2) - PxReal(size - i), PxReal(i * 2 + 1), 0) * halfExtent);
+            PxVec3 di = PxVec3(4.f / 3.f, 2.f, 0.f) * halfExtent * PxReal(i);
+            PxVec3 dj = PxVec3(8.f / 3.f, 0.f, 0.f) * halfExtent * PxReal(j);
+          
+            PxTransform localTm(di + dj + PxVec3(0, halfExtent, 0.f));
+            PxRigidDynamic* body = gPhysics->createRigidDynamic(t.transform(localTm));
             body->attachShape(*shape);
             PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
             gScene->addActor(*body);
 
-         /*   auto m_newObj =
-                std::make_shared<Model>(m_device, m_context, box);
-            m_newObj->m_materialConsts.GetCpu().albedoFactor =
-                Vector3(0.5f);
-            AppBase::m_basicList.push_back(m_newObj);
-            this->m_objects.push_back(m_newObj);*/
+            std::shared_ptr<Core::StaticMesh> boxMesh = std::make_shared<Core::StaticMesh>();
+            boxMesh->Initialize(box, m_device, m_commandList, DirectX::SimpleMath::Vector3::Zero,
+                Material(0.7f, 0.3f, 0.5f, 0.3f), false, false, false, false, false, false);
+            m_staticMeshes.push_back(boxMesh);
         }
     }
     shape->release();
+   
+   
 }
 
 void Renderer::D3D12PhysxSimulationApp::InitPhysics(bool interactive)
@@ -166,43 +163,51 @@ void Renderer::D3D12PhysxSimulationApp::InitPhysics(bool interactive)
     if (pvdClient) {
         pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
         pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
-        pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES,
-            true);
+        pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
     }
     gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.6f);
 
     PxRigidStatic* groundPlane =
         PxCreatePlane(*gPhysics, PxPlane(0, 1, 0, 0), *gMaterial);
     gScene->addActor(*groundPlane);
+    
+    std::shared_ptr<Core::StaticMesh> plane = std::make_shared<Core::StaticMesh>();
 
+    plane->Initialize(GeometryGenerator::PbrUseTesslationBox(10, 1, 10, L"DiamondPlate008C_4K-PNG_Albedo.png", 10.f, 1.f, 10.f), m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, -1.f, -1.f),
+        Material(1.f, 1.f, 1.f, 1.f),
+        true, true, true, true, true, true);
+    m_staticMeshes.push_back(plane);
 
-    std::vector<PbrMeshData> box = { GeometryGenerator::PbrUseTesslationBox(0.2f) };
-    PxTransform t = PxTransform(PxVec3(0, 1.0f, 0.f));
-    PxShape* shape =
-        gPhysics->createShape(PxBoxGeometry(0.2f, 0.2f, 0.2f), *gMaterial);
-
-    PxTransform localTm(PxVec3(0, 10, 0) * 0.2f);
-    PxRigidDynamic* body = gPhysics->createRigidDynamic(t.transform(localTm));
-    body->attachShape(*shape);
-    PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
-    gScene->addActor(*body);
-
-  /*  auto m_newObj = std::make_shared<Model>(m_device, m_context, box);
-    m_newObj->m_materialConsts.GetCpu().albedoFactor = Vector3(0.5f);
-    AppBase::m_basicList.push_back(m_newObj);
-    this->m_objects.push_back(m_newObj);*/
-
-    std::shared_ptr<Core::StaticMesh> boxMesh = std::make_shared<Core::StaticMesh>();
-    boxMesh->Initialize(box[0], m_device, m_commandList, DirectX::SimpleMath::Vector3::Zero,
-        Material(0.7f, 0.3f, 0.5f, 0.3f), false, false, false, false, false, false);
-    m_staticMeshes.push_back(boxMesh);
-
-    shape->release();
+    CreateStack(PxTransform(PxVec3(0.f, 2.f, 0.f)), 10, 0.3f);
 
 }
 
 void Renderer::D3D12PhysxSimulationApp::InitScene()
 {
 	InitPhysics(true);
-    D3D12PassApp::InitScene();
+    
+    using DirectX::SimpleMath::Vector3;
+    using namespace Core;
+
+    /*std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
+    sphere->Initialize(GeometryGenerator::PbrUseTesslationSphere(1.f,6, 6, L"worn-painted-metal_albedo.png",
+        1.f, 1.f),
+        m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
+        Material(1.f, 1.f, 1.f, 1.f),
+        true, false ,	true, true,	true, true);
+    m_staticMeshes.push_back(sphere);*/
+
+    //std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
+    //plane->Initialize(GeometryGenerator::PbrUseTesslationBox(1, 1, 1, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.f, -1.f, -1.f),
+    //	Material(1.f, 1.f, 1.f, 1.f),
+    //	true, true, true, true, true, true);
+
+    //m_staticMeshes.push_back(plane);
+
+    m_cubeMap = std::make_shared<Core::StaticMesh>();
+    m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(100.f), m_device, m_commandList);
+    m_cubeMap->SetTexturePath(std::wstring(L"Outdoor") + L"EnvHDR.dds");
+
+    m_screenMesh = std::make_shared<Core::StaticMesh>();
+    m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
 }

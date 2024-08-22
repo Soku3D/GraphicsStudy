@@ -33,7 +33,7 @@ public:
 		return m_uavHeap.Get();
 	}
 	UINT GetParticleCount() const {
-		return m_cpu.size();
+		return (UINT)m_cpu.size();
 	}
 private:
 	std::vector<Particle> m_cpu;

@@ -43,7 +43,6 @@ namespace Core {
 		{
 			m_name = meshData.m_name;
 
-
 			Renderer::Utility::CreateBuffer(meshData.m_vertices, m_vertexUpload, m_vertexGpu, device, commandList);
 			Renderer::Utility::CreateBuffer(meshData.m_indices, m_indexUpload, m_indexGpu, device, commandList);
 
@@ -89,6 +88,7 @@ namespace Core {
 		std::wstring GetTexturePath() const { return m_texturePath; }
 		void SetTexturePath(std::wstring path) { m_texturePath = path; }
 		void UpdateWorldRow(const DirectX::SimpleMath::Matrix& worldRow);
+		void UpdateMaterial(const Material& material);
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_objectConstantBuffer;
 		ObjectConstantData* m_objectConstantData;

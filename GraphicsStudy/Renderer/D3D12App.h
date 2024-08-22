@@ -221,5 +221,6 @@ namespace Renderer {
 
 	protected:
 		bool bUseTextureApp = true;
+		bool bUseCubeMapApp = true;
 	};
 }

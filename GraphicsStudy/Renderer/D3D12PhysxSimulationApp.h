@@ -6,7 +6,7 @@
 #include "physx/PxPhysicsAPI.h"
 
 #define PVD_HOST "127.0.0.1"
-#define MAX_NUM_ACTOR_SHAPES 1
+#define MAX_NUM_ACTOR_SHAPES 56
 
 namespace Renderer {
 
@@ -45,9 +45,9 @@ namespace Renderer {
 			const PxGeometry& geometry,
 			const PxVec3& velocity = PxVec3(0));
 
-        void createStack(const PxTransform& t, PxU32 size, PxReal halfExtent); 
+		void CreateStack(const PxTransform& t, PxU32 size, PxReal halfExtent);
 
-        void InitPhysics(bool interactive);
+		void InitPhysics(bool interactive);
 
         void InitScene() override;
 

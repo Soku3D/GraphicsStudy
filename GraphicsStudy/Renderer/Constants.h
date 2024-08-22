@@ -9,6 +9,10 @@ struct Light {
 	float fallOfEnd = 5.f;
 };
 
+//albedo
+//ao
+//metallic
+//roughness
 struct Material {
 	float albedo = 0.8f;
 	float ao = 1.f;

@@ -107,9 +107,6 @@
     <ClInclude Include="Timer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="GenerateGeometry.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="MeshData.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>

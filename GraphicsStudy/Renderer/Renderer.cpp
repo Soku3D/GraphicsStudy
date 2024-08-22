@@ -298,7 +298,7 @@ namespace Renderer {
 		passPsoLists[msaaGeometryPassPso.GetName()] = msaaGeometryPassPso;
 		passPsoLists[fbxGeometryPassPso.GetName()] = fbxGeometryPassPso;
 		passPsoLists[fbxMsaaGeometryPassPso.GetName()] = fbxMsaaGeometryPassPso;
-		passPsoLists[fbxMsaaGeometryPassPso.GetName()] = fbxMsaaGeometryPassPso;
+		passPsoLists[fbxWireGeometryPassPso.GetName()] = fbxWireGeometryPassPso;
 		passPsoLists[lightPassPso.GetName()] = lightPassPso;
 		passPsoLists[DrawNormalPassPso.GetName()] = DrawNormalPassPso;
 		passPsoLists[simulationRenderPso.GetName()] = simulationRenderPso;
