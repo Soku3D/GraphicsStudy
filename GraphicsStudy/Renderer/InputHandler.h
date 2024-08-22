@@ -27,8 +27,8 @@ public:
 	void UpdateKeyUp(const int& wParam);
 
 private:
-	unsigned int upKey = unsigned int('Q');
-	unsigned int downKey = unsigned int('E');
+	unsigned int upKey = unsigned int('E');
+	unsigned int downKey = unsigned int('Q');
 	unsigned int rightKey = unsigned int('D');
 	unsigned int leftKey = unsigned int('A');
 	unsigned int forwardKey = unsigned int('W');

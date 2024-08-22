@@ -57,7 +57,7 @@ void Renderer::D3D12PassApp::InitConstantBuffers() {
 
 }
 
-void Renderer::D3D12PassApp::CreateVertexAndIndexBuffer()
+void Renderer::D3D12PassApp::InitScene()
 {
 	using DirectX::SimpleMath::Vector3;
 	using namespace Core;
@@ -70,12 +70,12 @@ void Renderer::D3D12PassApp::CreateVertexAndIndexBuffer()
 		true, false ,	true, true,	true, true);
 	m_staticMeshes.push_back(sphere);*/
 
-	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
-	plane->Initialize(GeometryGenerator::PbrUseTesslationBox(1, 1, 1, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.f, -1.f, -1.f),
-		Material(1.f, 1.f, 1.f, 1.f),
-		true, true, true, true, true, true);
+	//std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
+	//plane->Initialize(GeometryGenerator::PbrUseTesslationBox(1, 1, 1, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.f, -1.f, -1.f),
+	//	Material(1.f, 1.f, 1.f, 1.f),
+	//	true, true, true, true, true, true);
 
-	m_staticMeshes.push_back(plane);
+	//m_staticMeshes.push_back(plane);
 
 	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile_Pbr("uvtest4.fbx", true);
 	std::shared_ptr<Animation::FBX> wallDistructionFbx = std::make_shared<Animation::FBX>();
@@ -279,7 +279,7 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 					handle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath()], m_csuHeapSize);
 				}
 				else {
-					handle.Offset(m_textureMap[L"zzzdefault.png"], m_csuHeapSize);
+					handle.Offset(m_textureMap[L"zzzdefaultAlbedo.png"], m_csuHeapSize);
 				}
 				m_commandList->SetGraphicsRootDescriptorTable(0, handle);
 				//m_commandList->SetGraphicsRootDescriptorTable(1, normalHandle);
@@ -515,6 +515,18 @@ void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 			m_cubeMap->Render(deltaTime, m_commandList, false);
 
 		}
+		if(bRenderFPS)
+		{
+			int fps = (int)m_timer.GetFrameRate();
+
+			if (msaaMode) {
+				RenderFonts(std::to_wstring(fps), m_msaaResourceDescriptors, m_msaaSpriteBatch, m_msaaFont, m_commandList);
+				//ResolveSubresource(m_commandList, HDRRenderTargetBuffer(), MsaaRenderTargetBuffer());
+			}
+			else {
+				RenderFonts(std::to_wstring(fps), m_resourceDescriptors, m_spriteBatch, m_font, m_commandList);
+			}
+		}
 		ThrowIfFailed(m_commandList->Close());
 
 		ID3D12CommandList* plists[] = { m_commandList.Get() };
@@ -522,23 +534,8 @@ void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 
 		FlushCommandQueue();
 		PIXEndEvent(m_commandQueue.Get());
-
 	}
-	//Render Font GUI
-	//{
-	//	int time = (int)m_timer.GetElapsedTime();
-
-	//	if (msaaMode) {
-	//		//RenderFonts(std::to_wstring(time), m_msaaResourceDescriptors, m_msaaSpriteBatch, m_msaaFont, m_commandList);
-	//		//ResolveSubresource(m_commandList, HDRRenderTargetBuffer(), MsaaRenderTargetBuffer());
-	//	}
-	//	else {
-	//		//RenderFonts(std::to_wstring(time), m_resourceDescriptors, m_spriteBatch, m_font, m_commandList);
-	//	}
-	//}
-
 }
-
 
 void Renderer::D3D12PassApp::PostProcessing(float& deltaTime) {
 

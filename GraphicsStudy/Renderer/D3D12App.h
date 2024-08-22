@@ -1,5 +1,5 @@
 #pragma once
-
+#define _SILENCE_CXX20_CISO646_REMOVED_WARNING
 #include <map>
 
 #include "SimpleApp.h"
@@ -48,7 +48,7 @@ namespace Renderer {
 
 		void FlushCommandQueue();
 
-		virtual void CreateVertexAndIndexBuffer();
+		virtual void InitScene();
 		void RenderFonts(const std::wstring& output, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors, std::shared_ptr<DirectX::SpriteBatch>& spriteBatch, std::shared_ptr<DirectX::SpriteFont>& font, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 		void CreateConstantBuffer();
 		void CreateTextures();

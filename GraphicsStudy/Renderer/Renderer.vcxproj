@@ -105,7 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(OutDir)CompiledShaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OutDir)CompiledShaders\;C:\Users\son\vcpkg\installed\x64-windows\include\physx\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -127,7 +127,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(OutDir)CompiledShaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OutDir)CompiledShaders\;C:\Users\son\vcpkg\installed\x64-windows\include\physx\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -152,6 +152,7 @@
     <ClCompile Include="D3D12App.cpp" />
     <ClCompile Include="D3D12ComputeShaderApp.cpp" />
     <ClCompile Include="D3D12PassApp.cpp" />
+    <ClCompile Include="D3D12PhysxSimulationApp.cpp" />
     <ClCompile Include="D3D12SimulationApp.cpp" />
     <ClCompile Include="FBX.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
@@ -182,6 +183,7 @@
     <ClInclude Include="D3D12App.h" />
     <ClInclude Include="D3D12ComputeShaderApp.h" />
     <ClInclude Include="D3D12PassApp.h" />
+    <ClInclude Include="D3D12PhysxSimulationApp.h" />
     <ClInclude Include="D3D12SimulationApp.h" />
     <ClInclude Include="FBX.h" />
     <ClInclude Include="GenerateGeometry.h" />

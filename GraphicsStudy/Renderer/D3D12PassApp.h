@@ -23,7 +23,7 @@ namespace Renderer {
 		bool InitGUI() override;
 		bool InitDirectX() override;
 		void OnResize() override;
-		void CreateVertexAndIndexBuffer() override;
+		void InitScene() override;
 
 		void Update(float& deltaTime) override;
 		void UpdateGUI(float& deltaTime) override;
@@ -46,9 +46,10 @@ namespace Renderer {
 		UINT8* m_pCubeMapCbufferBegin = nullptr;
 		ComPtr<ID3D12Resource> m_cubeMapConstantBuffer;
 
-	private:
+	protected:
 		bool bRenderMeshes = true;
 		bool bRenderFbx = true;
+		bool bRenderFPS = true;
 		bool bRenderNormal = true;
 
 		float gui_cubeMapLod = 0.f;

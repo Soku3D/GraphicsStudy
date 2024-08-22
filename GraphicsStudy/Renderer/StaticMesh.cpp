@@ -60,6 +60,11 @@ void Core::StaticMesh::Update(const float& deltaTime)
 	ThrowIfFailed(m_objectConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
 	memcpy(m_pCbvDataBegin, m_objectConstantData, sizeof(ObjectConstantData));
 }
+void Core::StaticMesh::UpdateWorldRow(const DirectX::SimpleMath::Matrix& worldRow)
+{
+	m_objectConstantData->Model = worldRow.Transpose();
+	m_objectConstantData->invTranspose = m_objectConstantData->Model.Invert();
+}
 //
 //void Core::StaticMesh::UpdateDomain(const float& deltaTime,
 //	float gui_edge0,

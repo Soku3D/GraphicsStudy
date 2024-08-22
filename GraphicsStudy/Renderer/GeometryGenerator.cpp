@@ -382,7 +382,7 @@ PbrMeshData GeometryGenerator::PbrRectangle(const float& length, const std::wstr
 
 PbrMeshData GeometryGenerator::PbrBox(const float& length, const std::wstring& texturePath)
 {
-	return PbrMeshData();
+	return PbrBox(length, length, length, texturePath);
 }
 
 PbrMeshData GeometryGenerator::PbrBox(const float& x, const float& y, const float& z, const std::wstring& texturePath)
@@ -446,8 +446,10 @@ PbrMeshData GeometryGenerator::PbrBox(const float& x, const float& y, const floa
 
 	return data;
 }
-
-
+PbrMeshData GeometryGenerator::PbrUseTesslationBox(const float& length, const std::wstring& texturePath)
+{
+	return PbrUseTesslationBox(length, length, length, texturePath);
+}
 PbrMeshData GeometryGenerator::PbrUseTesslationBox(const float& x, const float& y, const float& z, const std::wstring& texturePath)
 {
 	PbrMeshData data;
@@ -456,44 +458,11 @@ PbrMeshData GeometryGenerator::PbrUseTesslationBox(const float& x, const float& 
 	float hY = y / 2.f;
 	float hZ = z / 2.f;
 
-	//std::vector<PbrVertex> vertices = {
-	//	{Vector3(-hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(0.f, 1.f),Vector3::Zero},
-	//	{Vector3(-hX, hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(0.f, 0.f),Vector3::Zero},
-	//	{Vector3(hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(1.f, 1.f),Vector3::Zero},
-	//	{Vector3(hX, hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(1.f, 0.f),Vector3::Zero},
-
-	//	{Vector3(hX, -hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(1.f, 1.f),Vector3::Zero},
-	//	{Vector3(hX, hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(1.f, 0.f),Vector3::Zero},
-	//	{Vector3(-hX, hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(0.f, 0.f),Vector3::Zero},
-	//	{Vector3(-hX, -hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(0.f, 1.f),Vector3::Zero},
-
-	//	{Vector3(-hX, -hY, hZ), Vector3(-1.f,0.f,0.f), Vector2(0.f, 1.f),Vector3::Zero},
-	//	{Vector3(-hX, hY, hZ), Vector3(-1.f,0.f, 0.f), Vector2(0.f, 0.f),Vector3::Zero},
-	//	{Vector3(-hX, hY, -hZ), Vector3(-1.f,0.f, 0.f), Vector2(1.f, 0.f),Vector3::Zero},
-	//	{Vector3(-hX, -hY, -hZ), Vector3(-1.f,0.f, 0.f), Vector2(1.f, 1.f),Vector3::Zero},
-
-	//	{Vector3(hX, -hY, -hZ), Vector3(1.f,0.f,0.f), Vector2(1.f, 1.f),Vector3::Zero},
-	//	{Vector3(hX, hY, -hZ), Vector3(1.f,0.f,0.f), Vector2(1.f, 0.f),Vector3::Zero},
-	//	{Vector3(hX, hY, hZ), Vector3(1.f,0.f,0.f), Vector2(0.f, 0.f),Vector3::Zero},
-	//	{Vector3(hX, -hY, hZ), Vector3(1.f,0.f,0.f), Vector2(0.f, 1.f),Vector3::Zero},
-
-	//	// 윗 면 (xz 평면)
-	//	{Vector3(-hX, hY, hZ), Vector3(0.f, 1.f, 0.f), Vector2(0.f, 0.f),Vector3::Zero},
-	//	{Vector3(hX, hY, hZ), Vector3(0.f, 1.f, 0.f), Vector2(1.f, 0.f),Vector3::Zero},
-	//	{Vector3(-hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(0.f, 1.f),Vector3::Zero},
-	//	{Vector3(hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(1.f, 1.f),Vector3::Zero},
-
-	//	// 아랫 면
-	//	{Vector3(hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(1.f, 1.f),Vector3::Zero},
-	//	{Vector3(hX, -hY, hZ), Vector3(0.f, -1.f, 0.f), Vector2(1.f, 0.f),Vector3::Zero},
-	//	{Vector3(-hX, -hY, hZ), Vector3(0.f, -1.f, 0.f), Vector2(0.f, 0.f),Vector3::Zero},
-	//	{Vector3(-hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(0.f, 1.f),Vector3::Zero}
-	//};
 	std::vector<PbrVertex> vertices = {
-	/*	{Vector3(-hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(0.f, 1.f),Vector3::Zero},
+		{Vector3(-hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(0.f, 1.f),Vector3::Zero},
 		{Vector3(-hX, hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(0.f, 0.f),Vector3::Zero},
-		{Vector3(hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(1.f, 1.f),Vector3::Zero},
-		{Vector3(hX, hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(1.f, 0.f),Vector3::Zero},
+		{Vector3(hX, hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(1.f, 1.f),Vector3::Zero},
+		{Vector3(hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(1.f, 0.f),Vector3::Zero},
 
 		{Vector3(hX, -hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(1.f, 1.f),Vector3::Zero},
 		{Vector3(hX, hY, hZ), Vector3(0.f,0.f, 1.f), Vector2(1.f, 0.f),Vector3::Zero},
@@ -508,23 +477,23 @@ PbrMeshData GeometryGenerator::PbrUseTesslationBox(const float& x, const float& 
 		{Vector3(hX, -hY, -hZ), Vector3(1.f,0.f,0.f), Vector2(1.f, 1.f),Vector3::Zero},
 		{Vector3(hX, hY, -hZ), Vector3(1.f,0.f,0.f), Vector2(1.f, 0.f),Vector3::Zero},
 		{Vector3(hX, hY, hZ), Vector3(1.f,0.f,0.f), Vector2(0.f, 0.f),Vector3::Zero},
-		{Vector3(hX, -hY, hZ), Vector3(1.f,0.f,0.f), Vector2(0.f, 1.f),Vector3::Zero},*/
+		{Vector3(hX, -hY, hZ), Vector3(1.f,0.f,0.f), Vector2(0.f, 1.f),Vector3::Zero},
 
 		// 윗 면 (xz 평면)
 		{Vector3(-hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(0.f, 1.f),Vector3::Zero},
 		{Vector3(-hX, hY, hZ), Vector3(0.f, 1.f, 0.f), Vector2(0.f, 0.f),Vector3::Zero},
 		{Vector3(hX, hY, hZ), Vector3(0.f, 1.f, 0.f), Vector2(1.f, 0.f),Vector3::Zero},
-		{Vector3(hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(1.f, 1.f),Vector3::Zero}
+		{Vector3(hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), Vector2(1.f, 1.f),Vector3::Zero},
 
 		// 아랫 면
-		/*{Vector3(hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(1.f, 1.f),Vector3::Zero},
+		{Vector3(hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(1.f, 1.f),Vector3::Zero},
 		{Vector3(hX, -hY, hZ), Vector3(0.f, -1.f, 0.f), Vector2(1.f, 0.f),Vector3::Zero},
 		{Vector3(-hX, -hY, hZ), Vector3(0.f, -1.f, 0.f), Vector2(0.f, 0.f),Vector3::Zero},
-		{Vector3(-hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(0.f, 1.f),Vector3::Zero}*/
+		{Vector3(-hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), Vector2(0.f, 1.f),Vector3::Zero}
 	};
 	std::vector<uint32_t> indices;
 
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < 6; i++)
 	{
 		int idx = i * 4;
 		indices.push_back(idx + 1);

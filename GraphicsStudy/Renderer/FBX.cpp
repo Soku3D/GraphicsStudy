@@ -59,8 +59,8 @@ void Animation::FBX::Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D1
 
 void Animation::FBX::Update(float& deltaTime)
 {
-	//m_animationData.Update((int)m_frame);
-	m_animationData.Update((int)1);
+	m_animationData.Update((int)m_frame);
+	//m_animationData.Update((int)1);
 	for (auto& mesh : m_staticMeshes) {
 		mesh->UpdateAnimation(deltaTime, m_animationData);
 	}

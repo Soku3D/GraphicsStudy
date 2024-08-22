@@ -88,7 +88,7 @@ namespace Core {
 
 		std::wstring GetTexturePath() const { return m_texturePath; }
 		void SetTexturePath(std::wstring path) { m_texturePath = path; }
-
+		void UpdateWorldRow(const DirectX::SimpleMath::Matrix& worldRow);
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_objectConstantBuffer;
 		ObjectConstantData* m_objectConstantData;

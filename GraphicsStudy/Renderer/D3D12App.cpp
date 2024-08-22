@@ -57,7 +57,7 @@ bool Renderer::D3D12App::Initialize()
 		CreateCubeMapTextures();
 		//CreateExrTexture();
 	}
-	CreateVertexAndIndexBuffer();
+	InitScene();
 
 	CreateFontFromFile(L"Fonts/default.spritefont", m_font, m_spriteBatch, m_resourceDescriptors, false, m_hdrFormat, m_depthStencilFormat);
 	CreateFontFromFile(L"Fonts/default.spritefont", m_msaaFont, m_msaaSpriteBatch, m_msaaResourceDescriptors, true, m_hdrFormat, m_depthStencilFormat);
@@ -593,19 +593,25 @@ void Renderer::D3D12App::FlushCommandQueue() {
 	}
 }
 
-void Renderer::D3D12App::CreateVertexAndIndexBuffer()
+void Renderer::D3D12App::InitScene()
 {
 	using DirectX::SimpleMath::Vector3;
 
-	std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
+	/*std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
 	sphere->Initialize(GeometryGenerator::Sphere(0.8f, 100, 100, L"Bricks075A_4K-PNG0_Color.png"),
-		m_device, m_commandList, Vector3(0.f, 0.f, 0.f), Material(), true);
+		m_device, m_commandList, Vector3(0.f, 0.f, 0.f), Material(), true);*/
 
 	/*std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
 	plane->Initialize(GeometryGenerator::Box(5, 1, 5, L"Bricks075A_4K-PNG_Color.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f));*/
 
-	m_staticMeshes.push_back(sphere);
+	//m_staticMeshes.push_back(sphere);
 	//m_staticMeshes.push_back(plane);
+
+	/*std::shared_ptr<StaticMesh> box = std::make_shared<StaticMesh>();
+	box->Initialize(GeometryGenerator::Box(5, L"Bricks075A_4K-PNG_Color.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f),
+		Material(0.7f,1.f,1.f));
+
+	m_staticMeshes.push_back(box);*/
 
 	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile_Pbr("box_destruction.fbx", true);
 	std::shared_ptr<Animation::FBX> wallDistructionFbx = std::make_shared<Animation::FBX>();

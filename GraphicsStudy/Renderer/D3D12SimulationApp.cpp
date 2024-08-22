@@ -28,9 +28,6 @@ bool Renderer::D3D12SimulationApp::Initialize()
 
 	particle.BuildDescriptors(m_device, m_commandList);
 
-	
-
-	
 	return true;
 }
 
