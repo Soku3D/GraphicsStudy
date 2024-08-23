@@ -252,18 +252,19 @@ void Renderer::D3D12App::OnResize()
 	CD3DX12_CPU_DESCRIPTOR_HANDLE gPass_srvHeapHandle(m_geometryPassSrvHeap->GetCPUDescriptorHandleForHeapStart());
 	for (UINT i = 0; i < geometryPassRtvNum; i++)
 	{
-		CreateResourceBuffer(m_geometryPassResources[i], m_hdrFormat, false, rtvFlag);
+		CreateResourceBuffer(m_geometryPassResources[i], m_geometryPassFormat, false, rtvFlag);
 
-		CreateResourceView(m_geometryPassResources[i], m_hdrFormat, false, gPass_rtvHeapHandle, m_device, DescriptorType::RTV);
-		CreateResourceView(m_geometryPassResources[i], m_hdrFormat, false, gPass_srvHeapHandle, m_device, DescriptorType::SRV);
+		CreateResourceView(m_geometryPassResources[i], m_geometryPassFormat, false, gPass_rtvHeapHandle, m_device, DescriptorType::RTV);
+		CreateResourceView(m_geometryPassResources[i], m_geometryPassFormat, false, gPass_srvHeapHandle, m_device, DescriptorType::SRV);
 		gPass_rtvHeapHandle.Offset(1, m_rtvHeapSize);
 		gPass_srvHeapHandle.Offset(1, m_csuHeapSize);
 	}
+
 	CD3DX12_CPU_DESCRIPTOR_HANDLE gPassMsaa_rtvHeapHandle(m_geometryPassMsaaRtvHeap->GetCPUDescriptorHandleForHeapStart());
 	for (UINT i = 0; i < geometryPassRtvNum; i++)
 	{
-		CreateResourceBuffer(m_geometryPassMsaaResources[i], m_msaaFormat, true, rtvFlag);
-		CreateResourceView(m_geometryPassMsaaResources[i], m_msaaFormat, true, gPassMsaa_rtvHeapHandle, m_device, DescriptorType::RTV);
+		CreateResourceBuffer(m_geometryPassMsaaResources[i], m_geometryPassFormat, true, rtvFlag);
+		CreateResourceView(m_geometryPassMsaaResources[i], m_geometryPassFormat, true, gPassMsaa_rtvHeapHandle, m_device, DescriptorType::RTV);
 		gPassMsaa_rtvHeapHandle.Offset(1, m_rtvHeapSize);
 	}
 

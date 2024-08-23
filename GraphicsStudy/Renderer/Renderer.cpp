@@ -11,6 +11,7 @@
 #include "CopyPS.h"
 
 #include "GeometryPassVS.h"
+#include "GeometryPassTesslationVS.h"
 #include "GeometryPassHS.h"
 #include "GeometryPassDS.h"
 #include "GeometryPassTriangleHS.h"
@@ -95,7 +96,7 @@ namespace Renderer {
 		wrapLinearSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		wrapLinearSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		wrapLinearSampler.MipLODBias = 0;
-		wrapLinearSampler.MaxAnisotropy = 1;
+		wrapLinearSampler.MaxAnisotropy = 0;
 		wrapLinearSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 		wrapLinearSampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 		wrapLinearSampler.MinLOD = 0.0f;
@@ -205,12 +206,12 @@ namespace Renderer {
 		defaultGeometryPassPso = defaultPso;
 		defaultGeometryPassPso.SetRootSignature(&geometryPassSignature);
 		defaultGeometryPassPso.SetVertexShader(g_pGeometryPassVS, sizeof(g_pGeometryPassVS));
-		defaultGeometryPassPso.SetHullShader(g_pGeometryPassHS, sizeof(g_pGeometryPassHS));
-		defaultGeometryPassPso.SetDomainShader(g_pGeometryPassDS, sizeof(g_pGeometryPassDS));
+		//defaultGeometryPassPso.SetHullShader(g_pGeometryPassHS, sizeof(g_pGeometryPassHS));
+		//defaultGeometryPassPso.SetDomainShader(g_pGeometryPassDS, sizeof(g_pGeometryPassDS));
 		defaultGeometryPassPso.SetPixelShader(g_pGeometryPassPS, sizeof(g_pGeometryPassPS));
 		defaultGeometryPassPso.SetRenderTargetFormats(geometryPassNum, geometryPassFormats, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 		defaultGeometryPassPso.SetInputLayout((UINT)pbrElement.size(), pbrElement.data());
-		defaultGeometryPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH);
+		defaultGeometryPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 
 		fbxGeometryPassPso = defaultPso;
 		fbxGeometryPassPso.SetRootSignature(&geometryPassSignature);

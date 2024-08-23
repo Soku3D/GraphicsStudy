@@ -71,7 +71,7 @@ namespace Renderer {
 		float gui_edge3 = 1.f;
 		float gui_inside0 = 1.f;
 		float gui_inside1 = 1.f;
-
+		Material gui_material;
 	private:
 		const wchar_t* geomeytyPassEvent = L"Geometry Pass ";
 		const wchar_t* fbxGeomeytyPassEvent = L"FBX Geometry Pass ";

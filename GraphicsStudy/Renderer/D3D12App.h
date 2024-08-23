@@ -206,7 +206,8 @@ namespace Renderer {
 		ComPtr<ID3D12DescriptorHeap> m_geometryPassMsaaRtvHeap;
 		ComPtr<ID3D12Resource> m_geometryPassMsaaResources[geometryPassRtvNum];
 
-
+		DXGI_FORMAT m_geometryPassFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		//DXGI_FORMAT m_geometryPassFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		void CreateSamplers();
 
 		D3D12_CPU_DESCRIPTOR_HANDLE GeometryPassRTV() const;

@@ -71,6 +71,10 @@ void Core::StaticMesh::UpdateMaterial(const Material& material)
 {
 	m_objectConstantData->Material = material;
 }
+Material& Core::StaticMesh::GetMaterial() const
+{
+	return m_objectConstantData->Material;
+}
 //
 //void Core::StaticMesh::UpdateDomain(const float& deltaTime,
 //	float gui_edge0,

@@ -9,8 +9,8 @@ Renderer::D3D12PassApp::D3D12PassApp(const int& width, const int& height)
 {
 	bUseGUI = true;
 	bRenderCubeMap = true;
-	bRenderMeshes = false;
-	bRenderFbx = true;
+	bRenderMeshes = true;
+	bRenderFbx = false;
 	bRenderNormal = false;
 }
 
@@ -62,13 +62,13 @@ void Renderer::D3D12PassApp::InitScene()
 	using DirectX::SimpleMath::Vector3;
 	using namespace Core;
 
-	/*std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
-	sphere->Initialize(GeometryGenerator::PbrUseTesslationSphere(1.f,6, 6, L"worn-painted-metal_albedo.png",
+	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
+	sphere->Initialize(GeometryGenerator::PbrSphere(1.f,300, 300, L"worn-painted-metal_albedo.png",
 		1.f, 1.f),
 		m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
-		true, false ,	true, true,	true, true);
-	m_staticMeshes.push_back(sphere);*/
+		false /*AO*/,false /*Metallic*/, false /*Height*/, false /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
+	m_staticMeshes.push_back(sphere);
 
 	//std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
 	//plane->Initialize(GeometryGenerator::PbrUseTesslationBox(1, 1, 1, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.f, -1.f, -1.f),
@@ -142,6 +142,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
 	}
 
+	m_staticMeshes[0]->UpdateMaterial(gui_material);
 	for (auto& mesh : m_staticMeshes) {
 		mesh->Update(deltaTime);
 	}
@@ -183,10 +184,9 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 	ImGui::SliderFloat("edge3", &gui_edge3, 1.f, 64.f);
 	ImGui::SliderFloat("inside0", &gui_inside0, 1.f, 64.f);
 	ImGui::SliderFloat("inside1", &gui_inside1, 1.f, 64.f);*/
-
-	/*ImGui::SliderFloat("AO", &gui_ao, 0.f, 1.f);
-	ImGui::SliderFloat("Metalic", &gui_metallic, 0.f, 1.f);
-	ImGui::SliderFloat("Roughness", &gui_roughness, 0.f, 1.f);*/
+	ImGui::SliderFloat("AO", &gui_material.ao, 0.f, 1.f);
+	ImGui::SliderFloat("Metalic", &gui_material.metallic, 0.f, 1.f);
+	ImGui::SliderFloat("Roughness", &gui_material.roughness, 0.f, 1.f);
 	//ImGui::SliderFloat("LOD", &gui_lod, 0.f, 10.f);
 	
 	ImGui::SliderFloat("CubeMap LodLevel", &gui_cubeMapLod, 0.f, 10.f);
@@ -262,7 +262,8 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 		}
 		//m_commandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
 
-		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
+		//m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
+		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		m_commandList->RSSetScissorRects(1, &m_scissorRect);
 		m_commandList->RSSetViewports(1, &m_viewport);
 		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());

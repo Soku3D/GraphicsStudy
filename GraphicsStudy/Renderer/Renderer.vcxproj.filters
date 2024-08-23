@@ -197,7 +197,7 @@
     <FxCompile Include="CubeMapPS.hlsl" />
     <FxCompile Include="CopyVS.hlsl" />
     <FxCompile Include="CopyPS.hlsl" />
-    <FxCompile Include="GeometryPassVS.hlsl" />
+    <FxCompile Include="GeometryPassTesslationVS.hlsl" />
     <FxCompile Include="GeometryPassPS.hlsl" />
     <FxCompile Include="LightPassPS.hlsl" />
     <FxCompile Include="LightPassVS.hlsl" />
@@ -213,6 +213,7 @@
     <FxCompile Include="SimulationParticlesVS.hlsl" />
     <FxCompile Include="SimulationParticlesPS.hlsl" />
     <FxCompile Include="SimulationParticlesGS.hlsl" />
+    <FxCompile Include="GeometryPassVS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />

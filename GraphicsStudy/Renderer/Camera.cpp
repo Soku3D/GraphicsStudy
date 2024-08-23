@@ -13,6 +13,10 @@ namespace Core {
 		Actor()
 	{
 		using DirectX::SimpleMath::Vector3;
+
+		m_position = Vector3(0, 0, -1);
+		m_forwardDirection = Vector3(0, 0, 1);
+
 		m_forwardDirection.Normalize();
 		Vector3 v0 = Vector3(0, m_forwardDirection.y, m_forwardDirection.z);
 		Vector3 v1 = Vector3(m_forwardDirection.x, 0, m_forwardDirection.z);
@@ -28,7 +32,7 @@ namespace Core {
 		if (v1.x < 0) {
 			m_yTheta *= -1.f;
 		}
-		std::cout << m_xTheta << ' ' << m_yTheta;
+		//std::cout << m_xTheta << ' ' << m_yTheta;
 		m_fov = DirectX::XMConvertToRadians(70.f);
 		m_delTheta = DirectX::XMConvertToRadians(0.2f);
 		m_delSine = sin(m_delTheta / 2.f);
