@@ -576,7 +576,7 @@ void Renderer::D3D12App::CreateDescriptorHeaps() {
 	Utility::CreateDescriptorHeap(m_device, m_hdrUavHeap, DescriptorType::UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	Utility::CreateDescriptorHeap(m_device, m_hdrSrvHeap, DescriptorType::SRV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	Utility::CreateDescriptorHeap(m_device, m_geometryPassRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
-	Utility::CreateDescriptorHeap(m_device, m_geometryPassSrvHeap, DescriptorType::SRV, geometryPassRtvNum + 16, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	Utility::CreateDescriptorHeap(m_device, m_geometryPassSrvHeap, DescriptorType::SRV, geometryPassRtvNum + 4, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	Utility::CreateDescriptorHeap(m_device, m_geometryPassMsaaRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
 
 }
@@ -1110,7 +1110,7 @@ void  Renderer::D3D12App::CopyResource(ComPtr<ID3D12GraphicsCommandList>& comman
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 
 	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 255, 0), copyResourceEvent);
-
+	
 	D3D12_RESOURCE_BARRIER startBarrierList[2] = {
 		CD3DX12_RESOURCE_BARRIER::Transition(
 			dest,
@@ -1164,7 +1164,13 @@ void Renderer::D3D12App::CopyResourceToSwapChain(float& deltaTime)
 				D3D12_RESOURCE_STATE_RENDER_TARGET
 			));
 		FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
-
+		if (msaaMode)
+		{
+			ResolveSubresource(m_commandList, HDRRenderTargetBuffer(), MsaaRenderTargetBuffer(), 
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_RENDER_TARGET, 
+				DXGI_FORMAT_R16G16B16A16_FLOAT);
+		}
 
 		m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
 		m_commandList->OMSetRenderTargets(1, &CurrentBackBufferView(), false, nullptr);

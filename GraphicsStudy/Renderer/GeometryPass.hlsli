@@ -88,7 +88,7 @@ struct PSOutput
     float4 position : SV_Target0;
     float4 normal : SV_Target1;
     float4 albedoColor : SV_Target2; 
-    float4 material : SV_Target3; // ao, metalic, roughness
+    float4 material : SV_Target3; // ao, metalic, roughness, isCubeMap
 };
 
 float customSaturate(float min, float max, float fallOfStart, float fallOfEnd, float d)

@@ -37,13 +37,18 @@ namespace Renderer {
 	DXGI_FORMAT hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	DXGI_FORMAT geometryPassFormats[geometryPassNum] =
 	{
-		DXGI_FORMAT_R16G16B16A16_FLOAT,
-		DXGI_FORMAT_R16G16B16A16_FLOAT,
-		DXGI_FORMAT_R16G16B16A16_FLOAT,
-		DXGI_FORMAT_R16G16B16A16_FLOAT
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		DXGI_FORMAT_R32G32B32A32_FLOAT
 	};
-
-	UINT msaaCount = 8;
+	DXGI_FORMAT cubeMapPassFormats[2] =
+	{
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+	
+	};
+	UINT msaaCount = 4;
 	UINT msaaQuality = 0;
 
 	GraphicsPSO defaultPso("Default");
@@ -141,9 +146,10 @@ namespace Renderer {
 		GraphicsPSO fbxMsaaGeometryPassPso("MsaaFbxGeometryPass");
 		GraphicsPSO fbxWireGeometryPassPso("WireFbxGeometryPass");
 
-		GraphicsPSO lightPassPso("LightPass");
+		GraphicsPSO defaultLightPassPso("DefaultLightPass");
+		GraphicsPSO msaaLightPassPso("MsaaLightPass");
 
-		GraphicsPSO DrawNormalPassPso("NormalPass");
+		GraphicsPSO drawNormalPassPso("NormalPass");
 
 		GraphicsPSO copyPso("Copy");
 
@@ -203,6 +209,7 @@ namespace Renderer {
 		defaultPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 		defaultPso.SetRootSignature(&defaultSignature);
 
+		// Geometry Pass
 		defaultGeometryPassPso = defaultPso;
 		defaultGeometryPassPso.SetRootSignature(&geometryPassSignature);
 		defaultGeometryPassPso.SetVertexShader(g_pGeometryPassVS, sizeof(g_pGeometryPassVS));
@@ -233,21 +240,25 @@ namespace Renderer {
 		fbxWireGeometryPassPso = fbxGeometryPassPso;
 		fbxWireGeometryPassPso.SetRasterizerState(wireRasterizer);
 
-		lightPassPso = defaultPso;
-		lightPassPso.SetRootSignature(&lightPassSignature);
-		lightPassPso.SetVertexShader(g_pLightPassVS, sizeof(g_pLightPassVS));
-		lightPassPso.SetPixelShader(g_pLightPassPS, sizeof(g_pLightPassPS));
-		lightPassPso.SetInputLayout((UINT)simpleElement.size(), simpleElement.data());
-		lightPassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
+		// Light Pass
+		defaultLightPassPso = defaultPso;
+		defaultLightPassPso.SetRootSignature(&lightPassSignature);
+		defaultLightPassPso.SetVertexShader(g_pLightPassVS, sizeof(g_pLightPassVS));
+		defaultLightPassPso.SetPixelShader(g_pLightPassPS, sizeof(g_pLightPassPS));
+		defaultLightPassPso.SetInputLayout((UINT)simpleElement.size(), simpleElement.data());
+		defaultLightPassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 
-		DrawNormalPassPso = defaultPso;
-		DrawNormalPassPso.SetVertexShader(g_pDrawNormalPassVS, sizeof(g_pDrawNormalPassVS));
-		DrawNormalPassPso.SetPixelShader(g_pDrawNormalPassPS, sizeof(g_pDrawNormalPassPS));
-		DrawNormalPassPso.SetInputLayout((UINT)pbrElement.size(), pbrElement.data());
-		DrawNormalPassPso.SetGeometryShader(g_pDrawNormalPassGS, sizeof(g_pDrawNormalPassGS));
-		DrawNormalPassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
-		DrawNormalPassPso.SetRootSignature(&NormalPassSignature);
-		DrawNormalPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+		msaaLightPassPso = defaultLightPassPso;
+		msaaLightPassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
+
+		drawNormalPassPso = defaultPso;
+		drawNormalPassPso.SetVertexShader(g_pDrawNormalPassVS, sizeof(g_pDrawNormalPassVS));
+		drawNormalPassPso.SetPixelShader(g_pDrawNormalPassPS, sizeof(g_pDrawNormalPassPS));
+		drawNormalPassPso.SetInputLayout((UINT)pbrElement.size(), pbrElement.data());
+		drawNormalPassPso.SetGeometryShader(g_pDrawNormalPassGS, sizeof(g_pDrawNormalPassGS));
+		drawNormalPassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		drawNormalPassPso.SetRootSignature(&NormalPassSignature);
+		drawNormalPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
 
 		computePso.SetRootSignature(&computeSignature);
 		computePso.SetComputeShader(g_pTestCS, sizeof(g_pTestCS));
@@ -264,14 +275,15 @@ namespace Renderer {
 		cubeMapPso.SetVertexShader(g_pCubeMapVS, sizeof(g_pCubeMapVS));
 		cubeMapPso.SetPixelShader(g_pCubeMapPS, sizeof(g_pCubeMapPS));
 		cubeMapPso.SetRasterizerState(cubeMapRasterizer);
-		cubeMapPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		//cubeMapPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		cubeMapPso.SetRenderTargetFormats(2, cubeMapPassFormats, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 
 		wireCubeMapPso = cubeMapPso;
 		wireCubeMapPso.SetRasterizerState(wireRasterizer);
 
 		msaaCubeMapPso = cubeMapPso;
 		//msaaCubeMapPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
-		msaaCubeMapPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		msaaCubeMapPso.SetRenderTargetFormats(2, cubeMapPassFormats, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
 
 		copyPso = defaultPso;
 		copyPso.SetRenderTargetFormat(backbufferFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
@@ -300,8 +312,9 @@ namespace Renderer {
 		passPsoLists[fbxGeometryPassPso.GetName()] = fbxGeometryPassPso;
 		passPsoLists[fbxMsaaGeometryPassPso.GetName()] = fbxMsaaGeometryPassPso;
 		passPsoLists[fbxWireGeometryPassPso.GetName()] = fbxWireGeometryPassPso;
-		passPsoLists[lightPassPso.GetName()] = lightPassPso;
-		passPsoLists[DrawNormalPassPso.GetName()] = DrawNormalPassPso;
+		passPsoLists[defaultLightPassPso.GetName()] = defaultLightPassPso;
+		passPsoLists[msaaLightPassPso.GetName()] = msaaLightPassPso;
+		passPsoLists[drawNormalPassPso.GetName()] = drawNormalPassPso;
 		passPsoLists[simulationRenderPso.GetName()] = simulationRenderPso;
 
 		utilityPsoLists[copyPso.GetName()] = copyPso;

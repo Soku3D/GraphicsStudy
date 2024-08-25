@@ -20,6 +20,7 @@ namespace Renderer {
 	
 	static const int geometryPassNum = 4;
 	extern DXGI_FORMAT geometryPassFormats[geometryPassNum];
+	extern DXGI_FORMAT cubeMapPassFormats[2];
 	extern DXGI_FORMAT backbufferFormat;
 	extern DXGI_FORMAT hdrFormat;
 

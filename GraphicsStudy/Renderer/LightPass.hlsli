@@ -93,7 +93,7 @@ float NDF(float roughness, float NoH)
     return (a2 / (PI * pow(NoH2 * (a2 - 1.f) + 1.f, 2.f)));
 }
 
-float3 ComputeLight(int lightIndex, float roughness, float3 position, float3 N, float3 V, float3 F0)
+float3 ComputeLight(int lightIndex, float roughness, float3 position, float3 N, float3 V, float3 F0, float metallic, float3 albedo)
 {
     float3 L = normalize(light[lightIndex].position - position);
     float3 H = normalize(L + V);
@@ -109,6 +109,8 @@ float3 ComputeLight(int lightIndex, float roughness, float3 position, float3 N, 
     
     //return (F * D * G) / (4.f * NoL * NoV);
     //float3 specularBRDF =  (F * D * G) / max(1e-5, 4.0 * NoL * NoV);
-    float3 specularBRDF = (D) / max(1e-5, 4.0 * NoL * NoV);
-    return (specularBRDF) * NoL;
+    float3 specularBRDF = (F * D * G) / max(1e-5, 4.0 * NoL * NoV);
+    float3 kd = lerp(float3(1, 1, 1) - F, float3(0, 0, 0), metallic);
+    float3 diffuseBRDF = kd * albedo;
+    return (specularBRDF + diffuseBRDF) * NoL;
 }

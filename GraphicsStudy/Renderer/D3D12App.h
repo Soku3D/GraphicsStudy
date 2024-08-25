@@ -100,7 +100,7 @@ namespace Renderer {
 		ComPtr<ID3D12Device> m_device;
 
 		UINT m_numQualityLevels = 0;
-		UINT m_sampleCount = 8;
+		UINT m_sampleCount = 4;
 		//DXGI_FORMAT m_backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 		DXGI_FORMAT m_backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		DXGI_FORMAT m_hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
