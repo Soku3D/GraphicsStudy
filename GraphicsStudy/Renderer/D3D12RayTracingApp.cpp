@@ -23,7 +23,7 @@ bool Renderer::D3D12RayTracingApp::Initialize()
 		return false;
 
 	ThrowIfFailed(m_commandList->QueryInterface(IID_PPV_ARGS(&m_dxrCommandList)), L"Couldn't get DirectX Raytracing interface for the command list.\n");
-	
+
 	m_commandAllocator->Reset();
 	m_dxrCommandList->Reset(m_commandAllocator.Get(), nullptr);
 
@@ -59,15 +59,55 @@ bool Renderer::D3D12RayTracingApp::Initialize()
 	raygeneration.NumExports = 1;
 	raygeneration.pExports = &raygenExport;
 
-	D3D12_STATE_SUBOBJECT shaders
+	D3D12_STATE_SUBOBJECT rayGenshaders
 	{
 		D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY,
 		&raygeneration
 	};
 
+	D3D12_EXPORT_DESC hitAndMissExport[2]
+	{
+		{
+			L"Hit",
+			nullptr,
+			D3D12_EXPORT_FLAG_NONE
+		},
+		{
+			L"Miss",
+			nullptr,
+			D3D12_EXPORT_FLAG_NONE
+		}
+	};
+
+	D3D12_DXIL_LIBRARY_DESC hitAndMiss = {};
+	hitAndMiss.DXILLibrary.BytecodeLength = sizeof(g_pRaytracing);
+	hitAndMiss.DXILLibrary.pShaderBytecode = g_pRaytracing;
+	hitAndMiss.NumExports = 2;
+	hitAndMiss.pExports = hitAndMissExport;
+
+	D3D12_STATE_SUBOBJECT hitAndMissShaders
+	{
+		D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY,
+		& hitAndMiss
+	};
+
+	D3D12_HIT_GROUP_DESC hitGroup
+	{
+		L"HitGroup0",
+		D3D12_HIT_GROUP_TYPE_TRIANGLES,
+		nullptr,
+		L"Hit",
+		nullptr
+	};
+	D3D12_STATE_SUBOBJECT hitGroupObject
+	{
+		D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP,
+		&hitGroup
+	};
+
 	D3D12_RAYTRACING_SHADER_CONFIG shrdConfig
 	{
-		0,
+		sizeof(float[4]),
 		sizeof(float[2])
 	};
 	D3D12_STATE_SUBOBJECT config
@@ -90,7 +130,9 @@ bool Renderer::D3D12RayTracingApp::Initialize()
 		&pipelineConfig
 	};
 	std::vector<D3D12_STATE_SUBOBJECT> subObjectes;
-	subObjectes.emplace_back(shaders);
+	subObjectes.emplace_back(rayGenshaders);
+	subObjectes.emplace_back(hitAndMissShaders);
+	subObjectes.emplace_back(hitGroupObject);
 	subObjectes.emplace_back(config);
 	subObjectes.emplace_back(globalRootSignature);
 	subObjectes.emplace_back(pipeline);
@@ -105,12 +147,10 @@ bool Renderer::D3D12RayTracingApp::Initialize()
 	ComPtr<ID3D12StateObjectProperties> stateObjectProperties;
 	ThrowIfFailed(m_rtpso.As(&stateObjectProperties));
 
-
 	UINT shaderIdentifierSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
 	ShaderTable parameter;
-	memcpy(parameter.m_mappedShaderRecords, stateObjectProperties->GetShaderIdentifier(L"RayGen"), shaderIdentifierSize);
-
+	
 	ThrowIfFailed(m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
@@ -118,10 +158,36 @@ bool Renderer::D3D12RayTracingApp::Initialize()
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&m_rgsTable)));
+	ThrowIfFailed(m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(sizeof(parameter)),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&m_missTable)));
+	ThrowIfFailed(m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(sizeof(parameter)),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&m_hitGroupsTable)));
+	
+	CD3DX12_RANGE readRange(0, 0);
 
-	CD3DX12_RANGE readRange(0, 0);  
+	memcpy(parameter.m_mappedShaderRecords, stateObjectProperties->GetShaderIdentifier(L"RayGen"), shaderIdentifierSize);
 	ThrowIfFailed(m_rgsTable->Map(0, &readRange, reinterpret_cast<void**>(&pRgsData)));
-	memcpy(pRgsData, parameter.m_mappedShaderRecords, sizeof(parameter));
+	memcpy(pRgsData, parameter.m_mappedShaderRecords, shaderIdentifierSize);
+
+	
+	memcpy(parameter.m_mappedShaderRecords, stateObjectProperties->GetShaderIdentifier(L"Miss"), shaderIdentifierSize);
+	ThrowIfFailed(m_hitGroupsTable->Map(0, &readRange, reinterpret_cast<void**>(&pHitgroupsData)));
+	memcpy(pHitgroupsData, parameter.m_mappedShaderRecords, shaderIdentifierSize);
+
+
+	memcpy(parameter.m_mappedShaderRecords, stateObjectProperties->GetShaderIdentifier(L"HitGroup0"), shaderIdentifierSize);
+	ThrowIfFailed(m_missTable->Map(0, &readRange, reinterpret_cast<void**>(&pMissData)));
+	memcpy(pMissData, parameter.m_mappedShaderRecords, shaderIdentifierSize);
 
 
 	ThrowIfFailed(m_dxrCommandList->Close());
@@ -175,9 +241,9 @@ void Renderer::D3D12RayTracingApp::UpdateGUI(float& deltaTime)
 
 void Renderer::D3D12RayTracingApp::Render(float& deltaTime)
 {
-	
+
 	RaytracingPass(deltaTime);
-	CopyResource(m_commandList,CurrentBackBuffer(), HDRRenderTargetBuffer());
+	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 }
 void Renderer::D3D12RayTracingApp::RaytracingPass(float& deltaTime)
 {
@@ -205,8 +271,18 @@ void Renderer::D3D12RayTracingApp::RaytracingPass(float& deltaTime)
 	m_dxrCommandList->SetComputeRootShaderResourceView(1, m_staticMeshes[0]->GetTlas());
 
 	D3D12_DISPATCH_RAYS_DESC dispactchRays = {};
+	
 	dispactchRays.RayGenerationShaderRecord.StartAddress = m_rgsTable->GetGPUVirtualAddress();
 	dispactchRays.RayGenerationShaderRecord.SizeInBytes = sizeof(ShaderTable);
+	
+	dispactchRays.HitGroupTable.StartAddress = m_hitGroupsTable->GetGPUVirtualAddress();
+	dispactchRays.HitGroupTable.SizeInBytes = sizeof(ShaderTable[1]);
+	dispactchRays.HitGroupTable.StrideInBytes = sizeof(ShaderTable);
+
+	dispactchRays.MissShaderTable.StartAddress = m_missTable->GetGPUVirtualAddress();
+	dispactchRays.MissShaderTable.SizeInBytes = sizeof(ShaderTable[1]);
+	dispactchRays.MissShaderTable.StrideInBytes = sizeof(ShaderTable);
+
 	dispactchRays.Width = width;
 	dispactchRays.Height = height;
 	dispactchRays.Depth = 1;

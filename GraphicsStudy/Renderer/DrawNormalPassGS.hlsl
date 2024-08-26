@@ -2,7 +2,7 @@
 
 [maxvertexcount(6)]
 void main(
-	point GSInput input[1] : SV_POSITION,
+	point GSInput input[1],
 	inout LineStream<PSInput> output
 )
 {

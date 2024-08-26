@@ -17,7 +17,7 @@ namespace Renderer {
 		Viewport viewport;
 		Viewport stencil;
 	};
-	struct ShaderTable {
+	struct __declspec(align(256)) ShaderTable {
 		uint8_t m_mappedShaderRecords[D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES];
 	};
 	class D3D12RayTracingApp :public D3D12App {
@@ -52,11 +52,11 @@ namespace Renderer {
 
 		RayGenConstantBuffer m_rayGenCB;
 		ComPtr<ID3D12Resource> m_rgsTable;
-		ComPtr<ID3D12Resource> m_mssTable;
-		ComPtr<ID3D12Resource> m_hgsTable;
+		ComPtr<ID3D12Resource> m_missTable;
+		ComPtr<ID3D12Resource> m_hitGroupsTable;
 		uint8_t* pRgsData;
-		uint8_t* pMssData;
-		uint8_t* pHgsData;
+		uint8_t* pMissData;
+		uint8_t* pHitgroupsData;
 		ComPtr<ID3D12DescriptorHeap> m_descriptorHeap;
 
 	};
