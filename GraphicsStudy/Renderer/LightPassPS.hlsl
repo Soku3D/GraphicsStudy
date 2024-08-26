@@ -9,7 +9,7 @@ float4 main(PSInput input) : SV_TARGET
     float3 albedo = g_albedoColor.Sample(g_wrapLinearSampler, input.uv).rgb;
     float4 materialTex = g_material.Sample(g_wrapLinearSampler, input.uv).rgba;
        
-    if (materialTex.a>=1.f)
+    if (materialTex.a>=2.f)
     {
         return float4(albedo, 1.f);
     }

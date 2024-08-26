@@ -97,7 +97,7 @@ namespace Renderer {
         else
             m_psoDesc.InputLayout.pInputElementDescs = nullptr;
     }
-    void GraphicsPSO::Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device)
+    void GraphicsPSO::Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     {
         if (m_rootSignature != nullptr){
             m_psoDesc.pRootSignature = m_rootSignature->Get();
@@ -130,7 +130,7 @@ namespace Renderer {
         //this->m_Name = pso.m_Name;
     }
 
-    void ComputePSO::Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device)
+    void ComputePSO::Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     {
         if (m_rootSignature != nullptr) {
             m_psoDesc.pRootSignature = m_rootSignature->Get();

@@ -146,7 +146,7 @@ void Renderer::RootSignature::InitializeDoubleSrvHeap(UINT srvCount1, UINT srvCo
 			m_samplerArray.data(), rootSignatureFlags);
 	}
 }
-void Renderer::RootSignature::Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device)
+void Renderer::RootSignature::Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 {
 	
 	Microsoft::WRL::ComPtr<ID3DBlob> signature;

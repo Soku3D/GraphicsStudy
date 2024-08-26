@@ -24,7 +24,7 @@ PSOutput main(PSInput input)
     float4 cubeColor = g_cubeMap.SampleLevel(g_sampler, input.worldPoition, lodLevel);
     
     output.albedo = float4((expose * cubeColor.rgb), 1.f);
-    output.material = float4(0, 0, 0, 1);
+    output.material = float4(0, 0, 0, 2);
     
     return output;
     //return float4(1.f, 0.f, 0.f, 1.f);

@@ -20,7 +20,7 @@ void Particles::Initialize(int numPatricles)
 	}
 }
 
-void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
+void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
 {
 	const UINT bufferSize = sizeof(Particle) * m_cpu.size();
 
@@ -72,7 +72,7 @@ void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device>& device, Mic
 
 }
 
-void Particles::BuildDescriptors(Microsoft::WRL::ComPtr<ID3D12Device>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
+void Particles::BuildDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
 {
 	Renderer::Utility::CreateDescriptorHeap(device, m_srvHeap, Renderer::DescriptorType::SRV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	Renderer::Utility::CreateDescriptorHeap(device, m_uavHeap, Renderer::DescriptorType::UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);

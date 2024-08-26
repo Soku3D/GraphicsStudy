@@ -23,7 +23,7 @@ std::wstring DxException::ToString()const
 }
 
 void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Resource>& texture, ComPtr<ID3D12DescriptorHeap>& heap,
-	ComPtr<ID3D12Device>& device, ComPtr<ID3D12CommandQueue>& commandQueue, ComPtr<ID3D12GraphicsCommandList>& commandList, int offset, int descriptorSize, bool* bIsCubeMap)
+	ComPtr<ID3D12Device5>& device, ComPtr<ID3D12CommandQueue>& commandQueue, ComPtr<ID3D12GraphicsCommandList>& commandList, int offset, int descriptorSize, bool* bIsCubeMap)
 {
 	using namespace DirectX;
 
@@ -79,11 +79,12 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
 
 }
 
-void Renderer::Utility::CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce,
+void Renderer::Utility::CreateDescriptorHeap(ComPtr<ID3D12Device5>& deivce,
 	ComPtr<ID3D12DescriptorHeap>& heap,
 	const Renderer::DescriptorType& type,
 	int Numdescriptors,
-	D3D12_DESCRIPTOR_HEAP_FLAGS flag)
+	D3D12_DESCRIPTOR_HEAP_FLAGS flag,
+	const std::wstring name)
 {
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
 	ZeroMemory(&heapDesc, sizeof(heapDesc));
@@ -105,4 +106,6 @@ void Renderer::Utility::CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce,
 
 	ThrowIfFailed(deivce->CreateDescriptorHeap(
 		&heapDesc, IID_PPV_ARGS(heap.GetAddressOf())));
+
+	heap->SetName(name.c_str());
 }

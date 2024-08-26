@@ -67,7 +67,7 @@ namespace Renderer {
 		template<typename Vertex>
 		static void CreateVertexBuffer(std::vector<Vertex>& vertices,
 			Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer,
-			Microsoft::WRL::ComPtr<ID3D11Device>& device) {
+			Microsoft::WRL::ComPtr<ID3D12Device5>& device) {
 			D3D11_BUFFER_DESC buffDesc;
 			buffDesc.ByteWidth = UINT(sizeof(Vertex) * vertices.size());
 			buffDesc.Usage = D3D11_USAGE_IMMUTABLE;
@@ -85,7 +85,7 @@ namespace Renderer {
 		template<typename Index>
 		static void CreateIndexBuffer(std::vector<Index>& indices,
 			Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer,
-			Microsoft::WRL::ComPtr<ID3D11Device>& device) {
+			Microsoft::WRL::ComPtr<ID3D12Device5>& device) {
 			D3D11_BUFFER_DESC buffDesc;
 			buffDesc.ByteWidth = UINT(sizeof(Index) * indices.size());
 			buffDesc.Usage = D3D11_USAGE_IMMUTABLE;
@@ -100,43 +100,11 @@ namespace Renderer {
 
 			ThrowIfFailed(device->CreateBuffer(&buffDesc, &subData, buffer.GetAddressOf()));
 		}
-		static void CreateVertexShaderAndInputLayout(
-			const std::wstring& shaderPath,
-			Microsoft::WRL::ComPtr<ID3D11VertexShader>& vertexShader,
-			std::vector<D3D11_INPUT_ELEMENT_DESC>& elements,
-			Microsoft::WRL::ComPtr<ID3D11InputLayout>& inputlayout,
-			Microsoft::WRL::ComPtr<ID3D11Device>& device) {
-
-			Microsoft::WRL::ComPtr <ID3DBlob> shader;
-			Microsoft::WRL::ComPtr <ID3DBlob> error;
-
-			ThrowIfFailed(D3DCompileFromFile(shaderPath.c_str(), nullptr, nullptr, "main",
-				"vs_4_0", 0, 0, shader.GetAddressOf(), error.GetAddressOf()));
-
-			ThrowIfFailed(device->CreateVertexShader(shader->GetBufferPointer(), shader->GetBufferSize(), nullptr,
-				vertexShader.GetAddressOf()));
-
-			ThrowIfFailed(device->CreateInputLayout(elements.data(), (UINT)elements.size(), shader->GetBufferPointer(), (UINT)shader->GetBufferSize(),
-				inputlayout.GetAddressOf()));
-		}
-		static void CreatePixelShader(
-			const std::wstring& shaderPath,
-			Microsoft::WRL::ComPtr<ID3D11PixelShader>& pixelShader,
-			Microsoft::WRL::ComPtr<ID3D11Device>& device) {
-
-			Microsoft::WRL::ComPtr <ID3DBlob> shader;
-			Microsoft::WRL::ComPtr <ID3DBlob> error;
-
-			ThrowIfFailed(D3DCompileFromFile(shaderPath.c_str(), nullptr, nullptr, "main",
-				"ps_4_0", 0, 0, shader.GetAddressOf(), error.GetAddressOf()));
-
-			ThrowIfFailed(device->CreatePixelShader(shader->GetBufferPointer(), shader->GetBufferSize(), nullptr,
-				pixelShader.GetAddressOf()));
-		}
+		
 		template<typename V>
 		static void CreateUploadBuffer(std::vector<V>& data,
 			ComPtr<ID3D12Resource> & buffer,
-			ComPtr<ID3D12Device> & device) {
+			ComPtr<ID3D12Device5> & device) {
 			
 			ThrowIfFailed(device->CreateCommittedResource(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -150,7 +118,7 @@ namespace Renderer {
 		template<typename V>
 		static void CreateGPUBuffer(std::vector<V>& data,
 			ComPtr<ID3D12Resource>& buffer,
-			ComPtr<ID3D12Device>& device) {
+			ComPtr<ID3D12Device5>& device) {
 			
 			ThrowIfFailed(device->CreateCommittedResource(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
@@ -166,7 +134,7 @@ namespace Renderer {
 		static void CreateBuffer(std::vector<V>& data,
 			ComPtr<ID3D12Resource>& uploadBuffer,
 			ComPtr<ID3D12Resource>& gpuBuffer,
-			ComPtr<ID3D12Device>& device,
+			ComPtr<ID3D12Device5>& device,
 			ComPtr<ID3D12GraphicsCommandList> & commandList) {
 
 			CreateUploadBuffer<V>(data, uploadBuffer, device);
@@ -183,8 +151,14 @@ namespace Renderer {
 		}
 		
 		// Texture Buffer를 만들고 Texture에 대한 Descriptor를 Heap에 넣는다
-		static void CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Resource>& texture, ComPtr<ID3D12DescriptorHeap>& heap, ComPtr<ID3D12Device>& device, ComPtr<ID3D12CommandQueue>& commandQueue, ComPtr<ID3D12GraphicsCommandList>& commandList, int offset, int descriptorSize, bool* bIsCubeMap);
+		static void CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Resource>& texture, ComPtr<ID3D12DescriptorHeap>& heap,
+			ComPtr<ID3D12Device5>& device, ComPtr<ID3D12CommandQueue>& commandQueue, ComPtr<ID3D12GraphicsCommandList>& commandList, int offset, int descriptorSize, bool* bIsCubeMap);
 
-		static void CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce, ComPtr<ID3D12DescriptorHeap>& heap, const Renderer::DescriptorType& type, int Numdescriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
+		static void CreateDescriptorHeap(ComPtr<ID3D12Device5>& deivce, 
+			ComPtr<ID3D12DescriptorHeap>& heap, 
+			const Renderer::DescriptorType& type, 
+			int Numdescriptors, 
+			D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
+			const std::wstring name = L"");
 };
 }

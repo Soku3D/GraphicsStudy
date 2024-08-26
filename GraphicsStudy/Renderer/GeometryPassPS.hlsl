@@ -23,7 +23,7 @@ PSOutput main(PSInput input)
     output.material.r = useAoMap ? g_ao.Sample(g_sampler, input.uv).r : material.ao;
     output.material.g = useMetalnessMap ? g_metalness.Sample(g_sampler, input.uv).r : material.metalic;
     output.material.b = useRoughnessMap ? g_roughness.Sample(g_sampler, input.uv).r : material.roughness;
-    output.material.a = 0.5f;
+    output.material.a = 1.f;
     
     return output;
 }

@@ -14,7 +14,7 @@ namespace Renderer {
 		void Initialize(UINT srvCount, UINT cbCount, std::vector<D3D12_STATIC_SAMPLER_DESC>& sampler);
 		void Initialize(UINT cbCount);
 		void InitializeDoubleSrvHeap(UINT srvCount1, UINT srvCount2, UINT cbCount, std::vector<D3D12_STATIC_SAMPLER_DESC>& sampler);
-		void Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device);
+		void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device);
 		ID3D12RootSignature* Get()const { return m_rootSignature.Get(); }
 		
 	private:

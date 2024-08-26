@@ -16,9 +16,9 @@ public:
 	~Particles() {};
 
 	void Initialize(int numPatricles);
-	void BuildResources(Microsoft::WRL::ComPtr <ID3D12Device> & device,
+	void BuildResources(Microsoft::WRL::ComPtr <ID3D12Device5> & device,
 		Microsoft::WRL::ComPtr <ID3D12GraphicsCommandList>& commandList);
-	void BuildDescriptors(Microsoft::WRL::ComPtr <ID3D12Device>& device,
+	void BuildDescriptors(Microsoft::WRL::ComPtr <ID3D12Device5>& device,
 		Microsoft::WRL::ComPtr <ID3D12GraphicsCommandList>& commandList);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandle() const {
 		return m_srvHeap->GetGPUDescriptorHandleForHeapStart();

@@ -87,7 +87,8 @@ namespace Renderer {
 
 		void CreateDepthBuffer(ComPtr<ID3D12Resource>& buffer, D3D12_CPU_DESCRIPTOR_HANDLE& handle, bool bUseMsaa);
 		void CreateResourceBuffer(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_RESOURCE_FLAGS flag);
-		void CreateResourceView(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_CPU_DESCRIPTOR_HANDLE& handle, ComPtr<ID3D12Device>& deivce, const Renderer::DescriptorType& type);
+		void CreateResourceView(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_CPU_DESCRIPTOR_HANDLE& handle, 
+			ComPtr<ID3D12Device5>& deivce, const Renderer::DescriptorType& type);
 		/*void CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce, ComPtr<ID3D12DescriptorHeap>& heap, const Renderer::DescriptorType& type, int Numdescriptors,
 			D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);*/
 
@@ -97,7 +98,7 @@ namespace Renderer {
 		ComPtr<IDXGIFactory4> m_dxgiFactory;
 		ComPtr<IDXGIAdapter1> m_warpAdapter;
 		
-		ComPtr<ID3D12Device> m_device;
+		ComPtr<ID3D12Device5> m_device;
 
 		UINT m_numQualityLevels = 0;
 		UINT m_sampleCount = 4;
@@ -223,5 +224,6 @@ namespace Renderer {
 	protected:
 		bool bUseTextureApp = true;
 		bool bUseCubeMapApp = true;
+		bool bUseDefaultSceneApp = true;
 	};
 }

@@ -73,16 +73,15 @@ float3 EnvBRDF(float3 irradiance, float3 specluar, float3 albedo, float ao, floa
     
     return (irradianceColor + specularColor) *ao;
 }
-float3 GGX1(float3 N, float3 V, float k)
+float3 GGX1(float NoV, float k)
 {
-    float NoV = dot(N, V);
     return NoV / (NoV * (1 - k) + k);
 }
-float3 GGX(float roughness, float3 L, float3 V, float3 N)
+float3 GGX(float roughness, float NoL, float NoV)
 {
     float k = pow(roughness + 1, 2.f) / 8.f;
     
-    return GGX1(N, V, k) * GGX1(N, L, k);
+    return GGX1(NoV, k) * GGX1(NoL, k);
 }
 float NDF(float roughness, float NoH)
 {
@@ -105,7 +104,7 @@ float3 ComputeLight(int lightIndex, float roughness, float3 position, float3 N, 
         
     float3 F = FresnelSchrick(F0, VoH);
     float D = NDF(roughness, NoH);
-    float3 G = GGX(roughness, L, V, N);
+    float3 G = GGX(roughness, NoL, NoV);
     
     //return (F * D * G) / (4.f * NoL * NoV);
     //float3 specularBRDF =  (F * D * G) / max(1e-5, 4.0 * NoL * NoV);

@@ -17,6 +17,7 @@ bool Renderer::D3D12PhysxSimulationApp::Initialize()
 	if (!D3D12PassApp::Initialize())
 		return false;
 
+    m_camera->SetSpeed(3.f);
 	return true;
 }
 
@@ -72,7 +73,7 @@ void Renderer::D3D12PhysxSimulationApp::Update(float& deltaTime)
                 bool sleeping = actors[i]->is<PxRigidDynamic>() &&
                     actors[i]->is<PxRigidDynamic>()->isSleeping();
                 if (sleeping) {
-                    m_staticMeshes[i]->UpdateMaterial(Material(1, 0, 1, 1));
+                    m_staticMeshes[i]->UpdateMaterial(Material(1.f, 0.2f, 1.f, 0.3f));
                 }
                 m_staticMeshes[i]->UpdateWorldRow(DirectX::SimpleMath::Matrix(shapePose.front()) *
                     DirectX::SimpleMath::Matrix::CreateScale(1.00f));
@@ -98,19 +99,19 @@ void Renderer::D3D12PhysxSimulationApp::RenderGUI(float& deltaTime)
     D3D12PassApp::RenderGUI(deltaTime);
 }
 
-physx::PxRigidDynamic* Renderer::D3D12PhysxSimulationApp::createDynamic(const PxTransform& t, const PxGeometry& geometry, const PxVec3& velocity)
+physx::PxRigidDynamic* Renderer::D3D12PhysxSimulationApp::createDynamic(const PxTransform& t, const PxGeometry& geometry, const PxVec3& m_velocity)
 {
     physx::PxRigidDynamic* dynamic =
         PxCreateDynamic(*gPhysics, t, geometry, *gMaterial, 10.0f);
     dynamic->setAngularDamping(0.5f);
-    dynamic->setLinearVelocity(velocity);
+    dynamic->setLinearVelocity(m_velocity);
     gScene->addActor(*dynamic);
     return dynamic;
 }
 
 void Renderer::D3D12PhysxSimulationApp::CreateStack(const PxTransform& t, PxU32 size, PxReal halfExtent)
 {
-    PbrMeshData box = GeometryGenerator::PbrUseTesslationBox(halfExtent);
+    PbrMeshData box = GeometryGenerator::PbrBox(halfExtent);
     PxShape* shape =
         gPhysics->createShape(PxBoxGeometry(halfExtent, halfExtent, halfExtent), *gMaterial);
     //PxReal dx = halfExtent * 3.f / 2.f;
@@ -173,7 +174,7 @@ void Renderer::D3D12PhysxSimulationApp::InitPhysics(bool interactive)
     
     std::shared_ptr<Core::StaticMesh> plane = std::make_shared<Core::StaticMesh>();
 
-    plane->Initialize(GeometryGenerator::PbrUseTesslationBox(10, 1, 10, L"DiamondPlate008C_4K-PNG_Albedo.png", 10.f, 1.f, 10.f), m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, -1.f, -1.f),
+    plane->Initialize(GeometryGenerator::PbrBox(10, 1, 10, L"DiamondPlate008C_4K-PNG_Albedo.png"), m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, -1.f, -1.f),
         Material(1.f, 1.f, 1.f, 1.f),
         true, true, true, true, true, true);
     m_staticMeshes.push_back(plane);

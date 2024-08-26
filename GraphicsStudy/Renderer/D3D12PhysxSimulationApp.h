@@ -43,7 +43,7 @@ namespace Renderer {
 
 		PxRigidDynamic* createDynamic(const PxTransform& t,
 			const PxGeometry& geometry,
-			const PxVec3& velocity = PxVec3(0));
+			const PxVec3& m_velocity = PxVec3(0));
 
 		void CreateStack(const PxTransform& t, PxU32 size, PxReal halfExtent);
 

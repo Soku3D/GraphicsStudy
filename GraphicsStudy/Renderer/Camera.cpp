@@ -14,8 +14,8 @@ namespace Core {
 	{
 		using DirectX::SimpleMath::Vector3;
 
-		m_position = Vector3(0, 0, -1);
-		m_forwardDirection = Vector3(0, 0, 1);
+		//m_position = Vector3(0, 0, -1);
+		//m_forwardDirection = Vector3(0, 0, 1);
 
 		m_forwardDirection.Normalize();
 		Vector3 v0 = Vector3(0, m_forwardDirection.y, m_forwardDirection.z);
@@ -57,6 +57,11 @@ namespace Core {
 		m_quaternion = DirectX::SimpleMath::Quaternion(n * m_delSine, m_delCosine);
 	}
 
+	void Camera::SetSpeed(float velocity)
+	{
+		m_velocity = velocity;
+	}
+
 	void Camera::SetRotation(int deltaX, int deltaY) {
 		m_xTheta += deltaY * m_aspectRatio * m_delTheta;
 		m_yTheta += (float)deltaX * m_delTheta;
@@ -88,32 +93,32 @@ namespace Core {
 
 	void Camera::MoveUp(float deltaTime)
 	{
-		m_position += (velocity * deltaTime) * m_upDirection;
+		m_position += (m_velocity * deltaTime) * m_upDirection;
 	}
 
 	void Camera::MoveDown(float deltaTime)
 	{
-		m_position += (velocity * deltaTime) * -m_upDirection;
+		m_position += (m_velocity * deltaTime) * -m_upDirection;
 	}
 
 	void Camera::MoveRight(float deltaTime)
 	{
-		m_position += (velocity * deltaTime) * m_rightDirection;
+		m_position += (m_velocity * deltaTime) * m_rightDirection;
 	}
 
 	void Camera::MoveLeft(float deltaTime)
 	{
-		m_position += (velocity * deltaTime) * -m_rightDirection;
+		m_position += (m_velocity * deltaTime) * -m_rightDirection;
 	}
 
 	void Camera::MoveForward(float deltaTime)
 	{
-		m_position += (velocity * deltaTime) * m_forwardDirection;
+		m_position += (m_velocity * deltaTime) * m_forwardDirection;
 	}
 
 	void Camera::MoveBackward(float deltaTime)
 	{
-		m_position += (velocity * deltaTime) * -m_forwardDirection;
+		m_position += (m_velocity * deltaTime) * -m_forwardDirection;
 	}
 
 	DirectX::SimpleMath::Matrix Camera::GetViewMatrix() const

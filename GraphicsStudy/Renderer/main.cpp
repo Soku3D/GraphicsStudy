@@ -2,17 +2,16 @@
 #include "D3D12PassApp.h"
 #include "D3D12ComputeShaderApp.h"
 #include "D3D12PhysxSimulationApp.h"
-#include "D3D11App.h"
+#include "D3D12RayTracingApp.h"
 
 int main() {
 
     try
     {
-        //Renderer::D3D12App m_app(1280, 720);
-        //Renderer::D3D12ComputeShaderApp m_app(1280, 720);
-        Renderer::D3D12PassApp m_app(1280, 720);
+        //Renderer::D3D12PassApp m_app(1280, 720);
         //Renderer::D3D12SimulationApp  m_app(1280, 720);
         //Renderer::D3D12PhysxSimulationApp  m_app(1280, 720);
+        Renderer::D3D12RayTracingApp  m_app(1280, 720);
         if (!m_app.Initialize())
             return 0;
 

@@ -2,7 +2,7 @@
 
 
 
-void Animation::FBX::Initialize(std::vector<PbrMeshData>& meshData, AnimationData& animationData, Microsoft::WRL::ComPtr<ID3D12Device>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList,
+void Animation::FBX::Initialize(std::vector<PbrMeshData>& meshData, AnimationData& animationData, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList,
 	bool loopAnimation, float animationSpeed,const Vector3 & ModelTranslation,const std::wstring & texture )
 {
 	using namespace Core;
@@ -89,6 +89,6 @@ void Animation::FBX::InitAnimation(AnimationData& animationData, double& tickPer
 	m_framPerSecond = tickPerSecond;
 	m_animationSpeed = animationSpeed;
 	m_loopAnimation = bLoop;
-	m_lastFrame = m_animationData.clips[0].keys[0].size() - 1;
+	m_lastFrame = (int)m_animationData.clips[0].keys[0].size() - 1;
 
 }

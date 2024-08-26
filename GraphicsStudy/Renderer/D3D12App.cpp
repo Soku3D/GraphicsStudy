@@ -58,8 +58,9 @@ bool Renderer::D3D12App::Initialize()
 	if (bUseCubeMapApp) {
 		CreateCubeMapTextures();
 	}
-	InitScene();
-
+	if (bUseDefaultSceneApp) {
+		InitScene();
+	}
 	CreateFontFromFile(L"Fonts/default.spritefont", m_font, m_spriteBatch, m_resourceDescriptors, false, m_hdrFormat, m_depthStencilFormat);
 	CreateFontFromFile(L"Fonts/default.spritefont", m_msaaFont, m_msaaSpriteBatch, m_msaaResourceDescriptors, true, m_hdrFormat, m_depthStencilFormat);
 
@@ -242,6 +243,7 @@ void Renderer::D3D12App::OnResize()
 
 	CreateResourceBuffer(m_msaaRenderTarget, m_msaaFormat, true, rtvFlag);
 	CreateResourceBuffer(m_hdrRenderTarget, m_hdrFormat, false, uavFlag);
+	m_hdrRenderTarget->SetName(L"HDR RenderTarget");
 
 	CreateResourceView(m_msaaRenderTarget, m_msaaFormat, true, m_msaaRtvHeap->GetCPUDescriptorHandleForHeapStart(), m_device, DescriptorType::RTV);
 	CreateResourceView(m_hdrRenderTarget, m_hdrFormat, false, m_hdrRtvHeap->GetCPUDescriptorHandleForHeapStart(), m_device, DescriptorType::RTV);
@@ -568,16 +570,18 @@ void Renderer::D3D12App::CreateDescriptorHeaps() {
 	m_dsvHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	m_csuHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	Utility::CreateDescriptorHeap(m_device, m_swapChainRtvHeap, DescriptorType::RTV, m_swapChainCount);
+	Utility::CreateDescriptorHeap(m_device, m_swapChainRtvHeap, DescriptorType::RTV, m_swapChainCount,D3D12_DESCRIPTOR_HEAP_FLAG_NONE, L"SwapChain RTV");
 	Utility::CreateDescriptorHeap(m_device, m_dsvHeap, DescriptorType::DSV, 2);
 	Utility::CreateDescriptorHeap(m_device, m_cbvHeap, DescriptorType::CBV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	Utility::CreateDescriptorHeap(m_device, m_msaaRtvHeap, DescriptorType::RTV, 1);
 	Utility::CreateDescriptorHeap(m_device, m_hdrRtvHeap, DescriptorType::RTV, 1);
-	Utility::CreateDescriptorHeap(m_device, m_hdrUavHeap, DescriptorType::UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	Utility::CreateDescriptorHeap(m_device, m_hdrUavHeap, DescriptorType::UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, L"HDR UAV");
 	Utility::CreateDescriptorHeap(m_device, m_hdrSrvHeap, DescriptorType::SRV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	Utility::CreateDescriptorHeap(m_device, m_geometryPassRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
 	Utility::CreateDescriptorHeap(m_device, m_geometryPassSrvHeap, DescriptorType::SRV, geometryPassRtvNum + 4, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	Utility::CreateDescriptorHeap(m_device, m_geometryPassMsaaRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
+
+
 
 }
 
@@ -1301,7 +1305,7 @@ void Renderer::D3D12App::CreateResourceView(ComPtr<ID3D12Resource>& buffer,
 	DXGI_FORMAT format,
 	bool bUseMsaa,
 	D3D12_CPU_DESCRIPTOR_HANDLE& handle,
-	ComPtr<ID3D12Device>& deivce,
+	ComPtr<ID3D12Device5>& deivce,
 	const Renderer::DescriptorType& type)
 {
 	if (type == DescriptorType::RTV) {

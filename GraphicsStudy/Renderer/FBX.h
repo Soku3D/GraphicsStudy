@@ -12,7 +12,7 @@ namespace Animation {
 		FBX() {}
 		~FBX() {}
 
-		void Initialize(std::vector<PbrMeshData>& meshData, AnimationData& animationData, Microsoft::WRL::ComPtr<ID3D12Device>& device,
+		void Initialize(std::vector<PbrMeshData>& meshData, AnimationData& animationData, Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool loopAnimation = false, float animationSpeed = 1.f, 
 			const Vector3& ModelTranslation = Vector3::Zero, const std::wstring& texture = L"");
 

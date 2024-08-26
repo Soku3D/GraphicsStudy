@@ -8,6 +8,7 @@ Core::StaticMesh::StaticMesh() :
 {
 }
 
+
 void Core::StaticMesh::Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat)
 {
 	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);

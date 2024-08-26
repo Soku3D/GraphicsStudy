@@ -21,7 +21,7 @@ SimpleMeshData GeometryGenerator::SimpleTriangle(const float& length)
 		0, 1, 2
 	};
 	data.Initialize(vertices, indices);
-
+	data.m_name = "SimpleTriangle";
 	return data;
 }
 
@@ -389,9 +389,9 @@ PbrMeshData GeometryGenerator::PbrBox(const float& x, const float& y, const floa
 {
 	PbrMeshData data;
 
-	float hX = x / 2.f;
-	float hY = y / 2.f;
-	float hZ = z / 2.f;
+	float hX = x;
+	float hY = y;
+	float hZ = z;
 
 	std::vector<PbrVertex> vertices = {
 		{Vector3(-hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(0.f, 1.f),Vector3::Zero},

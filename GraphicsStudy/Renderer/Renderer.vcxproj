@@ -148,11 +148,11 @@
     <ClCompile Include="BoxComponent.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Command.cpp" />
-    <ClCompile Include="D3D11App.cpp" />
     <ClCompile Include="D3D12App.cpp" />
     <ClCompile Include="D3D12ComputeShaderApp.cpp" />
     <ClCompile Include="D3D12PassApp.cpp" />
     <ClCompile Include="D3D12PhysxSimulationApp.cpp" />
+    <ClCompile Include="D3D12RayTracingApp.cpp" />
     <ClCompile Include="D3D12SimulationApp.cpp" />
     <ClCompile Include="FBX.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
@@ -179,11 +179,11 @@
     <ClInclude Include="CameraComponent.h" />
     <ClInclude Include="Command.h" />
     <ClInclude Include="Constants.h" />
-    <ClInclude Include="D3D11App.h" />
     <ClInclude Include="D3D12App.h" />
     <ClInclude Include="D3D12ComputeShaderApp.h" />
     <ClInclude Include="D3D12PassApp.h" />
     <ClInclude Include="D3D12PhysxSimulationApp.h" />
+    <ClInclude Include="D3D12RayTracingApp.h" />
     <ClInclude Include="D3D12SimulationApp.h" />
     <ClInclude Include="FBX.h" />
     <ClInclude Include="GeometryGenerator.h" />
@@ -325,6 +325,20 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Raytracing.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Library</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.3</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Geometry</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Library</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.3</ShaderModel>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)CompiledShaders\%(Filename).hlsl.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)CompiledShaders\%(Filename).hlsl.h</HeaderFileOutput>
     </FxCompile>
     <FxCompile Include="SimulationParticlesCS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>

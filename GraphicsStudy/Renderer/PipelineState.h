@@ -59,7 +59,7 @@ namespace Renderer {
         void SetDomainShader(const D3D12_SHADER_BYTECODE& Binary) { m_psoDesc.DS = Binary; }
 
         // Perform validation and compute a hash value for fast state block comparisons
-        void Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device);
+        void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device);
         void PrintMSAAData();
 
     private:
@@ -73,7 +73,7 @@ namespace Renderer {
         ~ComputePSO() {}
 
         void operator=(ComputePSO& pso);
-        void Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device);
+        void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device);
         void SetComputeShader(const D3D12_SHADER_BYTECODE& Binary) { m_psoDesc.CS = Binary; }
         void SetComputeShader(const void* Binary, size_t Size) { m_psoDesc.CS = CD3DX12_SHADER_BYTECODE(const_cast<void*>(Binary), Size); }
 

@@ -18,7 +18,7 @@ namespace Core {
 		DirectX::SimpleMath::Vector3 m_standardDirection;
 		DirectX::SimpleMath::Vector3 m_rightDirection;
 		DirectX::SimpleMath::Vector3 m_upDirection;
-		float velocity = 1.f;
+		float m_velocity = 1.f;
 		float m_delTheta;
 		float m_delSine;
 		float m_delCosine;
@@ -30,7 +30,7 @@ namespace Core {
 	public:
 		void SetAspectRation(float aspectRatio);
 		void SetQuaternion(int deltaX, int deltaY);
-
+		void SetSpeed(float velocity);
 		void SetRotation(int deltaX, int deltaY);
 
 	public:

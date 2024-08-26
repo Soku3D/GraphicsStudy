@@ -27,9 +27,6 @@
     <ClCompile Include="SimpleApp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="D3D11App.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Utility.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -93,15 +90,15 @@
     <ClCompile Include="D3D12PhysxSimulationApp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="D3D12RayTracingApp.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3D12App.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="SimpleApp.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="D3D11App.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Timer.h">
@@ -188,6 +185,9 @@
     <ClInclude Include="D3D12PhysxSimulationApp.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="D3D12RayTracingApp.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="TestVS.hlsl" />
@@ -214,6 +214,7 @@
     <FxCompile Include="SimulationParticlesPS.hlsl" />
     <FxCompile Include="SimulationParticlesGS.hlsl" />
     <FxCompile Include="GeometryPassVS.hlsl" />
+    <FxCompile Include="Raytracing.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />

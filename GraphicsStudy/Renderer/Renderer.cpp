@@ -246,10 +246,10 @@ namespace Renderer {
 		defaultLightPassPso.SetVertexShader(g_pLightPassVS, sizeof(g_pLightPassVS));
 		defaultLightPassPso.SetPixelShader(g_pLightPassPS, sizeof(g_pLightPassPS));
 		defaultLightPassPso.SetInputLayout((UINT)simpleElement.size(), simpleElement.data());
-		defaultLightPassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		defaultLightPassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
 
 		msaaLightPassPso = defaultLightPassPso;
-		msaaLightPassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
+		msaaLightPassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_UNKNOWN, msaaCount, msaaQuality - 1);
 
 		drawNormalPassPso = defaultPso;
 		drawNormalPassPso.SetVertexShader(g_pDrawNormalPassVS, sizeof(g_pDrawNormalPassVS));
@@ -328,7 +328,7 @@ namespace Renderer {
 
 	}
 
-	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device)
+	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	{
 		defaultSignature.Finalize(device);
 		computeSignature.Finalize(device);

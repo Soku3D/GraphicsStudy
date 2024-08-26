@@ -63,7 +63,7 @@ namespace Renderer {
 	extern D3D12_BLEND_DESC alphaBlender;
 
 	void Initialize(void);
-	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device>& device);
+	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device);
 }
 
 
