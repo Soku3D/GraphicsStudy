@@ -59,7 +59,7 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
 	if (bIsCubeMap != nullptr && *bIsCubeMap == true) {
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 		srvDesc.TextureCube.MipLevels = texture->GetDesc().MipLevels;
-		srvDesc.TextureCube.MostDetailedMip = 0.f;
+		srvDesc.TextureCube.MostDetailedMip = 0;
 	}
 	else {
 		srvDesc.Texture2D.MipLevels = texture->GetDesc().MipLevels;
@@ -109,3 +109,17 @@ void Renderer::Utility::CreateDescriptorHeap(ComPtr<ID3D12Device5>& deivce,
 
 	heap->SetName(name.c_str());
 }
+
+void Renderer::Utility::CreateBuffer(ComPtr<ID3D12Device5>& deivce, D3D12_HEAP_TYPE heapType, D3D12_HEAP_FLAGS heapFlag, UINT buffersize, 
+	D3D12_RESOURCE_FLAGS resourceFlag, D3D12_RESOURCE_STATES resourceState, ComPtr<ID3D12Resource>& buffer)
+{
+	ThrowIfFailed(deivce->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(heapType),
+		heapFlag,
+		&CD3DX12_RESOURCE_DESC::Buffer(buffersize, resourceFlag),
+		resourceState,
+		nullptr,
+		IID_PPV_ARGS(&buffer)));
+}
+
+

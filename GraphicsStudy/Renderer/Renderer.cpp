@@ -77,6 +77,8 @@ namespace Renderer {
 	RootSignature computeSignature;
 	RootSignature simulationComputeSignature;
 	RootSignature simulationSignature;
+	
+	RootSignature raytracingGlobalSignature;
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElement;
@@ -131,6 +133,8 @@ namespace Renderer {
 		
 		simulationComputeSignature.InitializeUAV(1,0, 0, nullptr);
 		simulationSignature.Initialize(1, 0, 0, nullptr);
+
+		raytracingGlobalSignature.InitializeSrv(1, 1, 1, 0, nullptr);
 
 		GraphicsPSO msaaPso("Msaa");
 		GraphicsPSO wirePso("Wire");
@@ -339,6 +343,7 @@ namespace Renderer {
 		NormalPassSignature.Finalize(device);
 		simulationComputeSignature.Finalize(device);
 		simulationSignature.Finalize(device);
+		raytracingGlobalSignature.Finalize(device);
 
 		for (auto& pso : modePsoLists) {
 			pso.second.Finalize(device);

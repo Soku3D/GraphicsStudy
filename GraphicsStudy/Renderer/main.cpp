@@ -6,16 +6,38 @@
 
 int main() {
 
+    enum AppType {
+        D3D12PassApp,
+        D3D12SimulationApp,
+        D3D12PhysxSimulationApp,
+        D3D12RayTracingApp
+    };
+
+    auto currentApp = 3;
+
     try
     {
-        //Renderer::D3D12PassApp m_app(1280, 720);
-        //Renderer::D3D12SimulationApp  m_app(1280, 720);
-        //Renderer::D3D12PhysxSimulationApp  m_app(1280, 720);
-        Renderer::D3D12RayTracingApp  m_app(1280, 720);
-        if (!m_app.Initialize())
+        Renderer::D3D12App* m_app = nullptr;
+        switch (currentApp)
+        {
+        case AppType::D3D12PassApp:
+            m_app = new Renderer::D3D12PassApp(1280, 720);
+            break;
+        case AppType::D3D12SimulationApp:
+            m_app = new Renderer::D3D12SimulationApp(1280, 720);
+            break;
+        case AppType::D3D12PhysxSimulationApp:
+            m_app = new Renderer::D3D12PhysxSimulationApp(1280, 720);
+            break;
+        case AppType::D3D12RayTracingApp:
+            m_app = new Renderer::D3D12RayTracingApp(1280, 720);
+            break;
+        }
+
+        if (m_app && !m_app->Initialize())
             return 0;
 
-        return m_app.Run();
+        return m_app->Run();
     }
     catch (DxException& e)
     {

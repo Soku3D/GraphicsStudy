@@ -188,6 +188,12 @@
     <ClInclude Include="D3D12RayTracingApp.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="HlslCompat.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="RaytracingHlslCompat.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="TestVS.hlsl" />

@@ -188,6 +188,7 @@
     <ClInclude Include="D3D12SimulationApp.h" />
     <ClInclude Include="FBX.h" />
     <ClInclude Include="GeometryGenerator.h" />
+    <ClInclude Include="HlslCompat.h" />
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="MeshData.h" />
     <ClInclude Include="ModelLoader.h" />
@@ -195,6 +196,7 @@
     <ClInclude Include="Particle.h" />
     <ClInclude Include="PipelineState.h" />
     <ClInclude Include="PrimitiveComponent.h" />
+    <ClInclude Include="RaytracingHlslCompat.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RootSignature.h" />
     <ClInclude Include="SceneComponent.h" />
@@ -337,7 +339,6 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Library</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.3</ShaderModel>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)CompiledShaders\%(Filename).hlsl.h</HeaderFileOutput>
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)CompiledShaders\%(Filename).hlsl.h</HeaderFileOutput>
     </FxCompile>

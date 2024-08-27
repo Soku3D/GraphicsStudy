@@ -22,7 +22,7 @@ void Particles::Initialize(int numPatricles)
 
 void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
 {
-	const UINT bufferSize = sizeof(Particle) * m_cpu.size();
+	const UINT bufferSize = (UINT)(sizeof(Particle) * m_cpu.size());
 
 	// default upload buffer 생성
 	D3D12_RESOURCE_DESC resourceDesc;
@@ -81,7 +81,7 @@ void Particles::BuildDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device, 
 	SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 	SRVDesc.Format = DXGI_FORMAT_UNKNOWN;
 	SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	SRVDesc.Buffer.NumElements = m_cpu.size();
+	SRVDesc.Buffer.NumElements = (UINT)m_cpu.size();
 	SRVDesc.Buffer.StructureByteStride = sizeof(Particle);
 	SRVDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 	SRVDesc.Buffer.FirstElement = 0;
@@ -90,7 +90,7 @@ void Particles::BuildDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device, 
 	UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 	UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
 	UAVDesc.Buffer.CounterOffsetInBytes = 0;
-	UAVDesc.Buffer.NumElements = m_cpu.size();
+	UAVDesc.Buffer.NumElements = (UINT)m_cpu.size();
 	UAVDesc.Buffer.StructureByteStride = sizeof(Particle);
 	UAVDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 

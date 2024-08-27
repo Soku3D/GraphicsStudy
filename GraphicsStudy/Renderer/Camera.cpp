@@ -4,8 +4,8 @@
 namespace Core {
 
 	Camera::Camera() :
-		m_position(DirectX::SimpleMath::Vector3(7.27f, 7.35f, -3.66f)),
-		m_forwardDirection(DirectX::SimpleMath::Vector3(-0.55f, -0.62f, 0.55f)),
+		m_position(DirectX::SimpleMath::Vector3(0,0,-1)),
+		m_forwardDirection(DirectX::SimpleMath::Vector3(0,0,1)),
 		m_upDirection(DirectX::SimpleMath::Vector3(0.f, 1.f, 0.f)),
 		m_rightDirection(DirectX::SimpleMath::Vector3(1.f, 0.f, 0.f)),
 		m_farZ(100.f),
@@ -14,10 +14,26 @@ namespace Core {
 	{
 		using DirectX::SimpleMath::Vector3;
 
-		//m_position = Vector3(0, 0, -1);
-		//m_forwardDirection = Vector3(0, 0, 1);
-
 		m_forwardDirection.Normalize();
+	
+		m_fov = DirectX::XMConvertToRadians(70.f);
+		m_delTheta = DirectX::XMConvertToRadians(0.2f);
+		m_delSine = sin(m_delTheta / 2.f);
+		m_delCosine = cos(m_delTheta / 2.f);
+	
+		m_standardDirection = Vector3(0,0,1);
+		
+		d = 1.f/tan(m_fov/2.f);
+	}
+
+	void Camera::SetPositionAndDirection(const DirectX::SimpleMath::Vector3 & position,
+		const DirectX::SimpleMath::Vector3& direction) 
+	{
+		using DirectX::SimpleMath::Vector3;
+
+		m_position = position;
+		m_forwardDirection = direction;
+
 		Vector3 v0 = Vector3(0, m_forwardDirection.y, m_forwardDirection.z);
 		Vector3 v1 = Vector3(m_forwardDirection.x, 0, m_forwardDirection.z);
 		v0.Normalize();
@@ -32,20 +48,15 @@ namespace Core {
 		if (v1.x < 0) {
 			m_yTheta *= -1.f;
 		}
-		//std::cout << m_xTheta << ' ' << m_yTheta;
 		m_fov = DirectX::XMConvertToRadians(70.f);
 		m_delTheta = DirectX::XMConvertToRadians(0.2f);
 		m_delSine = sin(m_delTheta / 2.f);
 		m_delCosine = cos(m_delTheta / 2.f);
-		
-
-		m_standardDirection = Vector3(0,0,1);
 
 		m_forwardDirection = Vector3::Transform(m_standardDirection, DirectX::XMMatrixRotationX(m_xTheta));
 		m_forwardDirection = Vector3::Transform(m_forwardDirection, DirectX::XMMatrixRotationY(m_yTheta));
 		m_forwardDirection.Normalize();
 	}
-
 	void Camera::SetAspectRation(float aspectRatio)
 	{
 		m_aspectRatio = aspectRatio;

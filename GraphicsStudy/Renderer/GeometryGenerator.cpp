@@ -57,13 +57,13 @@ SimpleMeshData GeometryGenerator::SimpleBox(const float& length)
 	std::vector<uint32_t> indices = {
 		0, 1, 2, 0, 2, 3,
 		7, 6, 5, 7, 5, 4,
-		4, 5, 1, 5, 1, 0,
+		4, 5, 1, 4, 1, 0,
 		4, 0, 3, 4, 3, 7,
 		3, 2, 6, 3, 6, 7,
 		1, 5, 6, 1, 6, 2
 	};
 	data.Initialize(vertices, indices);
-
+	data.m_name = "SimpleBox";
 	return data;
 }
 

@@ -2,24 +2,24 @@
 
 #include "D3D12App.h"
 #include "Renderer.h"
+#include "RaytracingHlslCompat.h"
 
 namespace Renderer {
-	struct Viewport
-	{
-		float left;
-		float top;
-		float right;
-		float bottom;
-	};
 
-	struct RayGenConstantBuffer
-	{
-		Viewport viewport;
-		Viewport stencil;
-	};
-	struct __declspec(align(256)) ShaderTable {
+	struct ShaderTable {
 		uint8_t m_mappedShaderRecords[D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES];
 	};
+
+	/*struct RayGenConstantBufferData {
+		float localRootSignatureTest[8] = {1,1,0,1,5,6,7,8};
+	};*/
+	
+	struct __declspec(align(256)) RaytraingSceneConstantData {
+		DirectX::SimpleMath::Matrix view = DirectX::SimpleMath::Matrix();
+		DirectX::SimpleMath::Vector3 cameraPosition = DirectX::SimpleMath::Vector3(0,0,0);
+		float dummy = 0.5;
+	};
+
 	class D3D12RayTracingApp :public D3D12App {
 	public:
 		D3D12RayTracingApp(const int& width, const int& height);
@@ -27,6 +27,9 @@ namespace Renderer {
 
 		bool Initialize() override;
 		bool InitGUI() override;
+		void CreateStateObjects();
+		void CreateShaderTable();
+		void CreateConstantBuffer() override;
 		bool InitDirectX() override;
 		void OnResize() override;
 		void InitRayTracingScene();
@@ -50,7 +53,6 @@ namespace Renderer {
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> m_globalRootSignature;
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> m_localRootSignature;
 
-		RayGenConstantBuffer m_rayGenCB;
 		ComPtr<ID3D12Resource> m_rgsTable;
 		ComPtr<ID3D12Resource> m_missTable;
 		ComPtr<ID3D12Resource> m_hitGroupsTable;
@@ -58,6 +60,22 @@ namespace Renderer {
 		uint8_t* pMissData;
 		uint8_t* pHitgroupsData;
 		ComPtr<ID3D12DescriptorHeap> m_descriptorHeap;
+
+		std::vector<D3D12_STATE_SUBOBJECT> subObjects;
+		D3D12_STATE_OBJECT_DESC rtStateObject;
+		D3D12_STATE_SUBOBJECT config;
+
+		ComPtr<ID3D12RootSignature> m_raytracingLocalSignature;
+		const wchar_t* rayGenerationShaderName = L"RayGen";
+		const wchar_t* closestHitShaderName = L"Hit";
+		const wchar_t* hitGroupName = L"HitGroup0";
+		const wchar_t* missShaderName = L"Miss";
+
+		/*RayGenConstantBufferData m_rayGenCB;*/
+		
+		RaytraingSceneConstantData m_sceneCBData;
+		uint8_t* pSceneBegin;
+		ComPtr<ID3D12Resource> m_sceneCB;
 
 	};
 }

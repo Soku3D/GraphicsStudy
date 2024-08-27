@@ -13,6 +13,7 @@ namespace Core {
 		float m_fov;
 		float m_nearZ;
 		float m_farZ;
+		float d;
 		DirectX::SimpleMath::Vector3 m_position;
 		DirectX::SimpleMath::Vector3 m_forwardDirection;
 		DirectX::SimpleMath::Vector3 m_standardDirection;
@@ -28,6 +29,7 @@ namespace Core {
 		float m_yTheta = 0.f;
 
 	public:
+		void SetPositionAndDirection(const DirectX::SimpleMath::Vector3& position, const DirectX::SimpleMath::Vector3& direction);
 		void SetAspectRation(float aspectRatio);
 		void SetQuaternion(int deltaX, int deltaY);
 		void SetSpeed(float velocity);

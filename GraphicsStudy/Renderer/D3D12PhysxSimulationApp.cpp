@@ -10,6 +10,10 @@ Renderer::D3D12PhysxSimulationApp::D3D12PhysxSimulationApp(const int& width, con
     bRenderMeshes = true;
     bRenderFbx = false;
     bRenderNormal = false;
+
+    m_camera->SetPositionAndDirection(DirectX::SimpleMath::Vector3(7.27f, 7.35f, -3.66f),
+        DirectX::SimpleMath::Vector3(-0.55f, -0.62f, 0.55f));
+
 }
 
 bool Renderer::D3D12PhysxSimulationApp::Initialize()

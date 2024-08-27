@@ -93,6 +93,39 @@ namespace Core {
 			geometryDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Vertex);
 			geometryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
 
+			D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO bottomLevelPrebuildInfo = {};
+			D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS bottomLevelInputs = {};
+			bottomLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+			bottomLevelInputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+			bottomLevelInputs.NumDescs = 1;
+			bottomLevelInputs.pGeometryDescs = &geometryDesc;
+			device->GetRaytracingAccelerationStructurePrebuildInfo(&bottomLevelInputs, &bottomLevelPrebuildInfo);
+
+			if (bottomLevelPrebuildInfo.ResultDataMaxSizeInBytes < 0)
+			{
+				std::cout << "Failed GetRaytracingAccelerationStructurePrebuildInfo(BLAS)\n";
+				return;
+			}
+			
+			UINT64 buffersize = bottomLevelPrebuildInfo.ScratchDataSizeInBytes;
+			Renderer::Utility::CreateBuffer(device, D3D12_HEAP_TYPE_DEFAULT, D3D12_HEAP_FLAG_NONE, 
+				buffersize,	D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+				m_scratchResource);
+
+			Renderer::Utility::CreateBuffer(device, D3D12_HEAP_TYPE_DEFAULT, D3D12_HEAP_FLAG_NONE,
+				bottomLevelPrebuildInfo.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, 
+				D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, m_blas);
+
+			D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC bottomLevelBuildDesc = {};
+
+			bottomLevelBuildDesc.Inputs = bottomLevelInputs;
+			bottomLevelBuildDesc.ScratchAccelerationStructureData = m_scratchResource->GetGPUVirtualAddress();
+			bottomLevelBuildDesc.DestAccelerationStructureData = m_blas->GetGPUVirtualAddress();
+
+			commandList->BuildRaytracingAccelerationStructure(&bottomLevelBuildDesc, 0, nullptr);
+			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_blas.Get()));
+		
 			D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
 			D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS topLevelInputs = {};
 			topLevelInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
@@ -103,34 +136,6 @@ namespace Core {
 			D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelPrebuildInfo = {};
 			device->GetRaytracingAccelerationStructurePrebuildInfo(&topLevelInputs, &topLevelPrebuildInfo);
 
-			D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO bottomLevelPrebuildInfo = {};
-			D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS bottomLevelInputs = topLevelInputs;
-			bottomLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-			bottomLevelInputs.pGeometryDescs = &geometryDesc;
-			device->GetRaytracingAccelerationStructurePrebuildInfo(&bottomLevelInputs, &bottomLevelPrebuildInfo);
-
-			if (bottomLevelPrebuildInfo.ResultDataMaxSizeInBytes < 0)
-			{
-				std::cout << "Failed GetRaytracingAccelerationStructurePrebuildInfo(BLAS)\n";
-			}
-
-			UINT64 buffersize = max(bottomLevelPrebuildInfo.ScratchDataSizeInBytes, topLevelPrebuildInfo.ScratchDataSizeInBytes);
-			ThrowIfFailed(device->CreateCommittedResource(
-				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-				D3D12_HEAP_FLAG_NONE,
-				&CD3DX12_RESOURCE_DESC::Buffer(buffersize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-				nullptr,
-				IID_PPV_ARGS(&m_scratchResource)));
-
-			ThrowIfFailed(device->CreateCommittedResource(
-				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-				D3D12_HEAP_FLAG_NONE,
-				&CD3DX12_RESOURCE_DESC::Buffer(bottomLevelPrebuildInfo.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
-				D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
-				nullptr,
-				IID_PPV_ARGS(&m_blas)));
-
 			ThrowIfFailed(device->CreateCommittedResource(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 				D3D12_HEAP_FLAG_NONE,
@@ -138,7 +143,6 @@ namespace Core {
 				D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
 				nullptr,
 				IID_PPV_ARGS(&m_tlas)));
-
 
 			D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
 			instanceDesc.Transform[0][0] = instanceDesc.Transform[1][1] = instanceDesc.Transform[2][2] = 1;
@@ -159,14 +163,6 @@ namespace Core {
 			memcpy(pMappedData, &instanceDesc, datasize);
 			m_instanceDescs->Unmap(0, nullptr);
 
-			D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC bottomLevelBuildDesc = {};
-
-			bottomLevelBuildDesc.Inputs = bottomLevelInputs;
-			bottomLevelBuildDesc.ScratchAccelerationStructureData = m_scratchResource->GetGPUVirtualAddress();
-			bottomLevelBuildDesc.DestAccelerationStructureData = m_blas->GetGPUVirtualAddress();
-
-			commandList->BuildRaytracingAccelerationStructure(&bottomLevelBuildDesc, 0, nullptr);
-
 			D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC topLevelBuildDesc = {};
 
 			topLevelInputs.InstanceDescs = m_instanceDescs->GetGPUVirtualAddress();
@@ -174,11 +170,10 @@ namespace Core {
 			topLevelBuildDesc.ScratchAccelerationStructureData = m_scratchResource->GetGPUVirtualAddress();
 			topLevelBuildDesc.DestAccelerationStructureData = m_tlas->GetGPUVirtualAddress();
 
-			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_blas.Get()));
-
 			commandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
 
-			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_tlas.Get()));
+			//commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_tlas.Get()));
+			
 			std::wstringstream tlassName;
 			std::wstring name(m_name.begin(), m_name.end());
 			tlassName << L"TLAS - " << name;
@@ -187,10 +182,6 @@ namespace Core {
 
 			m_tlas->SetName(tlassName.str().c_str());
 			m_blas->SetName(blassName.str().c_str());
-			//Renderer::Utility::CreateDescriptorHeap(device, m_blasSrvHeap, Renderer::DescriptorType::SRV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, L"blas Srv Heap");
-			//Renderer::Utility::CreateDescriptorHeap(device, m_tlasSrvHeap, Renderer::DescriptorType::SRV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, L"tlas Srv Heap");
-			//device->CreateShaderResourceView(m_blas.Get(), nullptr, m_blasSrvHeap->GetCPUDescriptorHandleForHeapStart());
-			//device->CreateShaderResourceView(m_tlas.Get(), nullptr, m_tlasSrvHeap->GetCPUDescriptorHandleForHeapStart());
 		}
 
 		D3D12_GPU_VIRTUAL_ADDRESS GetBlas() { return m_blas->GetGPUVirtualAddress(); }

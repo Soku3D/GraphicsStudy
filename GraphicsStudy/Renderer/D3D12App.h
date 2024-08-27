@@ -50,7 +50,7 @@ namespace Renderer {
 
 		virtual void InitScene();
 		void RenderFonts(const std::wstring& output, std::shared_ptr<DirectX::DescriptorHeap>& resourceDescriptors, std::shared_ptr<DirectX::SpriteBatch>& spriteBatch, std::shared_ptr<DirectX::SpriteFont>& font, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
-		void CreateConstantBuffer();
+		virtual void CreateConstantBuffer();
 		void CreateTextures();
 		void CreateCubeMapTextures();
 		void CreateExrTexture();
