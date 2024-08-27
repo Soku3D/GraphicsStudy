@@ -17,7 +17,7 @@ bool Renderer::D3D12PassApp::Initialize()
 	if (!D3D12App::Initialize())
 		return false;
 
-	gui_lightPos = DirectX::SimpleMath::Vector3(-1.f, 1.f, 0.f);
+	gui_lightPos = DirectX::SimpleMath::Vector3(10.f, 0.f, -10.f);
 	InitConstantBuffers();
 
 	return true;
@@ -61,11 +61,11 @@ void Renderer::D3D12PassApp::InitScene()
 	using namespace Core;
 
 	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
-	sphere->Initialize(GeometryGenerator::PbrSphere(1.f, 300, 300, L"worn-painted-metal_albedo.png",
-		1.f, 1.f),
+	sphere->Initialize(GeometryGenerator::PbrSphere(1.f, 100, 100, L"worn-painted-metal_albedo.png",
+		2.f, 2.f),
 		m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
-		false /*AO*/, false /*Metallic*/, false /*Height*/, false /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
+		true /*AO*/, true /*Metallic*/, true /*Height*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
 	m_staticMeshes.push_back(sphere);
 
 	//std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
@@ -562,7 +562,7 @@ void Renderer::D3D12PassApp::PostProcessing(float& deltaTime) {
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 
 	{
-		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 0, 255), cubeMapPassEvent);
+		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 0, 255), postprocessingEvent);
 
 		m_commandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(

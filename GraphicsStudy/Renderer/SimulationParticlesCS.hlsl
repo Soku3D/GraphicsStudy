@@ -11,11 +11,10 @@ static const float deltaTime = 1.f / 300.f;
 void main( uint3 DTid : SV_DispatchThreadID )
 {
     Particle p = particles[DTid.x];
-    //p.position += float3(0.f, -2.f * deltaTime ,0.f);
-    if (p.position.y < -1.f)
-    {
-        p.position.y = 1.1f;
-    }
+    float3 position = p.position;
+    float3 direction = cross(normalize(position), float3(0, 0, -1));
+    p.position += direction * deltaTime;
+    
     particles[DTid.x] = p;
 
 }

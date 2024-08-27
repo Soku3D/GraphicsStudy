@@ -198,7 +198,7 @@
   <ItemGroup>
     <FxCompile Include="TestVS.hlsl" />
     <FxCompile Include="TestPS.hlsl" />
-    <FxCompile Include="TestCS.hlsl" />
+    <FxCompile Include="PostprocessingCS.hlsl" />
     <FxCompile Include="CubeMapVS.hlsl" />
     <FxCompile Include="CubeMapPS.hlsl" />
     <FxCompile Include="CopyVS.hlsl" />

@@ -37,7 +37,8 @@ int main() {
         if (m_app && !m_app->Initialize())
             return 0;
 
-        return m_app->Run();
+        int wParam =  m_app->Run();
+        delete m_app;
     }
     catch (DxException& e)
     {

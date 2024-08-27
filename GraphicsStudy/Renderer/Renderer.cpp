@@ -2,7 +2,7 @@
 
 #include "TestVS.h"
 #include "TestPS.h"
-#include "TestCS.h"
+#include "PostprocessingCS.h"
 
 #include "CubeMapVS.h"
 #include "CubeMapPS.h"
@@ -123,7 +123,7 @@ namespace Renderer {
 
 		// Init Signatures
 		defaultSignature.Initialize(1, 3, 1, &wrapLinearSampler);
-		computeSignature.InitializeUAV(1, 1, 0, nullptr);
+		computeSignature.InitializeUAV(1, 0, 0, nullptr);
 		cubeMapSignature.Initialize(1, 2, 1, &wrapLinearSampler);
 		copySignature.Initialize(1, 0, 1, &wrapLinearSampler);
 
@@ -265,7 +265,7 @@ namespace Renderer {
 		drawNormalPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
 
 		computePso.SetRootSignature(&computeSignature);
-		computePso.SetComputeShader(g_pTestCS, sizeof(g_pTestCS));
+		computePso.SetComputeShader(g_pPostprocessingCS, sizeof(g_pPostprocessingCS));
 
 		msaaPso = defaultPso;
 		msaaPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);

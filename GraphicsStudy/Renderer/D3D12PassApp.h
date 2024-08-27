@@ -53,7 +53,7 @@ namespace Renderer {
 		bool bRenderNormal = true;
 
 		float gui_cubeMapLod = 0.f;
-		float gui_cubeMapExpose = 1.7f;
+		float gui_cubeMapExpose = 2.0f;
 		DirectX::SimpleMath::Vector3 gui_lightPos;
 		float gui_shineness;
 		float gui_diffuse;
@@ -78,6 +78,7 @@ namespace Renderer {
 		const wchar_t* lightPassEvent = L"Light Pass ";
 		const wchar_t* drawNormalPassEvent = L"DrawNormal Pass ";
 		const wchar_t* cubeMapPassEvent = L"CubeMap Pass ";
+		const wchar_t* postprocessingEvent = L"Postprocessing Pass ";
 
 	};
 }

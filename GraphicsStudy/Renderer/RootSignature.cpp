@@ -47,11 +47,11 @@ void Renderer::RootSignature::InitializeSrv(UINT uavCount, UINT srvCount, UINT c
 
 	m_sampler = sampler;
 	if (m_sampler == nullptr) {
-		m_rootSignatureDesc.Init_1_1(paramenters.size(), paramenters.data(), 0, nullptr, rootSignatureFlags);
+		m_rootSignatureDesc.Init_1_1((UINT)paramenters.size(), paramenters.data(), 0, nullptr, rootSignatureFlags);
 	}
 	else
 	{
-		m_rootSignatureDesc.Init_1_1(paramenters.size(), paramenters.data(), 1, m_sampler, rootSignatureFlags);
+		m_rootSignatureDesc.Init_1_1((UINT)paramenters.size(), paramenters.data(), 1, m_sampler, rootSignatureFlags);
 	}
 }
 void Renderer::RootSignature::InitializeUAV(UINT uavCount, UINT cbCount, int numSamplers, D3D12_STATIC_SAMPLER_DESC* sampler) {

@@ -110,7 +110,7 @@ void Renderer::Utility::CreateDescriptorHeap(ComPtr<ID3D12Device5>& deivce,
 	heap->SetName(name.c_str());
 }
 
-void Renderer::Utility::CreateBuffer(ComPtr<ID3D12Device5>& deivce, D3D12_HEAP_TYPE heapType, D3D12_HEAP_FLAGS heapFlag, UINT buffersize, 
+void Renderer::Utility::CreateBuffer(ComPtr<ID3D12Device5>& deivce, D3D12_HEAP_TYPE heapType, D3D12_HEAP_FLAGS heapFlag, UINT64 buffersize, 
 	D3D12_RESOURCE_FLAGS resourceFlag, D3D12_RESOURCE_STATES resourceState, ComPtr<ID3D12Resource>& buffer)
 {
 	ThrowIfFailed(deivce->CreateCommittedResource(

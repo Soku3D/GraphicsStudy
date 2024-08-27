@@ -5,15 +5,15 @@ struct GSOutput
 	float4 pos : SV_POSITION;
 };
 
-[maxvertexcount(60)]
+[maxvertexcount(30)]
 void main(
 	point GSInput input[1],
 	inout TriangleStream<PSInput> output)
 {
     float2 center = input[0].position.xy;
-    float radius = 0.1f;
+    float radius = 0.02f;
     float PIX2 = 3.141592f * 2.f;
-    float delTheta = PIX2 / 20.f;
+    float delTheta = PIX2 / 10.f;
     
     float2x2 mat = float2x2(cos(delTheta), sin(delTheta), 
                             -sin(delTheta), cos(delTheta));

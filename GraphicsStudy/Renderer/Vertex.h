@@ -17,4 +17,8 @@ namespace Renderer {
 		DirectX::SimpleMath::Vector2 texcoord;
 		DirectX::SimpleMath::Vector3 tangent;
 	};
+	struct RaytracingVertex {
+		DirectX::SimpleMath::Vector3 position;
+		DirectX::SimpleMath::Vector3 normal;
+	};
 }

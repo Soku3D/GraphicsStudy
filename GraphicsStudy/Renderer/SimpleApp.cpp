@@ -19,6 +19,7 @@ Renderer::SimpleApp::SimpleApp(const int& width, const int& height):
 
 Renderer::SimpleApp::~SimpleApp()
 {
+    std::cout << "~SimpleApp" << std::endl;
     ImGui_ImplDX12_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
@@ -149,8 +150,7 @@ int Renderer::SimpleApp::Run()
         }
         else {
             m_timer.Tick();
-            float delTime = (float)m_timer.GetDeltaTime();
-            
+            float delTime = min((float)m_timer.GetDeltaTime(), 1/60.f);
             Update(delTime);
             Render(delTime);
             RenderGUI(delTime);
@@ -158,6 +158,8 @@ int Renderer::SimpleApp::Run()
             //std::cout << delTime << ' ' << elapsedTime << '\n';
         }
     }
+
+    std::cout << "QUIT" << std::endl;
     return (int)msg.wParam;
 }
 

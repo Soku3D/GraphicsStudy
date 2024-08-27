@@ -162,7 +162,7 @@ namespace Renderer {
 			D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
 			const std::wstring name = L"");
 
-		static void CreateBuffer(ComPtr<ID3D12Device5>& deivce, D3D12_HEAP_TYPE heapType, D3D12_HEAP_FLAGS heapFlag, UINT buffersize, 
+		static void CreateBuffer(ComPtr<ID3D12Device5>& deivce, D3D12_HEAP_TYPE heapType, D3D12_HEAP_FLAGS heapFlag, UINT64 buffersize, 
 			D3D12_RESOURCE_FLAGS resourceFlag, D3D12_RESOURCE_STATES resourceState, ComPtr<ID3D12Resource>& buffer);
 };
 }

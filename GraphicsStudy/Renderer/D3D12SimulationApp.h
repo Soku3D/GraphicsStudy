@@ -20,6 +20,7 @@ namespace Renderer {
 		void UpdateGUI(float& deltaTime) override;
 		void Render(float& deltaTime) override;
 		void SimulationPass(float& deltaTime);
+		void PostProcessing(float& deltaTime);
 		void SimulationRenderPass(float& deltaTime);
 		void RenderGUI(float& deltaTime) override;
 		
@@ -27,5 +28,7 @@ namespace Renderer {
 		Particles particle;
 		const wchar_t* simulationRenderPassEvent = L"Simulation Render Pass ";
 		const wchar_t* simulationPassEvent = L"Simulation Pass ";
+		const wchar_t* postprocessingEvent = L"Postprocessing Pass ";
+
 	};
 }

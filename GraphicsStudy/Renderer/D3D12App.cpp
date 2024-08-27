@@ -30,6 +30,8 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 
 Renderer::D3D12App::~D3D12App()
 {
+	std::cout << "~D3D12App" << std::endl;
+
 	if (m_device != nullptr)
 		FlushCommandQueue();
 	for (int i = 0; i < m_swapChainCount; i++)
@@ -121,7 +123,6 @@ bool Renderer::D3D12App::InitDirectX()
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 		{
 			debugController->EnableDebugLayer();
-
 			// Enable additional debug layers.
 			dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
 		}

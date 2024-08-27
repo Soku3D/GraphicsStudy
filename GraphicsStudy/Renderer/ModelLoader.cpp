@@ -217,7 +217,7 @@ namespace Renderer {
     BasicMeshData ModelLoader::ProcessMesh(aiMesh* mesh, const aiScene* scene) {
         // Data to fill
         std::vector<Vertex> vertices;
-        std::vector<uint32_t> indices;
+        std::vector<uint16_t> indices;
 
         // Walk through each of the mesh's vertices
         for (UINT i = 0; i < mesh->mNumVertices; i++) {
@@ -279,7 +279,7 @@ namespace Renderer {
     {
         // Data to fill
         std::vector<PbrVertex> vertices;
-        std::vector<uint32_t> indices;
+        std::vector<uint16_t> indices;
 
         // Walk through each of the mesh's vertices
         for (UINT i = 0; i < mesh->mNumVertices; i++) {
