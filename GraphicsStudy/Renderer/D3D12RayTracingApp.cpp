@@ -8,6 +8,7 @@ const wchar_t* c_raygenShaderName = L"MyRaygenShader";
 const wchar_t* c_closestHitShaderName = L"MyClosestHitShader";
 const wchar_t* c_missShaderName = L"MyMissShader";
 
+
 Renderer::D3D12RayTracingApp::D3D12RayTracingApp(const int& width, const int& height)
 	: D3D12App(width, height)
 {
@@ -17,6 +18,11 @@ Renderer::D3D12RayTracingApp::D3D12RayTracingApp(const int& width, const int& he
 	bUseGUI = false;
 	/*m_camera->SetPositionAndDirection(DirectX::SimpleMath::Vector3(0, 0, 0),
 		DirectX::SimpleMath::Vector3(0, 0, 1));*/
+}
+
+Renderer::D3D12RayTracingApp::~D3D12RayTracingApp()
+{
+	std::cout << "~D3D12RayTracingApp" << std::endl;
 }
 
 bool Renderer::D3D12RayTracingApp::Initialize()
@@ -40,6 +46,9 @@ bool Renderer::D3D12RayTracingApp::Initialize()
 
 	CreateConstantBuffer();
 	InitRayTracingScene();
+
+	BuildAccelerationStructures();
+
 	CreateStateObjects();
 	CreateShaderTable();
 
@@ -301,29 +310,118 @@ void Renderer::D3D12RayTracingApp::InitRayTracingScene()
 {
 	using DirectX::SimpleMath::Vector3;
 	std::shared_ptr<Core::StaticMesh> box = std::make_shared<Core::StaticMesh>();
-	box->Initialize(GeometryGenerator::SimpleBox(1.f), m_device, m_commandList, Vector3(0,0,2));
-	box->BuildAccelerationStructures<SimpleVertex>(m_device, m_dxrCommandList);
+	box->Initialize(GeometryGenerator::RTBox(0.5f), m_device, m_commandList);
+	box->BuildAccelerationStructures<RaytracingVertex>(m_device, m_dxrCommandList);
+
+	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
+	sphere->Initialize(GeometryGenerator::RTSphere(0.25f, 100, 100), m_device, m_commandList);
+	sphere->BuildAccelerationStructures<RaytracingVertex>(m_device, m_dxrCommandList);
+
 	m_staticMeshes.push_back(box);
+	m_staticMeshes.push_back(sphere);
 }
 
+// TLAS 생성
 void Renderer::D3D12RayTracingApp::BuildAccelerationStructures()
 {
+	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE
+		| D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
 
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS topLevelInputs = {};
+	topLevelInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+	topLevelInputs.Flags = buildFlags;
+	topLevelInputs.NumDescs = (UINT)m_staticMeshes.size();
+	topLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+
+	for (size_t i = 0; i < m_staticMeshes.size(); i++)
+	{
+		D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
+		instanceDesc.Transform[0][0] = instanceDesc.Transform[1][1] = instanceDesc.Transform[2][2] = 1;
+		instanceDesc.InstanceMask = 0xFF;
+		instanceDesc.InstanceID = i;
+		instanceDesc.AccelerationStructure = m_staticMeshes[i]->GetBlas();
+		m_instances.push_back(instanceDesc);
+	}
+	m_instances[1].Transform[0][3] = 1.f;
+	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelPrebuildInfo = {};
+	m_device->GetRaytracingAccelerationStructurePrebuildInfo(&topLevelInputs, &topLevelPrebuildInfo);
+
+	Utility::CreateBuffer(m_device, D3D12_HEAP_TYPE_DEFAULT, D3D12_HEAP_FLAG_NONE,
+		topLevelPrebuildInfo.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+		m_scratchResource);
+
+	Utility::CreateBuffer(m_device, D3D12_HEAP_TYPE_DEFAULT, D3D12_HEAP_FLAG_NONE,
+		topLevelPrebuildInfo.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+		D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
+		m_tlas);
+
+		
+	UINT64 datasize = (UINT64)(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * m_instances.size());
+
+	Utility::CreateBuffer(m_device, D3D12_HEAP_TYPE_UPLOAD, D3D12_HEAP_FLAG_NONE, datasize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, m_instanceDescs);
+
+	
+	m_instanceDescs->Map(0, nullptr, reinterpret_cast<void**>(&pInstancesMappedData));
+	memcpy(pInstancesMappedData, m_instances.data(), datasize);
+	//m_instanceDescs->Unmap(0, nullptr);
+
+	topLevelBuildDesc = {};
+
+	topLevelInputs.InstanceDescs = m_instanceDescs->GetGPUVirtualAddress();
+	topLevelBuildDesc.Inputs = topLevelInputs;
+	topLevelBuildDesc.ScratchAccelerationStructureData = m_scratchResource->GetGPUVirtualAddress();
+	topLevelBuildDesc.DestAccelerationStructureData = m_tlas->GetGPUVirtualAddress();
+
+	m_dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
+
+	m_dxrCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_tlas.Get()));
+
+	//commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_tlas.Get()));
+
+	std::wstringstream tlassName;
+	tlassName << L"TLAS";
+	m_tlas->SetName(tlassName.str().c_str());
 }
 
 void Renderer::D3D12RayTracingApp::Update(float& deltaTime)
 {
-	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
+	using DirectX::SimpleMath::Vector3;
+	using DirectX::SimpleMath::Vector4;
+	using DirectX::SimpleMath::Matrix;
 
+	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
+	
 	m_sceneCBData.cameraPosition = m_camera->GetPosition();
-	m_sceneCBData.view = m_camera->GetViewMatrix() * m_camera->GetProjMatrix() * DirectX::XMMatrixTranslation(0,0,m_camera->d);
-	m_sceneCBData.view = m_sceneCBData.view.Invert();
-	m_sceneCBData.view = m_sceneCBData.view.Transpose();
+	Matrix projectionToWorld = m_camera->GetViewMatrix() * m_camera->GetProjMatrix() * DirectX::XMMatrixTranslation(0,0,m_camera->d);
+	projectionToWorld = projectionToWorld.Invert();
+	projectionToWorld = projectionToWorld.Transpose();
+	
+	m_sceneCBData.projectionToWorld = projectionToWorld;
+
 	memcpy(pSceneBegin, &m_sceneCBData, sizeof(RaytraingSceneConstantData));
 
 	for (auto& mesh : m_staticMeshes) {
 		mesh->Update(deltaTime);
 	}
+	float delAngle = (3.14f / 3.f) * deltaTime;
+	static float angle = 0.f;
+	angle += delAngle;
+
+	Matrix rotate = DirectX::XMMatrixRotationY(angle);
+	rotate = rotate.Transpose();
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			m_instances[0].Transform[i][j] = rotate.m[i][j];
+
+		}
+	}
+
+	UINT64 datasize = (UINT64)(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * m_instances.size());
+	m_instanceDescs->Map(0, nullptr, reinterpret_cast<void**>(&pInstancesMappedData));
+	memcpy(pInstancesMappedData, m_instances.data(), datasize);
 }
 
 void Renderer::D3D12RayTracingApp::UpdateGUI(float& deltaTime)
@@ -349,6 +447,8 @@ void Renderer::D3D12RayTracingApp::RaytracingPass(float& deltaTime)
 
 	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 0, 255), raytracingPass);
 
+	m_dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
+
 	FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
 	m_dxrCommandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
 	m_dxrCommandList->ResourceBarrier(1,
@@ -362,7 +462,7 @@ void Renderer::D3D12RayTracingApp::RaytracingPass(float& deltaTime)
 	m_dxrCommandList->SetPipelineState1(m_rtpso.Get());
 	m_dxrCommandList->SetDescriptorHeaps(1, m_hdrUavHeap.GetAddressOf());
 	m_dxrCommandList->SetComputeRootDescriptorTable(0, m_hdrUavHeap->GetGPUDescriptorHandleForHeapStart());
-	m_dxrCommandList->SetComputeRootShaderResourceView(1, m_staticMeshes[0]->GetTlas());
+	m_dxrCommandList->SetComputeRootShaderResourceView(1, GetTlas());
 	m_dxrCommandList->SetComputeRootConstantBufferView(2, m_sceneCB->GetGPUVirtualAddress());
 
 	D3D12_DISPATCH_RAYS_DESC dispactchRays = {};

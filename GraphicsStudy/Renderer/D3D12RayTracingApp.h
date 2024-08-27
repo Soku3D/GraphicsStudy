@@ -23,7 +23,7 @@ namespace Renderer {
 	class D3D12RayTracingApp :public D3D12App {
 	public:
 		D3D12RayTracingApp(const int& width, const int& height);
-		virtual ~D3D12RayTracingApp() {};
+		virtual ~D3D12RayTracingApp();
 
 		bool Initialize() override;
 		bool InitGUI() override;
@@ -61,10 +61,16 @@ namespace Renderer {
 		uint8_t* pHitgroupsData;
 		ComPtr<ID3D12DescriptorHeap> m_descriptorHeap;
 
-		std::vector<D3D12_STATE_SUBOBJECT> subObjects;
-		D3D12_STATE_OBJECT_DESC rtStateObject;
-		D3D12_STATE_SUBOBJECT config;
-
+		//std::vector<D3D12_STATE_SUBOBJECT> subObjects;
+		//D3D12_STATE_OBJECT_DESC rtStateObject;
+		//D3D12_STATE_SUBOBJECT config;
+	protected:
+		std::vector< D3D12_RAYTRACING_INSTANCE_DESC> m_instances;
+		ComPtr<ID3D12Resource> m_tlas;
+		ComPtr<ID3D12Resource> m_scratchResource;
+		ComPtr<ID3D12Resource> m_instanceDescs;
+		D3D12_GPU_VIRTUAL_ADDRESS GetTlas() { return m_tlas->GetGPUVirtualAddress(); }
+	protected:
 		ComPtr<ID3D12RootSignature> m_raytracingLocalSignature;
 		const wchar_t* rayGenerationShaderName = L"RayGen";
 		const wchar_t* closestHitShaderName = L"Hit";
@@ -73,9 +79,12 @@ namespace Renderer {
 
 		/*RayGenConstantBufferData m_rayGenCB;*/
 		
-		RaytraingSceneConstantData m_sceneCBData;
+		SceneConstantBuffer m_sceneCBData;
 		uint8_t* pSceneBegin;
 		ComPtr<ID3D12Resource> m_sceneCB;
+
+		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC topLevelBuildDesc;
+		uint8_t* pInstancesMappedData;
 
 	};
 }
