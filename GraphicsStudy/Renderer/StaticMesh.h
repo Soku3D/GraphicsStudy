@@ -91,7 +91,7 @@ namespace Core {
 			geometryDesc.Triangles.VertexCount = static_cast<UINT>(m_vertexGpu->GetDesc().Width) / sizeof(Vertex);
 			geometryDesc.Triangles.VertexBuffer.StartAddress = m_vertexGpu->GetGPUVirtualAddress();
 			geometryDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Vertex);
-			geometryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+			geometryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
 
 			D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO bottomLevelPrebuildInfo = {};
 			D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS bottomLevelInputs = {};
@@ -149,6 +149,8 @@ namespace Core {
 		void UpdateWorldRow(const DirectX::SimpleMath::Matrix& worldRow);
 		void UpdateMaterial(const Material& material);
 		Material& GetMaterial() const;
+		DirectX::SimpleMath::Matrix GetTransformMatrix() { return m_objectConstantData->Model; }
+
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_objectConstantBuffer;
 		ObjectConstantData* m_objectConstantData;

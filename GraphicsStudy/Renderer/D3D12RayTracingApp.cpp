@@ -90,7 +90,7 @@ void Renderer::D3D12RayTracingApp::CreateStateObjects()
 
 	// Shader config
 	auto shaderConfig = raytracingPipeline.CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
-	UINT payloadSize = 4 * sizeof(float);   // float4 color
+	UINT payloadSize = sizeof(RayPayload);   // float4 color
 	UINT attributeSize = 2 * sizeof(float); // float2 barycentrics
 	shaderConfig->Config(payloadSize, attributeSize);
 
@@ -117,7 +117,7 @@ void Renderer::D3D12RayTracingApp::CreateStateObjects()
 	globalRootSignature->SetRootSignature(raytracingGlobalSignature.Get());
 
 	auto pipelineConfig = raytracingPipeline.CreateSubobject<CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT>();
-	UINT maxRecursionDepth = 1; // ~ primary rays only. 
+	UINT maxRecursionDepth = MAX_RAY_RECURSION_DEPTH;
 	pipelineConfig->Config(maxRecursionDepth);
 
 	// Create the state object.
@@ -310,16 +310,16 @@ void Renderer::D3D12RayTracingApp::OnResize()
 void Renderer::D3D12RayTracingApp::InitRayTracingScene()
 {
 	using DirectX::SimpleMath::Vector3;
-	std::shared_ptr<Core::StaticMesh> box = std::make_shared<Core::StaticMesh>();
-	box->Initialize(GeometryGenerator::RTBox(0.5f), m_device, m_commandList);
-	box->BuildAccelerationStructures<RaytracingVertex>(m_device, m_dxrCommandList);
+	std::shared_ptr<Core::StaticMesh> sphere1 = std::make_shared<Core::StaticMesh>();
+	sphere1->Initialize(GeometryGenerator::RTSphere(0.45f, 100, 100), m_device, m_commandList, Vector3(-0.5, 0, 0));
+	sphere1->BuildAccelerationStructures<RaytracingVertex>(m_device, m_dxrCommandList);
 
-	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
-	sphere->Initialize(GeometryGenerator::RTSphere(0.25f, 100, 100), m_device, m_commandList);
-	sphere->BuildAccelerationStructures<RaytracingVertex>(m_device, m_dxrCommandList);
+	std::shared_ptr<Core::StaticMesh> sphere2 = std::make_shared<Core::StaticMesh>();
+	sphere2->Initialize(GeometryGenerator::RTSphere(0.4f, 100, 100), m_device, m_commandList, Vector3(0.5,0,0.f));
+	sphere2->BuildAccelerationStructures<RaytracingVertex>(m_device, m_dxrCommandList);
 
-	m_staticMeshes.push_back(box);
-	m_staticMeshes.push_back(sphere);
+	m_staticMeshes.push_back(sphere1);
+	m_staticMeshes.push_back(sphere2);
 }
 
 // TLAS 생성
@@ -337,13 +337,21 @@ void Renderer::D3D12RayTracingApp::BuildAccelerationStructures()
 	for (size_t i = 0; i < m_staticMeshes.size(); i++)
 	{
 		D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
-		instanceDesc.Transform[0][0] = instanceDesc.Transform[1][1] = instanceDesc.Transform[2][2] = 1;
+		//instanceDesc.Transform[0][0] = instanceDesc.Transform[1][1] = instanceDesc.Transform[2][2] = 1;
+		DirectX::SimpleMath::Matrix Model = m_staticMeshes[i]->GetTransformMatrix();
+		for (int i = 0; i < 3; i++)
+		{
+			for (int j = 0; j <= 3; j++)
+			{
+				instanceDesc.Transform[i][j] = Model.m[i][j];
+			}
+		}
 		instanceDesc.InstanceMask = 0xFF;
 		instanceDesc.InstanceID = i;
 		instanceDesc.AccelerationStructure = m_staticMeshes[i]->GetBlas();
 		m_instances.push_back(instanceDesc);
 	}
-	m_instances[1].Transform[0][3] = 1.f;
+	
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelPrebuildInfo = {};
 	m_device->GetRaytracingAccelerationStructurePrebuildInfo(&topLevelInputs, &topLevelPrebuildInfo);
 
@@ -405,24 +413,22 @@ void Renderer::D3D12RayTracingApp::Update(float& deltaTime)
 	for (auto& mesh : m_staticMeshes) {
 		mesh->Update(deltaTime);
 	}
-	float delAngle = (3.14f / 3.f) * deltaTime;
-	static float angle = 0.f;
-	angle += delAngle;
+	//float delAngle = (3.14f / 3.f) * deltaTime;
+	//static float angle = 0.f;
+	//angle += delAngle;
+	//Matrix rotate = DirectX::XMMatrixRotationY(angle);
+	//rotate = rotate.Transpose();
+	//for (int i = 0; i < 3; i++)
+	//{
+	//	for (int j = 0; j < 3; j++)
+	//	{
+	//		m_instances[0].Transform[i][j] = rotate.m[i][j];
 
-	Matrix rotate = DirectX::XMMatrixRotationY(angle);
-	rotate = rotate.Transpose();
-	for (int i = 0; i < 3; i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			m_instances[0].Transform[i][j] = rotate.m[i][j];
-
-		}
-	}
-
-	UINT64 datasize = (UINT64)(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * m_instances.size());
-	m_instanceDescs->Map(0, nullptr, reinterpret_cast<void**>(&pInstancesMappedData));
-	memcpy(pInstancesMappedData, m_instances.data(), datasize);
+	//	}
+	//}
+	//UINT64 datasize = (UINT64)(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * m_instances.size());
+	//m_instanceDescs->Map(0, nullptr, reinterpret_cast<void**>(&pInstancesMappedData));
+	//memcpy(pInstancesMappedData, m_instances.data(), datasize);
 }
 
 void Renderer::D3D12RayTracingApp::UpdateGUI(float& deltaTime)
@@ -448,7 +454,7 @@ void Renderer::D3D12RayTracingApp::RaytracingPass(float& deltaTime)
 
 	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 0, 255), raytracingPass);
 
-	m_dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
+	// m_dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
 
 	FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
 	m_dxrCommandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);

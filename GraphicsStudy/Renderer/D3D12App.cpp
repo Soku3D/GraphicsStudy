@@ -1443,7 +1443,7 @@ void Renderer::D3D12App::CaptureBufferToPNG() {
 	for (size_t i = 0; i < imageSize; i++)
 	{
 
-		if (m_appName == "PhysxSimulationApp" || m_appName == "PassApp") {
+		if (m_appName == "PhysxSimulationApp" || m_appName == "PassApp" || m_appName == "RaytracingApp") {
 			imageUnorm[i] = (uint8_t)(pow(std::clamp(fp16_ieee_to_fp32_value(imagef16[i]), 0.f, 1.f), invGamma) * 255.f);
 		}
 		else {

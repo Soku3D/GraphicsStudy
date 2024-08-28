@@ -754,7 +754,7 @@ RaytracingMeshData GeometryGenerator::RTSphere(const float& radius, const int& x
 	{
 		return data;
 	}
-	Vector3 basePosition(Vector3(0.f, radius / 2.f, 0.f));
+	Vector3 basePosition(Vector3(0.f, radius, 0.f));
 
 
 	float delYTheta = DirectX::XM_2PI / x;
