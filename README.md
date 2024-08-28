@@ -16,5 +16,5 @@
 
 1. Simulation sample
     
-    <img src="GraphicsStudy/Renderer/Results/SimulationApp/240828-1935.png" alt="simulation" height="200">
+    <img src="GraphicsStudy/Renderer/Results/SimulationApp/240828-201.png" alt="simulation" height="200">
 
