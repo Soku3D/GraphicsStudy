@@ -1437,9 +1437,18 @@ void Renderer::D3D12App::CaptureBufferToPNG() {
 	memcpy(imagef16.data(), pData, dataSize);
 	imageBuffer->Unmap(0, nullptr);
 
+	float gamma = 2.2f;
+	float invGamma = 1.f / gamma;
+
 	for (size_t i = 0; i < imageSize; i++)
 	{
-		imageUnorm[i] = (uint8_t)(fp16_ieee_to_fp32_value(imagef16[i]) * 255.f);
+
+		if (m_appName == "PhysxSimulationApp" || m_appName == "PassApp") {
+			imageUnorm[i] = (uint8_t)(pow(std::clamp(fp16_ieee_to_fp32_value(imagef16[i]), 0.f, 1.f), invGamma) * 255.f);
+		}
+		else {
+			imageUnorm[i] = (uint8_t)(std::clamp(fp16_ieee_to_fp32_value(imagef16[i]), 0.f, 1.f) * 255.f);
+		}
 	}
 	time_t timer = time(NULL);
 	tm* t;
