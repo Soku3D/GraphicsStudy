@@ -23,7 +23,6 @@ namespace Renderer {
 	};
 
 
-
 	class D3D12App :public SimpleApp {
 	public:
 		D3D12App(const int& width, const int& height);
@@ -86,9 +85,11 @@ namespace Renderer {
 		void CopyResourceToSwapChain(float& deltaTime);
 
 		void CreateDepthBuffer(ComPtr<ID3D12Resource>& buffer, D3D12_CPU_DESCRIPTOR_HANDLE& handle, bool bUseMsaa);
-		void CreateResourceBuffer(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_RESOURCE_FLAGS flag);
+		void CreateResourceBuffer(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_RESOURCE_FLAGS flag, 
+			D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATES resourceState = D3D12_RESOURCE_STATE_RENDER_TARGET, bool bUseClear = true);
 		void CreateResourceView(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_CPU_DESCRIPTOR_HANDLE& handle, 
 			ComPtr<ID3D12Device5>& deivce, const Renderer::DescriptorType& type);
+		void CaptureBufferToPNG() override;
 		/*void CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce, ComPtr<ID3D12DescriptorHeap>& heap, const Renderer::DescriptorType& type, int Numdescriptors,
 			D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);*/
 
@@ -225,5 +226,14 @@ namespace Renderer {
 		bool bUseTextureApp = true;
 		bool bUseCubeMapApp = true;
 		bool bUseDefaultSceneApp = true;
+
+	protected:
+		std::vector<uint16_t> imagef16;
+		std::vector<uint8_t> imageUnorm;
+		ComPtr<ID3D12Resource> imageBuffer;
+
+	protected:
+		std::string m_appName = "D3D12App";
+
 	};
 }

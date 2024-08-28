@@ -16,6 +16,7 @@ Renderer::D3D12RayTracingApp::D3D12RayTracingApp(const int& width, const int& he
 	bUseCubeMapApp = false;
 	bUseDefaultSceneApp = false;
 	bUseGUI = false;
+	m_appName = "RaytracingApp";
 	/*m_camera->SetPositionAndDirection(DirectX::SimpleMath::Vector3(0, 0, 0),
 		DirectX::SimpleMath::Vector3(0, 0, 1));*/
 }
@@ -497,6 +498,8 @@ void Renderer::D3D12RayTracingApp::RaytracingPass(float& deltaTime)
 
 	FlushCommandQueue();
 	PIXEndEvent(m_commandQueue.Get());
+
+	//CaptureBufferToPNG();
 }
 void Renderer::D3D12RayTracingApp::RenderCubeMap(float& deltaTime)
 {

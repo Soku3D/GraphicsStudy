@@ -8,6 +8,8 @@ Renderer::D3D12SimulationApp::D3D12SimulationApp(const int& width, const int& he
 	bUseTextureApp = false;
 	bUseCubeMapApp = false;
 	bUseGUI = false;
+
+	m_appName =	"SimulationApp";
 }
 
 bool Renderer::D3D12SimulationApp::Initialize()

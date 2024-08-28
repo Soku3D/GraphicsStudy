@@ -86,5 +86,6 @@ namespace Renderer {
 		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC topLevelBuildDesc;
 		uint8_t* pInstancesMappedData;
 
+
 	};
 }

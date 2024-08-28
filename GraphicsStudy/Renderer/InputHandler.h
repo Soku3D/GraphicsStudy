@@ -33,7 +33,5 @@ private:
 	unsigned int leftKey = unsigned int('A');
 	unsigned int forwardKey = unsigned int('W');
 	unsigned int backwardKey = unsigned int('S');
-
-
-
+	
 };

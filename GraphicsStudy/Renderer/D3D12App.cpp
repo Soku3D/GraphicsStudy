@@ -8,6 +8,15 @@
 #include <DirectXTexEXR.h>
 #include <tuple>
 #include "pix3.h"
+#include <fp16.h>
+#include <ctime>
+
+#pragma warning(disable : 4996)
+
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image.h"
+#include "stb_image_write.h"
 
 using namespace Core;
 
@@ -244,7 +253,21 @@ void Renderer::D3D12App::OnResize()
 
 	CreateResourceBuffer(m_msaaRenderTarget, m_msaaFormat, true, rtvFlag);
 	CreateResourceBuffer(m_hdrRenderTarget, m_hdrFormat, false, uavFlag);
-	m_hdrRenderTarget->SetName(L"HDR RenderTarget");
+	
+	UINT copyBufferSize = m_screenWidth * m_screenHeight * 4 * sizeof(uint16_t);
+	m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(copyBufferSize),
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(&imageBuffer));
+
+	/*CreateResourceBuffer(m_copyBuffer, m_hdrFormat, false, D3D12_RESOURCE_FLAG_NONE, 
+		D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST, false);
+	m_hdrRenderTarget->SetName(L"HDR RenderTarget");*/
+	//UINT dataSize = m_screenWidth * m_screenHeight * 4 * sizeof(uint16_t);
+	//Utility::CreateBuffer(m_device, D3D12_HEAP_TYPE_READBACK, D3D12_HEAP_FLAG_NONE, dataSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, m_copyBuffer);
 
 	CreateResourceView(m_msaaRenderTarget, m_msaaFormat, true, m_msaaRtvHeap->GetCPUDescriptorHandleForHeapStart(), m_device, DescriptorType::RTV);
 	CreateResourceView(m_hdrRenderTarget, m_hdrFormat, false, m_hdrRtvHeap->GetCPUDescriptorHandleForHeapStart(), m_device, DescriptorType::RTV);
@@ -362,7 +385,7 @@ void Renderer::D3D12App::RenderGUI(float& deltaTime)
 		{
 			ThrowIfFailed(m_guiCommandAllocator->Reset());
 			ThrowIfFailed(m_guiCommandList->Reset(m_guiCommandAllocator.Get(), nullptr));
-			
+
 			PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 255, 255), guiPassEvent);
 
 
@@ -571,7 +594,7 @@ void Renderer::D3D12App::CreateDescriptorHeaps() {
 	m_dsvHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	m_csuHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	Utility::CreateDescriptorHeap(m_device, m_swapChainRtvHeap, DescriptorType::RTV, m_swapChainCount,D3D12_DESCRIPTOR_HEAP_FLAG_NONE, L"SwapChain RTV");
+	Utility::CreateDescriptorHeap(m_device, m_swapChainRtvHeap, DescriptorType::RTV, m_swapChainCount, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, L"SwapChain RTV");
 	Utility::CreateDescriptorHeap(m_device, m_dsvHeap, DescriptorType::DSV, 2);
 	Utility::CreateDescriptorHeap(m_device, m_cbvHeap, DescriptorType::CBV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	Utility::CreateDescriptorHeap(m_device, m_msaaRtvHeap, DescriptorType::RTV, 1);
@@ -608,17 +631,17 @@ void Renderer::D3D12App::InitScene()
 	sphere->Initialize(GeometryGenerator::Sphere(0.8f, 100, 100, L"Bricks075A_4K-PNG0_Color.png"),
 		m_device, m_commandList, Vector3(0.f, 0.f, 0.f), Material(), true);*/
 
-	/*std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
-	plane->Initialize(GeometryGenerator::Box(5, 1, 5, L"Bricks075A_4K-PNG_Color.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f));*/
+		/*std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
+		plane->Initialize(GeometryGenerator::Box(5, 1, 5, L"Bricks075A_4K-PNG_Color.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f));*/
 
-	//m_staticMeshes.push_back(sphere);
-	//m_staticMeshes.push_back(plane);
+		//m_staticMeshes.push_back(sphere);
+		//m_staticMeshes.push_back(plane);
 
-	/*std::shared_ptr<StaticMesh> box = std::make_shared<StaticMesh>();
-	box->Initialize(GeometryGenerator::Box(5, L"Bricks075A_4K-PNG_Color.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f),
-		Material(0.7f,1.f,1.f));
+		/*std::shared_ptr<StaticMesh> box = std::make_shared<StaticMesh>();
+		box->Initialize(GeometryGenerator::Box(5, L"Bricks075A_4K-PNG_Color.png"), m_device, m_commandList, Vector3(0.f, -1.f, 0.f),
+			Material(0.7f,1.f,1.f));
 
-	m_staticMeshes.push_back(box);*/
+		m_staticMeshes.push_back(box);*/
 
 	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile_Pbr("box_destruction.fbx", true);
 	std::shared_ptr<Animation::FBX> wallDistructionFbx = std::make_shared<Animation::FBX>();
@@ -1115,13 +1138,13 @@ void  Renderer::D3D12App::CopyResource(ComPtr<ID3D12GraphicsCommandList>& comman
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 
 	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 255, 0), copyResourceEvent);
-	
+
 	D3D12_RESOURCE_BARRIER startBarrierList[2] = {
 		CD3DX12_RESOURCE_BARRIER::Transition(
 			dest,
 			destState,
 			D3D12_RESOURCE_STATE_COPY_DEST),
-		
+
 		CD3DX12_RESOURCE_BARRIER::Transition(
 			src,
 			srcState,
@@ -1132,7 +1155,7 @@ void  Renderer::D3D12App::CopyResource(ComPtr<ID3D12GraphicsCommandList>& comman
 			src,
 			D3D12_RESOURCE_STATE_COPY_SOURCE,
 			srcState),
-	
+
 		CD3DX12_RESOURCE_BARRIER::Transition(
 			dest,
 			D3D12_RESOURCE_STATE_COPY_DEST,
@@ -1171,9 +1194,9 @@ void Renderer::D3D12App::CopyResourceToSwapChain(float& deltaTime)
 		FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
 		if (msaaMode)
 		{
-			ResolveSubresource(m_commandList, HDRRenderTargetBuffer(), MsaaRenderTargetBuffer(), 
+			ResolveSubresource(m_commandList, HDRRenderTargetBuffer(), MsaaRenderTargetBuffer(),
 				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_RENDER_TARGET, 
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
 				DXGI_FORMAT_R16G16B16A16_FLOAT);
 		}
 
@@ -1264,7 +1287,7 @@ void Renderer::D3D12App::CreateDepthBuffer(ComPtr<ID3D12Resource>& buffer,
 }
 
 void Renderer::D3D12App::CreateResourceBuffer(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format,
-	bool bUseMsaa, D3D12_RESOURCE_FLAGS flag)
+	bool bUseMsaa, D3D12_RESOURCE_FLAGS flag, D3D12_HEAP_TYPE heapType, D3D12_RESOURCE_STATES resourceState, bool bUseClear)
 {
 	D3D12_RESOURCE_DESC rtDesc;
 	rtDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -1285,22 +1308,36 @@ void Renderer::D3D12App::CreateResourceBuffer(ComPtr<ID3D12Resource>& buffer, DX
 	rtDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	rtDesc.Flags = flag;
 
-	FLOAT color[4] = { 0.f, 0.f, 0.f, 0.f };
-	D3D12_CLEAR_VALUE optClearRtv;
-	optClearRtv.Format = format;
-	optClearRtv.Color[0] = 0.f;
-	optClearRtv.Color[1] = 0.f;
-	optClearRtv.Color[2] = 0.f;
-	optClearRtv.Color[3] = 0.f;
 
-	ThrowIfFailed(m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
-		&rtDesc,
-		D3D12_RESOURCE_STATE_RENDER_TARGET,
-		&optClearRtv,
-		IID_PPV_ARGS(buffer.ReleaseAndGetAddressOf())));
+	if (bUseClear)
+	{
+		FLOAT color[4] = { 0.f, 0.f, 0.f, 0.f };
+		D3D12_CLEAR_VALUE optClearRtv;
+		optClearRtv.Format = format;
+		optClearRtv.Color[0] = 0.f;
+		optClearRtv.Color[1] = 0.f;
+		optClearRtv.Color[2] = 0.f;
+		optClearRtv.Color[3] = 0.f;
+		ThrowIfFailed(m_device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(heapType),
+			D3D12_HEAP_FLAG_NONE,
+			&rtDesc,
+			resourceState,
+			&optClearRtv,
+			IID_PPV_ARGS(buffer.ReleaseAndGetAddressOf())));
+	}
+	else 
+	{
+		ThrowIfFailed(m_device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(heapType),
+			D3D12_HEAP_FLAG_NONE,
+			&rtDesc,
+			resourceState,
+			nullptr,
+			IID_PPV_ARGS(buffer.ReleaseAndGetAddressOf())));
+	}
 }
+
 
 void Renderer::D3D12App::CreateResourceView(ComPtr<ID3D12Resource>& buffer,
 	DXGI_FORMAT format,
@@ -1353,7 +1390,77 @@ void Renderer::D3D12App::CreateResourceView(ComPtr<ID3D12Resource>& buffer,
 		m_device->CreateShaderResourceView(buffer.Get(), &srvDesc, handle);
 	}
 }
+void Renderer::D3D12App::CaptureBufferToPNG() {
+	
+	m_commandAllocator->Reset();
+	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
+	D3D12_RESOURCE_DESC desc = HDRRenderTargetBuffer()->GetDesc();
+	UINT64 requiredSize = 0;
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+	m_device->GetCopyableFootprints(&desc, 0, 1, 0, &footprint, nullptr, nullptr, &requiredSize);
+	
+	m_commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			HDRRenderTargetBuffer(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+	CD3DX12_TEXTURE_COPY_LOCATION dst(imageBuffer.Get(), footprint);
+	CD3DX12_TEXTURE_COPY_LOCATION src(HDRRenderTargetBuffer(), 0);
+	m_commandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+
+	m_commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			HDRRenderTargetBuffer(),
+			D3D12_RESOURCE_STATE_COPY_SOURCE,
+			D3D12_RESOURCE_STATE_RENDER_TARGET
+			));
+
+	m_commandList->Close();
+	ID3D12CommandList* lists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
+	FlushCommandQueue();
+
+	D3D12_RANGE range(0, 0);
+	void* pData;
+	UINT width = (UINT)HDRRenderTargetBuffer()->GetDesc().Width;
+	UINT height = HDRRenderTargetBuffer()->GetDesc().Height;
+	UINT channels = 4;
+
+	UINT imageSize = width * height * channels;
+	imagef16.resize(imageSize);
+	imageUnorm.resize(imageSize);
+	UINT dataSize = width * height * channels * sizeof(uint16_t);
+
+	imageBuffer->Map(0, &range, reinterpret_cast<void**>(&pData));
+	memcpy(imagef16.data(), pData, dataSize);
+	imageBuffer->Unmap(0, nullptr);
+
+	for (size_t i = 0; i < imageSize; i++)
+	{
+		imageUnorm[i] = (uint8_t)(fp16_ieee_to_fp32_value(imagef16[i]) * 255.f);
+	}
+	time_t timer = time(NULL);
+	tm* t;
+	t = localtime(&timer);
+	std::stringstream ss;
+	ss << "Results/" << m_appName << "/" << t->tm_year - 100;
+	if (t->tm_mon < 9) {
+		ss << '0' << t->tm_mon + 1;
+	}
+	else{
+		ss << t->tm_mon + 1;
+	}
+	if (t->tm_mday < 9)	{
+		ss << '0' << t->tm_mday;
+	}
+	else {
+		ss << t->tm_mday;
+	}
+	ss << '-' << t->tm_hour << t->tm_min << ".png";
+	stbi_write_png(ss.str().c_str(), width, height, 4, imageUnorm.data(), width * channels);
+}
 
 void Renderer::D3D12App::CreateSamplers() {
 	/*D3D12_SAMPLER_DESC clampSampler = {};

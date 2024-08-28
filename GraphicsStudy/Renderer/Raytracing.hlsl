@@ -64,6 +64,6 @@ void Hit(inout Payload payload : SV_Payload, BuiltInAttribute attribute)
 [shader("miss")]
 void Miss(inout Payload payload : SV_Payload)
 {
-    payload.color = 0.f;
+    payload.color = float4(0.5f, 0.8f, 0.8f, 1.f);
 }
 #endif // RAYTRACING_HLSL

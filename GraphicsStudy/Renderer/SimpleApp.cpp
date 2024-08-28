@@ -229,6 +229,9 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 
     case WM_KEYUP:
         m_inputHandler->m_currKeyStates[(int)wParam] = false;
+        if (wParam == 'C') {
+            CaptureBufferToPNG();
+        }
         //m_inputHandler->UpdateKeyUp((int)wParam);
 
     }

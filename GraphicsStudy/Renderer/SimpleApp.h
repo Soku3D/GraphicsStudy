@@ -29,6 +29,7 @@ namespace Renderer {
 
 		virtual void UpdateGUI(float& deltaTime) = 0;
 		virtual void Update(float& deltaTime) = 0;
+		virtual void CaptureBufferToPNG() {};
 	public:
 		HWND m_mainWnd;
 		static SimpleApp* m_pApp;

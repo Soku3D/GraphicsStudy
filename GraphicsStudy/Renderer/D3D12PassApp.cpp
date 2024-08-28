@@ -10,6 +10,7 @@ Renderer::D3D12PassApp::D3D12PassApp(const int& width, const int& height)
 	bRenderMeshes = true;
 	bRenderFbx = false;
 	bRenderNormal = false;
+	m_appName = "PassApp";
 }
 
 bool Renderer::D3D12PassApp::Initialize()
