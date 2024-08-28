@@ -7,10 +7,10 @@
 int main() {
 
     enum AppType {
-        D3D12PassApp,
-        D3D12SimulationApp,
-        D3D12PhysxSimulationApp,
-        D3D12RayTracingApp
+        D3D12PassApp = 1,
+        D3D12SimulationApp = 2,
+        D3D12PhysxSimulationApp = 3,
+        D3D12RayTracingApp = 4
     };
 
     auto currentApp = 2;
