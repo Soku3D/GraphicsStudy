@@ -13,6 +13,7 @@
 1. Raytracing sample
     
     <img src="GraphicsStudy/Renderer/Results/RaytracingApp/240828-1933.png" alt="D3D12 Raytracing" height="200">
+    <img src="GraphicsStudy/Renderer/Results/RaytracingApp/240828-2337.png" height="200">
 
 1. Simulation sample
     
