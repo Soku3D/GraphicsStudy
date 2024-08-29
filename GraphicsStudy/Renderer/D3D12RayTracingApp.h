@@ -6,14 +6,6 @@
 
 namespace Renderer {
 
-	struct ShaderTable {
-		uint8_t m_mappedShaderRecords[D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES];
-	};
-
-	/*struct RayGenConstantBufferData {
-		float localRootSignatureTest[8] = {1,1,0,1,5,6,7,8};
-	};*/
-	
 	struct __declspec(align(256)) RaytraingSceneConstantData {
 		DirectX::SimpleMath::Matrix view = DirectX::SimpleMath::Matrix();
 		DirectX::SimpleMath::Vector3 cameraPosition = DirectX::SimpleMath::Vector3(0,0,0);
@@ -59,6 +51,7 @@ namespace Renderer {
 		uint8_t* pRgsData;
 		uint8_t* pMissData;
 		uint8_t* pHitgroupsData;
+		uint8_t* pHitgroupsData1;
 		ComPtr<ID3D12DescriptorHeap> m_descriptorHeap;
 
 		//std::vector<D3D12_STATE_SUBOBJECT> subObjects;
@@ -74,7 +67,7 @@ namespace Renderer {
 		ComPtr<ID3D12RootSignature> m_raytracingLocalSignature;
 		const wchar_t* rayGenerationShaderName = L"RayGen";
 		const wchar_t* closestHitShaderName = L"Hit";
-		const wchar_t* hitGroupName = L"HitGroup0";
+		std::vector<const wchar_t*> hitGroupNames;
 		const wchar_t* missShaderName = L"Miss";
 
 		/*RayGenConstantBufferData m_rayGenCB;*/
@@ -86,6 +79,9 @@ namespace Renderer {
 		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC topLevelBuildDesc;
 		uint8_t* pInstancesMappedData;
 
+	protected:
+		PrimitiveConstantBuffer m_testCB0;
+		PrimitiveConstantBuffer m_testCB1;
 
 	};
 }

@@ -196,6 +196,7 @@
     <ClInclude Include="Particle.h" />
     <ClInclude Include="PipelineState.h" />
     <ClInclude Include="PrimitiveComponent.h" />
+    <ClInclude Include="RaytracingHelper.h" />
     <ClInclude Include="RaytracingHlslCompat.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RootSignature.h" />
@@ -415,6 +416,7 @@
     <None Include="GeometryPass.hlsli" />
     <None Include="LightPass.hlsli" />
     <None Include="packages.config" />
+    <None Include="RaytracingShaderHelper.hlsli" />
     <None Include="SimulationParticles.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

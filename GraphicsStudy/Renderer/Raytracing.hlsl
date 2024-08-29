@@ -6,8 +6,10 @@
 
 RWTexture2D<float4> output : register(u0);
 RaytracingAccelerationStructure gSceneTlas : register(t0);
+
 ConstantBuffer<SceneConstantBuffer> gSceneCB : register(b0);
 
+ConstantBuffer<PrimitiveConstantBuffer> l_materialCB : register(b1);
 //ConstantBuffer<LocalConstant> g_localCB : register(b0);
 
 struct Ray
@@ -98,14 +100,14 @@ void Hit(inout RayPayload rayPayload : SV_Payload, BuiltInAttribute attribute)
     {
         N = normalize(hitPos - float3(-0.5f, 0, 0));
         float NoL = max(0.f, dot(L, N));
-        albedo = float4(1.f, 0.f, 0.f, 1.f) * NoL;
+        albedo = l_materialCB.color * NoL;
 
     }
     else
     {
         N = normalize(hitPos - float3(0.5f, 0, 0));
         float NoL = max(0.f, dot(L, N));
-        albedo = float4(0.f, 0.f, 1.f, 1.f) * NoL;
+        albedo = l_materialCB.color * NoL;
         
     }
     Ray reflectionRay = { hitPos, reflect(WorldRayDirection(), N) };

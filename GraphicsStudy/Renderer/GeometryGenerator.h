@@ -37,7 +37,7 @@ public:
 	static RaytracingMeshData RTTriangle(const float& length, const std::wstring& texturePath = L"");
 	static RaytracingMeshData RTRectangle(const float& length, const std::wstring& texturePath = L"");
 	static RaytracingMeshData RTBox(const float& length, const std::wstring& texturePath = L"");
-	static RaytracingMeshData RTBox(const float& x, const float& y, const float& z, const std::wstring& texturePath);
+	static RaytracingMeshData RTBox(const float& x, const float& y, const float& z, const std::wstring& texturePath = L"");
 	static RaytracingMeshData RTGrid(const float& xLength, const float& yLength, const int& x, const int& y, const std::wstring& texturePath = L"");
 	static RaytracingMeshData RTCyilinder(const float& topRadius, const float& bottomRadius, const float& height, const int& x, const int& y, const std::wstring& texturePath = L"");
 	static RaytracingMeshData RTSphere(const float& radius, const int& x, const int& y, const std::wstring& texturePath = L"");

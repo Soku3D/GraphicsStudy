@@ -7,11 +7,14 @@
 using namespace DirectX;
 #endif
 
-#define MAX_RAY_RECURSION_DEPTH 10
+#define MAX_RAY_RECURSION_DEPTH 3
 
 struct SceneConstantBuffer {
 	XMMATRIX projectionToWorld;
 	XMVECTOR cameraPosition;
+};
+struct PrimitiveConstantBuffer {
+	XMFLOAT4 color;
 };
 struct RayPayload
 {

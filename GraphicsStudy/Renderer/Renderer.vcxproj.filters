@@ -194,6 +194,9 @@
     <ClInclude Include="RaytracingHlslCompat.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="RaytracingHelper.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="TestVS.hlsl" />
@@ -229,5 +232,6 @@
     <None Include="DrawNormalPass.hlsli" />
     <None Include="packages.config" />
     <None Include="SimulationParticles.hlsli" />
+    <None Include="RaytracingShaderHelper.hlsli" />
   </ItemGroup>
 </Project>

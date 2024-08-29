@@ -3,6 +3,7 @@
 #include "Constants.h"
 #include "Utility.h"
 #include "GeometryGenerator.h"
+#include "RaytracingHlslCompat.h"
 
 namespace Core {
 	class StaticMesh {
@@ -27,6 +28,8 @@ namespace Core {
 		DirectX::SimpleMath::Matrix m_transformFBXAnimation = DirectX::SimpleMath::Matrix();
 		bool m_loopAnimation = false;
 		float frame = 0.f;
+
+		PrimitiveConstantBuffer m_primitiveConstantData;
 
 		template <typename Vertex>
 		void Initialize(MeshData<Vertex>& meshData,
@@ -79,8 +82,11 @@ namespace Core {
 		}
 		template <typename Vertex>
 		void BuildAccelerationStructures(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
-			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4>& commandList)
+			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4>& commandList,
+			const PrimitiveConstantBuffer & constantData = PrimitiveConstantBuffer())
 		{
+			m_primitiveConstantData = constantData;
+
 			D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc;
 			geometryDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
 			geometryDesc.Triangles.IndexBuffer = m_indexGpu->GetGPUVirtualAddress();
