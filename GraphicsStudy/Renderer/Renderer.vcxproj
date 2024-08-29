@@ -105,7 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(OutDir)CompiledShaders\;C:\Users\son\vcpkg\installed\x64-windows\include\physx\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OutDir)CompiledShaders\;C:\Users\son\vcpkg\installed\x64-windows\include\physx\;C:\Users\son97\vcpkg\packages\physx_x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -413,9 +413,9 @@
     <None Include="Common.hlsli" />
     <None Include="DrawNormalPass.hlsli" />
     <None Include="GeometryPass.hlsli" />
-    <None Include="LightPass.hlsli" />
     <None Include="packages.config" />
     <None Include="SimulationParticles.hlsli" />
+    <None Include="LightPass.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
