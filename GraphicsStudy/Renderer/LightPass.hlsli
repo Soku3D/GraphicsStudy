@@ -48,7 +48,7 @@ float3 EnvBRDFIrradiance(float3 irradiance, float3 albedo, float VoH, float meta
 {
     float3 F = FresnelSchrick(F0, VoH);
     
-    // Specluarê°€ ì»¤ì§€ë©´ IrradianceëŠ” ì‘ì•„ì§„ë‹¤ ( ì—ë„ˆì§€ ë³´ì¡´ ë²•ì¹™ )
+    // Specluar°¡ Ä¿Áö¸é Irradiance´Â ÀÛ¾ÆÁø´Ù ( ¿¡³ÊÁö º¸Á¸ ¹ıÄ¢ )
     float3 kd = lerp((1.f - F), 0, metallic);
     
     return kd * irradiance * albedo;
@@ -60,7 +60,7 @@ float3 EnvBRDFSpecular(float3 specluar, float3 albedo, float NoV, float metallic
     return specluar * (LUT.r * F0 + LUT.g);
     //return specluar* (LUT.r * F0 + LUT.g);
     //return (LUT.r * F0);
-    // LUT.g NoVê°€ 0ì¸ ì§€ì ì—ì„œ roughnessê°€ ë‚®ìœ¼ë©´ ë†’ì€ê°’ì„ ê°–ëŠ”ë‹¤
+    // LUT.g NoV°¡ 0ÀÎ ÁöÁ¡¿¡¼­ roughness°¡ ³·À¸¸é ³ôÀº°ªÀ» °®´Â´Ù
     //return LUT.g;
 
 }
@@ -71,7 +71,7 @@ float3 EnvBRDF(float3 irradiance, float3 specluar, float3 albedo, float ao, floa
     float3 specularColor = EnvBRDFSpecular(specluar, albedo, NoV, metallic, roughness, F0);
     //return specularColor;
     
-    return (irradianceColor + specularColor) *ao;
+    return (irradianceColor + specularColor) * ao;
 }
 float3 GGX1(float NoV, float k)
 {
