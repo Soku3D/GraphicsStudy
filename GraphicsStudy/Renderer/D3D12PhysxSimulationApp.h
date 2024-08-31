@@ -9,6 +9,8 @@
 #define PVD_HOST "127.0.0.1"
 #define MAX_NUM_ACTOR_SHAPES 56
 
+#define PX_RELEASE(x)			if(x)	{ x->release(); x = NULL;	}
+
 namespace Renderer {
 
 	using namespace physx;
@@ -17,7 +19,7 @@ namespace Renderer {
 	public:
 		D3D12PhysxSimulationApp(const int& width, const int& height);
 		virtual ~D3D12PhysxSimulationApp() {
-			/*PX_RELEASE(gScene);
+			PX_RELEASE(gScene);
 			PX_RELEASE(gDispatcher);
 			PX_RELEASE(gPhysics);
 			if (gPvd) {
@@ -26,7 +28,7 @@ namespace Renderer {
 				gPvd = NULL;
 				PX_RELEASE(transport);
 			}
-			PX_RELEASE(gFoundation);*/
+			PX_RELEASE(gFoundation);
 		}
 
 		bool Initialize() override;

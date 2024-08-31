@@ -726,12 +726,10 @@ void Renderer::D3D12App::CreateTextures() {
 		return;
 	}
 	m_textureNum = file_count;
-	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	srvHeapDesc.NodeMask = 0;
-	srvHeapDesc.NumDescriptors = file_count;
-	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	m_device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_textureHeap));
+
+	Utility::CreateDescriptorHeap(m_device, m_textureHeap, DescriptorType::SRV, file_count, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	Utility::CreateDescriptorHeap(m_device, m_textureHeapNSV, DescriptorType::SRV, file_count, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
+
 
 	m_textureResources.resize(file_count);
 	m_uploadResources.resize(file_count);
@@ -742,11 +740,16 @@ void Renderer::D3D12App::CreateTextures() {
 			if (fs::is_regular_file(entry.status())) {
 				std::wstring fileName = entry.path().filename().wstring();
 
-				Utility::CreateTextureBuffer(textureBasePath + fileName, m_textureResources[mapIdx], m_textureHeap, m_device, m_commandQueue, m_commandList, mapIdx, m_csuHeapSize, nullptr);
+				Utility::CreateTextureBuffer(textureBasePath + fileName, m_textureResources[mapIdx], m_textureHeapNSV, m_device, m_commandQueue, m_commandList, mapIdx, m_csuHeapSize, nullptr);
 				m_textureMap.emplace(fileName, mapIdx++);
 			}
 		}
 	}
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dest_textureHeapHandle(m_textureHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE srcTextureHandle(m_textureHeapNSV->GetCPUDescriptorHandleForHeapStart());
+
+	UINT numDescriptors = m_textureHeapNSV->GetDesc().NumDescriptors;
+	m_device->CopyDescriptorsSimple(numDescriptors, dest_textureHeapHandle, srcTextureHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
 void Renderer::D3D12App::CreateCubeMapTextures() {

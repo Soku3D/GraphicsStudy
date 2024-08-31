@@ -58,6 +58,34 @@ namespace Core {
 			m_indexBufferView.SizeInBytes = UINT(sizeof(uint16_t) * meshData.m_indices.size());
 			m_objectConstantData = new ObjectConstantData();
 
+			Renderer::Utility::CreateDescriptorHeap(device, m_indicesSrvHeap, Renderer::DescriptorType::SRV, 2,
+				D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+
+			D3D12_SHADER_RESOURCE_VIEW_DESC SRVDescVertex = {};
+
+			SRVDescVertex.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			SRVDescVertex.Buffer.NumElements = (UINT)meshData.m_vertices.size();
+			SRVDescVertex.Buffer.FirstElement = 0;
+			SRVDescVertex.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+			SRVDescVertex.Format = DXGI_FORMAT_UNKNOWN;
+			SRVDescVertex.Buffer.StructureByteStride = sizeof(Vertex);
+			SRVDescVertex.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+			D3D12_SHADER_RESOURCE_VIEW_DESC SRVDescIndex = {};
+			SRVDescIndex.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+			SRVDescIndex.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			SRVDescIndex.Buffer.NumElements = (UINT)(meshData.m_indices.size() / 2);
+			SRVDescIndex.Format = DXGI_FORMAT_R32_TYPELESS;
+			SRVDescIndex.Buffer.StructureByteStride = 0;
+			SRVDescIndex.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
+
+			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_indicesSrvHeap->GetCPUDescriptorHandleForHeapStart());
+			UINT srvIncreaseSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			
+			device->CreateShaderResourceView(m_indexGpu.Get(), &SRVDescIndex, handle);
+			handle.Offset(1, srvIncreaseSize);
+			device->CreateShaderResourceView(m_vertexGpu.Get(), &SRVDescVertex, handle);
+
 			m_objectConstantData->Material = material;
 			m_objectConstantData->bUseAoMap = bUseAoMap;
 			m_objectConstantData->bUseHeightMap = bUseHeightMap;
@@ -157,6 +185,9 @@ namespace Core {
 		Material& GetMaterial() const;
 		DirectX::SimpleMath::Matrix GetTransformMatrix() { return m_objectConstantData->Model; }
 
+		D3D12_GPU_DESCRIPTOR_HANDLE GetIndexGpuHandle() { return m_indicesSrvHeap->GetGPUDescriptorHandleForHeapStart(); }
+		D3D12_CPU_DESCRIPTOR_HANDLE GetIndexCpuHandle() { return m_indicesSrvHeap->GetCPUDescriptorHandleForHeapStart(); }
+
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_objectConstantBuffer;
 		ObjectConstantData* m_objectConstantData;
@@ -177,7 +208,8 @@ namespace Core {
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_instanceDescs;
 
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_blasSrvHeap;
-		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_tlasSrvHeap;
+
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_indicesSrvHeap;
 
 		D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
 		UINT indexCount = 0;

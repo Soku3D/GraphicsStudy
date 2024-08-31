@@ -42,15 +42,16 @@ public:
     void push_back(const ShaderRecord& shaderRecord) {
        
         memcpy(m_mappedShaderRecoreds, shaderRecord.shaderIdentifier.ptr, shaderRecord.shaderIdentifier.size);
-        m_mappedShaderRecoreds += 32;
+        m_mappedShaderRecoreds += shaderRecord.shaderIdentifier.size;
         if (shaderRecord.localRootArguments.size > 0) {
             
             memcpy(m_mappedShaderRecoreds, shaderRecord.localRootArguments.ptr, shaderRecord.localRootArguments.size);
-            m_mappedShaderRecoreds += 32;
+            m_mappedShaderRecoreds += shaderRecord.localRootArguments.size;
         }
     }
     ComPtr<ID3D12Resource> GetResource() { return m_table; }
+    uint8_t* m_mappedShaderRecoreds;
+
 private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_table;
-    uint8_t* m_mappedShaderRecoreds;
 };

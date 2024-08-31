@@ -702,6 +702,7 @@ RaytracingMeshData GeometryGenerator::RTBox(const float& x, const float& y, cons
 		{Vector3(-hX, hY, -hZ), Vector3(-1.f,0.f, 0.f)},
 		{Vector3(-hX, -hY, -hZ), Vector3(-1.f,0.f, 0.f)},
 
+		// 우측 면
 		{Vector3(hX, -hY, -hZ), Vector3(1.f,0.f,0.f)},
 		{Vector3(hX, hY, -hZ), Vector3(1.f,0.f,0.f)},
 		{Vector3(hX, hY, hZ), Vector3(1.f,0.f,0.f)},
@@ -774,9 +775,9 @@ RaytracingMeshData GeometryGenerator::RTSphere(const float& radius, const int& x
 		{
 			RaytracingVertex v;
 			v.position = Vector3::Transform(position, DirectX::XMMatrixRotationY(-delYTheta * i));
-			v.normal = v.position;
-			v.normal.Normalize();
-
+			Vector3 normal = v.position;
+			normal.Normalize();
+			v.normal = normal;
 			vertices.push_back(v);
 		}
 	}

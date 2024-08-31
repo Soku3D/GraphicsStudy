@@ -128,6 +128,7 @@ namespace Renderer {
 		ComPtr<ID3D12DescriptorHeap> m_dsvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_cbvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_textureHeap;
+		ComPtr<ID3D12DescriptorHeap> m_textureHeapNSV;
 		ComPtr<ID3D12DescriptorHeap> m_cubeMapTextureHeapNSV;
 		ComPtr<ID3D12DescriptorHeap> m_cubeMapTextureHeap;
 

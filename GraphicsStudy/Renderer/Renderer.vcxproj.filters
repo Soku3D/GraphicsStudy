@@ -228,10 +228,10 @@
   <ItemGroup>
     <None Include="Common.hlsli" />
     <None Include="GeometryPass.hlsli" />
-    <None Include="LightPass.hlsli" />
     <None Include="DrawNormalPass.hlsli" />
     <None Include="packages.config" />
     <None Include="SimulationParticles.hlsli" />
     <None Include="RaytracingShaderHelper.hlsli" />
+    <None Include="LightPass.hlsli" />
   </ItemGroup>
 </Project>

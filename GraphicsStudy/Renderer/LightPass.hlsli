@@ -48,7 +48,6 @@ float3 EnvBRDFIrradiance(float3 irradiance, float3 albedo, float VoH, float meta
 {
     float3 F = FresnelSchrick(F0, VoH);
     
-    // Specluar가 커지면 Irradiance는 작아진다 ( 에너지 보존 법칙 )
     float3 kd = lerp((1.f - F), 0, metallic);
     
     return kd * irradiance * albedo;
@@ -58,11 +57,6 @@ float3 EnvBRDFSpecular(float3 specluar, float3 albedo, float NoV, float metallic
     float2 LUT = g_brdf.Sample(g_clampLinearSampler, float2(NoV, 1 - roughness)).rg;
     
     return specluar * (LUT.r * F0 + LUT.g);
-    //return specluar* (LUT.r * F0 + LUT.g);
-    //return (LUT.r * F0);
-    // LUT.g NoV가 0인 지점에서 roughness가 낮으면 높은값을 갖는다
-    //return LUT.g;
-
 }
 float3 EnvBRDF(float3 irradiance, float3 specluar, float3 albedo, float ao, float VoH, float NoV, float metallic, float roughness, float3 F0)
 {

@@ -21,6 +21,7 @@ namespace Renderer {
 		bool InitGUI() override;
 		void CreateStateObjects();
 		void CreateShaderTable();
+		void InitializeViews();
 		void CreateConstantBuffer() override;
 		bool InitDirectX() override;
 		void OnResize() override;
@@ -80,8 +81,7 @@ namespace Renderer {
 		uint8_t* pInstancesMappedData;
 
 	protected:
-		PrimitiveConstantBuffer m_testCB0;
-		PrimitiveConstantBuffer m_testCB1;
+		std::vector<ComPtr<ID3D12DescriptorHeap>> m_raytracingHeaps;
 
 	};
 }

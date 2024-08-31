@@ -13,7 +13,7 @@ const wchar_t* c_missShaderName = L"MyMissShader";
 Renderer::D3D12RayTracingApp::D3D12RayTracingApp(const int& width, const int& height)
 	: D3D12App(width, height)
 {
-	bUseTextureApp = false;
+	//bUseTextureApp = false;
 	bUseCubeMapApp = false;
 	bUseDefaultSceneApp = false;
 	bUseGUI = false;
@@ -31,15 +31,19 @@ bool Renderer::D3D12RayTracingApp::Initialize()
 {
 	if (!D3D12App::Initialize())
 		return false;
-
-	
+		
 	// Direct RayTracing Command List 생성
 	ThrowIfFailed(m_commandList->QueryInterface(IID_PPV_ARGS(&m_dxrCommandList)));
 	m_commandAllocator->Reset();
 	m_dxrCommandList->Reset(m_commandAllocator.Get(), nullptr);
 
-	CD3DX12_ROOT_PARAMETER1 rootParameters[1];
-	rootParameters[0].InitAsConstants(SizeOfInUint32(m_testCB0), 1, 0);
+	CD3DX12_DESCRIPTOR_RANGE1 rangeTable[1];
+	rangeTable[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 8, 1);
+	//rangeTable[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);
+
+	CD3DX12_ROOT_PARAMETER1 rootParameters[2];
+	rootParameters[0].InitAsDescriptorTable(ARRAYSIZE(rangeTable), rangeTable);
+	rootParameters[1].InitAsConstants(SizeOfInUint32(PrimitiveConstantBuffer), 1, 0);
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC localRootSignatureDesc(ARRAYSIZE(rootParameters), rootParameters,0,nullptr, D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 	Microsoft::WRL::ComPtr<ID3DBlob> signature;
 	Microsoft::WRL::ComPtr<ID3DBlob> error;
@@ -48,12 +52,13 @@ bool Renderer::D3D12RayTracingApp::Initialize()
 
 	CreateConstantBuffer();
 	InitRayTracingScene();
-
+	InitializeViews();
 	BuildAccelerationStructures();
 
 	CreateStateObjects();
 	CreateShaderTable();
 
+	
 
 	ThrowIfFailed(m_dxrCommandList->Close());
 	ID3D12CommandList* pCmdLists[] = { m_dxrCommandList.Get() };
@@ -71,6 +76,7 @@ bool Renderer::D3D12RayTracingApp::InitGUI()
 		return false;
 	return true;
 }
+
 void Renderer::D3D12RayTracingApp::CreateStateObjects()
 {
 	CD3DX12_STATE_OBJECT_DESC raytracingPipeline{ D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE };
@@ -276,18 +282,55 @@ void Renderer::D3D12RayTracingApp::CreateShaderTable()
 	m_missTable = missShaderTable.GetResource();
 
 	UINT numShaderRecords = (UINT)m_staticMeshes.size();
-	UINT shaderRecordSize = shaderIdentifierSize + 32;
+	UINT shaderRecordSize = 64;
 	
 	ShaderTable hitShaderTable(m_device, numShaderRecords, shaderRecordSize);
 
-	m_testCB0.color = DirectX::SimpleMath::Vector4(1, 0, 0, 1);
-	m_testCB1.color = DirectX::SimpleMath::Vector4(0, 0, 1, 1);
 	for (size_t i = 0; i < hitGroupNames.size(); i++)
 	{
-		hitShaderTable.push_back(ShaderRecord(hitGroupShaderIDs[0], shaderIdentifierSize, &(m_staticMeshes[i]->m_primitiveConstantData), sizeof(PrimitiveConstantBuffer)));
+		//hitShaderTable.push_back(ShaderRecord(hitGroupShaderIDs[i], shaderIdentifierSize, &(m_textureHeap->GetGPUDescriptorHandleForHeapStart().ptr), sizeof(m_textureHeap->GetGPUDescriptorHandleForHeapStart().ptr)));
+		//hitShaderTable.push_back(ShaderRecord(hitGroupShaderIDs[i], 0, &(m_staticMeshes[i]->m_primitiveConstantData), 32));
+		memcpy(hitShaderTable.m_mappedShaderRecoreds, hitGroupShaderIDs[i], shaderIdentifierSize);
+		hitShaderTable.m_mappedShaderRecoreds += 32;
+
+		CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
+		if (m_textureMap.count(m_staticMeshes[i]->GetTexturePath()) > 0) {
+			textureHandle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath()], m_csuHeapSize);
+		}
+		else {
+			textureHandle.Offset(m_textureMap[L"zzzdefaultAlbedo.png"], m_csuHeapSize);
+		}
+
+		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_raytracingHeaps[i]->GetGPUDescriptorHandleForHeapStart());
+		//CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_staticMeshes[i]->GetIndexGpuHandle());
+		memcpy(hitShaderTable.m_mappedShaderRecoreds, &handle.ptr, sizeof(handle.ptr));
+		hitShaderTable.m_mappedShaderRecoreds += 8;
+		memcpy(hitShaderTable.m_mappedShaderRecoreds, &(m_staticMeshes[i]->m_primitiveConstantData), sizeof(PrimitiveConstantBuffer));
+		hitShaderTable.m_mappedShaderRecoreds += 24;
 	}
+	
 	m_hitGroupsTable = hitShaderTable.GetResource();
 
+}
+
+void Renderer::D3D12RayTracingApp::InitializeViews() {
+	m_raytracingHeaps.resize(m_staticMeshes.size());
+	for (size_t i = 0; i < m_staticMeshes.size(); i++)
+	{
+		Utility::CreateDescriptorHeap(m_device, m_raytracingHeaps[i], DescriptorType::SRV, 6 + 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+		CD3DX12_CPU_DESCRIPTOR_HANDLE srvTextureHandle(m_textureHeap->GetCPUDescriptorHandleForHeapStart());
+		CD3DX12_CPU_DESCRIPTOR_HANDLE srvIndexHandle(m_staticMeshes[i]->GetIndexCpuHandle());
+		CD3DX12_CPU_DESCRIPTOR_HANDLE destHandle(m_raytracingHeaps[i]->GetCPUDescriptorHandleForHeapStart());
+		if (m_textureMap.count(m_staticMeshes[i]->GetTexturePath()) > 0) {
+			srvTextureHandle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath()], m_csuHeapSize);
+		}
+		else {
+			srvTextureHandle.Offset(m_textureMap[L"zzzdefaultAlbedo.png"], m_csuHeapSize);
+		}
+		m_device->CopyDescriptorsSimple(2, destHandle, srvIndexHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		destHandle.Offset(2, m_csuHeapSize);
+		m_device->CopyDescriptorsSimple(6, destHandle, srvTextureHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
 }
 
 void Renderer::D3D12RayTracingApp::CreateConstantBuffer()
@@ -321,12 +364,15 @@ void Renderer::D3D12RayTracingApp::InitRayTracingScene()
 {
 	using DirectX::SimpleMath::Vector3;
 	std::shared_ptr<Core::StaticMesh> sphere1 = std::make_shared<Core::StaticMesh>();
-	sphere1->Initialize(GeometryGenerator::RTSphere(0.45f, 100, 100), m_device, m_commandList, Vector3(-0.5, 0, 0));
+	//sphere1->Initialize(GeometryGenerator::RTSphere(0.45f, 100, 100), m_device, m_commandList, Vector3(-0.5, 0, 0));
+	sphere1->Initialize(GeometryGenerator::RTBox(0.4f, L"DiamondPlate008C_4K-PNG_Albedo.png"), m_device, m_commandList, Vector3(-0.5, 0, 0.5));
 	sphere1->BuildAccelerationStructures<RaytracingVertex>(m_device, m_dxrCommandList, PrimitiveConstantBuffer({1,0,0,1}));
 	hitGroupNames.push_back(L"HitGroupSphere1");
 
 	std::shared_ptr<Core::StaticMesh> sphere2 = std::make_shared<Core::StaticMesh>();
-	sphere2->Initialize(GeometryGenerator::RTSphere(0.4f, 100, 100), m_device, m_commandList, Vector3(0.5,0,0.f));
+	//sphere2->Initialize(GeometryGenerator::RTSphere(0.4f, 100, 100), m_device, m_commandList, Vector3(0.5,0,0.f));
+	sphere2->Initialize(GeometryGenerator::RTBox(0.4f, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.5, 0, 0.5));
+
 	sphere2->BuildAccelerationStructures<RaytracingVertex>(m_device, m_dxrCommandList, PrimitiveConstantBuffer({ 0,0, 1,1 }));
 	hitGroupNames.push_back(L"HitGroupSphere2");
 
@@ -495,8 +541,10 @@ void Renderer::D3D12RayTracingApp::RaytracingPass(float& deltaTime)
 	D3D12_DISPATCH_RAYS_DESC dispactchRays = {};
 
 	dispactchRays.RayGenerationShaderRecord.StartAddress = m_rgsTable->GetGPUVirtualAddress();
+	
 	dispactchRays.RayGenerationShaderRecord.SizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
+    //TODO : size
 	dispactchRays.HitGroupTable.StartAddress = m_hitGroupsTable->GetGPUVirtualAddress();
 	dispactchRays.HitGroupTable.SizeInBytes = 128;
 	dispactchRays.HitGroupTable.StrideInBytes = 64 ;

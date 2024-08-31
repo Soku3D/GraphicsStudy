@@ -78,13 +78,15 @@ void Particles::BuildDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device, 
 	Renderer::Utility::CreateDescriptorHeap(device, m_uavHeap, Renderer::DescriptorType::UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
-	SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	SRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+	
 	SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	SRVDesc.Buffer.NumElements = (UINT)m_cpu.size();
+	SRVDesc.Buffer.FirstElement = 0;
+
+	SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+	SRVDesc.Format = DXGI_FORMAT_UNKNOWN;
 	SRVDesc.Buffer.StructureByteStride = sizeof(Particle);
 	SRVDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-	SRVDesc.Buffer.FirstElement = 0;
 
 	D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
 	UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;

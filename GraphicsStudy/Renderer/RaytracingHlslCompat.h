@@ -7,7 +7,7 @@
 using namespace DirectX;
 #endif
 
-#define MAX_RAY_RECURSION_DEPTH 3
+#define MAX_RAY_RECURSION_DEPTH 1
 
 struct SceneConstantBuffer {
 	XMMATRIX projectionToWorld;
@@ -21,5 +21,9 @@ struct RayPayload
 	XMFLOAT4 color;
 	UINT   recursionDepth;
 };
-
+struct RaytracingVertex
+{
+	XMFLOAT3 position;
+	XMFLOAT3 normal;
+};
 #endif // RAYTRACINGHLSLCOMPAT_H
