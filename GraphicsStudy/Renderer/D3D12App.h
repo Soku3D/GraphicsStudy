@@ -193,6 +193,7 @@ namespace Renderer {
 		ComPtr<ID3D12DescriptorHeap> m_hdrRtvHeap;
 		ComPtr<ID3D12DescriptorHeap> m_hdrDepthHeap;
 		ComPtr<ID3D12DescriptorHeap> m_hdrUavHeap;
+		ComPtr<ID3D12DescriptorHeap> m_hdrUavHeapNSV;
 		ComPtr<ID3D12DescriptorHeap> m_hdrSrvHeap;
 
 	protected:

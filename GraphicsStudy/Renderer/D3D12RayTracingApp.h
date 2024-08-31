@@ -82,6 +82,8 @@ namespace Renderer {
 
 	protected:
 		std::vector<ComPtr<ID3D12DescriptorHeap>> m_raytracingHeaps;
+		ComPtr<ID3D12DescriptorHeap> m_raytracingGlobalHeap;
+		const wchar_t* cubeMapTextureName = L"DefaultEnvHDR.dds";
 
 	};
 }

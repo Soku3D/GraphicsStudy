@@ -26,21 +26,22 @@ void Renderer::RootSignature::Initialize(UINT srvCount, UINT uavCount, UINT cbCo
 		m_rootSignatureDesc.Init_1_1(cbCount + 1, paramenters.data(), 1, m_sampler, rootSignatureFlags);
 	}
 }
-void Renderer::RootSignature::InitializeSrv(UINT uavCount, UINT srvCount, UINT cbCount, int numSamplers, D3D12_STATIC_SAMPLER_DESC* sampler)
+void Renderer::RootSignature::InitializeRaytracing(UINT uavCount, UINT srvCount, UINT cbCount, int numSamplers, D3D12_STATIC_SAMPLER_DESC* sampler)
 {
-	
 	rangeTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, uavCount, 0);
+	rangeTable2.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, srvCount, 9);
 
-	paramenters.resize(cbCount + srvCount + uavCount);
-	paramenters[0].InitAsDescriptorTable(uavCount, &rangeTable);
+	paramenters.resize(cbCount + 3);
+	paramenters[0].InitAsDescriptorTable(1, &rangeTable);
+	paramenters[1].InitAsDescriptorTable(1, &rangeTable2);
 
-	for (UINT i = 1; i <= srvCount; i++)
+	for (UINT i = 2; i <= 2; i++)
 	{
-		paramenters[i].InitAsShaderResourceView(i - 1);
+		paramenters[i].InitAsShaderResourceView(i - 2);
 	}
-	for (UINT i = 1 + srvCount; i <= srvCount + cbCount; i++)
+	for (UINT i = 3; i < 3 + cbCount; i++)
 	{
-		paramenters[i].InitAsConstantBufferView(i - 1 - srvCount);
+		paramenters[i].InitAsConstantBufferView(i - 3);
 	}
 	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
 		D3D12_ROOT_SIGNATURE_FLAG_NONE;

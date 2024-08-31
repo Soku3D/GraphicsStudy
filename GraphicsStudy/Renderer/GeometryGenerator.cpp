@@ -685,40 +685,43 @@ RaytracingMeshData GeometryGenerator::RTBox(const float& x, const float& y, cons
 	float hX = x;
 	float hY = y;
 	float hZ = z;
-
+	Vector3 uv0 = Vector3(0, 1, 0);
+	Vector3 uv1 = Vector3(0, 0, 0);
+	Vector3 uv2 = Vector3(1, 0 , 0);
+	Vector3 uv3 = Vector3(1, 1, 0);
 	std::vector<RaytracingVertex> vertices = {
-		{Vector3(-hX, -hY, -hZ), Vector3(0.f,0.f,-1.f)},
-		{Vector3(-hX, hY, -hZ), Vector3(0.f,0.f,-1.f)},
-		{Vector3(hX, hY, -hZ), Vector3(0.f,0.f,-1.f)},
-		{Vector3(hX, -hY, -hZ), Vector3(0.f,0.f,-1.f)},
+		{Vector3(-hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), uv0, uv0},
+		{Vector3(-hX, hY, -hZ), Vector3(0.f,0.f,-1.f), uv1, uv1},
+		{Vector3(hX, hY, -hZ), Vector3(0.f,0.f,-1.f), uv2, uv2},
+		{Vector3(hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), uv3, uv3},
 
-		{Vector3(hX, -hY, hZ), Vector3(0.f,0.f, 1.f)},
-		{Vector3(hX, hY, hZ), Vector3(0.f,0.f, 1.f)},
-		{Vector3(-hX, hY, hZ), Vector3(0.f,0.f, 1.f)},
-		{Vector3(-hX, -hY, hZ), Vector3(0.f,0.f, 1.f)},
+		{Vector3(hX, -hY, hZ), Vector3(0.f,0.f, 1.f), uv0, uv0},
+		{Vector3(hX, hY, hZ), Vector3(0.f,0.f, 1.f), uv1, uv1},
+		{Vector3(-hX, hY, hZ), Vector3(0.f,0.f, 1.f), uv2, uv2},
+		{Vector3(-hX, -hY, hZ), Vector3(0.f,0.f, 1.f), uv3, uv3},
 
-		{Vector3(-hX, -hY, hZ), Vector3(-1.f,0.f,0.f)},
-		{Vector3(-hX, hY, hZ), Vector3(-1.f,0.f, 0.f)},
-		{Vector3(-hX, hY, -hZ), Vector3(-1.f,0.f, 0.f)},
-		{Vector3(-hX, -hY, -hZ), Vector3(-1.f,0.f, 0.f)},
+		{Vector3(-hX, -hY, hZ), Vector3(-1.f,0.f,0.f), uv0, uv0},
+		{Vector3(-hX, hY, hZ), Vector3(-1.f,0.f, 0.f), uv1, uv1},
+		{Vector3(-hX, hY, -hZ), Vector3(-1.f,0.f, 0.f), uv2, uv2},
+		{Vector3(-hX, -hY, -hZ), Vector3(-1.f,0.f, 0.f), uv3, uv3},
 
 		// 우측 면
-		{Vector3(hX, -hY, -hZ), Vector3(1.f,0.f,0.f)},
-		{Vector3(hX, hY, -hZ), Vector3(1.f,0.f,0.f)},
-		{Vector3(hX, hY, hZ), Vector3(1.f,0.f,0.f)},
-		{Vector3(hX, -hY, hZ), Vector3(1.f,0.f,0.f)},
+		{Vector3(hX, -hY, -hZ), Vector3(1.f,0.f,0.f), uv0, uv0},
+		{Vector3(hX, hY, -hZ), Vector3(1.f,0.f,0.f), uv1, uv1},
+		{Vector3(hX, hY, hZ), Vector3(1.f,0.f,0.f), uv2, uv2},
+		{Vector3(hX, -hY, hZ), Vector3(1.f,0.f,0.f), uv3, uv3},
 
 		// 윗 면 (xz 평면)
-		{Vector3(-hX, hY, -hZ), Vector3(0.f, 1.f, 0.f)},
-		{Vector3(-hX, hY, hZ), Vector3(0.f, 1.f, 0.f)},
-		{Vector3(hX, hY, hZ), Vector3(0.f, 1.f, 0.f)},
-		{Vector3(hX, hY, -hZ), Vector3(0.f, 1.f, 0.f)},
+		{Vector3(-hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), uv0, uv0},
+		{Vector3(-hX, hY, hZ), Vector3(0.f, 1.f, 0.f), uv1, uv1},
+		{Vector3(hX, hY, hZ), Vector3(0.f, 1.f, 0.f), uv2, uv2},
+		{Vector3(hX, hY, -hZ), Vector3(0.f, 1.f, 0.f), uv3, uv3},
 
 		// 아랫 면
-		{Vector3(hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f)},
-		{Vector3(hX, -hY, hZ), Vector3(0.f, -1.f, 0.f)},
-		{Vector3(-hX, -hY, hZ), Vector3(0.f, -1.f, 0.f)},
-		{Vector3(-hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f)}
+		{Vector3(hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), uv0, uv0},
+		{Vector3(hX, -hY, hZ), Vector3(0.f, -1.f, 0.f), uv1, uv1},
+		{Vector3(-hX, -hY, hZ), Vector3(0.f, -1.f, 0.f), uv2, uv2},
+		{Vector3(-hX, -hY, -hZ), Vector3(0.f, -1.f, 0.f), uv3, uv3}
 	};
 	std::vector<uint16_t> indices;
 
@@ -734,6 +737,30 @@ RaytracingMeshData GeometryGenerator::RTBox(const float& x, const float& y, cons
 		indices.push_back(idx + 3);
 	}
 	data.Initialize(vertices, indices, texturePath);
+
+	return data;
+}
+
+RaytracingMeshData GeometryGenerator::RTCubeMapBox(const float& length)
+{
+	RaytracingMeshData data;
+
+	float l = length;
+
+	std::vector<RaytracingVertex> vertices = 
+	{
+		{Vector3(-l, -l, -l)},{Vector3(-l, l, -l)},{Vector3(l, l, -l)},{Vector3(l, -l, -l)},
+		{Vector3(-l, -l, l)},{Vector3(-l, l, l)},{Vector3(l, l, l)},{Vector3(l, -l, l)}
+	};
+	std::vector<uint16_t> indices = {
+		0, 2, 1, 0, 3, 2,
+		7, 5, 6, 7, 4, 5,
+		4, 1, 5, 4, 0, 1,
+		4, 3, 0, 4, 7, 3,
+		3, 6, 2, 3, 7, 6,
+		1, 6, 5, 1, 2, 6
+	};
+	data.Initialize(vertices, indices);
 
 	return data;
 }
@@ -778,6 +805,7 @@ RaytracingMeshData GeometryGenerator::RTSphere(const float& radius, const int& x
 			Vector3 normal = v.position;
 			normal.Normalize();
 			v.normal = normal;
+			v.texcoord = Vector3(i * uvDelX, j * uvDelY, 0);
 			vertices.push_back(v);
 		}
 	}
@@ -791,12 +819,19 @@ RaytracingMeshData GeometryGenerator::RTSphere(const float& radius, const int& x
 			indices.push_back(idx + x + 1);
 			indices.push_back(idx);
 			indices.push_back(idx + 1);
+			if (i != 0)
+				ComputeTangent(vertices[idx + x + 1], vertices[idx], vertices[idx + 1]);
 
 			indices.push_back(idx + x + 1);
 			indices.push_back(idx + 1);
 			indices.push_back(idx + x + 2);
+			if (i != y - 1)
+				ComputeTangent(vertices[idx + x + 1], vertices[idx + 1], vertices[idx + x + 2]);
 		}
 	}
+	vertices[0].tangent = Vector3(0.f, 0.f, 1.f);
+	vertices[vertices.size() - 1].tangent = vertices[vertices.size() - 2].tangent;
+
 	data.Initialize(vertices, indices, texturePath);
 
 	return data;
@@ -808,6 +843,32 @@ void GeometryGenerator::ComputeTangent(Renderer::PbrVertex& v0, Renderer::PbrVer
 
 	Vector3 e0 = v1.position - v0.position;
 	Vector3 e1 = (v2.position - v0.position);
+
+	float a = t0.x;
+	float b = t0.y;
+	float c = t1.x;
+	float d = t1.y;
+
+	float det = a * d - b * c;
+	float invDet = 1.f / det;
+
+	Vector3 tangent = invDet * (e0 * d - b * e1);
+	tangent.Normalize();
+
+	v0.tangent = tangent;
+	v1.tangent = tangent;
+	v2.tangent = tangent;
+
+}
+
+void GeometryGenerator::ComputeTangent(RaytracingVertex& v0, RaytracingVertex& v1, RaytracingVertex& v2) {
+	using DirectX::SimpleMath::Vector3;
+
+	Vector3 t0 = Vector3(v1.texcoord) - Vector3(v0.texcoord);
+	Vector3 t1 = Vector3(v2.texcoord) - Vector3(v0.texcoord);
+
+	Vector3 e0 = Vector3(v1.position) - Vector3(v0.position);
+	Vector3 e1 = Vector3(v2.position) - Vector3(v0.position);
 
 	float a = t0.x;
 	float b = t0.y;

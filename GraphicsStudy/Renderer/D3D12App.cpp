@@ -271,8 +271,10 @@ void Renderer::D3D12App::OnResize()
 
 	CreateResourceView(m_msaaRenderTarget, m_msaaFormat, true, m_msaaRtvHeap->GetCPUDescriptorHandleForHeapStart(), m_device, DescriptorType::RTV);
 	CreateResourceView(m_hdrRenderTarget, m_hdrFormat, false, m_hdrRtvHeap->GetCPUDescriptorHandleForHeapStart(), m_device, DescriptorType::RTV);
-	CreateResourceView(m_hdrRenderTarget, m_hdrFormat, false, m_hdrUavHeap->GetCPUDescriptorHandleForHeapStart(), m_device, DescriptorType::UAV);
+	CreateResourceView(m_hdrRenderTarget, m_hdrFormat, false, m_hdrUavHeapNSV->GetCPUDescriptorHandleForHeapStart(), m_device, DescriptorType::UAV);
 	CreateResourceView(m_hdrRenderTarget, m_hdrFormat, false, m_hdrSrvHeap->GetCPUDescriptorHandleForHeapStart(), m_device, DescriptorType::SRV);
+
+	m_device->CopyDescriptorsSimple(1, m_hdrUavHeap->GetCPUDescriptorHandleForHeapStart(), m_hdrUavHeapNSV->GetCPUDescriptorHandleForHeapStart(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE gPass_rtvHeapHandle(m_geometryPassRtvHeap->GetCPUDescriptorHandleForHeapStart());
 	CD3DX12_CPU_DESCRIPTOR_HANDLE gPass_srvHeapHandle(m_geometryPassSrvHeap->GetCPUDescriptorHandleForHeapStart());
@@ -599,6 +601,7 @@ void Renderer::D3D12App::CreateDescriptorHeaps() {
 	Utility::CreateDescriptorHeap(m_device, m_cbvHeap, DescriptorType::CBV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	Utility::CreateDescriptorHeap(m_device, m_msaaRtvHeap, DescriptorType::RTV, 1);
 	Utility::CreateDescriptorHeap(m_device, m_hdrRtvHeap, DescriptorType::RTV, 1);
+	Utility::CreateDescriptorHeap(m_device, m_hdrUavHeapNSV, DescriptorType::UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, L"HDR CPU UAV");
 	Utility::CreateDescriptorHeap(m_device, m_hdrUavHeap, DescriptorType::UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, L"HDR UAV");
 	Utility::CreateDescriptorHeap(m_device, m_hdrSrvHeap, DescriptorType::SRV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	Utility::CreateDescriptorHeap(m_device, m_geometryPassRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
@@ -793,8 +796,6 @@ void Renderer::D3D12App::CreateCubeMapTextures() {
 				Utility::CreateTextureBuffer(cubeMapTextureBasePath + fileName, m_cubeMaptextureResources[mapIdx], m_cubeMapTextureHeapNSV, m_device, m_commandQueue, m_commandList, mapIdx, m_csuHeapSize, &IsCubeMap);
 				//CreateCubeMapBuffer(cubeMapTextureBasePath + fileName, m_cubeMaptextureUpload[mapIdx], m_cubeMaptextureResources[mapIdx], mapIdx);
 				m_cubeTextureMap.emplace(fileName, mapIdx++);
-
-
 			}
 		}
 	}
@@ -1373,9 +1374,6 @@ void Renderer::D3D12App::CreateResourceView(ComPtr<ID3D12Resource>& buffer,
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 		uavDesc.Format = format;
 		uavDesc.Texture2D.MipSlice = 0;
-		uavDesc.Format = format;
-		uavDesc.Texture2D.MipSlice = 0;
-
 		m_device->CreateUnorderedAccessView(buffer.Get(), nullptr, &uavDesc, handle);
 	}
 	else if (type == DescriptorType::SRV) {
@@ -1392,6 +1390,7 @@ void Renderer::D3D12App::CreateResourceView(ComPtr<ID3D12Resource>& buffer,
 		srvDesc.Texture2D.MipLevels = 1;
 		m_device->CreateShaderResourceView(buffer.Get(), &srvDesc, handle);
 	}
+	
 }
 void Renderer::D3D12App::CaptureBufferToPNG() {
 	

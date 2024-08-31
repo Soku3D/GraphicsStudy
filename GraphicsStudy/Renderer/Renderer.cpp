@@ -134,7 +134,7 @@ namespace Renderer {
 		simulationComputeSignature.InitializeUAV(1,0, 0, nullptr);
 		simulationSignature.Initialize(1, 0, 0, nullptr);
 
-		raytracingGlobalSignature.InitializeSrv(1, 1, 1, 1, &wrapLinearSampler);
+		raytracingGlobalSignature.InitializeRaytracing(1, 4, 1, 1, &wrapLinearSampler);
 
 		GraphicsPSO msaaPso("Msaa");
 		GraphicsPSO wirePso("Wire");

@@ -28,6 +28,7 @@ namespace Core {
 		DirectX::SimpleMath::Matrix m_transformFBXAnimation = DirectX::SimpleMath::Matrix();
 		bool m_loopAnimation = false;
 		float frame = 0.f;
+		bool bIsCubeMap = false;
 
 		PrimitiveConstantBuffer m_primitiveConstantData;
 
@@ -58,8 +59,7 @@ namespace Core {
 			m_indexBufferView.SizeInBytes = UINT(sizeof(uint16_t) * meshData.m_indices.size());
 			m_objectConstantData = new ObjectConstantData();
 
-			Renderer::Utility::CreateDescriptorHeap(device, m_indicesSrvHeap, Renderer::DescriptorType::SRV, 2,
-				D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+			Renderer::Utility::CreateDescriptorHeap(device, m_indicesSrvHeap, Renderer::DescriptorType::SRV, 2);
 
 			D3D12_SHADER_RESOURCE_VIEW_DESC SRVDescVertex = {};
 
@@ -99,6 +99,8 @@ namespace Core {
 			m_objectConstantData->invTranspose = m_objectConstantData->Model.Invert();
 			m_objectConstantData->Model = m_objectConstantData->Model.Transpose();
 
+			m_primitiveConstantData.invTranspose = m_objectConstantData->invTranspose;
+
 			std::vector<ObjectConstantData> constantData = { *m_objectConstantData };
 			Renderer::Utility::CreateUploadBuffer(constantData, m_objectConstantBuffer, device);
 			indexCount = (UINT)meshData.m_indices.size();
@@ -110,11 +112,9 @@ namespace Core {
 		}
 		template <typename Vertex>
 		void BuildAccelerationStructures(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
-			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4>& commandList,
-			const PrimitiveConstantBuffer & constantData = PrimitiveConstantBuffer())
+			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4>& commandList)
 		{
-			m_primitiveConstantData = constantData;
-
+			
 			D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc;
 			geometryDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
 			geometryDesc.Triangles.IndexBuffer = m_indexGpu->GetGPUVirtualAddress();
@@ -145,7 +145,7 @@ namespace Core {
 			
 			Renderer::Utility::CreateBuffer(device, D3D12_HEAP_TYPE_DEFAULT, D3D12_HEAP_FLAG_NONE, 
 				buffersize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+				D3D12_RESOURCE_STATE_COMMON,
 				m_scratchResource);
 
 			Renderer::Utility::CreateBuffer(device, D3D12_HEAP_TYPE_DEFAULT, D3D12_HEAP_FLAG_NONE,
@@ -160,6 +160,7 @@ namespace Core {
 
 			commandList->BuildRaytracingAccelerationStructure(&bottomLevelBuildDesc, 0, nullptr);
 			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_blas.Get()));
+			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_scratchResource.Get()));
 
 			std::wstring name(m_name.begin(), m_name.end());
 			std::wstringstream blassName;
@@ -179,6 +180,7 @@ namespace Core {
 		//void UpdateDomain(const float& deltaTime, float gui_edge0, float gui_edge1, float gui_edge2, float gui_edge3, float gui_inside0, float gui_inside1);
 
 		std::wstring GetTexturePath() const { return m_texturePath; }
+		void SetIsCubeMap(bool isCubeMap) { bIsCubeMap = isCubeMap; }
 		void SetTexturePath(std::wstring path) { m_texturePath = path; }
 		void UpdateWorldRow(const DirectX::SimpleMath::Matrix& worldRow);
 		void UpdateMaterial(const Material& material);
