@@ -7,6 +7,9 @@
 #include "Vertex.h"
 #include "MeshData.h"
 #include "AnimationClip.h"
+#include "RaytracingHlslCompat.h"
+
+using RaytracingMeshData = MeshData<RaytracingVertex>;
 
 class GeometryGenerator {
 public:

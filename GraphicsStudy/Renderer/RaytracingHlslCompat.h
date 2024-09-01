@@ -7,7 +7,7 @@
 using namespace DirectX;
 #endif
 
-#define MAX_RAY_RECURSION_DEPTH 1
+#define MAX_RAY_RECURSION_DEPTH 2
 
 struct SceneConstantBuffer {
 	XMMATRIX cubeMapView;

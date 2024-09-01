@@ -104,7 +104,7 @@ void Hit(inout RayPayload rayPayload : SV_Payload, BuiltInAttribute att)
     uint instanceId = InstanceID();
     if (instanceId == 0 )
     {
-        if (rayPayload.recursionDepth == 1)
+        if (rayPayload.recursionDepth == 0)
         {
             rayPayload.color = g_albedoCube.SampleLevel(g_s0, HitWorldPosition(), 0.f);
         }
@@ -140,7 +140,7 @@ void Hit(inout RayPayload rayPayload : SV_Payload, BuiltInAttribute att)
     
         if (dot(reflectionPayload.color, float4(1, 1, 1, 1)) != 0)
         {
-            color = albedo * 0.2f + reflectionPayload.color * 0.8f;
+            color = albedo * 0.8f + reflectionPayload.color * 0.2f;
         }
   
         rayPayload.color = float4(color.rgb, 1.f);

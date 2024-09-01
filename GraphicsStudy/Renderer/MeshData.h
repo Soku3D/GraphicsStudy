@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vertex.h"
-#include "RaytracingHlslCompat.h"
+
 
 template<typename Vertex>
 class MeshData {
@@ -20,7 +20,7 @@ public:
 using SimpleMeshData = MeshData<Renderer::SimpleVertex>;
 using BasicMeshData = MeshData<Renderer::Vertex>;
 using PbrMeshData = MeshData<Renderer::PbrVertex>;
-using RaytracingMeshData = MeshData<RaytracingVertex>;
+
 
 template<typename Vertex>
 inline void MeshData<Vertex>::Initialize(std::vector<Vertex>& vertices, std::vector<uint16_t> indices, const std::wstring& texturePath)
