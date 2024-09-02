@@ -50,17 +50,19 @@ void Renderer::D3D12PhysxSimulationApp::Update(float& deltaTime)
 {
 	if (fire) {
 		auto cameraPos = m_camera->GetPosition();
-		AddBoxMesh(cameraPos);
+		auto cameraForwardDir = m_camera->GetForwardDirection();
+		CreateDynamicSphere(cameraPos, cameraForwardDir , 1.f);
 
 		fire = false;
 		std::cout << "Fire!";
+
 		m_effect.release();
 		m_effect = m_soundEffect->CreateInstance(SoundEffectInstance_Use3D);
 
 		listener.SetPosition(cameraPos);
-		listener.SetOrientation(m_camera->GetForwardDirection(), m_camera->GetUpDirection());
+		listener.SetOrientation(cameraForwardDir, m_camera->GetUpDirection());
 
-		emitter.SetPosition(cameraPos + XMFLOAT3(0, 0, 1.f));
+		emitter.SetPosition(cameraPos + cameraForwardDir);
 
 		m_effect->Play();
 		m_effect->Apply3D(listener, emitter, false);
@@ -220,16 +222,48 @@ void Renderer::D3D12PhysxSimulationApp::InitScene()
 	m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
 }
 
-void Renderer::D3D12PhysxSimulationApp::AddBoxMesh(const DirectX::SimpleMath::Vector3&  position)
+void Renderer::D3D12PhysxSimulationApp::CreateDynamicBox(const DirectX::SimpleMath::Vector3& position, const DirectX::SimpleMath::Vector3& velocityDir, float velocity, float halfExtend)
 {
+	PxTransform t(PxVec3(position.x,position.y, position.z));
+	PxRigidDynamic* dynamic = PxCreateDynamic(*gPhysics, t, PxBoxGeometry(halfExtend, halfExtend, halfExtend), *gMaterial, 10.0f);
+	dynamic->setAngularDamping(0.5f);
+	PxVec3 vel(velocityDir.x, velocityDir.y, velocityDir.z);
+	dynamic->setLinearVelocity(vel * velocity);
+	gScene->addActor(*dynamic);
+
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 
-	PbrMeshData box = GeometryGenerator::PbrBox(0.3f);
+	PbrMeshData box = GeometryGenerator::PbrBox(halfExtend);
 	std::shared_ptr<Core::StaticMesh> boxMesh = std::make_shared<Core::StaticMesh>();
 	boxMesh->Initialize(box, m_device, m_commandList, position,
 		Material(0.7f, 0.3f, 0.5f, 0.3f), false, false, false, false, false, false);
 	m_staticMeshes.push_back(boxMesh);
+
+	ThrowIfFailed(m_commandList->Close());
+	ID3D12CommandList* pCmdLists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(pCmdLists), pCmdLists);
+
+	FlushCommandQueue();
+}
+
+void Renderer::D3D12PhysxSimulationApp::CreateDynamicSphere(const DirectX::SimpleMath::Vector3& position, const DirectX::SimpleMath::Vector3& velocityDir, float velocity, float halfExtend)
+{
+	PxTransform t(PxVec3(position.x, position.y, position.z));
+	PxRigidDynamic* dynamic = PxCreateDynamic(*gPhysics, t, PxSphereGeometry(halfExtend), *gMaterial, 10.0f);
+	dynamic->setAngularDamping(0.5f);
+	PxVec3 vel(velocityDir.x, velocityDir.y, velocityDir.z);
+	dynamic->setLinearVelocity(vel * velocity);
+	gScene->addActor(*dynamic);
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
+
+	PbrMeshData sphere = GeometryGenerator::PbrSphere(halfExtend,100.f,100.f, L"worn-painted-metal_albedo.png");
+	std::shared_ptr<Core::StaticMesh> sphereMesh = std::make_shared<Core::StaticMesh>();
+	sphereMesh->Initialize(sphere, m_device, m_commandList, position,
+		Material(0.7f, 0.3f, 0.5f, 0.3f), true, true, true, true, true, false);
+	m_staticMeshes.push_back(sphereMesh);
 
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* pCmdLists[] = { m_commandList.Get() };

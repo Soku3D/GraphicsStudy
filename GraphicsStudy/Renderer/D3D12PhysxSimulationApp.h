@@ -7,7 +7,7 @@
 #include "pix3.h"
 
 #define PVD_HOST "127.0.0.1"
-#define MAX_NUM_ACTOR_SHAPES 56
+#define MAX_NUM_ACTOR_SHAPES 100
 
 #define PX_RELEASE(x)			if(x)	{ x->release(); x = NULL;	}
 
@@ -54,7 +54,8 @@ namespace Renderer {
 
         void InitScene() override;
 
-		void AddBoxMesh(const DirectX::SimpleMath::Vector3& position = DirectX::SimpleMath::Vector3::Zero);
+		void CreateDynamicBox(const DirectX::SimpleMath::Vector3& position, const DirectX::SimpleMath::Vector3& velocityDir, float velocity = 100.f, float halfExtend = 0.3f);
+		void CreateDynamicSphere(const DirectX::SimpleMath::Vector3& position, const DirectX::SimpleMath::Vector3& velocityDir, float velocity = 100.f, float halfExtend = 0.3f);
 
 		PxDefaultAllocator gAllocator;
 		PxDefaultErrorCallback gErrorCallback;

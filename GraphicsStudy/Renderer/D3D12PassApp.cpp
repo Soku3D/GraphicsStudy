@@ -98,10 +98,6 @@ void Renderer::D3D12PassApp::OnResize()
 void Renderer::D3D12PassApp::Update(float& deltaTime)
 {
 	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
-
-
-	
-
 	{
 		m_passConstantData->ViewMat = m_camera->GetViewMatrix();
 		m_passConstantData->ProjMat = m_camera->GetProjMatrix();
@@ -126,6 +122,20 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
 	}
 
+	using DirectX::SimpleMath::Vector3;
+
+	//static float angle = 0.f;
+
+	//float speed = 1.f * deltaTime;
+	//angle += speed;
+
+	//Vector3 axis(-1, 1, 0);
+	//axis.Normalize();
+
+	//m_objectConstantData->Model = DirectX::XMMatrixRotationAxis(axis, angle);
+	//m_objectConstantData->invTranspose = m_objectConstantData->Model.Invert();
+
+	//m_objectConstantData->Model = m_objectConstantData->Model.Transpose();
 	m_staticMeshes[0]->UpdateMaterial(gui_material);
 	for (auto& mesh : m_staticMeshes) {
 		mesh->Update(deltaTime);
@@ -504,13 +514,13 @@ void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 			<< L", z: " << d.z;*/
 		wss << L"FPS : " << (int)m_timer.GetFrameRate();
 
-		/*if (msaaMode) {
+		if (msaaMode) {
 			RenderFonts(wss.str(), m_msaaResourceDescriptors, m_msaaSpriteBatch, m_msaaFont, m_commandList);
 
 		}
 		else {
 			RenderFonts(wss.str(), m_resourceDescriptors, m_spriteBatch, m_font, m_commandList);
-		}*/
+		}
 		//RenderFonts(wss.str(), m_resourceDescriptors, m_spriteBatch, m_font, m_commandList);
 
 	}

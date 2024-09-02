@@ -48,15 +48,6 @@ void Core::StaticMesh::UpdateAnimation(const float& deltaTime, Animation::Animat
 
 void Core::StaticMesh::Update(const float& deltaTime)
 {
-	/*static float angle = 0.f;
-
-	float speed =1.f *deltaTime;
-	angle += speed;
-	m_objectConstantData->Model = DirectX::XMMatrixRotationZ(angle);
-	m_objectConstantData->invTranspose = m_objectConstantData->Model.Invert();
-
-	m_objectConstantData->Model = m_objectConstantData->Model.Transpose();
-	*/
 	CD3DX12_RANGE range(0, 0);
 	ThrowIfFailed(m_objectConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
 	memcpy(m_pCbvDataBegin, m_objectConstantData, sizeof(ObjectConstantData));
@@ -64,8 +55,13 @@ void Core::StaticMesh::Update(const float& deltaTime)
 
 void Core::StaticMesh::UpdateWorldRow(const DirectX::SimpleMath::Matrix& worldRow)
 {
+	using DirectX::SimpleMath::Matrix;
+	using DirectX::SimpleMath::Vector3;
+
+	Matrix world = worldRow;
 	m_objectConstantData->Model = worldRow.Transpose();
-	m_objectConstantData->invTranspose = m_objectConstantData->Model.Invert();
+	world.Translation(Vector3(0.f));
+	m_objectConstantData->invTranspose = world.Invert();
 }
 
 void Core::StaticMesh::UpdateMaterial(const Material& material)

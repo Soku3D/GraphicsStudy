@@ -52,8 +52,7 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = texture->GetDesc().Format;
 
-	std::wcout << path.c_str() << ' ' << texture->GetDesc().MipLevels << ' ' 
-		<< texture->GetDesc().Format << std::endl;
+	
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
 	if (bIsCubeMap != nullptr && *bIsCubeMap == true) {
@@ -77,6 +76,7 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
 
 	uploadResourcesFinished.wait();
 
+	std::wcout << "Create Texture Complete - " << path.c_str() << '\n';
 }
 
 void Renderer::Utility::CreateDescriptorHeap(ComPtr<ID3D12Device5>& deivce,
