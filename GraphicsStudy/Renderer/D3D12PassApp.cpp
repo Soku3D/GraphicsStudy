@@ -27,33 +27,15 @@ bool Renderer::D3D12PassApp::Initialize()
 void Renderer::D3D12PassApp::InitConstantBuffers() {
 	psConstantData = new CSConstantData();
 	psConstantData->time = 0;
+	Utility::CreateConstantBuffer(m_device, sizeof(CSConstantData), m_csBuffer, &m_pCbufferBegin);
 
-	m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(sizeof(CSConstantData)),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&m_csBuffer));
-
-	D3D12_RANGE range(0, 0);
-	ThrowIfFailed(m_csBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbufferBegin)));
 	memcpy(m_pCbufferBegin, psConstantData, sizeof(CSConstantData));
 
 	m_pCubeMapConstantData = new CubeMapConstantData();
 	m_pCubeMapConstantData->expose = gui_cubeMapExpose;
 	m_pCubeMapConstantData->lodLevel = gui_cubeMapLod;
-	m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(sizeof(CubeMapConstantData)),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&m_cubeMapConstantBuffer));
-
-	ThrowIfFailed(m_cubeMapConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCubeMapCbufferBegin)));
+	Utility::CreateConstantBuffer(m_device, sizeof(CubeMapConstantData), m_cubeMapConstantBuffer, &m_pCubeMapCbufferBegin);
 	memcpy(m_pCubeMapCbufferBegin, m_pCubeMapConstantData, sizeof(CubeMapConstantData));
-
 }
 
 void Renderer::D3D12PassApp::InitScene()
@@ -116,6 +98,9 @@ void Renderer::D3D12PassApp::OnResize()
 void Renderer::D3D12PassApp::Update(float& deltaTime)
 {
 	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
+
+
+	
 
 	{
 		m_passConstantData->ViewMat = m_camera->GetViewMatrix();
@@ -226,7 +211,7 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 	else {
 		msaaMode = false;
 	}
-	
+
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
@@ -357,7 +342,7 @@ void Renderer::D3D12PassApp::LightPass(float& deltaTime) {
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 	{
 		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), lightPassEvent);
-		
+
 		FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
 		//if (msaaMode) {
 		//	m_commandList->ClearRenderTargetView(MsaaRenderTargetView(), clearColor, 0, nullptr);
@@ -507,7 +492,7 @@ void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 	if (bRenderFPS)
 	{
 		DirectX::SimpleMath::Vector3 p = m_camera->GetPosition();
-		DirectX::SimpleMath::Vector3 d = m_camera->GetDirection();
+		DirectX::SimpleMath::Vector3 d = m_camera->GetForwardDirection();
 		std::wstringstream wss;
 
 		/*wss << L"Position - x: " << p.x

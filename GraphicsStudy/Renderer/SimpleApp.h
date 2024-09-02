@@ -47,6 +47,8 @@ namespace Renderer {
 		bool bIsFPSMode = false;
 		bool bUseGUI = true;
 		bool bRenderCubeMap = true;
+		bool lMouseButtonClicked = false;
+		bool fire = false;
 		POINT m_fpsModeCursorPos;
 
 	protected:

@@ -54,6 +54,8 @@ namespace Renderer {
 
         void InitScene() override;
 
+		void AddBoxMesh(const DirectX::SimpleMath::Vector3& position = DirectX::SimpleMath::Vector3::Zero);
+
 		PxDefaultAllocator gAllocator;
 		PxDefaultErrorCallback gErrorCallback;
 		PxFoundation* gFoundation = NULL;
@@ -66,5 +68,8 @@ namespace Renderer {
 
 		const wchar_t* simulationRenderPassEvent = L"Simulation Render Pass ";
 		const wchar_t* simulationPassEvent = L"Simulation Pass ";
+
+	protected:
+		//std::shared_ptr<Core::StaticMesh> m_boxMesh;
 	};
 }

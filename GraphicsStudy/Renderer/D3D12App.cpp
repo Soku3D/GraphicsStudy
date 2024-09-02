@@ -33,8 +33,9 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	textureBasePath = L"Textures/";
 	cubeMapTextureBasePath = L"Textures/CubeMaps/";
 	exrTextureBasePath = L"Textures/HDR/";
-
+	soundBasePath = L"Sounds/SoundLab/Audio/";
 	bUseGUI = true;
+
 }
 
 Renderer::D3D12App::~D3D12App()
@@ -50,11 +51,46 @@ Renderer::D3D12App::~D3D12App()
 	m_msaaDepthStencilBuffer.Reset();
 }
 
+void Renderer::D3D12App::InitSoundEngine()
+{
+	AUDIO_ENGINE_FLAGS eflags = AudioEngine_EnvironmentalReverb
+		| AudioEngine_ReverbUseFilters;
+#ifdef _DEBUG
+	eflags = eflags | AudioEngine_Debug;
+#endif
+	ThrowIfFailed(CoInitializeEx(nullptr, COINIT_MULTITHREADED));
+	m_audioEngine = std::make_unique<DirectX::AudioEngine>(eflags);
+	m_audioEngine->SetReverb(Reverb_ConcertHall);
+	auto path = soundBasePath + L"Explosions/media_Explo4.wav";
+
+	m_soundEffect = std::make_unique<DirectX::SoundEffect>(
+		m_audioEngine.get(),
+		path.c_str());
+
+	listener.Position = XMFLOAT3(0.0f, 0.0f, 0.0f);   
+	listener.OrientFront = XMFLOAT3(0.0f, 0.0f, 1.0f);   
+	listener.OrientTop = XMFLOAT3(0.0f, 1.0f, 0.0f);     
+
+	emitter.Position = XMFLOAT3(2.0f, 0.0f, 0.0f);
+	emitter.OrientTop = XMFLOAT3(0.0f, 1.0f, 0.0f);          
+	emitter.OrientFront = XMFLOAT3(0.0f, 0.0f, 1.0f);    
+	emitter.Velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	emitter.ChannelCount = 1;
+	emitter.InnerRadius = 1.f;
+	emitter.InnerRadiusAngle = X3DAUDIO_PI / 4.0f;
+	emitter.ChannelRadius = 1.0f;
+	emitter.CurveDistanceScaler = 1.0f;
+	emitter.DopplerScaler = 1.0f;
+	m_effect = m_soundEffect->CreateInstance(SoundEffectInstance_Use3D);
+	
+	
+}
 bool Renderer::D3D12App::Initialize()
 {
 	if (!SimpleApp::Initialize()) {
 		return false;
 	}
+	InitSoundEngine();
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 
 	CreateConstantBuffer();

@@ -20,6 +20,7 @@
 #include "d3dx12.h"
 #include "d3d12.h"
 #include "dxgi1_4.h"
+#include <directxtk12/Audio.h>
 
 #include "Camera.h"
 
@@ -164,5 +165,8 @@ namespace Renderer {
 
 		static void CreateBuffer(ComPtr<ID3D12Device5>& deivce, D3D12_HEAP_TYPE heapType, D3D12_HEAP_FLAGS heapFlag, UINT64 buffersize, 
 			D3D12_RESOURCE_FLAGS resourceFlag, D3D12_RESOURCE_STATES resourceState, ComPtr<ID3D12Resource>& buffer);
+
+		static void CreateConstantBuffer(ComPtr<ID3D12Device5>& device, UINT64 buffersize, ComPtr<ID3D12Resource>& buffer, void** pBufferData);
+
 };
 }

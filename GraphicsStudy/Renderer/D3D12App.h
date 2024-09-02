@@ -28,6 +28,8 @@ namespace Renderer {
 		D3D12App(const int& width, const int& height);
 		virtual ~D3D12App();
 
+		void InitSoundEngine();
+
 		virtual bool Initialize();
 		bool InitGUI() override;
 		bool InitDirectX() override;
@@ -153,6 +155,7 @@ namespace Renderer {
 		std::wstring textureBasePath;
 		std::wstring cubeMapTextureBasePath;
 		std::wstring exrTextureBasePath;
+		std::wstring soundBasePath;
 
 		std::vector<ComPtr<ID3D12Resource>> m_textureResources;
 		std::vector<ComPtr<ID3D12Resource>> m_uploadResources;
@@ -237,5 +240,11 @@ namespace Renderer {
 	protected:
 		std::string m_appName = "D3D12App";
 
+	protected:
+		std::unique_ptr<DirectX::AudioEngine> m_audioEngine;
+		std::unique_ptr<DirectX::SoundEffect> m_soundEffect;
+		std::unique_ptr<DirectX::SoundEffectInstance> m_effect;
+		AudioListener listener;
+		AudioEmitter emitter;
 	};
 }

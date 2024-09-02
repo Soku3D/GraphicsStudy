@@ -145,8 +145,12 @@ namespace Core {
 	{
 		return m_position;
 	}
-	DirectX::SimpleMath::Vector3 Camera::GetDirection() const
+	DirectX::SimpleMath::Vector3 Camera::GetForwardDirection() const
 	{
 		return m_forwardDirection;
+	}
+	DirectX::SimpleMath::Vector3 Camera::GetUpDirection() const
+	{
+		return m_upDirection;
 	}
 }

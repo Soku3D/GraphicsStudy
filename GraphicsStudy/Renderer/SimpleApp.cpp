@@ -205,11 +205,22 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
                 ShowCursor(FALSE);
             }         
         }
-        if (raw.data.mouse.usButtonFlags == RI_MOUSE_RIGHT_BUTTON_UP) {
+        else if (raw.data.mouse.usButtonFlags == RI_MOUSE_RIGHT_BUTTON_UP) {
             bIsFPSMode = false;
             ShowCursor(TRUE);
             SetCursorPos(m_fpsModeCursorPos.x, m_fpsModeCursorPos.y);
-
+        }
+        if (raw.data.mouse.usButtonFlags == RI_MOUSE_LEFT_BUTTON_DOWN) {
+            if (!lMouseButtonClicked) {
+                lMouseButtonClicked = true;
+                fire = true;
+            }
+            else {
+                fire = false;
+            }
+        }
+        else if (raw.data.mouse.usButtonFlags == RI_MOUSE_LEFT_BUTTON_UP) {
+            lMouseButtonClicked = false;
         }
         if (m_camera != nullptr && bIsFPSMode)
         {

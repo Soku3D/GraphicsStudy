@@ -40,7 +40,8 @@ namespace Core {
 		DirectX::SimpleMath::Matrix GetProjMatrix() const;
 		DirectX::SimpleMath::Vector3 GetPosition() const;
 
-		DirectX::SimpleMath::Vector3 GetDirection() const;
+		DirectX::SimpleMath::Vector3 GetForwardDirection() const;
+		DirectX::SimpleMath::Vector3 GetUpDirection() const;
 
 	public:
 		virtual void RotateDirection() override;

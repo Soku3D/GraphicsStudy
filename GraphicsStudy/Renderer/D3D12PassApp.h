@@ -39,11 +39,11 @@ namespace Renderer {
 
 	protected:
 		CSConstantData* psConstantData;
-		UINT8* m_pCbufferBegin = nullptr;
+		void* m_pCbufferBegin = nullptr;
 		ComPtr<ID3D12Resource> m_csBuffer;
 
 		CubeMapConstantData* m_pCubeMapConstantData;
-		UINT8* m_pCubeMapCbufferBegin = nullptr;
+		void* m_pCubeMapCbufferBegin = nullptr;
 		ComPtr<ID3D12Resource> m_cubeMapConstantBuffer;
 
 	protected:

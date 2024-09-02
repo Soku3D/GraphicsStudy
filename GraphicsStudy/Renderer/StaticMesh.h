@@ -110,6 +110,7 @@ namespace Core {
 			memcpy(m_pCbvDataBegin, m_objectConstantData, sizeof(ObjectConstantData));
 			m_texturePath = meshData.GetTexturePath();
 		}
+
 		template <typename Vertex>
 		void BuildAccelerationStructures(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4>& commandList)
