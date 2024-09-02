@@ -14,7 +14,8 @@ void Core::StaticMesh::Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3
 	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 	commandList->IASetIndexBuffer(&m_indexBufferView);
 
-	if (bUseModelMat) {
+	if (bUseModelMat) 
+	{
 		commandList->SetGraphicsRootConstantBufferView(1, m_objectConstantBuffer->GetGPUVirtualAddress());
 	}
 	commandList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);

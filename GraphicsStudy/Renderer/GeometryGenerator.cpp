@@ -527,7 +527,7 @@ PbrMeshData GeometryGenerator::PbrSphere(const float& radius, const int& x, cons
 	{
 		return data;
 	}
-	Vector3 basePosition(Vector3(0.f, radius / 2.f, 0.f));
+	Vector3 basePosition(Vector3(0.f, radius, 0.f));
 
 
 	float delYTheta = DirectX::XM_2PI / x;
@@ -552,35 +552,52 @@ PbrMeshData GeometryGenerator::PbrSphere(const float& radius, const int& x, cons
 			v.normal.Normalize();
 
 			vertices.push_back(v);
+			if (j == 0 || j== y)
+				break;
 		}
 	}
 
 	for (int i = 0; i < y; i++)
 	{
-		int index = i * (x + 1);
+		int index = (i -1) * (x + 1) + 1;
 		for (int j = 0; j < x; j++)
 		{
 			int idx = index + j;
-			indices.push_back(idx + x + 1);
-			indices.push_back(idx);
-			indices.push_back(idx + 1);
-			if(i!=0)
-				ComputeTangent(vertices[idx + x + 1], vertices[idx], vertices[idx + 1]);
+			if (i == 0) {
+				indices.push_back(idx + x + 1);
+				indices.push_back(0);
+				indices.push_back(idx + x + 2);
+			}
+			else if (i == y-1) {
+				indices.push_back(index + x + 1);
+				indices.push_back(idx);
+				indices.push_back(idx + 1);			
+			}
+			else {
+				indices.push_back(idx + x + 1);
+				indices.push_back(idx);
+				indices.push_back(idx + 1);
 
-			indices.push_back(idx + x + 1);
-			indices.push_back(idx + 1);
-			indices.push_back(idx + x + 2);
-			if(i!=y-1)
-				ComputeTangent(vertices[idx + x + 1], vertices[idx + 1], vertices[idx + x + 2]);
-
+				indices.push_back(idx + x + 1);
+				indices.push_back(idx + 1);
+				indices.push_back(idx + x + 2);
+			}
+			
 		}
 	}
-	vertices[0].tangent = Vector3(0.f, 0.f, 1.f);
-	vertices[vertices.size() - 1].tangent = vertices[vertices.size() - 2].tangent;
+	for (size_t i = 0; i < indices.size(); i += 3) {
+		int idx0 = indices[i];
+		int idx1 = indices[i + 1];
+		int idx2 = indices[i + 2];
 
-	/*for (auto& v : vertices) {
-		std::cout << v.tangent.x << ' '<< v.tangent.y << ' ' << v.tangent.z << '\n';
-	}*/
+		Renderer::PbrVertex& v0 = vertices[idx0];
+		Renderer::PbrVertex& v1 = vertices[idx1];
+		Renderer::PbrVertex& v2 = vertices[idx2];
+
+		ComputeTangent(v0, v1, v2);  
+	}
+	vertices[0].tangent = Vector3(0, 0, 0);
+	
 	data.Initialize(vertices, indices, texturePath);
 
 	return data;

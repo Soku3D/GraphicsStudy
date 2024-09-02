@@ -20,7 +20,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	m_commandAllocator->Reset();
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
-	particle.Initialize(SIMULATION_PARTICLE_SIZE );
+	particle.Initialize(SIMULATION_PARTICLE_SIZE);
 	particle.BuildResources(m_device, m_commandList);
 
 	m_commandList->Close();

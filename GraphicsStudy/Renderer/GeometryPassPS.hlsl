@@ -12,8 +12,8 @@ PSOutput main(PSInput input)
     {
         float3 normal = g_normal.Sample(g_sampler, input.uv).xyz;
         
-        float3 T = normalize(input.tangent);
         float3 N = normalize(input.normal);
+        float3 T = normalize(input.tangent - dot(input.tangent, N) * N);
         float3 B = normalize(cross(N, T));
         float3x3 transformMat = float3x3(T, B, N);
         normal = mul(normal, transformMat);

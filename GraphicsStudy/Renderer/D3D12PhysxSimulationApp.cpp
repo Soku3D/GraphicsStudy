@@ -51,7 +51,7 @@ void Renderer::D3D12PhysxSimulationApp::Update(float& deltaTime)
 	if (fire) {
 		auto cameraPos = m_camera->GetPosition();
 		auto cameraForwardDir = m_camera->GetForwardDirection();
-		CreateDynamicSphere(cameraPos, cameraForwardDir , 1.f);
+		CreateDynamicSphere(cameraPos, cameraForwardDir , 100.f);
 
 		fire = false;
 		std::cout << "Fire!";
@@ -68,7 +68,7 @@ void Renderer::D3D12PhysxSimulationApp::Update(float& deltaTime)
 		m_effect->Apply3D(listener, emitter, false);
 	}
 
-	gScene->simulate(min(deltaTime, 1 / 300.f));
+	gScene->simulate(min(deltaTime, 1 / 144.f));
 	gScene->fetchResults(true);
 
 	// gScene->getActors()
@@ -198,7 +198,7 @@ void Renderer::D3D12PhysxSimulationApp::InitPhysics(bool interactive)
 
 	std::shared_ptr<Core::StaticMesh> plane = std::make_shared<Core::StaticMesh>();
 
-	plane->Initialize(GeometryGenerator::PbrBox(10, 1, 10, L"DiamondPlate008C_4K-PNG_Albedo.png"), m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, -1.f, -1.f),
+	plane->Initialize(GeometryGenerator::PbrBox(10, 1, 10, L"DiamondPlate008C_4K-PNG_Albedo.dds"), m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, -1.f, -1.f),
 		Material(1.f, 1.f, 1.f, 1.f),
 		true, true, true, true, true, true);
 	m_staticMeshes.push_back(plane);
@@ -259,10 +259,10 @@ void Renderer::D3D12PhysxSimulationApp::CreateDynamicSphere(const DirectX::Simpl
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 
-	PbrMeshData sphere = GeometryGenerator::PbrSphere(halfExtend,100.f,100.f, L"worn-painted-metal_albedo.png");
+	PbrMeshData sphere = GeometryGenerator::PbrSphere(halfExtend,100.f,100.f, L"Metal048C_4K-PNG_Albedo.dds");
 	std::shared_ptr<Core::StaticMesh> sphereMesh = std::make_shared<Core::StaticMesh>();
 	sphereMesh->Initialize(sphere, m_device, m_commandList, position,
-		Material(0.7f, 0.3f, 0.5f, 0.3f), true, true, true, true, true, false);
+		Material(0.7f, 0.3f, 0.5f, 0.3f), true, true, true, false, true, false);
 	m_staticMeshes.push_back(sphereMesh);
 
 	ThrowIfFailed(m_commandList->Close());

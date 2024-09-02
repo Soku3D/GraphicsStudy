@@ -44,7 +44,7 @@ void Renderer::D3D12PassApp::InitScene()
 	using namespace Core;
 
 	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
-	sphere->Initialize(GeometryGenerator::PbrSphere(1.f, 100, 100, L"worn-painted-metal_albedo.png",
+	sphere->Initialize(GeometryGenerator::PbrSphere(1.f, 100, 100, L"worn-painted-metal_albedo.dds",
 		2.f, 2.f),
 		m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
@@ -64,7 +64,7 @@ void Renderer::D3D12PassApp::InitScene()
 		true /*loopAnimation*/,
 		1.5f /*animationSpeed*/,
 		Vector3(0.f, 1.f, 0.f),
-		L"uvtest_DefaultMaterial_Albedo.png");
+		L"uvtest_DefaultMaterial_Albedo.dds");
 
 	m_fbxList.push_back(wallDistructionFbx);
 
