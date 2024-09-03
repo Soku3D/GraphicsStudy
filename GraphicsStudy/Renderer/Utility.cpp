@@ -75,8 +75,10 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
 		commandQueue.Get());
 
 	uploadResourcesFinished.wait();
+	std::wstringstream wss;
 
-	std::wcout << "Create Texture Complete - " << path.c_str() << '\n';
+	wss << "Create Texture Complete - " << path.c_str() << '\n';
+	std::wcout << wss.str();
 }
 
 void Renderer::Utility::CreateDescriptorHeap(ComPtr<ID3D12Device5>& deivce,

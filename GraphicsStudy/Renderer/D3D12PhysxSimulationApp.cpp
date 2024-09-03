@@ -89,16 +89,21 @@ void Renderer::D3D12PhysxSimulationApp::Update(float& deltaTime)
 		const PxU32 nbShapes = actors[i]->getNbShapes();
 		PX_ASSERT(nbShapes <= MAX_NUM_ACTOR_SHAPES);
 		actors[i]->getShapes(shapes, nbShapes);
+		
 		for (PxU32 j = 0; j < nbShapes; j++) {
 			const PxMat44 shapePose(
 				PxShapeExt::getGlobalPose(*shapes[j], *actors[i]));
-
+			
 			if (actors[i]->is<PxRigidDynamic>()) {
 
 				bool sleeping = actors[i]->is<PxRigidDynamic>() &&
 					actors[i]->is<PxRigidDynamic>()->isSleeping();
 				if (sleeping) {
 					m_staticMeshes[i]->UpdateMaterial(Material(1.f, 0.2f, 1.f, 0.3f));
+				}
+				else
+				{
+					m_staticMeshes[i]->UpdateMaterial(Material(0.7f, 0.3f, 0.5f, 0.3f));
 				}
 				m_staticMeshes[i]->UpdateWorldRow(DirectX::SimpleMath::Matrix(shapePose.front()) *
 					DirectX::SimpleMath::Matrix::CreateScale(1.00f));
@@ -122,6 +127,12 @@ void Renderer::D3D12PhysxSimulationApp::RenderGUI(float& deltaTime)
 {
 	D3D12PassApp::RenderGUI(deltaTime);
 }
+
+void Renderer::D3D12PhysxSimulationApp::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
+{
+	std::cout << "Pairs : " << nbPairs << '\n';
+}
+
 
 physx::PxRigidDynamic* Renderer::D3D12PhysxSimulationApp::createDynamic(const PxTransform& t, const PxGeometry& geometry, const PxVec3& m_velocity)
 {
@@ -205,6 +216,7 @@ void Renderer::D3D12PhysxSimulationApp::InitPhysics(bool interactive)
 
 	CreateStack(PxTransform(PxVec3(0.f, 2.f, 0.f)), 10, 0.3f);
 
+	gScene->setSimulationEventCallback(this);
 }
 
 void Renderer::D3D12PhysxSimulationApp::InitScene()
@@ -259,7 +271,7 @@ void Renderer::D3D12PhysxSimulationApp::CreateDynamicSphere(const DirectX::Simpl
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 
-	PbrMeshData sphere = GeometryGenerator::PbrSphere(halfExtend,100.f,100.f, L"Metal048C_4K-PNG_Albedo.dds");
+	PbrMeshData sphere = GeometryGenerator::PbrSphere(halfExtend, 100, 100, L"Metal048C_4K-PNG_Albedo.dds");
 	std::shared_ptr<Core::StaticMesh> sphereMesh = std::make_shared<Core::StaticMesh>();
 	sphereMesh->Initialize(sphere, m_device, m_commandList, position,
 		Material(0.7f, 0.3f, 0.5f, 0.3f), true, true, true, false, true, false);

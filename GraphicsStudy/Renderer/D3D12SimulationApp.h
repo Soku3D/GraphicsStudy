@@ -23,7 +23,6 @@ namespace Renderer {
 		void PostProcessing(float& deltaTime);
 		void SimulationRenderPass(float& deltaTime);
 		void RenderGUI(float& deltaTime) override;
-		
 	protected:
 		Particles particle;
 		const wchar_t* simulationRenderPassEvent = L"Simulation Render Pass ";

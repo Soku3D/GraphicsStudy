@@ -15,7 +15,7 @@ namespace Renderer {
 
 	using namespace physx;
 
-	class D3D12PhysxSimulationApp :public D3D12PassApp {
+	class D3D12PhysxSimulationApp :public D3D12PassApp, public PxSimulationEventCallback {
 	public:
 		D3D12PhysxSimulationApp(const int& width, const int& height);
 		virtual ~D3D12PhysxSimulationApp() {
@@ -41,6 +41,8 @@ namespace Renderer {
 		void Render(float& deltaTime) override;
 		void RenderGUI(float& deltaTime) override;
 
+		virtual void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override;
+		
 	protected:
 		
 
