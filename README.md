@@ -24,17 +24,10 @@
 ### Windows
 ##### Installing Dependencies
 ```
-vcpkg install directxtex:x64-windows
-vcpkg install directxtex[dx11]:x64-windows
-vcpkg install directxtex[openexr]:x64-windows
-vcpkg install directxtk12:x64-windows
-vcpkg install directxtk12[xaudio2-9]:x64-windows
-vcpkg install directxtk:x64-windows
-vcpkg install directxtk[xaudio2-9]:x64-windows
+vcpkg install directxtex[core,dx11,openexr]:x64-windows
+vcpkg install directxtk12[core,xaudio2-9]:x64-windows
+vcpkg install directxtk[core,xaudio2-9]:x64-windows
 vcpkg install fp16:x64-windows glm:x64-windows
-vcpkg install imgui:x64-windows
-vcpkg install imgui[dx11-binding]:x64-windows
-vcpkg install imgui[dx12-binding]:x64-windows
-vcpkg install imgui[win32-binding]:x64-windows
+vcpkg install imgui[core,dx11-binding,dx12-binding,win32-binding]:x64-windows
 vcpkg install assimp:x64-windows
 ``` 
