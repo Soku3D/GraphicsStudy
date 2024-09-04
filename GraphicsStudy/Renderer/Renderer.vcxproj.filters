@@ -224,6 +224,9 @@
     <FxCompile Include="SimulationParticlesGS.hlsl" />
     <FxCompile Include="GeometryPassVS.hlsl" />
     <FxCompile Include="Raytracing.hlsl" />
+    <FxCompile Include="RenderBoundingBoxPassGS.hlsl" />
+    <FxCompile Include="RenderBoundingBoxPassVS.hlsl" />
+    <FxCompile Include="RenderBoundingBoxPassPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />
@@ -233,5 +236,6 @@
     <None Include="SimulationParticles.hlsli" />
     <None Include="RaytracingShaderHelper.hlsli" />
     <None Include="LightPass.hlsli" />
+    <None Include="RenderBoundingBoxPass.hlsli" />
   </ItemGroup>
 </Project>

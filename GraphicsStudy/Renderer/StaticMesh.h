@@ -175,6 +175,7 @@ namespace Core {
 		//D3D12_GPU_VIRTUAL_ADDRESS GetTlas() { return m_tlas->GetGPUVirtualAddress(); }
 		void Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat = true);
 		void RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat);
+		void RenderBoundingBox(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 		void UpdateAnimation(const float& deltaTime, Animation::AnimationData& animationData);
 		void Update(const float& deltaTime);
 
@@ -183,6 +184,7 @@ namespace Core {
 		std::wstring GetTexturePath() const { return m_texturePath; }
 		void SetIsCubeMap(bool isCubeMap) { bIsCubeMap = isCubeMap; }
 		void SetTexturePath(std::wstring path) { m_texturePath = path; }
+		void SetBoundingBoxHalfLength(const float& halfLength) { m_objectConstantData->boundingBoxHalfLength = halfLength; }
 		void UpdateWorldRow(const DirectX::SimpleMath::Matrix& worldRow);
 		void UpdateMaterial(const Material& material);
 		Material& GetMaterial() const;

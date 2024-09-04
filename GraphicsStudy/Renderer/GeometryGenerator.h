@@ -27,7 +27,8 @@ public:
 
 	static PbrMeshData PbrRectangle(const float& length, const std::wstring& texturePath = L"");
 	static PbrMeshData PbrBox(const float& length, const std::wstring& texturePath = L"");
-	static PbrMeshData PbrBox(const float& x, const float& y, const float& z, const std::wstring& texturePath);
+	static PbrMeshData PbrBox(const float& x, const float& y, const float& z, const std::wstring& texturePath
+				, const float& UVx = 1.f, const float& UVy = 1.f, const float& UVz = 1.f );
 	static PbrMeshData PbrUseTesslationBox(const float& length, const std::wstring& texturePath = L"");
 	static PbrMeshData PbrUseTesslationBox(const float& x, const float& y, const float& z, const std::wstring& texturePath, const float maxUVX = 1.f, const float maxUVY = 1.f, const float maxUVZ = 1.f);
 	static PbrMeshData PbrGrid(const float& xLength, const float& yLength, const int& x, const int& y, const std::wstring& texturePath = L"");

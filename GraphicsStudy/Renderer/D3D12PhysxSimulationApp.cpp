@@ -17,10 +17,10 @@ static physx::PxFilterFlags contactReportFilterShader(physx::PxFilterObjectAttri
 	PX_UNUSED(constantBlock);
 
 	// all initial and persisting reports for everything, with per-point data
-	pairFlags = PxPairFlag::eSOLVE_CONTACT | 
-		PxPairFlag::eDETECT_DISCRETE_CONTACT | 
-		PxPairFlag::eNOTIFY_TOUCH_FOUND	|
-		PxPairFlag::eNOTIFY_TOUCH_PERSISTS | 
+	pairFlags = PxPairFlag::eSOLVE_CONTACT |
+		PxPairFlag::eDETECT_DISCRETE_CONTACT |
+		PxPairFlag::eNOTIFY_TOUCH_FOUND |
+		PxPairFlag::eNOTIFY_TOUCH_PERSISTS |
 		PxPairFlag::eNOTIFY_CONTACT_POINTS;
 
 	return PxFilterFlag::eDEFAULT;
@@ -76,21 +76,11 @@ void Renderer::D3D12PhysxSimulationApp::Update(float& deltaTime)
 	if (fire) {
 		auto cameraPos = m_camera->GetPosition();
 		auto cameraForwardDir = m_camera->GetForwardDirection();
-		CreateDynamicSphere(cameraPos, cameraForwardDir , 100.f);
+		CreateDynamicSphere(cameraPos, cameraForwardDir, 100.f);
 
 		fire = false;
-		std::cout << "Fire!";
-
-		m_effect.release();
-		m_effect = m_soundEffect->CreateInstance(SoundEffectInstance_Use3D);
-
-		listener.SetPosition(cameraPos);
-		listener.SetOrientation(cameraForwardDir, m_camera->GetUpDirection());
-
-		emitter.SetPosition(cameraPos + cameraForwardDir);
-
-		m_effect->Play();
-		m_effect->Apply3D(listener, emitter, false);
+		//std::cout << "Fire!";
+		PlaySoundEffect("Shoting", m_camera->GetPosition() + m_camera->GetForwardDirection(), 0.3f);
 	}
 
 	gScene->simulate(min(deltaTime, 1 / 144.f));
@@ -98,6 +88,12 @@ void Renderer::D3D12PhysxSimulationApp::Update(float& deltaTime)
 
 	// gScene->getActors()
 	// PxGeometryType::eBOX: , case PxGeometryType::eSPHERE:
+
+	for (size_t i = 0; i < gContactPositions.size(); ++i) 
+	{
+		PlaySoundEffect("HitGround", DirectX::SimpleMath::Vector3(gContactPositions[i].x, gContactPositions[i].y, gContactPositions[i].z), 2.f);
+	}
+	gContactPositions.clear();
 
 	PxU32 nbActors = gScene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC |
 		PxActorTypeFlag::eRIGID_STATIC);
@@ -114,11 +110,11 @@ void Renderer::D3D12PhysxSimulationApp::Update(float& deltaTime)
 		const PxU32 nbShapes = actors[i]->getNbShapes();
 		PX_ASSERT(nbShapes <= MAX_NUM_ACTOR_SHAPES);
 		actors[i]->getShapes(shapes, nbShapes);
-		
+
 		for (PxU32 j = 0; j < nbShapes; j++) {
 			const PxMat44 shapePose(
 				PxShapeExt::getGlobalPose(*shapes[j], *actors[i]));
-			
+
 			if (actors[i]->is<PxRigidDynamic>()) {
 
 				bool sleeping = actors[i]->is<PxRigidDynamic>() &&
@@ -168,7 +164,7 @@ void Renderer::D3D12PhysxSimulationApp::CreateStack(const PxTransform& t, PxU32 
 	PbrMeshData box = GeometryGenerator::PbrBox(halfExtent);
 	PxShape* shape =
 		gPhysics->createShape(PxBoxGeometry(halfExtent, halfExtent, halfExtent), *gMaterial);
-	
+
 	static int index = 0;
 
 	for (PxU32 i = 0; i < size; i++)
@@ -182,33 +178,47 @@ void Renderer::D3D12PhysxSimulationApp::CreateStack(const PxTransform& t, PxU32 
 			box.m_name = ss.str();
 			boxMesh->Initialize(box, m_device, m_commandList, DirectX::SimpleMath::Vector3::Zero,
 				Material(0.7f, 0.3f, 0.5f, 0.3f), false, false, false, false, false, false);
+			boxMesh->SetBoundingBoxHalfLength(halfExtent);
 			m_staticMeshes.push_back(boxMesh);
 
 			PxVec3 di = PxVec3(4.f / 3.f, 2.f, 0.f) * halfExtent * PxReal(i);
 			PxVec3 dj = PxVec3(8.f / 3.f, 0.f, 0.f) * halfExtent * PxReal(j);
-						
+
 
 			PxTransform localTm(di + dj + PxVec3(0, halfExtent, 0.f));
 			PxRigidDynamic* body = gPhysics->createRigidDynamic(t.transform(localTm));
 			body->setName(boxMesh->m_name.c_str());
 			body->attachShape(*shape);
 			PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
-						
-			gScene->addActor(*body);
-			
 
-			
+			gScene->addActor(*body);
+
+
+
 		}
 	}
 	shape->release();
 }
 
+void Renderer::D3D12PhysxSimulationApp::PlaySoundEffect(std::string soundName,const DirectX::SimpleMath::Vector3& emitterPosition, float volume)
+{
+	effect.release();
+	effect = m_soundEffects[soundMap[soundName]]->CreateInstance(SoundEffectInstance_Use3D);
+
+	listener.SetPosition(m_camera->GetPosition());
+	listener.SetOrientation(m_camera->GetForwardDirection(), m_camera->GetUpDirection());
+
+	emitter.SetPosition(emitterPosition);
+	effect->SetVolume(volume);
+	effect->Play();
+	effect->Apply3D(listener, emitter, false);
+}
 
 void Renderer::D3D12PhysxSimulationApp::InitPhysics(bool interactive)
 {
-	gFoundation =PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
+	gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
 	gPvd = PxCreatePvd(*gFoundation);
-	PxPvdTransport* transport =	PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
+	PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
 	gPvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
 	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
 
@@ -217,7 +227,7 @@ void Renderer::D3D12PhysxSimulationApp::InitPhysics(bool interactive)
 	gDispatcher = PxDefaultCpuDispatcherCreate(3);
 	sceneDesc.cpuDispatcher = gDispatcher;
 	sceneDesc.filterShader = contactReportFilterShader;
-	sceneDesc.simulationEventCallback = &gContactReportCallback;
+	sceneDesc.simulationEventCallback = this;
 	gScene = gPhysics->createScene(sceneDesc);
 
 	PxPvdSceneClient* pvdClient = gScene->getScenePvdClient();
@@ -235,17 +245,17 @@ void Renderer::D3D12PhysxSimulationApp::InitPhysics(bool interactive)
 
 	std::shared_ptr<Core::StaticMesh> plane = std::make_shared<Core::StaticMesh>();
 
-	plane->Initialize(GeometryGenerator::PbrBox(10, 1, 10, L"DiamondPlate008C_4K-PNG_Albedo.dds"), m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, -1.f, -1.f),
+	plane->Initialize(GeometryGenerator::PbrBox(10, 1, 10, L"Metal048C_4K-PNG_Albedo.png", 1,1,1), m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, -1.f, -1.f),
 		Material(1.f, 1.f, 1.f, 1.f),
 		true, true, true, true, true, true);
-	
+
 	m_staticMeshes.push_back(plane);
 
 	//gScene->setSimulationEventCallback(myCallback);
-	
+
 	CreateStack(PxTransform(PxVec3(0.f, 2.f, 0.f)), 10, 0.3f);
 
-	
+
 }
 
 void Renderer::D3D12PhysxSimulationApp::InitScene()
@@ -265,7 +275,7 @@ void Renderer::D3D12PhysxSimulationApp::InitScene()
 
 void Renderer::D3D12PhysxSimulationApp::CreateDynamicBox(const DirectX::SimpleMath::Vector3& position, const DirectX::SimpleMath::Vector3& velocityDir, float velocity, float halfExtend)
 {
-	PxTransform t(PxVec3(position.x,position.y, position.z));
+	PxTransform t(PxVec3(position.x, position.y, position.z));
 	PxRigidDynamic* dynamic = PxCreateDynamic(*gPhysics, t, PxBoxGeometry(halfExtend, halfExtend, halfExtend), *gMaterial, 10.0f);
 	dynamic->setAngularDamping(0.5f);
 	PxVec3 vel(velocityDir.x, velocityDir.y, velocityDir.z);
@@ -290,16 +300,15 @@ void Renderer::D3D12PhysxSimulationApp::CreateDynamicBox(const DirectX::SimpleMa
 
 void Renderer::D3D12PhysxSimulationApp::CreateDynamicSphere(const DirectX::SimpleMath::Vector3& position, const DirectX::SimpleMath::Vector3& velocityDir, float velocity, float halfExtend)
 {
-	static int i = 0;
-	std::stringstream ss;
-	ss << "Ball" << i++;
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
-	
-	PbrMeshData sphere = GeometryGenerator::PbrSphere(halfExtend, 100, 100, L"Metal048C_4K-PNG_Albedo.dds");
+
+	std::string str = "Ball";
+
+	PbrMeshData sphere = GeometryGenerator::PbrSphere(halfExtend, 100, 100, L"Metal048C_4K-PNG_Albedo.png");
 	std::shared_ptr<Core::StaticMesh> sphereMesh = std::make_shared<Core::StaticMesh>();
-	sphere.m_name = ss.str();
+	sphere.m_name = str;
 	sphereMesh->Initialize(sphere, m_device, m_commandList, position,
 		Material(0.7f, 0.3f, 0.5f, 0.3f), true, true, true, false, true, false);
 	m_staticMeshes.push_back(sphereMesh);
@@ -312,10 +321,45 @@ void Renderer::D3D12PhysxSimulationApp::CreateDynamicSphere(const DirectX::Simpl
 	dynamic->setName(sphereMesh->m_name.c_str());
 	gScene->addActor(*dynamic);
 
-	
+
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* pCmdLists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(pCmdLists), pCmdLists);
 
 	FlushCommandQueue();
+}
+
+void Renderer::D3D12PhysxSimulationApp::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
+{
+	PxActor* actor1 = pairHeader.actors[0];
+	PxActor* actor2 = pairHeader.actors[1];
+
+	// 충돌된 액터들에 대한 로그 출력
+	std::string name1 = actor1->getName();
+	std::string name2 = actor2->getName();
+	
+	std::vector<PxContactPairPoint> contactPoints;
+
+	if (name1 == "Ball" && name2 == "Ground") {
+		for (PxU32 i = 0; i < nbPairs; i++)
+		{
+			PxU32 contactCount = pairs[i].contactCount;
+			if (contactCount)
+			{
+				contactPoints.resize(contactCount);
+				pairs[i].extractContacts(&contactPoints[0], contactCount);
+
+				for (PxU32 j = 0; j < contactCount; j++)
+				{
+					if (contactPoints[j].impulse.magnitude() > 30.f)
+					{
+						gContactPositions.push_back(contactPoints[j].position);
+						gContactImpulses.push_back(contactPoints[j].impulse);
+					}
+					//
+				}
+			}
+		}
+	}
+
 }

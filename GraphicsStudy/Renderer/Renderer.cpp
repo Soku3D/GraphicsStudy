@@ -26,6 +26,11 @@
 #include "DrawNormalPassGS.h"
 #include "DrawNormalPassPS.h"
 
+#include "RenderBoundingBoxPassVS.h"
+#include "RenderBoundingBoxPassPS.h"
+#include "RenderBoundingBoxPassGS.h"
+
+
 #include "SimulationParticlesVS.h"
 #include "SimulationParticlesGS.h"
 #include "SimulationParticlesPS.h"
@@ -153,7 +158,8 @@ namespace Renderer {
 		GraphicsPSO defaultLightPassPso("DefaultLightPass");
 		GraphicsPSO msaaLightPassPso("MsaaLightPass");
 
-		GraphicsPSO drawNormalPassPso("NormalPass");
+		GraphicsPSO renderNormalPassPso("NormalPass");
+		GraphicsPSO renderBoundingBoxPassPso("BoundingBoxPass");
 
 		GraphicsPSO copyPso("Copy");
 
@@ -255,14 +261,22 @@ namespace Renderer {
 		msaaLightPassPso = defaultLightPassPso;
 		msaaLightPassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_UNKNOWN, msaaCount, msaaQuality - 1);
 
-		drawNormalPassPso = defaultPso;
-		drawNormalPassPso.SetVertexShader(g_pDrawNormalPassVS, sizeof(g_pDrawNormalPassVS));
-		drawNormalPassPso.SetPixelShader(g_pDrawNormalPassPS, sizeof(g_pDrawNormalPassPS));
-		drawNormalPassPso.SetInputLayout((UINT)pbrElement.size(), pbrElement.data());
-		drawNormalPassPso.SetGeometryShader(g_pDrawNormalPassGS, sizeof(g_pDrawNormalPassGS));
-		drawNormalPassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
-		drawNormalPassPso.SetRootSignature(&NormalPassSignature);
-		drawNormalPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+		renderNormalPassPso = defaultPso;
+		renderNormalPassPso.SetVertexShader(g_pDrawNormalPassVS, sizeof(g_pDrawNormalPassVS));
+		renderNormalPassPso.SetPixelShader(g_pDrawNormalPassPS, sizeof(g_pDrawNormalPassPS));
+		renderNormalPassPso.SetInputLayout((UINT)pbrElement.size(), pbrElement.data());
+		renderNormalPassPso.SetGeometryShader(g_pDrawNormalPassGS, sizeof(g_pDrawNormalPassGS));
+		renderNormalPassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		renderNormalPassPso.SetRootSignature(&NormalPassSignature);
+		renderNormalPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+
+		renderBoundingBoxPassPso = defaultPso;
+		renderBoundingBoxPassPso.SetVertexShader(g_pRenderBoundingBoxPassVS, sizeof(g_pRenderBoundingBoxPassVS));
+		renderBoundingBoxPassPso.SetPixelShader(g_pRenderBoundingBoxPassPS, sizeof(g_pRenderBoundingBoxPassPS));
+		renderBoundingBoxPassPso.SetGeometryShader(g_pRenderBoundingBoxPassGS, sizeof(g_pRenderBoundingBoxPassGS));
+		renderBoundingBoxPassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		renderBoundingBoxPassPso.SetRootSignature(&NormalPassSignature);
+		renderBoundingBoxPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
 
 		computePso.SetRootSignature(&computeSignature);
 		computePso.SetComputeShader(g_pPostprocessingCS, sizeof(g_pPostprocessingCS));
@@ -318,8 +332,9 @@ namespace Renderer {
 		passPsoLists[fbxWireGeometryPassPso.GetName()] = fbxWireGeometryPassPso;
 		passPsoLists[defaultLightPassPso.GetName()] = defaultLightPassPso;
 		passPsoLists[msaaLightPassPso.GetName()] = msaaLightPassPso;
-		passPsoLists[drawNormalPassPso.GetName()] = drawNormalPassPso;
+		passPsoLists[renderNormalPassPso.GetName()] = renderNormalPassPso;
 		passPsoLists[simulationRenderPso.GetName()] = simulationRenderPso;
+		passPsoLists[renderBoundingBoxPassPso.GetName()] = renderBoundingBoxPassPso;
 
 		utilityPsoLists[copyPso.GetName()] = copyPso;
 

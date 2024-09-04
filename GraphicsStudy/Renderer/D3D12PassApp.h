@@ -31,7 +31,8 @@ namespace Renderer {
 		void GeometryPass(float& deltaTime);
 		void FbxGeometryPass(float& deltaTime);
 		void LightPass(float& deltaTime);
-		void DrawNormalPass(float& deltaTime);
+		void RenderNormalPass(float& deltaTime);
+		void RenderBoundingBoxPass(float& deltaTime);
 		void RenderCubeMap(float& deltaTime) override;
 		void RenderGUI(float& deltaTime) override;
 
@@ -51,6 +52,7 @@ namespace Renderer {
 		bool bRenderFbx = true;
 		bool bRenderFPS = true;
 		bool bRenderNormal = true;
+		bool bRenderBoundingBox = false;
 
 		float gui_cubeMapLod = 0.f;
 		float gui_cubeMapExpose = 2.0f;
@@ -77,6 +79,7 @@ namespace Renderer {
 		const wchar_t* fbxGeomeytyPassEvent = L"FBX Geometry Pass ";
 		const wchar_t* lightPassEvent = L"Light Pass ";
 		const wchar_t* drawNormalPassEvent = L"DrawNormal Pass ";
+		const wchar_t* renderBoundingBoxPassEvent = L"RenderBoundingBox Pass ";
 		const wchar_t* cubeMapPassEvent = L"CubeMap Pass ";
 		const wchar_t* postprocessingEvent = L"Postprocessing Pass ";
 

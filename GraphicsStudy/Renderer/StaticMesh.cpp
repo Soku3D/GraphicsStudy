@@ -31,6 +31,10 @@ void Core::StaticMesh::RenderNormal(const float& deltaTime, Microsoft::WRL::ComP
 	}
 	commandList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
 }
+void Core::StaticMesh::RenderBoundingBox(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList) {
+	commandList->SetGraphicsRootConstantBufferView(0, m_objectConstantBuffer->GetGPUVirtualAddress());
+	commandList->DrawIndexedInstanced(1, 1, 0, 0, 0);
+}
 
 void Core::StaticMesh::UpdateAnimation(const float& deltaTime, Animation::AnimationData& animationData)
 {

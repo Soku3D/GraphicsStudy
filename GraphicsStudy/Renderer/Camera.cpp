@@ -8,7 +8,7 @@ namespace Core {
 		m_forwardDirection(DirectX::SimpleMath::Vector3(0,0,1)),
 		m_upDirection(DirectX::SimpleMath::Vector3(0.f, 1.f, 0.f)),
 		m_rightDirection(DirectX::SimpleMath::Vector3(1.f, 0.f, 0.f)),
-		m_farZ(100.f),
+		m_farZ(1000.f),
 		m_nearZ(0.1f),
 		Actor()
 	{

@@ -24,7 +24,8 @@ bool Renderer::D3D12PassApp::Initialize()
 	return true;
 }
 
-void Renderer::D3D12PassApp::InitConstantBuffers() {
+void Renderer::D3D12PassApp::InitConstantBuffers() 
+{
 	psConstantData = new CSConstantData();
 	psConstantData->time = 0;
 	Utility::CreateConstantBuffer(m_device, sizeof(CSConstantData), m_csBuffer, &m_pCbufferBegin);
@@ -44,11 +45,12 @@ void Renderer::D3D12PassApp::InitScene()
 	using namespace Core;
 
 	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
-	sphere->Initialize(GeometryGenerator::PbrSphere(1.f, 100, 100, L"worn-painted-metal_albedo.dds",
+	sphere->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, L"worn-painted-metal_albedo.png",
 		2.f, 2.f),
 		m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
 		true /*AO*/, true /*Metallic*/, true /*Height*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
+	sphere->SetBoundingBoxHalfLength(0.5f);
 	m_staticMeshes.push_back(sphere);
 
 	//std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
@@ -64,12 +66,12 @@ void Renderer::D3D12PassApp::InitScene()
 		true /*loopAnimation*/,
 		1.5f /*animationSpeed*/,
 		Vector3(0.f, 1.f, 0.f),
-		L"uvtest_DefaultMaterial_Albedo.dds");
+		L"uvtest_DefaultMaterial_Albedo.png");
 
 	m_fbxList.push_back(wallDistructionFbx);
 
 	m_cubeMap = std::make_shared<Core::StaticMesh>();
-	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(100.f), m_device, m_commandList);
+	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(900.f), m_device, m_commandList);
 	m_cubeMap->SetTexturePath(std::wstring(L"Outdoor") + L"EnvHDR.dds");
 
 	m_screenMesh = std::make_shared<Core::StaticMesh>();
@@ -187,7 +189,8 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 	ImGui::SliderFloat("CubeMap Expose", &gui_cubeMapExpose, 0.f, 10.f);
 	ImGui::SliderFloat3("Light Position", (float*)(&gui_lightPos), -10.f, 10.f);
 
-
+	ImGui::Checkbox("Render BoundingBox", &bRenderBoundingBox);
+	ImGui::SameLine();
 	ImGui::Checkbox("Render Normal", &bRenderNormal);
 	ImGui::SameLine();
 	ImGui::Checkbox("Render CubeMap", &bRenderCubeMap);
@@ -203,7 +206,8 @@ void Renderer::D3D12PassApp::Render(float& deltaTime)
 	FbxGeometryPass(deltaTime);
 	RenderCubeMap(deltaTime);
 	LightPass(deltaTime);
-	DrawNormalPass(deltaTime);
+	RenderNormalPass(deltaTime);
+	RenderBoundingBoxPass(deltaTime);
 	//CopyResourceToSwapChain(deltaTime);
 	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 
@@ -399,7 +403,8 @@ void Renderer::D3D12PassApp::LightPass(float& deltaTime) {
 }
 
 
-void Renderer::D3D12PassApp::DrawNormalPass(float& deltaTime) {
+
+void Renderer::D3D12PassApp::RenderNormalPass(float& deltaTime) {
 
 	if (bRenderNormal) {
 		auto& pso = passPsoLists["NormalPass"];
@@ -437,7 +442,44 @@ void Renderer::D3D12PassApp::DrawNormalPass(float& deltaTime) {
 	}
 
 }
+void Renderer::D3D12PassApp::RenderBoundingBoxPass(float& deltaTime) {
 
+	if (bRenderBoundingBox) {
+		auto& pso = passPsoLists["BoundingBoxPass"];
+
+
+		ThrowIfFailed(m_commandAllocator->Reset());
+		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+		{
+			PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), renderBoundingBoxPassEvent);
+
+
+			m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
+
+			m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+			m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+			m_commandList->RSSetScissorRects(1, &m_scissorRect);
+			m_commandList->RSSetViewports(1, &m_viewport);
+
+			m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer->GetGPUVirtualAddress());
+
+			if (bRenderMeshes) {
+				for (int i = 0; i < m_staticMeshes.size(); ++i) {
+					m_staticMeshes[i]->RenderBoundingBox(deltaTime, m_commandList);
+				}
+			}
+		}
+
+		ThrowIfFailed(m_commandList->Close());
+
+		ID3D12CommandList* plists[] = { m_commandList.Get() };
+		m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
+
+		FlushCommandQueue();
+		PIXEndEvent(m_commandQueue.Get());
+	}
+
+}
 void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 {
 	auto& pso = cubePsoLists[(currRenderMode + "CubeMap")];

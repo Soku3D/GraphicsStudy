@@ -34,6 +34,7 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	cubeMapTextureBasePath = L"Textures/CubeMaps/";
 	exrTextureBasePath = L"Textures/HDR/";
 	soundBasePath = L"Sounds/SoundLab/Audio/";
+	soundPath = L"Sounds/";
 	bUseGUI = true;
 
 }
@@ -61,30 +62,22 @@ void Renderer::D3D12App::InitSoundEngine()
 	ThrowIfFailed(CoInitializeEx(nullptr, COINIT_MULTITHREADED));
 	m_audioEngine = std::make_unique<DirectX::AudioEngine>(eflags);
 	m_audioEngine->SetReverb(Reverb_ConcertHall);
+	
+	m_soundEffects.resize(2);
+	
 	auto path = soundBasePath + L"Explosions/media_Explo4.wav";
-
-	m_soundEffect = std::make_unique<DirectX::SoundEffect>(
+	m_soundEffects[0] = std::make_unique<DirectX::SoundEffect>(
 		m_audioEngine.get(),
 		path.c_str());
+	soundMap["Shoting"] = 0;
 
-	listener.Position = XMFLOAT3(0.0f, 0.0f, 0.0f);   
-	listener.OrientFront = XMFLOAT3(0.0f, 0.0f, 1.0f);   
-	listener.OrientTop = XMFLOAT3(0.0f, 1.0f, 0.0f);     
-
-	emitter.Position = XMFLOAT3(2.0f, 0.0f, 0.0f);
-	emitter.OrientTop = XMFLOAT3(0.0f, 1.0f, 0.0f);          
-	emitter.OrientFront = XMFLOAT3(0.0f, 0.0f, 1.0f);    
-	emitter.Velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	emitter.ChannelCount = 1;
-	emitter.InnerRadius = 1.f;
-	emitter.InnerRadiusAngle = X3DAUDIO_PI * 2.0f;
-	emitter.ChannelRadius = 1.0f;
-	emitter.CurveDistanceScaler = 1.0f;
-	emitter.DopplerScaler = 1.0f;
-	m_effect = m_soundEffect->CreateInstance(SoundEffectInstance_Use3D);
-	
-	
+	path = soundPath + L"metal-whoosh-hit-11-202177.wav";
+	m_soundEffects[1] = std::make_unique<DirectX::SoundEffect>(
+		m_audioEngine.get(),
+		path.c_str());
+	soundMap["HitGround"] = 1;
 }
+
 bool Renderer::D3D12App::Initialize()
 {
 	if (!SimpleApp::Initialize()) {
@@ -688,7 +681,7 @@ void Renderer::D3D12App::InitScene()
 	m_fbxList.push_back(wallDistructionFbx);
 
 	m_cubeMap = std::make_shared<StaticMesh>();
-	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(100.f), m_device, m_commandList);
+	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(200.f), m_device, m_commandList);
 
 	m_screenMesh = std::make_shared<Core::StaticMesh>();
 	m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
@@ -850,61 +843,64 @@ void Renderer::D3D12App::CreateCubeMapTextures() {
 	m_cubeMaptextureResources.resize(file_count);
 	m_cubeMaptextureUpload.resize(file_count);
 
-	//bool IsCubeMap = true;
-	//int mapIdx = 0;
-	//if (fs::exists(path) && fs::is_directory(path)) {
-	//	for (const auto& entry : fs::directory_iterator(path)) {
-	//		if (fs::is_regular_file(entry.status())) {
-	//			std::wstring fileName = entry.path().filename().wstring();
-	//			IsCubeMap = true;
-	//			if (fileName.substr(fileName.size() - 8, 4) == L"Brdf") {
-	//				IsCubeMap = false;
-	//			}
-	//			Utility::CreateTextureBuffer(cubeMapTextureBasePath + fileName, m_cubeMaptextureResources[mapIdx], m_cubeMapTextureHeapNSV, m_device, m_commandQueue, m_commandList, mapIdx, m_csuHeapSize, &IsCubeMap);
-	//			//CreateCubeMapBuffer(cubeMapTextureBasePath + fileName, m_cubeMaptextureUpload[mapIdx], m_cubeMaptextureResources[mapIdx], mapIdx);
-	//			m_cubeTextureMap.emplace(fileName, mapIdx++);
-	//		}
-	//	}
-	//}
-	std::vector<std::wstring> fileNames(file_count);
-	std::vector<bool> isCubeMapFlags(file_count, true);  
-
+	bool IsCubeMap = true;
+	int mapIdx = 0;
 	if (fs::exists(path) && fs::is_directory(path)) {
-		int idx = 0;
 		for (const auto& entry : fs::directory_iterator(path)) {
 			if (fs::is_regular_file(entry.status())) {
 				std::wstring fileName = entry.path().filename().wstring();
-				fileNames[idx] = fileName;
+				IsCubeMap = true;
 				if (fileName.substr(fileName.size() - 8, 4) == L"Brdf") {
-					isCubeMapFlags[idx] = false;  
+					IsCubeMap = false;
 				}
-				++idx;
+				else{
+					IsCubeMap = true;
+				}
+				Utility::CreateTextureBuffer(cubeMapTextureBasePath + fileName, m_cubeMaptextureResources[mapIdx], m_cubeMapTextureHeapNSV, m_device, m_commandQueue, m_commandList, mapIdx, m_csuHeapSize, &IsCubeMap);
+				//CreateCubeMapBuffer(cubeMapTextureBasePath + fileName, m_cubeMaptextureUpload[mapIdx], m_cubeMaptextureResources[mapIdx], mapIdx);
+				m_cubeTextureMap.emplace(fileName, mapIdx++);
 			}
 		}
 	}
+	std::vector<std::wstring> fileNames(file_count);
+	std::vector<bool> isCubeMapFlags(file_count, true);  
 
-#pragma omp parallel for
-	for (int i = 0; i < file_count; ++i) {
-		const std::wstring& fileName = fileNames[i];
-		bool IsCubeMap = isCubeMapFlags[i];
-
-		Utility::CreateTextureBuffer(
-			cubeMapTextureBasePath + fileName,
-			m_cubeMaptextureResources[i],
-			m_cubeMapTextureHeapNSV,
-			m_device,
-			m_commandQueue,
-			m_commandList,
-			i,
-			m_csuHeapSize,
-			&IsCubeMap
-		);
-
-#pragma omp critical
-		{
-			m_cubeTextureMap.emplace(fileName, i);
-		}
-	}
+	//if (fs::exists(path) && fs::is_directory(path)) {
+	//	int idx = 0;
+	//	for (const auto& entry : fs::directory_iterator(path)) {
+	//		if (fs::is_regular_file(entry.status())) {
+	//			std::wstring fileName = entry.path().filename().wstring();
+	//			fileNames[idx] = fileName;
+	//			if (fileName.substr(fileName.size() - 8, 4) == L"Brdf") {
+	//				isCubeMapFlags[idx] = false;  
+	//			}
+	//			++idx;
+	//		}
+	//	}
+//	//}
+//
+//#pragma omp parallel for
+//	for (int i = 0; i < file_count; ++i) {
+//		const std::wstring& fileName = fileNames[i];
+//		bool IsCubeMap = isCubeMapFlags[i];
+//
+//		Utility::CreateTextureBuffer(
+//			cubeMapTextureBasePath + fileName,
+//			m_cubeMaptextureResources[i],
+//			m_cubeMapTextureHeapNSV,
+//			m_device,
+//			m_commandQueue,
+//			m_commandList,
+//			i,
+//			m_csuHeapSize,
+//			&IsCubeMap
+//		);
+//
+//#pragma omp critical
+//		{
+//			m_cubeTextureMap.emplace(fileName, i);
+//		}
+//	}
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dest_gPassHeapHandle(m_geometryPassSrvHeap->GetCPUDescriptorHandleForHeapStart(), 4, m_csuHeapSize);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dest_CubeHandle(m_cubeMapTextureHeap->GetCPUDescriptorHandleForHeapStart());

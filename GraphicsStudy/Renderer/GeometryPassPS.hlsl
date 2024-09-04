@@ -11,7 +11,9 @@ PSOutput main(PSInput input)
     if (useNormalMap)
     {
         float3 normal = g_normal.Sample(g_sampler, input.uv).xyz;
-        
+        normal = normal* 2.f - 1.f;
+        normal = normalize(normal);
+        //float3 normal = float3(0, 0, 1);
         float3 N = normalize(input.normal);
         float3 T = normalize(input.tangent - dot(input.tangent, N) * N);
         float3 B = normalize(cross(N, T));

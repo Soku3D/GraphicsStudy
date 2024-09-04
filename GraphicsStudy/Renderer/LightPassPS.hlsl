@@ -45,10 +45,10 @@ float4 main(PSInput input) : SV_TARGET
     
     //float3 irradianceColor = g_irradianceCube.Sample(g_wrapLinearSampler, N).rgb;
     float3 irradianceColor = g_specularCube.SampleLevel(g_wrapLinearSampler, N, 10.f).rgb;
-   
     float lod = pow(roughness, 2.0) * 3.f;
-    float3 specularColor = gui_cubeMapExpose * g_specularCube.SampleLevel(g_wrapLinearSampler, L, lod).rgb;
-    //return float4(specularColor, 1.f);
+    float3 specularColor = gui_cubeMapExpose * g_albedoCube.SampleLevel(g_wrapLinearSampler, L, lod).rgb;
+    //float3 specularColor = gui_cubeMapExpose * g_specularCube.SampleLevel(g_wrapLinearSampler, N, lod).rgb;
+    return float4(specularColor, 1.f);
     float3 EnvLight = EnvBRDF(irradianceColor, specularColor, albedo, ao, VoH, NoV, metallic, roughness, F0);
     
     color.rgb += EnvLight;

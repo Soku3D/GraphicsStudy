@@ -14,34 +14,15 @@
 namespace physx {
 	class ContactReportCallback : public PxSimulationEventCallback
 	{
-		void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) { PX_UNUSED(constraints); PX_UNUSED(count); }
-		void onWake(PxActor** actors, PxU32 count) { PX_UNUSED(actors); PX_UNUSED(count); }
-		void onSleep(PxActor** actors, PxU32 count) { PX_UNUSED(actors); PX_UNUSED(count); }
-		void onTrigger(PxTriggerPair* pairs, PxU32 count) { PX_UNUSED(pairs); PX_UNUSED(count); }
-		void onAdvance(const PxRigidBody* const*, const PxTransform*, const PxU32) {}
-		void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
-		{
-			//PX_UNUSED((pairHeader));
-			for (PxU32 i = 0; i < nbPairs; i++)
-			{
-				const PxContactPair& cp = pairs[i];
-
-				// 충돌한 두 액터를 가져옴
-				PxActor* actor1 = pairHeader.actors[0];
-				PxActor* actor2 = pairHeader.actors[1];
-
-				// 충돌된 액터들에 대한 로그 출력
-				std::cout << "Collision detected between: " << actor1->getName() << " and " << actor2->getName() << std::endl;
-			}
-		}
-	};	
+		
+	};
 }
 
 namespace Renderer {
 
 	using namespace physx;
 
-	class D3D12PhysxSimulationApp :public D3D12PassApp {
+	class D3D12PhysxSimulationApp :public D3D12PassApp, public PxSimulationEventCallback {
 	public:
 		D3D12PhysxSimulationApp(const int& width, const int& height);
 		virtual ~D3D12PhysxSimulationApp() {
@@ -66,7 +47,7 @@ namespace Renderer {
 		void UpdateGUI(float& deltaTime) override;
 		void Render(float& deltaTime) override;
 		void RenderGUI(float& deltaTime) override;
-		
+
 	protected:
 
 
@@ -75,6 +56,8 @@ namespace Renderer {
 			const PxVec3& m_velocity = PxVec3(0));
 
 		void CreateStack(const PxTransform& t, PxU32 size, PxReal halfExtent);
+
+		void PlaySoundEffect(std::string soundName, const DirectX::SimpleMath::Vector3& emitterPosition, float volume = 1.f);
 
 		void InitPhysics(bool interactive);
 
@@ -97,7 +80,15 @@ namespace Renderer {
 		const wchar_t* simulationPassEvent = L"Simulation Pass ";
 
 	protected:
-		physx::ContactReportCallback gContactReportCallback;
+		//physx::ContactReportCallback gContactReportCallback;
+		void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) { PX_UNUSED(constraints); PX_UNUSED(count); }
+		void onWake(PxActor** actors, PxU32 count) { PX_UNUSED(actors); PX_UNUSED(count); }
+		void onSleep(PxActor** actors, PxU32 count) { PX_UNUSED(actors); PX_UNUSED(count); }
+		void onTrigger(PxTriggerPair* pairs, PxU32 count) { PX_UNUSED(pairs); PX_UNUSED(count); }
+		void onAdvance(const PxRigidBody* const*, const PxTransform*, const PxU32) {}
+		void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs);
+		std::vector<PxVec3> gContactPositions;
+		std::vector<PxVec3> gContactImpulses;
 	};
 }
 

@@ -149,6 +149,7 @@ namespace Renderer {
 		std::vector<std::shared_ptr<Animation::FBX>> m_fbxList;
 
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
+		
 		std::shared_ptr<Core::StaticMesh> m_cubeMap;
 		std::shared_ptr<Core::StaticMesh> m_screenMesh;
 
@@ -156,6 +157,7 @@ namespace Renderer {
 		std::wstring cubeMapTextureBasePath;
 		std::wstring exrTextureBasePath;
 		std::wstring soundBasePath;
+		std::wstring soundPath;
 
 		std::vector<ComPtr<ID3D12Resource>> m_textureResources;
 		std::vector<ComPtr<ID3D12Resource>> m_uploadResources;
@@ -242,8 +244,10 @@ namespace Renderer {
 
 	protected:
 		std::unique_ptr<DirectX::AudioEngine> m_audioEngine;
-		std::unique_ptr<DirectX::SoundEffect> m_soundEffect;
-		std::unique_ptr<DirectX::SoundEffectInstance> m_effect;
+
+		std::vector<std::unique_ptr<DirectX::SoundEffect>> m_soundEffects;
+		std::map<std::string, uint8_t> soundMap;
+		std::unique_ptr<SoundEffectInstance> effect;
 		AudioListener listener;
 		AudioEmitter emitter;
 	};
