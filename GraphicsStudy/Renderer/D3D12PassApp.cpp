@@ -71,7 +71,7 @@ void Renderer::D3D12PassApp::InitScene()
 	m_fbxList.push_back(wallDistructionFbx);
 
 	m_cubeMap = std::make_shared<Core::StaticMesh>();
-	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(900.f), m_device, m_commandList);
+	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(500.f), m_device, m_commandList);
 	m_cubeMap->SetTexturePath(std::wstring(L"Outdoor") + L"EnvHDR.dds");
 
 	m_screenMesh = std::make_shared<Core::StaticMesh>();

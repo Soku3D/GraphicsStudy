@@ -29,7 +29,7 @@ SimpleMeshData GeometryGenerator::SimpleRectangle(const float& length)
 {
 	SimpleMeshData data;
 
-	float l = length / 2.f;
+	float l = length;
 	std::vector<Renderer::SimpleVertex> vertices = {
 		{Vector3(-l, -l, 0.0f)},
 		{Vector3(-l, l, 0.0f)},
@@ -48,7 +48,7 @@ SimpleMeshData GeometryGenerator::SimpleBox(const float& length)
 {
 	SimpleMeshData data;
 
-	float l = length / 2.f;
+	float l = length;
  
 	std::vector<Renderer::SimpleVertex> vertices = {
 		{Vector3(-l, -l, -l)},{Vector3(-l, l, -l)},{Vector3(l, l, -l)},{Vector3(l, -l, -l)},
@@ -72,7 +72,7 @@ SimpleMeshData GeometryGenerator::SimpleCubeMapBox(const float& length)
 {
 	SimpleMeshData data;
 
-	float l = length / 2.f;
+	float l = length;
 
 	std::vector<Renderer::SimpleVertex> vertices = {
 		{Vector3(-l, -l, -l)},{Vector3(-l, l, -l)},{Vector3(l, l, -l)},{Vector3(l, -l, -l)},

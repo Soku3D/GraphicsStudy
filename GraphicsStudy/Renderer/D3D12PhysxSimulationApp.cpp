@@ -245,7 +245,7 @@ void Renderer::D3D12PhysxSimulationApp::InitPhysics(bool interactive)
 
 	std::shared_ptr<Core::StaticMesh> plane = std::make_shared<Core::StaticMesh>();
 
-	plane->Initialize(GeometryGenerator::PbrBox(10, 1, 10, L"Metal048C_4K-PNG_Albedo.png", 1,1,1), m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, -1.f, -1.f),
+	plane->Initialize(GeometryGenerator::PbrBox(300, 1, 300, L"DiamondPlate008C_4K-PNG_Albedo.png", 50,1,50), m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, -1.f, -1.f),
 		Material(1.f, 1.f, 1.f, 1.f),
 		true, true, true, true, true, true);
 
@@ -254,8 +254,6 @@ void Renderer::D3D12PhysxSimulationApp::InitPhysics(bool interactive)
 	//gScene->setSimulationEventCallback(myCallback);
 
 	CreateStack(PxTransform(PxVec3(0.f, 2.f, 0.f)), 10, 0.3f);
-
-
 }
 
 void Renderer::D3D12PhysxSimulationApp::InitScene()

@@ -185,6 +185,7 @@ namespace Renderer {
 		};
 
 		defaultRasterizer = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+		
 		wireRasterizer = defaultRasterizer;
 		wireRasterizer.FillMode = D3D12_FILL_MODE_WIREFRAME;
 

@@ -681,7 +681,7 @@ void Renderer::D3D12App::InitScene()
 	m_fbxList.push_back(wallDistructionFbx);
 
 	m_cubeMap = std::make_shared<StaticMesh>();
-	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(200.f), m_device, m_commandList);
+	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(400.f), m_device, m_commandList);
 
 	m_screenMesh = std::make_shared<Core::StaticMesh>();
 	m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
