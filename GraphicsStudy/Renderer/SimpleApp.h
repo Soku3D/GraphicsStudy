@@ -58,5 +58,8 @@ namespace Renderer {
 		ComPtr<ID3D12GraphicsCommandList> m_commandList;
 		ComPtr<ID3D12GraphicsCommandList> m_guiCommandList;
 		ComPtr<ID3D12CommandQueue> m_commandQueue;
+
+		std::vector< ComPtr<ID3D12CommandQueue>> m_tempCommandQueue;
+
 	};
 }

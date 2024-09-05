@@ -524,68 +524,6 @@ PbrMeshData GeometryGenerator::PbrCyilinder(const float& topRadius, const float&
 PbrMeshData GeometryGenerator::PbrSphere(const float& radius, const int& x, const int& y, const std::wstring& texturePath, float uvDeltaX, float uvDeltaY)
 {
 
-	PbrMeshData data;
-	if (x == 0 || y == 0)
-	{
-		return data;
-	}
-	Vector3 basePosition(Vector3(0.f, radius, 0.f));
-
-
-	float delYTheta = DirectX::XM_2PI / x;
-	float delZTheta = DirectX::XM_PI / y;
-
-	float uvDelX = 1.f / x * uvDeltaX;
-	float uvDelY = 1.f / y * uvDeltaY;
-
-	int index = 0;
-
-	std::vector<PbrVertex> vertices;
-	std::vector<uint16_t> indices;
-	for (int j = 0; j < y + 1; ++j)
-	{
-		Vector3 position = Vector3::Transform(basePosition, DirectX::XMMatrixRotationZ(-delZTheta * j));
-		for (int i = 0; i < x + 1; ++i)
-		{
-			PbrVertex v;
-			v.position = Vector3::Transform(position, DirectX::XMMatrixRotationY(-delYTheta * i));
-			v.texcoord = Vector2(i * uvDelX, j * uvDelY);
-			v.normal = v.position;
-			v.normal.Normalize();
-
-			vertices.push_back(v);
-		}
-	}
-
-	for (int i = 0; i < y; i++)
-	{
-		int index = i * (x + 1);
-		for (int j = 0; j < x; j++)
-		{
-			int idx = index + j;
-			indices.push_back(idx + x + 1);
-			indices.push_back(idx);
-			indices.push_back(idx + 1);
-			if (i != 0)
-				ComputeTangent(vertices[idx + x + 1], vertices[idx], vertices[idx + 1]);
-			
-			indices.push_back(idx + x + 1);
-			indices.push_back(idx + 1);
-			indices.push_back(idx + x + 2);
-			if (i != y - 1)
-				ComputeTangent(vertices[idx + x + 1], vertices[idx + 1], vertices[idx + x + 2]);
-
-		}
-	}
-	vertices[0].tangent = Vector3(0.f, 0.f, 1.f);
-	vertices[vertices.size() - 1].tangent = vertices[vertices.size() - 2].tangent;
-	/*for (auto& v : vertices) {
-		std::cout << v.tangent.x << ' '<< v.tangent.y << ' ' << v.tangent.z << '\n';
-	}*/
-	data.Initialize(vertices, indices, texturePath);
-
-	return data;
-
 	//PbrMeshData data;
 	//if (x == 0 || y == 0)
 	//{
@@ -616,55 +554,120 @@ PbrMeshData GeometryGenerator::PbrSphere(const float& radius, const int& x, cons
 	//		v.normal.Normalize();
 
 	//		vertices.push_back(v);
-	//		if (j == 0 || j== y)
-	//			break;
 	//	}
 	//}
 
 	//for (int i = 0; i < y; i++)
 	//{
-	//	int index = (i -1) * (x + 1) + 1;
+	//	int index = i * (x + 1);
 	//	for (int j = 0; j < x; j++)
 	//	{
 	//		int idx = index + j;
-	//		if (i == 0) {
-	//			indices.push_back(idx + x + 1);
-	//			indices.push_back(0);
-	//			indices.push_back(idx + x + 2);
-	//		}
-	//		else if (i == y-1) {
-	//			indices.push_back(index + x + 1);
-	//			indices.push_back(idx);
-	//			indices.push_back(idx + 1);			
-	//		}
-	//		else {
-	//			indices.push_back(idx + x + 1);
-	//			indices.push_back(idx);
-	//			indices.push_back(idx + 1);
-
-	//			indices.push_back(idx + x + 1);
-	//			indices.push_back(idx + 1);
-	//			indices.push_back(idx + x + 2);
-	//		}
+	//		indices.push_back(idx + x + 1);
+	//		indices.push_back(idx);
+	//		indices.push_back(idx + 1);
+	//		if (i != 0)
+	//			ComputeTangent(vertices[idx + x + 1], vertices[idx], vertices[idx + 1]);
 	//		
+	//		indices.push_back(idx + x + 1);
+	//		indices.push_back(idx + 1);
+	//		indices.push_back(idx + x + 2);
+	//		if (i != y - 1)
+	//			ComputeTangent(vertices[idx + x + 1], vertices[idx + 1], vertices[idx + x + 2]);
 	//	}
 	//}
-	//for (size_t i = 0; i < indices.size(); i += 3) {
-	//	int idx0 = indices[i];
-	//	int idx1 = indices[i + 1];
-	//	int idx2 = indices[i + 2];
-
-	//	Renderer::PbrVertex& v0 = vertices[idx0];
-	//	Renderer::PbrVertex& v1 = vertices[idx1];
-	//	Renderer::PbrVertex& v2 = vertices[idx2];
-
-	//	ComputeTangent(v0, v1, v2);  
-	//}
-	//vertices[0].tangent = Vector3(0, 0, 0);
-	//
+	////vertices[0].tangent = Vector3(0.f, 0.f, 1.f);
+	////vertices[vertices.size() - 1].tangent = vertices[vertices.size() - 2].tangent;
+	///*for (auto& v : vertices) {
+	//	std::cout << v.tangent.x << ' '<< v.tangent.y << ' ' << v.tangent.z << '\n';
+	//}*/
 	//data.Initialize(vertices, indices, texturePath);
 
 	//return data;
+
+	PbrMeshData data;
+	if (x == 0 || y == 0)
+	{
+		return data;
+	}
+	Vector3 basePosition(Vector3(0.f, radius, 0.f));
+
+
+	float delYTheta = DirectX::XM_2PI / x;
+	float delZTheta = DirectX::XM_PI / y;
+
+	float uvDelX = 1.f / x * uvDeltaX;
+	float uvDelY = 1.f / y * uvDeltaY;
+
+	int index = 0;
+
+	std::vector<PbrVertex> vertices;
+	std::vector<uint16_t> indices;
+	for (int j = 0; j < y + 1; ++j)
+	{
+		Vector3 position = Vector3::Transform(basePosition, DirectX::XMMatrixRotationZ(-delZTheta * j));
+		for (int i = 0; i < x + 1; ++i)
+		{
+			if (j == 0 || j == y) {
+				if (i == x) {
+					break;
+				}
+			}
+
+			PbrVertex v;
+			v.position = Vector3::Transform(position, DirectX::XMMatrixRotationY(-delYTheta * i));
+			v.texcoord = Vector2(i * uvDelX, j * uvDelY);
+			v.normal = v.position;
+			v.normal.Normalize();
+
+			vertices.push_back(v);
+		}
+	}
+
+	for (int i = 0; i < y; i++)
+	{
+		int index = i * (x + 1) - 1;
+		for (int j = 0; j < x; j++)
+		{
+			int idx = index + j;
+			if (i == 0) {
+				indices.push_back(idx + x + 1);
+				indices.push_back(idx+1);
+				indices.push_back(idx + x + 2);
+			}
+			else if (i == y-1) {
+				indices.push_back(index + x + 1);
+				indices.push_back(idx);
+				indices.push_back(idx + 1);			
+			}
+			else {
+				indices.push_back(idx + x + 1);
+				indices.push_back(idx);
+				indices.push_back(idx + 1);
+
+				indices.push_back(idx + x + 1);
+				indices.push_back(idx + 1);
+				indices.push_back(idx + x + 2);
+			}
+			
+		}
+	}
+	for (size_t i = 0; i < indices.size(); i += 3) {
+		int idx0 = indices[i];
+		int idx1 = indices[i + 1];
+		int idx2 = indices[i + 2];
+
+		Renderer::PbrVertex& v0 = vertices[idx0];
+		Renderer::PbrVertex& v1 = vertices[idx1];
+		Renderer::PbrVertex& v2 = vertices[idx2];
+
+		ComputeTangent(v0, v1, v2);  
+	}
+	//vertices[0].tangent = Vector3(0, 0, 0);
+	
+	data.Initialize(vertices, indices, texturePath);
+
+	return data;
 }
 
 

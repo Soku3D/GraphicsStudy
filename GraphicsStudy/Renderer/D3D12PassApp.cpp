@@ -45,8 +45,8 @@ void Renderer::D3D12PassApp::InitScene()
 	using namespace Core;
 
 	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
-	sphere->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, L"worn-painted-metal_albedo.png",
-		2.f, 2.f),
+	sphere->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, 
+		L"worn-painted-metal_albedo.dds", 2.f, 2.f),
 		m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
 		true /*AO*/, true /*Metallic*/, true /*Height*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
@@ -209,9 +209,10 @@ void Renderer::D3D12PassApp::Render(float& deltaTime)
 	RenderNormalPass(deltaTime);
 	RenderBoundingBoxPass(deltaTime);
 	//CopyResourceToSwapChain(deltaTime);
-	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	
 
 	//PostProcessing(deltaTime);
+	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 	//CopyResourceToSwapChain(deltaTime);
 }
 

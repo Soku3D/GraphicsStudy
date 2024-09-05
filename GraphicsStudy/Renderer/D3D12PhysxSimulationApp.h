@@ -49,12 +49,6 @@ namespace Renderer {
 		void RenderGUI(float& deltaTime) override;
 
 	protected:
-
-
-		PxRigidDynamic* createDynamic(const PxTransform& t,
-			const PxGeometry& geometry,
-			const PxVec3& m_velocity = PxVec3(0));
-
 		void CreateStack(const PxTransform& t, PxU32 size, PxReal halfExtent);
 
 		void PlaySoundEffect(std::string soundName, const DirectX::SimpleMath::Vector3& emitterPosition, float volume = 1.f);

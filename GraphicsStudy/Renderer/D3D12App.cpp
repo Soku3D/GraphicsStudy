@@ -597,7 +597,7 @@ void Renderer::D3D12App::CreateCommandObjects()
 	D3D12_COMMAND_QUEUE_DESC cqDesc;
 	ZeroMemory(&cqDesc, sizeof(cqDesc));
 	cqDesc.Type = m_commandType;
-
+	
 	m_device->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&m_commandQueue));
 
 	ThrowIfFailed(m_device->CreateCommandList(
@@ -787,7 +787,15 @@ void Renderer::D3D12App::CreateTextures() {
 			}
 		}
 	}
+	D3D12_COMMAND_QUEUE_DESC cqDesc;
+	ZeroMemory(&cqDesc, sizeof(cqDesc));
+	cqDesc.Type = m_commandType;
+	m_tempCommandQueue.resize(file_count);
+	for (size_t i = 0; i < file_count; i++)
+	{
+		m_device->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(m_tempCommandQueue[i].ReleaseAndGetAddressOf()));
 
+	}
 #pragma omp parallel for
 	for (int i = 0; i < file_count; ++i) {
 		const std::wstring& fileName = fileNames[i];
@@ -796,7 +804,7 @@ void Renderer::D3D12App::CreateTextures() {
 			m_textureResources[i],
 			m_textureHeapNSV,
 			m_device,
-			m_commandQueue,
+			m_tempCommandQueue[i],
 			m_commandList,
 			i,
 			m_csuHeapSize,

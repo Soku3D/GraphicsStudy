@@ -11,17 +11,19 @@ static physx::PxFilterFlags contactReportFilterShader(physx::PxFilterObjectAttri
 
 	PX_UNUSED(attributes0);
 	PX_UNUSED(attributes1);
-	PX_UNUSED(filterData0);
-	PX_UNUSED(filterData1);
+	//PX_UNUSED(filterData0);
+	//PX_UNUSED(filterData1);
 	PX_UNUSED(constantBlockSize);
 	PX_UNUSED(constantBlock);
 
 	// all initial and persisting reports for everything, with per-point data
-	pairFlags = PxPairFlag::eSOLVE_CONTACT |
-		PxPairFlag::eDETECT_DISCRETE_CONTACT |
+	//if(filterData0.word0)
+	pairFlags =
+		PxPairFlag::eSOLVE_CONTACT |
+		PxPairFlag::eDETECT_DISCRETE_CONTACT;/* |
 		PxPairFlag::eNOTIFY_TOUCH_FOUND |
 		PxPairFlag::eNOTIFY_TOUCH_PERSISTS |
-		PxPairFlag::eNOTIFY_CONTACT_POINTS;
+		PxPairFlag::eNOTIFY_CONTACT_POINTS*/
 
 	return PxFilterFlag::eDEFAULT;
 }
@@ -76,14 +78,14 @@ void Renderer::D3D12PhysxSimulationApp::Update(float& deltaTime)
 	if (fire) {
 		auto cameraPos = m_camera->GetPosition();
 		auto cameraForwardDir = m_camera->GetForwardDirection();
-		CreateDynamicSphere(cameraPos, cameraForwardDir, 100.f);
+		CreateDynamicSphere(cameraPos, cameraForwardDir, 100);
 
 		fire = false;
 		//std::cout << "Fire!";
 		PlaySoundEffect("Shoting", m_camera->GetPosition() + m_camera->GetForwardDirection(), 0.3f);
 	}
 
-	gScene->simulate(min(deltaTime, 1 / 144.f));
+	gScene->simulate(min(deltaTime, 1 / 30.f));
 	gScene->fetchResults(true);
 
 	// gScene->getActors()
@@ -149,22 +151,16 @@ void Renderer::D3D12PhysxSimulationApp::RenderGUI(float& deltaTime)
 	D3D12PassApp::RenderGUI(deltaTime);
 }
 
-physx::PxRigidDynamic* Renderer::D3D12PhysxSimulationApp::createDynamic(const PxTransform& t, const PxGeometry& geometry, const PxVec3& m_velocity)
-{
-	physx::PxRigidDynamic* dynamic =
-		PxCreateDynamic(*gPhysics, t, geometry, *gMaterial, 10.0f);
-	dynamic->setAngularDamping(0.5f);
-	dynamic->setLinearVelocity(m_velocity);
-	gScene->addActor(*dynamic);
-	return dynamic;
-}
-
 void Renderer::D3D12PhysxSimulationApp::CreateStack(const PxTransform& t, PxU32 size, PxReal halfExtent)
 {
 	PbrMeshData box = GeometryGenerator::PbrBox(halfExtent);
+	PxFilterData filterData;
+	filterData.word0 = 1;
 	PxShape* shape =
 		gPhysics->createShape(PxBoxGeometry(halfExtent, halfExtent, halfExtent), *gMaterial);
 
+
+	shape->setSimulationFilterData(filterData);
 	static int index = 0;
 
 	for (PxU32 i = 0; i < size; i++)
@@ -189,12 +185,10 @@ void Renderer::D3D12PhysxSimulationApp::CreateStack(const PxTransform& t, PxU32 
 			PxRigidDynamic* body = gPhysics->createRigidDynamic(t.transform(localTm));
 			body->setName(boxMesh->m_name.c_str());
 			body->attachShape(*shape);
+			
 			PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
 
 			gScene->addActor(*body);
-
-
-
 		}
 	}
 	shape->release();
@@ -274,7 +268,8 @@ void Renderer::D3D12PhysxSimulationApp::InitScene()
 void Renderer::D3D12PhysxSimulationApp::CreateDynamicBox(const DirectX::SimpleMath::Vector3& position, const DirectX::SimpleMath::Vector3& velocityDir, float velocity, float halfExtend)
 {
 	PxTransform t(PxVec3(position.x, position.y, position.z));
-	PxRigidDynamic* dynamic = PxCreateDynamic(*gPhysics, t, PxBoxGeometry(halfExtend, halfExtend, halfExtend), *gMaterial, 10.0f);
+	PxRigidDynamic* dynamic = PxCreateDynamic(*gPhysics, t, PxBoxGeometry(halfExtend, halfExtend, halfExtend),
+		*gMaterial, 10.0f);
 	dynamic->setAngularDamping(0.5f);
 	PxVec3 vel(velocityDir.x, velocityDir.y, velocityDir.z);
 	dynamic->setLinearVelocity(vel * velocity);
@@ -304,11 +299,11 @@ void Renderer::D3D12PhysxSimulationApp::CreateDynamicSphere(const DirectX::Simpl
 
 	std::string str = "Ball";
 
-	PbrMeshData sphere = GeometryGenerator::PbrSphere(halfExtend, 100, 100, L"Metal048C_4K-PNG_Albedo.png");
+	PbrMeshData sphere = GeometryGenerator::PbrSphere(halfExtend,100, 100, L"Metal048C_4K-PNG_Albedo.png");
 	std::shared_ptr<Core::StaticMesh> sphereMesh = std::make_shared<Core::StaticMesh>();
 	sphere.m_name = str;
 	sphereMesh->Initialize(sphere, m_device, m_commandList, position,
-		Material(0.7f, 0.3f, 0.5f, 0.3f), true, true, true, false, true, false);
+		Material(0.7f, 0.3f, 0.5f, 0.3f), true, true, true, true, true, false);
 	m_staticMeshes.push_back(sphereMesh);
 
 	PxTransform t(PxVec3(position.x, position.y, position.z));

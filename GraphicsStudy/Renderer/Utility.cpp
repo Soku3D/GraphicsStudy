@@ -37,9 +37,14 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
 					texture.ReleaseAndGetAddressOf(), false, 0, nullptr, bIsCubeMap));
 		}
 		else {
-			ThrowIfFailed(
+			/*ThrowIfFailed(
 				CreateDDSTextureFromFile(device.Get(), resourceUpload, path.c_str()
-					,texture.ReleaseAndGetAddressOf(), false));
+					,texture.ReleaseAndGetAddressOf(), false));*/
+			ThrowIfFailed(
+				CreateDDSTextureFromFileEx(device.Get(), resourceUpload, path.c_str(),0,
+					D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE,
+					DDS_LOADER_MIP_AUTOGEN | DDS_LOADER_FORCE_SRGB,
+					texture.ReleaseAndGetAddressOf()));
 		}
 	}
 	else {
@@ -77,7 +82,8 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
 	uploadResourcesFinished.wait();
 	std::wstringstream wss;
 
-	wss << "Create Texture Complete - " << path.c_str() << '\n';
+	wss << "Create Texture Complete - " << path.c_str() << ", Format : " << srvDesc.Format <<
+		", mipLevel : " << texture->GetDesc().MipLevels << '\n';
 	std::wcout << wss.str();
 }
 
