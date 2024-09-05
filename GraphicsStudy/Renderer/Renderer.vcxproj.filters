@@ -227,6 +227,7 @@
     <FxCompile Include="RenderBoundingBoxPassGS.hlsl" />
     <FxCompile Include="RenderBoundingBoxPassVS.hlsl" />
     <FxCompile Include="RenderBoundingBoxPassPS.hlsl" />
+    <FxCompile Include="SimulationPostProcessingCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />

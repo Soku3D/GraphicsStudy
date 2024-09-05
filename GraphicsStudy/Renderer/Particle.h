@@ -8,6 +8,7 @@
 struct Particle {
 	DirectX::SimpleMath::Vector3 m_position;
 	DirectX::SimpleMath::Vector3 m_color;
+	float radius;
 };
 
 class Particles {

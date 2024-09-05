@@ -2,10 +2,11 @@ struct Particle
 {
     float3 position;
     float3 color;
+    float radius;
 };
 RWStructuredBuffer<Particle> particles : register(u0);
 
-static const float deltaTime = 1.f / 300.f;
+static const float deltaTime = 1.f / 500.f;
 
 [numthreads(768, 1, 1)]
 void main( uint3 DTid : SV_DispatchThreadID )

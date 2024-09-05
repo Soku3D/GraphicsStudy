@@ -46,7 +46,7 @@ void Renderer::D3D12PassApp::InitScene()
 
 	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
 	sphere->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, 
-		L"worn-painted-metal_albedo.dds", 2.f, 2.f),
+		L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f),
 		m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
 		true /*AO*/, true /*Metallic*/, true /*Height*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
@@ -66,7 +66,7 @@ void Renderer::D3D12PassApp::InitScene()
 		true /*loopAnimation*/,
 		1.5f /*animationSpeed*/,
 		Vector3(0.f, 1.f, 0.f),
-		L"uvtest_DefaultMaterial_Albedo.png");
+		L"uvtest_DefaultMaterial_Albedo.dds");
 
 	m_fbxList.push_back(wallDistructionFbx);
 
@@ -278,7 +278,7 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 					handle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath()], m_csuHeapSize);
 				}
 				else {
-					handle.Offset(m_textureMap[L"zzzdefaultAlbedo.png"], m_csuHeapSize);
+					handle.Offset(m_textureMap[L"zzzdefaultAlbedo.dds"], m_csuHeapSize);
 				}
 				m_commandList->SetGraphicsRootDescriptorTable(0, handle);
 				//m_commandList->SetGraphicsRootDescriptorTable(1, normalHandle);
@@ -595,7 +595,7 @@ void Renderer::D3D12PassApp::PostProcessing(float& deltaTime) {
 
 	//D3D12App::Render(deltaTime);
 
-	auto& pso = computePsoList["Compute"];
+	auto& pso = computePsoList["PostPrcessing"];
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));

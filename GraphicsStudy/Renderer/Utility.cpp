@@ -40,11 +40,23 @@ void Renderer::Utility::CreateTextureBuffer(std::wstring path, ComPtr<ID3D12Reso
 			/*ThrowIfFailed(
 				CreateDDSTextureFromFile(device.Get(), resourceUpload, path.c_str()
 					,texture.ReleaseAndGetAddressOf(), false));*/
-			ThrowIfFailed(
-				CreateDDSTextureFromFileEx(device.Get(), resourceUpload, path.c_str(),0,
-					D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE,
-					DDS_LOADER_MIP_AUTOGEN | DDS_LOADER_FORCE_SRGB,
-					texture.ReleaseAndGetAddressOf()));
+
+			if (path.substr(path.size() - 10, 6) == L"Albedo") {
+				ThrowIfFailed(
+					CreateDDSTextureFromFileEx(device.Get(), resourceUpload, path.c_str(), 0,
+						D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE,
+						DDS_LOADER_MIP_AUTOGEN | DDS_LOADER_FORCE_SRGB,
+						texture.ReleaseAndGetAddressOf()));
+				//std::cout << "albeldo";
+			}
+			else {
+				ThrowIfFailed(
+					CreateDDSTextureFromFileEx(device.Get(), resourceUpload, path.c_str(), 0,
+						D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE,
+						DDS_LOADER_MIP_AUTOGEN,
+						texture.ReleaseAndGetAddressOf()));
+			}
+		
 		}
 	}
 	else {

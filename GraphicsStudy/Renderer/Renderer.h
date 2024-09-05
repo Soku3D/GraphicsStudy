@@ -31,7 +31,7 @@ namespace Renderer {
 	extern UINT msaaQuality;
 
 	extern GraphicsPSO defaultPso;
-	extern ComputePSO computePso;
+	extern ComputePSO postProcessingPso;
 
 	extern RootSignature defaultSignature;
 
@@ -63,6 +63,7 @@ namespace Renderer {
 
 	extern D3D12_BLEND_DESC defaultBlender;
 	extern D3D12_BLEND_DESC alphaBlender;
+	extern D3D12_BLEND_DESC simulationBlender;
 
 	void Initialize(void);
 	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device);

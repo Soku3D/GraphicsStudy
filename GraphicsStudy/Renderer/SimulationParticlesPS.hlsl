@@ -1,6 +1,12 @@
 #include "SimulationParticles.hlsli"
-
+float smoothstep(float x)
+{
+    return x * x * (3.0f - 2.0f * x);
+}
 float4 main(PSInput input) : SV_TARGET
 {
-    return float4(input.color, 1);
+    float x = length(input.position - input.center) / input.radius;
+    float kd = smoothstep(1.f - x) * 100.f * input.radius;
+
+    return float4(input.color * kd, 1);
 }

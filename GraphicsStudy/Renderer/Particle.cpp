@@ -7,14 +7,16 @@ void Particles::Initialize(int numPatricles)
 	using DirectX::SimpleMath::Vector3;
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_real_distribution<> distribPos(-1.f, 1.f);
+	std::uniform_real_distribution<> distribPos(-1.3f, 1.3f);
 	std::uniform_real_distribution<> distribColor(0.f, 1.f);
+	std::uniform_real_distribution<> distribRadius(0.01f, 0.04f);
 	m_cpu.resize(numPatricles);
 	for (int i = 0; i < numPatricles; i++)
 	{
 		Particle particle;
 		particle.m_color = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
 		particle.m_position = Vector3((float)distribPos(gen), (float)distribPos(gen), 0.f);
+		particle.radius = (float)distribRadius(gen);
 
 		m_cpu[i] = particle;
 	}
@@ -38,6 +40,7 @@ void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Mi
 	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 	resourceDesc.MipLevels = 1;
+
 	ThrowIfFailed(
 		device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
@@ -45,8 +48,7 @@ void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Mi
 			&resourceDesc,
 			D3D12_RESOURCE_STATE_COPY_DEST,
 			nullptr,
-			IID_PPV_ARGS(&m_gpu)
-		));
+			IID_PPV_ARGS(&m_gpu)));
 
 	ThrowIfFailed(device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -63,13 +65,11 @@ void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Mi
 	subResourceData.SlicePitch = bufferSize;
 
 	UpdateSubresources(commandList.Get(), m_gpu.Get(), m_upload.Get(), 0, 0, 1, &subResourceData);
+	
 	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 		m_gpu.Get(),
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-
-
-
 }
 
 void Particles::BuildDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)

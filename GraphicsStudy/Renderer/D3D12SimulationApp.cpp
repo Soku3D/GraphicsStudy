@@ -20,7 +20,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	m_commandAllocator->Reset();
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
-	particle.Initialize(SIMULATION_PARTICLE_SIZE);
+	particle.Initialize(100);
 	particle.BuildResources(m_device, m_commandList);
 
 	m_commandList->Close();
@@ -87,10 +87,11 @@ void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
 	ID3D12DescriptorHeap* pHeaps[] = {
 		particle.GetUavHeap()
 	};
-	//m_commandList->ClearUnorderedAccessViewUint()
+	//m_commandList->ClearUnorderedAccessViewUint(,)
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, particle.GetUavHandle());
-	m_commandList->Dispatch(particle.GetParticleCount() / SIMULATION_PARTICLE_SIZE, 1, 1);
+	UINT dispatchX = (particle.GetParticleCount() - 1 + SIMULATION_PARTICLE_SIZE) / SIMULATION_PARTICLE_SIZE;
+	m_commandList->Dispatch(dispatchX, 1, 1);
 	//m_commandList->ExecuteIndirect(,)
 	ThrowIfFailed(m_commandList->Close());
 	
@@ -107,7 +108,7 @@ void Renderer::D3D12SimulationApp::PostProcessing(float& deltaTime) {
 
 	//D3D12App::Render(deltaTime);
 
-	auto& pso = computePsoList["Compute"];
+	auto& pso = computePsoList["SimulationPostProcessing"];
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
@@ -163,6 +164,7 @@ void Renderer::D3D12SimulationApp::SimulationRenderPass(float& deltaTime)
 	m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clear, 0, nullptr);
 	m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
 		1.f,0,0,nullptr);
+	//m_commandList->ClearRenderTargetView(HDRRendertargetView(), clear, 0, nullptr);
 
 	m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 	m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());

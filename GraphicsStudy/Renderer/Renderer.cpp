@@ -35,6 +35,7 @@
 #include "SimulationParticlesGS.h"
 #include "SimulationParticlesPS.h"
 #include "SimulationParticlesCS.h"
+#include "SimulationPostProcessingCS.h"
 
 namespace Renderer {
 	DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -57,7 +58,7 @@ namespace Renderer {
 	UINT msaaQuality = 0;
 
 	GraphicsPSO defaultPso("Default");
-	ComputePSO computePso("Compute");
+	ComputePSO postProcessingPso("PostProcessing");
 
 	std::map<std::string, GraphicsPSO > modePsoLists;
 	std::map<std::string, GraphicsPSO > passPsoLists;
@@ -98,6 +99,7 @@ namespace Renderer {
 
 	D3D12_BLEND_DESC defaultBlender;
 	D3D12_BLEND_DESC alphaBlender;
+	D3D12_BLEND_DESC simulationBlender;
 
 	void Initialize(void)
 	{
@@ -163,6 +165,7 @@ namespace Renderer {
 
 		GraphicsPSO copyPso("Copy");
 
+		ComputePSO simulationPostProcessingPso("SimulationPostProcessing");
 		ComputePSO simulationComputePso("SimulationCompute");
 		GraphicsPSO simulationRenderPso("SimulationRenderPass");
 
@@ -198,7 +201,6 @@ namespace Renderer {
 
 		defaultBlender = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		alphaBlender = defaultBlender;
-		alphaBlender.RenderTarget[0].BlendEnable = true;
 		alphaBlender.RenderTarget[0].BlendEnable = TRUE;
 		alphaBlender.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
 		alphaBlender.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
@@ -207,6 +209,11 @@ namespace Renderer {
 		alphaBlender.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
 		alphaBlender.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
 		alphaBlender.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+		simulationBlender = alphaBlender;
+		simulationBlender.RenderTarget[0].SrcBlend= D3D12_BLEND_SRC_COLOR;
+		simulationBlender.RenderTarget[0].DestBlend = D3D12_BLEND_DEST_COLOR;
+		simulationBlender.RenderTarget[0].BlendOp = D3D12_BLEND_OP_MAX;
 
 		defaultPso.SetVertexShader(g_pTestVS, sizeof(g_pTestVS));
 		defaultPso.SetPixelShader(g_pTestPS, sizeof(g_pTestPS));
@@ -279,8 +286,8 @@ namespace Renderer {
 		renderBoundingBoxPassPso.SetRootSignature(&NormalPassSignature);
 		renderBoundingBoxPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
 
-		computePso.SetRootSignature(&computeSignature);
-		computePso.SetComputeShader(g_pPostprocessingCS, sizeof(g_pPostprocessingCS));
+		postProcessingPso.SetRootSignature(&computeSignature);
+		postProcessingPso.SetComputeShader(g_pPostprocessingCS, sizeof(g_pPostprocessingCS));
 
 		msaaPso = defaultPso;
 		msaaPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, msaaCount, msaaQuality - 1);
@@ -317,9 +324,13 @@ namespace Renderer {
 		simulationRenderPso.SetPixelShader(g_pSimulationParticlesPS, sizeof(g_pSimulationParticlesPS));
 		simulationRenderPso.SetRenderTargetFormat(backbufferFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 		simulationRenderPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+		simulationRenderPso.SetBlendState(simulationBlender);
 
 		simulationComputePso.SetComputeShader(g_pSimulationParticlesCS, sizeof(g_pSimulationParticlesCS));
 		simulationComputePso.SetRootSignature(&simulationComputeSignature);
+
+		simulationPostProcessingPso.SetRootSignature(&computeSignature);
+		simulationPostProcessingPso.SetComputeShader(g_pSimulationPostProcessingCS, sizeof(g_pSimulationPostProcessingCS));
 
 		modePsoLists[defaultPso.GetName()] = defaultPso;
 		modePsoLists[wirePso.GetName()] = wirePso;
@@ -343,9 +354,9 @@ namespace Renderer {
 		cubePsoLists[msaaCubeMapPso.GetName()] = msaaCubeMapPso;
 		cubePsoLists[wireCubeMapPso.GetName()] = wireCubeMapPso;
 
-		computePsoList[computePso.GetName()] = computePso;
+		computePsoList[postProcessingPso.GetName()] = postProcessingPso;
 		computePsoList[simulationComputePso.GetName()] = simulationComputePso;
-
+		computePsoList[simulationPostProcessingPso.GetName()] = simulationPostProcessingPso;
 	}
 
 	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
