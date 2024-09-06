@@ -35,6 +35,7 @@
 #include "SimulationParticlesGS.h"
 #include "SimulationParticlesPS.h"
 #include "SimulationParticlesCS.h"
+#include "SphSimulationParticlesCS.h"
 #include "SimulationPostProcessingCS.h"
 
 namespace Renderer {
@@ -83,6 +84,7 @@ namespace Renderer {
 	RootSignature computeSignature;
 	RootSignature simulationComputeSignature;
 	RootSignature simulationSignature;
+	RootSignature simulationPostProcessingSignature;
 	
 	RootSignature raytracingGlobalSignature;
 
@@ -131,6 +133,7 @@ namespace Renderer {
 		// Init Signatures
 		defaultSignature.Initialize(1, 3, 1, &wrapLinearSampler);
 		computeSignature.InitializeUAV(1, 0, 0, nullptr);
+		computeSignature.InitializeUAV(1, 0, 0, nullptr);
 		cubeMapSignature.Initialize(1, 2, 1, &wrapLinearSampler);
 		copySignature.Initialize(1, 0, 1, &wrapLinearSampler);
 
@@ -138,8 +141,9 @@ namespace Renderer {
 		lightPassSignature.InitializeDoubleSrvHeap(4, 4, 1, samplers);
 		NormalPassSignature.Initialize(2);
 		
-		simulationComputeSignature.InitializeUAV(1,0, 0, nullptr);
+		simulationComputeSignature.InitializeUAV(1, 1, 0, nullptr);
 		simulationSignature.Initialize(1, 0, 0, nullptr);
+		simulationPostProcessingSignature.InitializeUAV(1, 1, 0, nullptr);
 
 		raytracingGlobalSignature.InitializeRaytracing(1, 4, 1, 1, &wrapLinearSampler);
 
@@ -167,6 +171,7 @@ namespace Renderer {
 
 		ComputePSO simulationPostProcessingPso("SimulationPostProcessing");
 		ComputePSO simulationComputePso("SimulationCompute");
+		ComputePSO sphSimulationComputePso("SphSimulationCompute");
 		GraphicsPSO simulationRenderPso("SimulationRenderPass");
 
 		defaultElement =
@@ -329,7 +334,10 @@ namespace Renderer {
 		simulationComputePso.SetComputeShader(g_pSimulationParticlesCS, sizeof(g_pSimulationParticlesCS));
 		simulationComputePso.SetRootSignature(&simulationComputeSignature);
 
-		simulationPostProcessingPso.SetRootSignature(&computeSignature);
+		sphSimulationComputePso.SetComputeShader(g_pSphSimulationParticlesCS, sizeof(g_pSphSimulationParticlesCS));
+		sphSimulationComputePso.SetRootSignature(&simulationComputeSignature);
+
+		simulationPostProcessingPso.SetRootSignature(&simulationPostProcessingSignature);
 		simulationPostProcessingPso.SetComputeShader(g_pSimulationPostProcessingCS, sizeof(g_pSimulationPostProcessingCS));
 
 		modePsoLists[defaultPso.GetName()] = defaultPso;
@@ -357,6 +365,8 @@ namespace Renderer {
 		computePsoList[postProcessingPso.GetName()] = postProcessingPso;
 		computePsoList[simulationComputePso.GetName()] = simulationComputePso;
 		computePsoList[simulationPostProcessingPso.GetName()] = simulationPostProcessingPso;
+		
+		computePsoList[sphSimulationComputePso.GetName()] = sphSimulationComputePso;
 	}
 
 	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
@@ -370,6 +380,8 @@ namespace Renderer {
 		NormalPassSignature.Finalize(device);
 		simulationComputeSignature.Finalize(device);
 		simulationSignature.Finalize(device);
+		simulationPostProcessingSignature.Finalize(device);
+
 		raytracingGlobalSignature.Finalize(device);
 
 		for (auto& pso : modePsoLists) {

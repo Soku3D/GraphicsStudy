@@ -8,16 +8,13 @@ struct Particle
 };
 
 RWStructuredBuffer<Particle> particles : register(u0);
-
-static const float deltaTime = 1.f / 500.f;
-
 struct SimulationConstant
 {
     float delTime;
 };
 ConstantBuffer<SimulationConstant> gConstantBuffer : register(b0);
 [numthreads(768, 1, 1)]
-void main( uint3 DTid : SV_DispatchThreadID )
+void main(uint3 DTid : SV_DispatchThreadID)
 {
     Particle p = particles[DTid.x];
     float3 position = p.position;

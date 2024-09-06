@@ -67,3 +67,9 @@ __declspec(align(256)) struct CubeMapConstantData {
 	float lodLevel;
 	DirectX::SimpleMath::Vector2 dummy;
 };
+
+
+__declspec(align(256)) struct SimulationCSConstantData {
+	float time;
+	float dummy[3];
+};

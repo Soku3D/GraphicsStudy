@@ -23,6 +23,7 @@
 #include <directxtk12/Audio.h>
 
 #include "Camera.h"
+#include "Buffer.h"
 
 inline std::wstring AnsiToWString(const std::string& str)
 {
@@ -168,5 +169,20 @@ namespace Renderer {
 
 		static void CreateConstantBuffer(ComPtr<ID3D12Device5>& device, UINT64 buffersize, ComPtr<ID3D12Resource>& buffer, void** pBufferData);
 
+		template<typename ConstantStructure>
+		static void CreateConstantBuffer(ComPtr<ID3D12Device5>& device, Core::ConstantBuffer<ConstantStructure>& buffer)
+		{
+			ThrowIfFailed(
+				device->CreateCommittedResource(
+					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+					D3D12_HEAP_FLAG_NONE,
+					&CD3DX12_RESOURCE_DESC::Buffer(sizeof(ConstantStructure)),
+					D3D12_RESOURCE_STATE_GENERIC_READ,
+					nullptr,
+					IID_PPV_ARGS(buffer.GetAddressOf())));
+
+			CD3DX12_RANGE range(0, 0);
+			ThrowIfFailed(buffer.Get()->Map(0, &range, reinterpret_cast<void**>(buffer.GetData())));
+		}
 };
 }

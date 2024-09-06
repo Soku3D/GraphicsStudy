@@ -45,9 +45,9 @@ namespace Renderer {
 	extern RootSignature computeSignature;
 	extern RootSignature simulationComputeSignature;
 	extern RootSignature simulationSignature;
+	extern RootSignature simulationPostProcessingSignature;
 
 	extern RootSignature raytracingGlobalSignature;
-
 
 	extern std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;
 	extern std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElement;

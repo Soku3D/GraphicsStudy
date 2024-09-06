@@ -14,10 +14,31 @@ void Particles::Initialize(int numPatricles)
 	for (int i = 0; i < numPatricles; i++)
 	{
 		Particle particle;
-		particle.m_color = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
-		particle.m_position = Vector3((float)distribPos(gen), (float)distribPos(gen), 0.f);
-		particle.radius = (float)distribRadius(gen);
+		particle.mColor = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
+		particle.mPosition = Vector3((float)distribPos(gen), (float)distribPos(gen), 0.f);
+		particle.mRadius = (float)distribRadius(gen);
 
+		m_cpu[i] = particle;
+	}
+}
+void Particles::InitializeSPH(int numPatricles)
+{
+	using DirectX::SimpleMath::Vector3;
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<> distribPos(-1.3f, 1.3f);
+	std::uniform_real_distribution<> distribColor(0.f, 1.f);
+	std::uniform_real_distribution<> distribRadius(0.01f, 0.04f);
+	std::uniform_real_distribution<> distribVeolcity(0.1f, 0.4f);
+	m_cpu.resize(numPatricles);
+	for (int i = 0; i < numPatricles; i++)
+	{
+		Particle particle;
+		particle.mColor = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
+		particle.mPosition = Vector3::Zero;
+		particle.mRadius = (float)distribRadius(gen);
+		//particle.mVelocity = (float)distribVeolcity(0.1f, 0.4f);
+		(gen);
 		m_cpu[i] = particle;
 	}
 }

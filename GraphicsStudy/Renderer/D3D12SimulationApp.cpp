@@ -20,7 +20,11 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	m_commandAllocator->Reset();
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
-	particle.Initialize(100);
+	//Utility::CreateConstantBuffer(m_device,sizeof(SimulationCSConstantData),)
+	Utility::CreateConstantBuffer(m_device, mSimulationConstantBuffer);
+
+	//particle.Initialize(100);
+	particle.InitializeSPH(SIMULATION_PARTICLE_SIZE);
 	particle.BuildResources(m_device, m_commandList);
 
 	m_commandList->Close();
@@ -58,8 +62,9 @@ void Renderer::D3D12SimulationApp::OnResize()
 void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 {
 	D3D12App::Update(deltaTime);
-
-
+	
+	mSimulationConstantBuffer.mStructure.time = min(1 / 60.f, deltaTime);
+	mSimulationConstantBuffer.UpdateBuffer();
 }
 
 void Renderer::D3D12SimulationApp::UpdateGUI(float& deltaTime)
@@ -69,9 +74,21 @@ void Renderer::D3D12SimulationApp::UpdateGUI(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::Render(float& deltaTime)
 {
+	ParticleSimulation(deltaTime);
+}
+void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
+{
 	SimulationPass(deltaTime);
 	SimulationRenderPass(deltaTime);
 	PostProcessing(deltaTime);
+	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+}
+
+void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
+{
+	SPHSimulationPass(deltaTime);
+	SimulationRenderPass(deltaTime);
+	//PostProcessing(deltaTime);
 	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 }
 
@@ -90,6 +107,7 @@ void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
 	//m_commandList->ClearUnorderedAccessViewUint(,)
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, particle.GetUavHandle());
+	m_commandList->SetComputeRootConstantBufferView(1, mSimulationConstantBuffer.GetGpuAddress());
 	UINT dispatchX = (particle.GetParticleCount() - 1 + SIMULATION_PARTICLE_SIZE) / SIMULATION_PARTICLE_SIZE;
 	m_commandList->Dispatch(dispatchX, 1, 1);
 	//m_commandList->ExecuteIndirect(,)
@@ -103,6 +121,38 @@ void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
 
 	PIXEndEvent(m_commandQueue.Get());
 }
+
+
+void Renderer::D3D12SimulationApp::SPHSimulationPass(float& deltaTime)
+{
+	auto& pso = computePsoList["SphSimulationCompute"];
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), simulationPassEvent);
+
+	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
+	ID3D12DescriptorHeap* pHeaps[] = {
+		particle.GetUavHeap()
+	};
+	//m_commandList->ClearUnorderedAccessViewUint(,)
+	m_commandList->SetDescriptorHeaps(1, pHeaps);
+	m_commandList->SetComputeRootDescriptorTable(0, particle.GetUavHandle());
+	m_commandList->SetComputeRootConstantBufferView(1, mSimulationConstantBuffer.GetGpuAddress());
+	UINT dispatchX = (particle.GetParticleCount() - 1 + SIMULATION_PARTICLE_SIZE) / SIMULATION_PARTICLE_SIZE;
+	m_commandList->Dispatch(dispatchX, 1, 1);
+	//m_commandList->ExecuteIndirect(,)
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* pCmdLists[] = {
+		m_commandList.Get()
+	};
+	m_commandQueue->ExecuteCommandLists(1, pCmdLists);
+	FlushCommandQueue();
+
+	PIXEndEvent(m_commandQueue.Get());
+}
+
 
 void Renderer::D3D12SimulationApp::PostProcessing(float& deltaTime) {
 
@@ -130,7 +180,7 @@ void Renderer::D3D12SimulationApp::PostProcessing(float& deltaTime) {
 		m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
 		m_commandList->SetComputeRootDescriptorTable(0, m_hdrUavHeap->GetGPUDescriptorHandleForHeapStart());
-
+		m_commandList->SetComputeRootConstantBufferView(1, mSimulationConstantBuffer.GetGpuAddress());
 		//m_commandList->SetComputeRootConstantBufferView(1, m_csBuffer->GetGPUVirtualAddress());
 		m_commandList->Dispatch((UINT)ceil(m_screenWidth / 32.f), (UINT)ceil(m_screenHeight / 32.f), 1);
 
@@ -161,7 +211,7 @@ void Renderer::D3D12SimulationApp::SimulationRenderPass(float& deltaTime)
 	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 0, 255), simulationRenderPassEvent);
 
 	FLOAT clear[4] = { 0,0,0,0 };
-	m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clear, 0, nullptr);
+	//m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clear, 0, nullptr);
 	m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
 		1.f,0,0,nullptr);
 	//m_commandList->ClearRenderTargetView(HDRRendertargetView(), clear, 0, nullptr);

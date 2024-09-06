@@ -2,6 +2,8 @@ struct Particle
 {
     float3 position;
     float3 color;
+    float2 veolctiy;
+    float life;
     float radius;
 };
 StructuredBuffer<Particle> particles : register(t0);
@@ -14,7 +16,8 @@ struct GSInput
 {
     float3 position : Position;
     float3 color : COLOR;
-    float radius : DEPTH;
+    float radius : DEPTH0;
+    float life : DEPTH1;
 };
 struct PSInput
 {

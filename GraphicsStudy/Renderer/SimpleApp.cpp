@@ -1,251 +1,250 @@
 #include "SimpleApp.h"
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-    return Renderer::SimpleApp::m_pApp->MainProc(hWnd, message, wParam, lParam);
+	return Renderer::SimpleApp::m_pApp->MainProc(hWnd, message, wParam, lParam);
 }
 Renderer::SimpleApp* Renderer::SimpleApp::m_pApp = nullptr;
 
-Renderer::SimpleApp::SimpleApp(const int& width, const int& height):
-    m_screenWidth(width),
-    m_screenHeight(height)  
+Renderer::SimpleApp::SimpleApp(const int& width, const int& height) :
+	m_screenWidth(width),
+	m_screenHeight(height)
 {
-    assert(m_pApp == nullptr);
-    m_pApp = this;
-    m_camera = std::make_shared<Core::Camera>();
-    m_inputHandler = std::make_unique<InputHandler>();
+	assert(m_pApp == nullptr);
+	m_pApp = this;
+	m_camera = std::make_shared<Core::Camera>();
+	m_inputHandler = std::make_unique<InputHandler>();
 
-    m_camera->SetAspectRation(width / (float)height);
+	m_camera->SetAspectRation(width / (float)height);
 }
 
 Renderer::SimpleApp::~SimpleApp()
 {
-    std::cout << "~SimpleApp" << std::endl;
-    ImGui_ImplDX12_Shutdown();
-    ImGui_ImplWin32_Shutdown();
-    ImGui::DestroyContext();
+	std::cout << "~SimpleApp" << std::endl;
+	ImGui_ImplDX12_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 
-    m_mainWnd = NULL;
-    m_pApp = nullptr;
-    m_camera.reset();
+	m_mainWnd = NULL;
+	m_pApp = nullptr;
+	m_camera.reset();
 }
 
 bool Renderer::SimpleApp::Initialize()
 {
-    if (!InitWindow()) {
-        std::cerr << "Failed InitWindow()\n";
-        return false;
-    }
-    /*if (!InitbackgroundWindow()) {
-         std::cerr << "Failed InitWindow()\n";
-         return false;
-    }*/
-    if (!InitDirectX()) {
-        std::cerr << "Failed InitDirectX()\n";
-        return false;
-    }
-    OnResize();
+	if (!InitWindow()) {
+		std::cerr << "Failed InitWindow()\n";
+		return false;
+	}
+	/*if (!InitbackgroundWindow()) {
+		 std::cerr << "Failed InitWindow()\n";
+		 return false;
+	}*/
+	if (!InitDirectX()) {
+		std::cerr << "Failed InitDirectX()\n";
+		return false;
+	}
+	OnResize();
 
-    return true;
+	return true;
 }
 
 bool Renderer::SimpleApp::InitbackgroundWindow()
 {
-    HWND progman = FindWindow(L"Progman", NULL);
+	HWND progman = FindWindow(L"Progman", NULL);
 
-    if (progman)
-    {
-        // Progman을 활성화시킴
-        SendMessageTimeout(progman, 0x052C, 0, 0, SMTO_NORMAL, 1000, nullptr);
-        // WorkerW 찾기
-        EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
-            HWND p = FindWindowEx(hwnd, NULL, L"SHELLDLL_DefView", NULL);
-            if (p)
-            {
-                HWND* ret = (HWND*)lParam;
-                *ret = FindWindowEx(NULL, hwnd, L"WorkerW", NULL);
-            }
-            return TRUE;
-            }, (LPARAM)&m_mainWnd);
-    }
-    assert(m_mainWnd != 0);
+	if (progman)
+	{
+		// Progman을 활성화시킴
+		SendMessageTimeout(progman, 0x052C, 0, 0, SMTO_NORMAL, 1000, nullptr);
+		// WorkerW 찾기
+		EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+			HWND p = FindWindowEx(hwnd, NULL, L"SHELLDLL_DefView", NULL);
+			if (p)
+			{
+				HWND* ret = (HWND*)lParam;
+				*ret = FindWindowEx(NULL, hwnd, L"WorkerW", NULL);
+			}
+			return TRUE;
+			}, (LPARAM)&m_mainWnd);
+	}
+	assert(m_mainWnd != 0);
 
-    RAWINPUTDEVICE rawInputDevice;
+	RAWINPUTDEVICE rawInputDevice;
 
-    //The HID standard for mouse
-    const uint16_t standardMouse = 0x02;
+	//The HID standard for mouse
+	const uint16_t standardMouse = 0x02;
 
-    rawInputDevice.usUsagePage = 0x01;
-    rawInputDevice.usUsage = standardMouse;
-    rawInputDevice.dwFlags = 0;
-    rawInputDevice.hwndTarget = m_mainWnd;
+	rawInputDevice.usUsagePage = 0x01;
+	rawInputDevice.usUsage = standardMouse;
+	rawInputDevice.dwFlags = 0;
+	rawInputDevice.hwndTarget = m_mainWnd;
 
-    ::RegisterRawInputDevices(&rawInputDevice, 1, sizeof(RAWINPUTDEVICE));
+	::RegisterRawInputDevices(&rawInputDevice, 1, sizeof(RAWINPUTDEVICE));
 
-    ShowWindow(m_mainWnd, SW_SHOWDEFAULT);
-    UpdateWindow(m_mainWnd);
+	ShowWindow(m_mainWnd, SW_SHOWDEFAULT);
+	UpdateWindow(m_mainWnd);
 
-    return true;
+	return true;
 }
 
 bool Renderer::SimpleApp::InitWindow()
 {
-    WNDCLASSEX wcex;
-    wcex.cbSize = sizeof(WNDCLASSEX);
-    wcex.style = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc = WndProc;
-    wcex.cbClsExtra = 0;
-    wcex.cbWndExtra = 0;
-    wcex.hInstance = GetModuleHandle(NULL);
-    wcex.hIcon = NULL;
-    wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wcex.hbrBackground = NULL;
-    wcex.lpszMenuName = nullptr;
-    wcex.lpszClassName = L"D3DApp";
-    wcex.hIconSm = NULL;
-    
-    RegisterClassEx(&wcex);
+	WNDCLASSEX wcex;
+	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.style = CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc = WndProc;
+	wcex.cbClsExtra = 0;
+	wcex.cbWndExtra = 0;
+	wcex.hInstance = GetModuleHandle(NULL);
+	wcex.hIcon = NULL;
+	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wcex.hbrBackground = NULL;
+	wcex.lpszMenuName = nullptr;
+	wcex.lpszClassName = L"D3DApp";
+	wcex.hIconSm = NULL;
 
-    // Create window
-    RECT rc = { 0, 0, (LONG)m_screenWidth, (LONG)m_screenHeight };
-    AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
+	RegisterClassEx(&wcex);
 
-    m_mainWnd = CreateWindow(wcex.lpszClassName, wcex.lpszClassName, WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, 
-        CW_USEDEFAULT,
-        rc.right - rc.left, 
-        rc.bottom - rc.top, 
-        nullptr,
-        nullptr, 
-        wcex.hInstance,
-        nullptr);
+	// Create window
+	RECT rc = { 0, 0, (LONG)m_screenWidth, (LONG)m_screenHeight };
+	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
+	m_mainWnd = CreateWindow(wcex.lpszClassName, wcex.lpszClassName, WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		(int)(rc.right - rc.left),
+		(int)(rc.bottom - rc.top),
+		NULL,
+		NULL,
+		wcex.hInstance,
+		nullptr);
 
-    assert(m_mainWnd != 0);
-    
-    RAWINPUTDEVICE rawInputDevice;
+	assert(m_mainWnd != 0);
 
-    //The HID standard for mouse
-    const uint16_t standardMouse = 0x02;
-   
-    rawInputDevice.usUsagePage = 0x01;
-    rawInputDevice.usUsage = standardMouse;
-    rawInputDevice.dwFlags = 0;
-    rawInputDevice.hwndTarget = m_mainWnd;
+	RAWINPUTDEVICE rawInputDevice;
 
-    ::RegisterRawInputDevices(&rawInputDevice, 1, sizeof(RAWINPUTDEVICE));
+	//The HID standard for mouse
+	const uint16_t standardMouse = 0x02;
 
-    ShowWindow(m_mainWnd,SW_SHOWDEFAULT);
-    UpdateWindow(m_mainWnd);
+	rawInputDevice.usUsagePage = 0x01;
+	rawInputDevice.usUsage = standardMouse;
+	rawInputDevice.dwFlags = 0;
+	rawInputDevice.hwndTarget = m_mainWnd;
 
-    return true;
+	::RegisterRawInputDevices(&rawInputDevice, 1, sizeof(RAWINPUTDEVICE));
+
+	ShowWindow(m_mainWnd, SW_SHOWDEFAULT);
+	UpdateWindow(m_mainWnd);
+
+	return true;
 }
 
 int Renderer::SimpleApp::Run()
 {
-    MSG msg = {};
-    m_timer.Start();
-    while (msg.message != WM_QUIT) {
-        if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        else {
-            m_timer.Tick();
-            float delTime = min((float)m_timer.GetDeltaTime(), 1/60.f);
-            Update(delTime);
-            Render(delTime);
-            RenderGUI(delTime);
+	MSG msg = {};
+	m_timer.Start();
+	while (msg.message != WM_QUIT) {
+		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		else {
+			m_timer.Tick();
+			float delTime = min((float)m_timer.GetDeltaTime(), 1 / 60.f);
+			Update(delTime);
+			Render(delTime);
+			RenderGUI(delTime);
 
-            //std::cout << delTime << ' ' << elapsedTime << '\n';
-        }
-    }
+			//std::cout << delTime << ' ' << elapsedTime << '\n';
+		}
+	}
 
-    std::cout << "QUIT" << std::endl;
-    return (int)msg.wParam;
+	std::cout << "QUIT" << std::endl;
+	return (int)msg.wParam;
 }
 
 LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
-        return true;
+	extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+		return true;
 
-    switch (msg) {
-    case WM_DESTROY:
-        {
-            PostQuitMessage(0);
-            return 0;
-        }
-    case WM_SIZE:
-        {
-            m_screenWidth = LOWORD(lParam);
-            m_screenHeight = HIWORD(lParam);
-            if(m_camera!=nullptr)
-                m_camera->SetAspectRation(m_screenWidth / (float)m_screenHeight);
-            OnResize();
+	switch (msg) {
+	case WM_DESTROY:
+	{
+		PostQuitMessage(0);
+		return 0;
+	}
+	case WM_SIZE:
+	{
+		m_screenWidth = LOWORD(lParam);
+		m_screenHeight = HIWORD(lParam);
+		if (m_camera != nullptr)
+			m_camera->SetAspectRation(m_screenWidth / (float)m_screenHeight);
+		OnResize();
 
-            return 0;
-        }
-        break;
-    case WM_INPUT:
-    {
-        RAWINPUT raw;
-        UINT rawSize = sizeof(raw);
-        
-        const UINT resultData =
-        GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT,
-            &raw, &rawSize, sizeof(RAWINPUTHEADER));
-      
-        int deltaX = raw.data.mouse.lLastX;
-        int deltaY = raw.data.mouse.lLastY;
-        if (raw.data.mouse.usButtonFlags == RI_MOUSE_RIGHT_BUTTON_DOWN) {
-            if (!bIsFPSMode) {
-                GetCursorPos(&m_fpsModeCursorPos);
-                //std::cout << m_fpsModeCursorPos.x << " " << m_fpsModeCursorPos.y << std::endl;
-                bIsFPSMode = true;
-                ShowCursor(FALSE);
-            }         
-        }
-        else if (raw.data.mouse.usButtonFlags == RI_MOUSE_RIGHT_BUTTON_UP) {
-            bIsFPSMode = false;
-            ShowCursor(TRUE);
-            SetCursorPos(m_fpsModeCursorPos.x, m_fpsModeCursorPos.y);
-        }
-        if (raw.data.mouse.usButtonFlags == RI_MOUSE_LEFT_BUTTON_DOWN) {
-            if (!lMouseButtonClicked) {
-                lMouseButtonClicked = true;
-                fire = true;
-            }
-            else {
-                fire = false;
-            }
-        }
-        else if (raw.data.mouse.usButtonFlags == RI_MOUSE_LEFT_BUTTON_UP) {
-            lMouseButtonClicked = false;
-        }
-        if (m_camera != nullptr && bIsFPSMode)
-        {
-            m_camera->SetRotation(deltaX, deltaY);
-           // m_camera->SetQuaternion(deltaX, deltaY);
-        }
+		return 0;
+	}
+	break;
+	case WM_INPUT:
+	{
+		RAWINPUT raw;
+		UINT rawSize = sizeof(raw);
 
-  
-        return 0;
-    }
-    break;
+		const UINT resultData =
+			GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT,
+				&raw, &rawSize, sizeof(RAWINPUTHEADER));
 
-    case WM_KEYDOWN:
-        m_inputHandler->m_currKeyStates[(int)wParam] = true;
+		int deltaX = raw.data.mouse.lLastX;
+		int deltaY = raw.data.mouse.lLastY;
+		if (raw.data.mouse.usButtonFlags == RI_MOUSE_RIGHT_BUTTON_DOWN) {
+			if (!bIsFPSMode) {
+				GetCursorPos(&m_fpsModeCursorPos);
+				//std::cout << m_fpsModeCursorPos.x << " " << m_fpsModeCursorPos.y << std::endl;
+				bIsFPSMode = true;
+				ShowCursor(FALSE);
+			}
+		}
+		else if (raw.data.mouse.usButtonFlags == RI_MOUSE_RIGHT_BUTTON_UP) {
+			bIsFPSMode = false;
+			ShowCursor(TRUE);
+			SetCursorPos(m_fpsModeCursorPos.x, m_fpsModeCursorPos.y);
+		}
+		if (raw.data.mouse.usButtonFlags == RI_MOUSE_LEFT_BUTTON_DOWN) {
+			if (!lMouseButtonClicked) {
+				lMouseButtonClicked = true;
+				fire = true;
+			}
+			else {
+				fire = false;
+			}
+		}
+		else if (raw.data.mouse.usButtonFlags == RI_MOUSE_LEFT_BUTTON_UP) {
+			lMouseButtonClicked = false;
+		}
+		if (m_camera != nullptr && bIsFPSMode)
+		{
+			m_camera->SetRotation(deltaX, deltaY);
+			// m_camera->SetQuaternion(deltaX, deltaY);
+		}
 
-        break;
 
-    case WM_KEYUP:
-        m_inputHandler->m_currKeyStates[(int)wParam] = false;
-        if (wParam == 'C') {
-            CaptureBufferToPNG();
-        }
-        //m_inputHandler->UpdateKeyUp((int)wParam);
+		return 0;
+	}
+	break;
 
-    }
-    return DefWindowProc(hWnd, msg, wParam, lParam);
-    
+	case WM_KEYDOWN:
+		m_inputHandler->m_currKeyStates[(int)wParam] = true;
+
+		break;
+
+	case WM_KEYUP:
+		m_inputHandler->m_currKeyStates[(int)wParam] = false;
+		if (wParam == 'C') {
+			CaptureBufferToPNG();
+		}
+		//m_inputHandler->UpdateKeyUp((int)wParam);
+
+	}
+	return DefWindowProc(hWnd, msg, wParam, lParam);
+
 }

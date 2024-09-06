@@ -6,9 +6,11 @@
 #include "d3d12.h"
 
 struct Particle {
-	DirectX::SimpleMath::Vector3 m_position;
-	DirectX::SimpleMath::Vector3 m_color;
-	float radius;
+	DirectX::SimpleMath::Vector3 mPosition;
+	DirectX::SimpleMath::Vector3 mColor;
+	DirectX::SimpleMath::Vector2 mVelocity;
+	float mLife;
+	float mRadius;
 };
 
 class Particles {
@@ -17,6 +19,7 @@ public:
 	~Particles() {};
 
 	void Initialize(int numPatricles);
+	void InitializeSPH(int numPatricles);
 	void BuildResources(Microsoft::WRL::ComPtr <ID3D12Device5> & device,
 		Microsoft::WRL::ComPtr <ID3D12GraphicsCommandList>& commandList);
 	void BuildDescriptors(Microsoft::WRL::ComPtr <ID3D12Device5>& device,

@@ -93,6 +93,9 @@
     <ClCompile Include="D3D12RayTracingApp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Buffer.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3D12App.h">
@@ -197,6 +200,9 @@
     <ClInclude Include="RaytracingHelper.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Buffer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="TestVS.hlsl" />
@@ -228,6 +234,7 @@
     <FxCompile Include="RenderBoundingBoxPassVS.hlsl" />
     <FxCompile Include="RenderBoundingBoxPassPS.hlsl" />
     <FxCompile Include="SimulationPostProcessingCS.hlsl" />
+    <FxCompile Include="SphSimulationParticlesCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />
