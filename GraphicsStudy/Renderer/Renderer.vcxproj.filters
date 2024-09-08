@@ -96,6 +96,9 @@
     <ClCompile Include="Buffer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="SteamOnlineSystem.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3D12App.h">
@@ -201,6 +204,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Buffer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamOnlineSystem.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

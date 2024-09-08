@@ -1,8 +1,10 @@
 struct Particle
 {
     float3 position;
+    float3 originPosition;
     float3 color;
-    float2 veolctiy;
+    float2 velocity;
+    float2 originVelocity;
     float life;
     float radius;
 };
@@ -17,10 +19,32 @@ ConstantBuffer<SimulationConstant> gConstantBuffer : register(b0);
 void main(uint3 DTid : SV_DispatchThreadID)
 {
     Particle p = particles[DTid.x];
+    
+    //if (p.life <= 0.f)
+    //{
+    //    p.position = p.originPosition;
+    //    p.velocity = p.originVelocity;
+    //}
+    
     float3 position = p.position;
-    float3 direction = cross(normalize(position), float3(0, 0, -1));
-    float velocity = 0.5f;
-    p.position += direction * gConstantBuffer.delTime * velocity;
+    float3 a = float3(0, -9.8f, 0.f);
+    p.velocity += a.xy * gConstantBuffer.delTime;
+    
+    
+    float f = 0.8f;
+    
+    if (p.position.y <= -1.f + p.radius)
+    {
+        p.velocity.y *= -f;
+    }
+    if (p.position.x <= -1.f + p.radius || p.position.x >= 1.f - p.radius)
+    {
+        p.velocity.x *= -f;
+    }
+    p.position.xy += p.velocity * gConstantBuffer.delTime;
+    p.life -= 1.f * gConstantBuffer.delTime;
+    
+   
     
     particles[DTid.x] = p;
 

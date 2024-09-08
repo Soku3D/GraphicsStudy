@@ -214,10 +214,10 @@ namespace Renderer {
 		alphaBlender.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
 		alphaBlender.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
 		alphaBlender.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-
+		
 		simulationBlender = alphaBlender;
-		simulationBlender.RenderTarget[0].SrcBlend= D3D12_BLEND_SRC_COLOR;
-		simulationBlender.RenderTarget[0].DestBlend = D3D12_BLEND_DEST_COLOR;
+		simulationBlender.RenderTarget[0].SrcBlend= D3D12_BLEND_ONE;
+		simulationBlender.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
 		simulationBlender.RenderTarget[0].BlendOp = D3D12_BLEND_OP_MAX;
 
 		defaultPso.SetVertexShader(g_pTestVS, sizeof(g_pTestVS));

@@ -26,15 +26,19 @@ namespace Renderer {
 		void SPHSimulationPass(float& deltaTime);
 		void PostProcessing(float& deltaTime);
 		void SimulationRenderPass(float& deltaTime);
+		void SPHSimulationRenderPass(float& deltaTime);
 		void RenderGUI(float& deltaTime) override;
 
 	protected:
 		Particles particle;
+		Particles sphParticle;
 		Core::ConstantBuffer<SimulationCSConstantData> mSimulationConstantBuffer;
 
 
 		const wchar_t* simulationRenderPassEvent = L"Simulation Render Pass ";
+		const wchar_t* sphSimulationRenderPassEvent = L"SPH Simulation Render Pass ";
 		const wchar_t* simulationPassEvent = L"Simulation Pass ";
+		const wchar_t* sphSimulationPassEvent = L"SPH Simulation Pass ";
 		const wchar_t* postprocessingEvent = L"Postprocessing Pass ";
 
 	};

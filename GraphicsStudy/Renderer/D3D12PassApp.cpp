@@ -44,21 +44,30 @@ void Renderer::D3D12PassApp::InitScene()
 	using DirectX::SimpleMath::Vector3;
 	using namespace Core;
 
-	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
-	sphere->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, 
+	//std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
+	//sphere->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, 
+	//	L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f),
+	//	m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
+	//	Material(1.f, 1.f, 1.f, 1.f),
+	//	true /*AO*/, true /*Metallic*/, true /*Height*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
+	//sphere->SetBoundingBoxHalfLength(0.5f);
+	//m_staticMeshes.push_back(sphere);
+
+	character = std::make_shared<Core::StaticMesh>();
+	character->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100,
 		L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f),
 		m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
 		true /*AO*/, true /*Metallic*/, true /*Height*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
-	sphere->SetBoundingBoxHalfLength(0.5f);
-	m_staticMeshes.push_back(sphere);
+	character->SetBoundingBoxHalfLength(0.5f);
 
-	//std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
-	//plane->Initialize(GeometryGenerator::PbrUseTesslationBox(1, 1, 1, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.f, -1.f, -1.f),
-	//	Material(1.f, 1.f, 1.f, 1.f),
-	//	true, true, true, true, true, true);
+	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
+	plane->Initialize(GeometryGenerator::PbrBox(10, 1, 10, L"worn-painted-metal_Albedo.dds", 10, 1, 10), m_device, m_commandList, 
+		Vector3(0.f, -1.5f, 0.f),
+		Material(1.f, 1.f, 1.f, 1.f),
+		true, true, true, true, true, true);
 
-	//m_staticMeshes.push_back(plane);
+	m_staticMeshes.push_back(plane);
 
 	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile_Pbr("uvtest4.fbx", true);
 	std::shared_ptr<Animation::FBX> wallDistructionFbx = std::make_shared<Animation::FBX>();
@@ -77,6 +86,7 @@ void Renderer::D3D12PassApp::InitScene()
 	m_screenMesh = std::make_shared<Core::StaticMesh>();
 	m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
 }
+
 bool Renderer::D3D12PassApp::InitGUI()
 {
 	if (!D3D12App::InitGUI())
@@ -99,6 +109,16 @@ void Renderer::D3D12PassApp::OnResize()
 
 void Renderer::D3D12PassApp::Update(float& deltaTime)
 {
+	if (createSession) {
+		createSession = false;
+		onlineSystem.CreateLobby(4);
+	}
+	if (findSession) {
+		findSession = false;
+		onlineSystem.EnterLobby(0);
+	}
+
+	onlineSystem.Update();
 	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
 	{
 		m_passConstantData->ViewMat = m_camera->GetViewMatrix();
@@ -126,19 +146,11 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 	using DirectX::SimpleMath::Vector3;
 
-	//static float angle = 0.f;
+	Vector3 characterPos = m_camera->GetPosition() + (m_camera->GetForwardDirection() * 2.f);
+	character->UpdateMaterial(gui_material);
+	character->UpdateWorldRow(DirectX::XMMatrixTranslation(characterPos.x, characterPos.y, characterPos.z));
+	character->Update(deltaTime);
 
-	//float speed = 1.f * deltaTime;
-	//angle += speed;
-
-	//Vector3 axis(-1, 1, 0);
-	//axis.Normalize();
-
-	//m_objectConstantData->Model = DirectX::XMMatrixRotationAxis(axis, angle);
-	//m_objectConstantData->invTranspose = m_objectConstantData->Model.Invert();
-
-	//m_objectConstantData->Model = m_objectConstantData->Model.Transpose();
-	m_staticMeshes[0]->UpdateMaterial(gui_material);
 	for (auto& mesh : m_staticMeshes) {
 		mesh->Update(deltaTime);
 	}
@@ -173,13 +185,13 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 		}
 		ImGui::EndCombo();
 	}
-
-	/*ImGui::SliderFloat("edge0", &gui_edge0, 1.f, 64.f);
-	ImGui::SliderFloat("edge1", &gui_edge1, 1.f, 64.f);
-	ImGui::SliderFloat("edge2", &gui_edge2, 1.f, 64.f);
-	ImGui::SliderFloat("edge3", &gui_edge3, 1.f, 64.f);
-	ImGui::SliderFloat("inside0", &gui_inside0, 1.f, 64.f);
-	ImGui::SliderFloat("inside1", &gui_inside1, 1.f, 64.f);*/
+	if (ImGui::Button("CreateSession")) {
+		createSession = true;
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("FindSession")) {
+		findSession = true;
+	}
 	ImGui::SliderFloat("AO", &gui_material.ao, 0.f, 1.f);
 	ImGui::SliderFloat("Metalic", &gui_material.metallic, 0.f, 1.f);
 	ImGui::SliderFloat("Roughness", &gui_material.roughness, 0.f, 1.f);
@@ -286,6 +298,15 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 			}
 
 		}
+		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
+		if (m_textureMap.count(character->GetTexturePath()) > 0) {
+			handle.Offset(m_textureMap[character->GetTexturePath()], m_csuHeapSize);
+		}
+		else {
+			handle.Offset(m_textureMap[L"zzzdefaultAlbedo.dds"], m_csuHeapSize);
+		}
+		m_commandList->SetGraphicsRootDescriptorTable(0, handle);
+		character->Render(deltaTime, m_commandList, true);
 	}
 
 	ThrowIfFailed(m_commandList->Close());

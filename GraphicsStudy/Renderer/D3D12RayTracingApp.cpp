@@ -298,7 +298,7 @@ void Renderer::D3D12RayTracingApp::CreateShaderTable()
 			textureHandle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath()], m_csuHeapSize);
 		}
 		else {
-			textureHandle.Offset(m_textureMap[L"zzzdefaultAlbedo.png"], m_csuHeapSize);
+			textureHandle.Offset(m_textureMap[L"zzzdefaultAlbedo.dds"], m_csuHeapSize);
 		}
 
 		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_raytracingHeaps[i]->GetGPUDescriptorHandleForHeapStart());
@@ -329,7 +329,7 @@ void Renderer::D3D12RayTracingApp::InitializeViews() {
 			srvTextureHandle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath()], m_csuHeapSize);
 		}
 		else {
-			srvTextureHandle.Offset(m_textureMap[L"zzzdefaultAlbedo.png"], m_csuHeapSize);
+			srvTextureHandle.Offset(m_textureMap[L"zzzdefaultAlbedo.dds"], m_csuHeapSize);
 		}
 		m_device->CopyDescriptorsSimple(indicesBufferCount, destHandle, srvIndexHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		destHandle.Offset(indicesBufferCount, m_csuHeapSize);
@@ -392,12 +392,12 @@ void Renderer::D3D12RayTracingApp::InitRayTracingScene()
 	using DirectX::SimpleMath::Vector3;
 	std::shared_ptr<Core::StaticMesh> sphere1 = std::make_shared<Core::StaticMesh>();
 	//sphere1->Initialize(GeometryGenerator::RTSphere(0.45f, 100, 100), m_device, m_commandList, Vector3(-0.5, 0, 0));
-	sphere1->Initialize(GeometryGenerator::RTBox(0.4f, L"DiamondPlate008C_4K-PNG_Albedo.png"), m_device, m_commandList, Vector3(-0.5, 0.4f, 0.5));
+	sphere1->Initialize(GeometryGenerator::RTBox(0.4f, L"DiamondPlate008C_4K-PNG_Albedo.dds"), m_device, m_commandList, Vector3(-0.5, 0.4f, 0.5));
 	sphere1->BuildAccelerationStructures<RaytracingVertex>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupSphere1");
 
 	std::shared_ptr<Core::StaticMesh> sphere2 = std::make_shared<Core::StaticMesh>();
-	sphere2->Initialize(GeometryGenerator::RTSphere(0.4f, 100, 100, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.5,0.4f,0.f));
+	sphere2->Initialize(GeometryGenerator::RTSphere(0.4f, 100, 100, L"worn-painted-metal_Albedo.dds"), m_device, m_commandList, Vector3(0.5,0.4f,0.f));
 	//sphere2->Initialize(GeometryGenerator::RTBox(0.4f, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.5, 0, 0.5));
 	sphere2->BuildAccelerationStructures<RaytracingVertex>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupSphere2");

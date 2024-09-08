@@ -53,8 +53,6 @@ void Core::StaticMesh::UpdateAnimation(const float& deltaTime, Animation::Animat
 
 void Core::StaticMesh::Update(const float& deltaTime)
 {
-	CD3DX12_RANGE range(0, 0);
-	ThrowIfFailed(m_objectConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
 	memcpy(m_pCbvDataBegin, m_objectConstantData, sizeof(ObjectConstantData));
 }
 

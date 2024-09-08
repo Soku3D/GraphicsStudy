@@ -1,7 +1,7 @@
 #pragma once
-#define _SILENCE_CXX20_CISO646_REMOVED_WARNING
-#include <map>
 
+
+#define _SILENCE_CXX20_CISO646_REMOVED_WARNING
 #include "SimpleApp.h"
 #include "Constants.h"
 #include "StaticMesh.h"
@@ -12,6 +12,8 @@
 #include "directxtk12/ResourceUploadBatch.h"
 #include "directxtk12/GraphicsMemory.h"
 #include "pix3.h"
+
+#include "SteamOnlineSystem.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -46,6 +48,8 @@ namespace Renderer {
 
 		void CreateCommandObjects();
 		void CreateDescriptorHeaps();
+
+		void FlushCommandList(ComPtr<ID3D12GraphicsCommandList>& commandList);
 
 		void FlushCommandQueue();
 
@@ -250,5 +254,11 @@ namespace Renderer {
 		std::unique_ptr<SoundEffectInstance> effect;
 		AudioListener listener;
 		AudioEmitter emitter;
+
+	protected:
+		Network::SteamOnlineSystem onlineSystem;
+		bool bIsHost = false;
+		bool createSession = false;
+		bool findSession = false;
 	};
 }

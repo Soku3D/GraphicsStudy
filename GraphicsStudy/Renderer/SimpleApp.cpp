@@ -193,7 +193,7 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 		const UINT resultData =
 			GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT,
 				&raw, &rawSize, sizeof(RAWINPUTHEADER));
-
+		
 		int deltaX = raw.data.mouse.lLastX;
 		int deltaY = raw.data.mouse.lLastY;
 		if (raw.data.mouse.usButtonFlags == RI_MOUSE_RIGHT_BUTTON_DOWN) {
@@ -213,6 +213,9 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 			if (!lMouseButtonClicked) {
 				lMouseButtonClicked = true;
 				fire = true;
+				GetCursorPos(&mCursorPosition);
+				ScreenToClient(hWnd, &mCursorPosition);
+				//std::cout << mCursorPosition.x << ' ';
 			}
 			else {
 				fire = false;

@@ -50,6 +50,7 @@ namespace Renderer {
 		bool lMouseButtonClicked = false;
 		bool fire = false;
 		POINT m_fpsModeCursorPos;
+		POINT mCursorPosition;
 
 	protected:
 		D3D12_COMMAND_LIST_TYPE m_commandType = D3D12_COMMAND_LIST_TYPE_DIRECT;

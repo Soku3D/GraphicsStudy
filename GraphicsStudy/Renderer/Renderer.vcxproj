@@ -105,20 +105,22 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(OutDir)CompiledShaders\;C:\Users\son\vcpkg\installed\x64-windows\include\physx\;C:\Users\son97\vcpkg\packages\physx_x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OutDir)CompiledShaders\;$(USERPROFILE)\vcpkg\installed\x64-windows\include\physx\;$(USERPROFILE)\vcpkg\packages\physx_x64-windows\include;$(USERPROFILE)\sdk\public\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;steam_api64.lib;sdkencryptedappticket64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(USERPROFILE)\sdk\public\steam\lib\win64;$(USERPROFILE)\sdk\redistributable_bin\win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <FxCompile>
       <ShaderModel>6.3</ShaderModel>
       <VariableName>g_p%(Filename)</VariableName>
       <HeaderFileOutput>$(OutDir)CompiledShaders\%(Filename).h</HeaderFileOutput>
       <AdditionalOptions>-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <ObjectFileOutput>$(OutDir)CompiledShaders\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -130,7 +132,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(OutDir)CompiledShaders\;C:\Users\son\vcpkg\installed\x64-windows\include\physx\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OutDir)CompiledShaders\;$(USERPROFILE)\vcpkg\installed\x64-windows\include\physx\;$(USERPROFILE)\vcpkg\packages\physx_x64-windows\include;$(USERPROFILE)\sdk\public\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -139,12 +141,14 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;dxguid.lib;steam_api64.lib;sdkencryptedappticket64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(USERPROFILE)\sdk\public\steam\lib\win64;$(DXSDK_DIR)Lib\x64;$(USERPROFILE)\sdk\redistributable_bin\win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <FxCompile>
       <ShaderModel>6.3</ShaderModel>
       <VariableName>g_p%(Filename)</VariableName>
       <HeaderFileOutput>$(OutDir)CompiledShaders\%(Filename).h</HeaderFileOutput>
+      <ObjectFileOutput>$(OutDir)CompiledShaders\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -173,6 +177,7 @@
     <ClCompile Include="SceneComponent.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
     <ClCompile Include="StaticMesh.cpp" />
+    <ClCompile Include="SteamOnlineSystem.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Utility.cpp" />
   </ItemGroup>
@@ -209,6 +214,7 @@
     <ClInclude Include="SceneComponent.h" />
     <ClInclude Include="SimpleApp.h" />
     <ClInclude Include="StaticMesh.h" />
+    <ClInclude Include="SteamOnlineSystem.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Utility.h" />
     <ClInclude Include="Vertex.h" />

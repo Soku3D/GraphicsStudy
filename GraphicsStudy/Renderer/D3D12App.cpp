@@ -10,6 +10,7 @@
 #include "pix3.h"
 #include <fp16.h>
 #include <ctime>
+#include "SteamOnlineSystem.h"
 
 #pragma warning(disable : 4996)
 
@@ -636,9 +637,15 @@ void Renderer::D3D12App::CreateDescriptorHeaps() {
 	Utility::CreateDescriptorHeap(m_device, m_geometryPassRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
 	Utility::CreateDescriptorHeap(m_device, m_geometryPassSrvHeap, DescriptorType::SRV, geometryPassRtvNum + 20, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	Utility::CreateDescriptorHeap(m_device, m_geometryPassMsaaRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
+}
 
-
-
+void Renderer::D3D12App::FlushCommandList(ComPtr<ID3D12GraphicsCommandList>& commandList) {
+	commandList->Close();
+	ID3D12CommandList* pCmdLists[] = {
+		commandList.Get()
+	};
+	m_commandQueue->ExecuteCommandLists(1, pCmdLists);
+	FlushCommandQueue();
 }
 
 void Renderer::D3D12App::FlushCommandQueue() {
@@ -675,10 +682,10 @@ void Renderer::D3D12App::InitScene()
 
 		m_staticMeshes.push_back(box);*/
 
-	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile_Pbr("box_destruction.fbx", true);
+	/*auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile_Pbr("box_destruction.fbx", true);
 	std::shared_ptr<Animation::FBX> wallDistructionFbx = std::make_shared<Animation::FBX>();
 	wallDistructionFbx->Initialize(box_destruction, box_destruction_animation, m_device, m_commandList, true, 1.f);
-	m_fbxList.push_back(wallDistructionFbx);
+	m_fbxList.push_back(wallDistructionFbx);*/
 
 	m_cubeMap = std::make_shared<StaticMesh>();
 	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(400.f), m_device, m_commandList);

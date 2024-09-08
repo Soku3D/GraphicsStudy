@@ -74,6 +74,7 @@ namespace Renderer {
 		float gui_inside0 = 1.f;
 		float gui_inside1 = 1.f;
 		Material gui_material;
+
 	private:
 		const wchar_t* geomeytyPassEvent = L"Geometry Pass ";
 		const wchar_t* fbxGeomeytyPassEvent = L"FBX Geometry Pass ";
@@ -83,5 +84,7 @@ namespace Renderer {
 		const wchar_t* cubeMapPassEvent = L"CubeMap Pass ";
 		const wchar_t* postprocessingEvent = L"Postprocessing Pass ";
 
+	protected:
+		std::shared_ptr<Core::StaticMesh> character;
 	};
 }

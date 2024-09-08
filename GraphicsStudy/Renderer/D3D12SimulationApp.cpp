@@ -1,4 +1,5 @@
 #include "D3D12SimulationApp.h"
+#include <random>
 
 #define SIMULATION_PARTICLE_SIZE 768
 
@@ -20,12 +21,13 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	m_commandAllocator->Reset();
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
-	//Utility::CreateConstantBuffer(m_device,sizeof(SimulationCSConstantData),)
 	Utility::CreateConstantBuffer(m_device, mSimulationConstantBuffer);
 
-	//particle.Initialize(100);
-	particle.InitializeSPH(SIMULATION_PARTICLE_SIZE);
+	particle.Initialize(100);
 	particle.BuildResources(m_device, m_commandList);
+
+	sphParticle.InitializeSPH(SIMULATION_PARTICLE_SIZE*2);
+	sphParticle.BuildResources(m_device, m_commandList);
 
 	m_commandList->Close();
 	ID3D12CommandList* pCmdLists[] = {
@@ -34,6 +36,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	m_commandQueue->ExecuteCommandLists(1, pCmdLists);
 	FlushCommandQueue();
 
+	sphParticle.BuildDescriptors(m_device, m_commandList);
 	particle.BuildDescriptors(m_device, m_commandList);
 
 	return true;
@@ -62,7 +65,56 @@ void Renderer::D3D12SimulationApp::OnResize()
 void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 {
 	D3D12App::Update(deltaTime);
-	
+	CopyResource(m_commandList, sphParticle.GetReadBack(), sphParticle.GetGpu(),
+		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	sphParticle.CopyToCpu();
+
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	if (fire) {
+		std::uniform_real_distribution<> distribVelocityDir(-3.14f, 3.14f);
+		fire = false;
+		DirectX::SimpleMath::Vector3 ndcPosition = XMFLOAT3((float)mCursorPosition.x / m_screenWidth, (float)mCursorPosition.y / m_screenHeight, 0.f);
+		ndcPosition = ndcPosition * 2.f;
+		ndcPosition -= XMFLOAT3(1.f, 1.f, 0.f);
+		ndcPosition.y *= -1.f;
+		//std::cout << ndcPosition.x << ' ' << ndcPosition.y << ' ';
+		int sleepCount = 0;
+		int fireCount = 200;
+		for (UINT i = 0; i < sphParticle.GetParticleCount(); i++)
+		{
+			if (sphParticle[i].mLife <= 0.f) {
+				sphParticle[i].mPosition = ndcPosition;
+				sphParticle[i].mVelocity = XMFLOAT2(std::cos(distribVelocityDir(gen)) * 2.f, std::sin(distribVelocityDir(gen)) * 2.f);
+				sphParticle[i].mLife = 5.f;
+				++sleepCount;
+				if (sleepCount == fireCount)
+					break;
+			}
+		}
+		std::cout << "sleep particle Count : " << sleepCount << '\n';
+	}
+	/*for (UINT i = 0; i < sphParticle.GetParticleCount(); i++)
+	{
+		int sleepCount = 0;
+		int spawnCount = 100;
+		if (sphParticle[i].mLife <= 0.f) 
+		{
+			sphParticle[i].mPosition = sphParticle[i].mOriginPosition;
+			sphParticle[i].mVelocity = sphParticle[i].mOriginVelocity;
+			sphParticle[i].mLife = 5.f;
+			++sleepCount;
+			if (sleepCount == spawnCount)
+				break;
+		}
+	}*/
+	m_commandAllocator->Reset();
+	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
+
+	sphParticle.CopyToGpu(m_device, m_commandList);
+
+	FlushCommandList(m_commandList);
+
 	mSimulationConstantBuffer.mStructure.time = min(1 / 60.f, deltaTime);
 	mSimulationConstantBuffer.UpdateBuffer();
 }
@@ -74,7 +126,8 @@ void Renderer::D3D12SimulationApp::UpdateGUI(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::Render(float& deltaTime)
 {
-	ParticleSimulation(deltaTime);
+	//ParticleSimulation(deltaTime);
+	SPH(deltaTime);
 }
 void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
 {
@@ -87,7 +140,7 @@ void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
 void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
 {
 	SPHSimulationPass(deltaTime);
-	SimulationRenderPass(deltaTime);
+	SPHSimulationRenderPass(deltaTime);
 	//PostProcessing(deltaTime);
 	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 }
@@ -129,17 +182,17 @@ void Renderer::D3D12SimulationApp::SPHSimulationPass(float& deltaTime)
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
-	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), simulationPassEvent);
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), sphSimulationPassEvent);
 
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 	ID3D12DescriptorHeap* pHeaps[] = {
-		particle.GetUavHeap()
+		sphParticle.GetUavHeap()
 	};
 	//m_commandList->ClearUnorderedAccessViewUint(,)
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
-	m_commandList->SetComputeRootDescriptorTable(0, particle.GetUavHandle());
+	m_commandList->SetComputeRootDescriptorTable(0, sphParticle.GetUavHandle());
 	m_commandList->SetComputeRootConstantBufferView(1, mSimulationConstantBuffer.GetGpuAddress());
-	UINT dispatchX = (particle.GetParticleCount() - 1 + SIMULATION_PARTICLE_SIZE) / SIMULATION_PARTICLE_SIZE;
+	UINT dispatchX = (sphParticle.GetParticleCount() - 1 + SIMULATION_PARTICLE_SIZE) / SIMULATION_PARTICLE_SIZE;
 	m_commandList->Dispatch(dispatchX, 1, 1);
 	//m_commandList->ExecuteIndirect(,)
 	ThrowIfFailed(m_commandList->Close());
@@ -241,6 +294,44 @@ void Renderer::D3D12SimulationApp::SimulationRenderPass(float& deltaTime)
 	PIXEndEvent(m_commandQueue.Get());
 }
 
+void Renderer::D3D12SimulationApp::SPHSimulationRenderPass(float& deltaTime)
+{
+	auto& pso = passPsoLists["SimulationRenderPass"];
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 0, 255), simulationRenderPassEvent);
+
+	FLOAT clear[4] = { 0,0,0,0 };
+	//m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clear, 0, nullptr);
+	m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+		1.f, 0, 0, nullptr);
+	m_commandList->ClearRenderTargetView(HDRRendertargetView(), clear, 0, nullptr);
+
+	m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+	m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
+	m_commandList->RSSetViewports(1, &m_viewport);
+	m_commandList->RSSetScissorRects(1, &m_scissorRect);
+
+	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+
+	ID3D12DescriptorHeap* pHeaps[] = {
+		sphParticle.GetSrvHeap()
+	};
+	m_commandList->SetDescriptorHeaps(1, pHeaps);
+	m_commandList->SetGraphicsRootDescriptorTable(0, sphParticle.GetSrvHandle());
+	m_commandList->DrawInstanced(sphParticle.GetParticleCount(), 1, 0, 0);
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* pCmdLists[] = {
+		m_commandList.Get()
+	};
+	m_commandQueue->ExecuteCommandLists(1, pCmdLists);
+	FlushCommandQueue();
+
+	PIXEndEvent(m_commandQueue.Get());
+}
 
 void Renderer::D3D12SimulationApp::RenderGUI(float& deltaTime)
 {

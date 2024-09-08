@@ -31,10 +31,31 @@ void main(
     p1.radius =
     p2.radius = radius;
     
+    p0.life =
+    p1.life =
+    p2.life = input[0].life;
+    
     float2 prevPosition = float2(0, radius);
+    
     float2 currPosition;
     p0.svPosition = float4(center, 0, 1);
     p0.position = center;
+    
+    //float l = radius * sqrt(2);
+    //p0.svPosition = float4(center + float2(-l, -l), 0, 1);
+    //p1.svPosition = float4(center + float2(-l, l), 0, 1);
+    //p2.svPosition = float4(center + float2(l, l), 0, 1);
+    //output.Append(p0);
+    //output.Append(p1);
+    //output.Append(p2);
+    //output.RestartStrip();
+    
+    //p1.svPosition = float4(center + float2(l, -l), 0, 1);
+    //output.Append(p0);
+    //output.Append(p2);
+    //output.Append(p1);
+          
+    //output.RestartStrip();
     
     for (int i = 0; i < 10; ++i)
     {

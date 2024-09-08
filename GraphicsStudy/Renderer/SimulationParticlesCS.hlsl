@@ -1,8 +1,10 @@
 struct Particle
 {
     float3 position;
+    float3 originPosition;
     float3 color;
-    float2 veolctiy;
+    float2 velocity;
+    float2 originVelocity;
     float life;
     float radius;
 };

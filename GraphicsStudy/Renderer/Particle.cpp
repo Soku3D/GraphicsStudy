@@ -10,42 +10,49 @@ void Particles::Initialize(int numPatricles)
 	std::uniform_real_distribution<> distribPos(-1.3f, 1.3f);
 	std::uniform_real_distribution<> distribColor(0.f, 1.f);
 	std::uniform_real_distribution<> distribRadius(0.01f, 0.04f);
-	m_cpu.resize(numPatricles);
+	
+	mCpu.resize(numPatricles);
 	for (int i = 0; i < numPatricles; i++)
 	{
 		Particle particle;
 		particle.mColor = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
 		particle.mPosition = Vector3((float)distribPos(gen), (float)distribPos(gen), 0.f);
 		particle.mRadius = (float)distribRadius(gen);
-
-		m_cpu[i] = particle;
+		particle.mLife = 1.f;
+		mCpu[i] = particle;
 	}
 }
 void Particles::InitializeSPH(int numPatricles)
 {
 	using DirectX::SimpleMath::Vector3;
+	using DirectX::SimpleMath::Vector2;
+
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_real_distribution<> distribPos(-1.3f, 1.3f);
+	std::uniform_real_distribution<> distribPos(-0.08, 0.08f);
 	std::uniform_real_distribution<> distribColor(0.f, 1.f);
 	std::uniform_real_distribution<> distribRadius(0.01f, 0.04f);
-	std::uniform_real_distribution<> distribVeolcity(0.1f, 0.4f);
-	m_cpu.resize(numPatricles);
+	std::uniform_real_distribution<> distribVeolcity(-2.f, -0.3f);
+	std::uniform_real_distribution<> distribLife(0.f, 5.f);
+	mCpu.resize(numPatricles);
 	for (int i = 0; i < numPatricles; i++)
 	{
 		Particle particle;
 		particle.mColor = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
-		particle.mPosition = Vector3::Zero;
+		particle.mPosition = Vector3((float)distribPos(gen), (float)distribPos(gen), 0.f);
+		particle.mOriginPosition = Vector3((float)distribPos(gen), (float)distribPos(gen), 0.f);
 		particle.mRadius = (float)distribRadius(gen);
-		//particle.mVelocity = (float)distribVeolcity(0.1f, 0.4f);
-		(gen);
-		m_cpu[i] = particle;
+		particle.mVelocity = Vector2((float)distribVeolcity(gen), 0.f);
+		particle.mOriginVelocity = particle.mVelocity;
+		//particle.mLife = 10.f;
+		particle.mLife = (float)distribLife(gen);
+		mCpu[i] = particle;
 	}
 }
 
 void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
 {
-	const UINT bufferSize = (UINT)(sizeof(Particle) * m_cpu.size());
+	const UINT bufferSize = (UINT)(sizeof(Particle) * mCpu.size());
 
 	// default upload buffer 생성
 	D3D12_RESOURCE_DESC resourceDesc;
@@ -67,9 +74,9 @@ void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Mi
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
 			&resourceDesc,
-			D3D12_RESOURCE_STATE_COPY_DEST,
+			D3D12_RESOURCE_STATE_COMMON,
 			nullptr,
-			IID_PPV_ARGS(&m_gpu)));
+			IID_PPV_ARGS(&mGpu)));
 
 	ThrowIfFailed(device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -77,31 +84,47 @@ void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Mi
 		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		IID_PPV_ARGS(&m_upload)));
+		IID_PPV_ARGS(&mUpload)));
 
+	ThrowIfFailed(device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
+		D3D12_RESOURCE_STATE_COMMON,
+		nullptr,
+		IID_PPV_ARGS(&mReadBack)));
 
 	D3D12_SUBRESOURCE_DATA subResourceData = {};
-	subResourceData.pData = m_cpu.data();
+	subResourceData.pData = mCpu.data();
 	subResourceData.RowPitch = bufferSize;
 	subResourceData.SlicePitch = bufferSize;
 
-	UpdateSubresources(commandList.Get(), m_gpu.Get(), m_upload.Get(), 0, 0, 1, &subResourceData);
+	commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			mGpu.Get(), 
+			D3D12_RESOURCE_STATE_COMMON, 
+			D3D12_RESOURCE_STATE_COPY_DEST));
+
+	UpdateSubresources(commandList.Get(), mGpu.Get(), mUpload.Get(), 0, 0, 1, &subResourceData);
 	
 	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		m_gpu.Get(),
+		mGpu.Get(),
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+
+	CD3DX12_RANGE range(0, 0);
+	mReadBack->Map(0, &range, reinterpret_cast<void**>(&pGpuData));
 }
 
 void Particles::BuildDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
 {
-	Renderer::Utility::CreateDescriptorHeap(device, m_srvHeap, Renderer::DescriptorType::SRV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	Renderer::Utility::CreateDescriptorHeap(device, mSrvHeap, Renderer::DescriptorType::SRV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	Renderer::Utility::CreateDescriptorHeap(device, m_uavHeap, Renderer::DescriptorType::UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
 	
 	SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	SRVDesc.Buffer.NumElements = (UINT)m_cpu.size();
+	SRVDesc.Buffer.NumElements = (UINT)mCpu.size();
 	SRVDesc.Buffer.FirstElement = 0;
 
 	SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
@@ -113,10 +136,36 @@ void Particles::BuildDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device, 
 	UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 	UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
 	UAVDesc.Buffer.CounterOffsetInBytes = 0;
-	UAVDesc.Buffer.NumElements = (UINT)m_cpu.size();
+	UAVDesc.Buffer.NumElements = (UINT)mCpu.size();
 	UAVDesc.Buffer.StructureByteStride = sizeof(Particle);
 	UAVDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 
-	device->CreateShaderResourceView(m_gpu.Get(), &SRVDesc, m_srvHeap->GetCPUDescriptorHandleForHeapStart());
-	device->CreateUnorderedAccessView(m_gpu.Get(), nullptr, &UAVDesc, m_uavHeap->GetCPUDescriptorHandleForHeapStart());
+	device->CreateShaderResourceView(mGpu.Get(), &SRVDesc, mSrvHeap->GetCPUDescriptorHandleForHeapStart());
+	device->CreateUnorderedAccessView(mGpu.Get(), nullptr, &UAVDesc, m_uavHeap->GetCPUDescriptorHandleForHeapStart());
+}
+
+void Particles::CopyToCpu()
+{
+	memcpy(mCpu.data(), pGpuData, mCpu.size() * sizeof(Particle));
+}
+
+void Particles::CopyToGpu(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList) {
+	const UINT bufferSize = (UINT)(sizeof(Particle) * mCpu.size());
+	D3D12_SUBRESOURCE_DATA subResourceData = {};
+	subResourceData.pData = mCpu.data();
+	subResourceData.RowPitch = bufferSize;
+	subResourceData.SlicePitch = bufferSize;
+	
+	commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			mGpu.Get(),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			D3D12_RESOURCE_STATE_COPY_DEST));
+
+	UpdateSubresources(commandList.Get(), mGpu.Get(), mUpload.Get(), 0, 0, 1, &subResourceData);
+
+	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		mGpu.Get(),
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 }
