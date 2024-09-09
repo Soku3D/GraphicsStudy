@@ -65,18 +65,18 @@ void Renderer::D3D12PassApp::InitScene()
 		true, true, true, true, true, true);
 	m_staticMeshes.push_back(plane);
 
-	auto [soldier, _] = GeometryGenerator::ReadFromFile_Pbr32("soldier.fbx", false, true);
-	//soldier[0].m_texturePath = L"worn-painted-metal_Albedo.dds";
-	for (size_t i = 0; i < soldier.size(); i++)
-	{
-		std::shared_ptr<StaticMesh> soldierMesh = std::make_shared<StaticMesh>();
-		soldierMesh->Initialize(soldier[i], m_device, m_commandList,
-			Vector3(0.f, 0.f, 0.f),
-			Material(1.f, 1.f, 1.f, 1.f),
-			false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
-		soldierMesh->SetTexturePath(L"angel_armor_Albedo.dds");
-		m_staticMeshes.push_back(soldierMesh);
-	}
+	//auto [soldier, _] = GeometryGenerator::ReadFromFile_Pbr32("soldier.fbx", false, true);
+	////soldier[0].m_texturePath = L"worn-painted-metal_Albedo.dds";
+	//for (size_t i = 0; i < soldier.size(); i++)
+	//{
+	//	std::shared_ptr<StaticMesh> soldierMesh = std::make_shared<StaticMesh>();
+	//	soldierMesh->Initialize(soldier[i], m_device, m_commandList,
+	//		Vector3(0.f, 0.f, 0.f),
+	//		Material(1.f, 1.f, 1.f, 1.f),
+	//		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
+	//	soldierMesh->SetTexturePath(L"angel_armor_Albedo.dds");
+	//	m_staticMeshes.push_back(soldierMesh);
+	//}
 	
 
 
