@@ -34,6 +34,7 @@ namespace Network {
 		void OnLobbyEnter(LobbyEnter_t* pCallback);*/
 
 		void CreateLobby(int maxMembers);
+		void FindLobby();
 		void EnterLobby(int lobbyIndex);
 
 		void UpdateData(PlayerData& data);
