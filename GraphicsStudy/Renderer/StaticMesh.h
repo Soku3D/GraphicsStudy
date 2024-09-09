@@ -32,8 +32,8 @@ namespace Core {
 
 		PrimitiveConstantBuffer m_primitiveConstantData;
 
-		template <typename Vertex>
-		void Initialize(MeshData<Vertex>& meshData,
+		template <typename Vertex, typename Index>
+		void Initialize(MeshData<Vertex, Index>& meshData,
 			Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList,
 			const DirectX::SimpleMath::Vector3& modelPosition = DirectX::SimpleMath::Vector3::Zero,
@@ -55,8 +55,13 @@ namespace Core {
 			m_vertexBufferView.StrideInBytes = sizeof(Vertex);
 
 			m_indexBufferView.BufferLocation = m_indexGpu->GetGPUVirtualAddress();
-			m_indexBufferView.Format = DXGI_FORMAT_R16_UINT;
-			m_indexBufferView.SizeInBytes = UINT(sizeof(uint16_t) * meshData.m_indices.size());
+			if (sizeof(Index) == 2) {
+				m_indexBufferView.Format = DXGI_FORMAT_R16_UINT;
+			}
+			else {
+				m_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+			}
+			m_indexBufferView.SizeInBytes = UINT(sizeof(Index) * meshData.m_indices.size());
 			m_objectConstantData = new ObjectConstantData();
 
 			Renderer::Utility::CreateDescriptorHeap(device, m_indicesSrvHeap, Renderer::DescriptorType::SRV, 2);
@@ -74,7 +79,13 @@ namespace Core {
 			D3D12_SHADER_RESOURCE_VIEW_DESC SRVDescIndex = {};
 			SRVDescIndex.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 			SRVDescIndex.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-			SRVDescIndex.Buffer.NumElements = (UINT)(meshData.m_indices.size() / 2);
+			if (sizeof(Index) == 2) {
+				SRVDescIndex.Buffer.NumElements = (UINT)(meshData.m_indices.size() / 2);
+
+			}
+			else {
+				SRVDescIndex.Buffer.NumElements = (UINT)(meshData.m_indices.size());
+			}
 			SRVDescIndex.Format = DXGI_FORMAT_R32_TYPELESS;
 			SRVDescIndex.Buffer.StructureByteStride = 0;
 			SRVDescIndex.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
@@ -110,8 +121,8 @@ namespace Core {
 			memcpy(m_pCbvDataBegin, m_objectConstantData, sizeof(ObjectConstantData));
 			m_texturePath = meshData.GetTexturePath();
 		}
-
-		template <typename Vertex>
+		
+		template <typename Vertex, typename Index>
 		void BuildAccelerationStructures(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4>& commandList)
 		{
@@ -119,8 +130,14 @@ namespace Core {
 			D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc;
 			geometryDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
 			geometryDesc.Triangles.IndexBuffer = m_indexGpu->GetGPUVirtualAddress();
-			geometryDesc.Triangles.IndexCount = static_cast<UINT>(m_indexGpu->GetDesc().Width) / sizeof(uint16_t);
-			geometryDesc.Triangles.IndexFormat = DXGI_FORMAT_R16_UINT;
+			geometryDesc.Triangles.IndexCount = static_cast<UINT>(m_indexGpu->GetDesc().Width) / sizeof(Index);
+			if (sizeof(Index) == 2) {
+				geometryDesc.Triangles.IndexFormat = DXGI_FORMAT_R16_UINT;
+			}
+			else {
+				geometryDesc.Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
+			}
+			
 			geometryDesc.Triangles.Transform3x4 = 0;
 			geometryDesc.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
 			geometryDesc.Triangles.VertexCount = static_cast<UINT>(m_vertexGpu->GetDesc().Width) / sizeof(Vertex);

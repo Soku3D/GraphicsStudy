@@ -5,14 +5,15 @@
 #include <steam/steam_api.h>
 #include <map>
 #include <vector>
+#include "directxtk/SimpleMath.h"
 
 namespace Network {
-	struct PlayerPosition {
-		float x, y, z;
+	struct PlayerData {
+		DirectX::SimpleMath::Vector3 position;
 	};
 	struct GameState {
-		PlayerPosition hostPosition;
-		std::map<CSteamID, PlayerPosition> clientPositions;
+		PlayerData hostData;
+		std::map<CSteamID, PlayerData> clientData;
 	};
 
 	class SteamOnlineSystem {
@@ -49,6 +50,6 @@ namespace Network {
 		HSteamListenSocket listenSocket;
 		std::vector<CSteamID> clientList;
 		GameState mGameState;
-		PlayerPosition mPosition = { 10.0f, 10.0f, 10.0f }; 
+		PlayerData mData = { {0,0,0} };
 	};
 }

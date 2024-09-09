@@ -60,8 +60,22 @@ void Renderer::D3D12PassApp::InitScene()
 		Vector3(0.f, -1.5f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
 		true, true, true, true, true, true);
-
 	m_staticMeshes.push_back(plane);
+
+	auto [soldier, _] = GeometryGenerator::ReadFromFile_Pbr32("soldier.fbx", false, true);
+	//soldier[0].m_texturePath = L"worn-painted-metal_Albedo.dds";
+	for (size_t i = 0; i < soldier.size(); i++)
+	{
+		std::shared_ptr<StaticMesh> soldierMesh = std::make_shared<StaticMesh>();
+		soldierMesh->Initialize(soldier[i], m_device, m_commandList,
+			Vector3(0.f, 0.f, 0.f),
+			Material(1.f, 1.f, 1.f, 1.f),
+			false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
+		soldierMesh->SetTexturePath(L"angel_armor_Albedo.dds");
+		m_staticMeshes.push_back(soldierMesh);
+	}
+	
+
 
 	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile_Pbr("uvtest4.fbx", true);
 	std::shared_ptr<Animation::FBX> wallDistructionFbx = std::make_shared<Animation::FBX>();
@@ -111,7 +125,10 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		findSession = false;
 		onlineSystem.EnterLobby(0);
 	}
+	Network::PlayerData data;
+	data.position = m_camera->GetPosition();
 
+	onlineSystem.UpdateData(data);
 	onlineSystem.Update();
 
 	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);

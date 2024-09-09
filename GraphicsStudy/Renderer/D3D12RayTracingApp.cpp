@@ -398,25 +398,25 @@ void Renderer::D3D12RayTracingApp::InitRayTracingScene()
 	std::shared_ptr<Core::StaticMesh> sphere1 = std::make_shared<Core::StaticMesh>();
 	//sphere1->Initialize(GeometryGenerator::RTSphere(0.45f, 100, 100), m_device, m_commandList, Vector3(-0.5, 0, 0));
 	sphere1->Initialize(GeometryGenerator::RTBox(0.4f, L"DiamondPlate008C_4K-PNG_Albedo.dds"), m_device, m_commandList, Vector3(-0.5, 0.4f, 0.5));
-	sphere1->BuildAccelerationStructures<RaytracingVertex>(m_device, m_dxrCommandList);
+	sphere1->BuildAccelerationStructures<RaytracingVertex, uint16_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupSphere1");
 
 	std::shared_ptr<Core::StaticMesh> sphere2 = std::make_shared<Core::StaticMesh>();
 	sphere2->Initialize(GeometryGenerator::RTSphere(0.4f, 100, 100, L"worn-painted-metal_Albedo.dds"), m_device, m_commandList, Vector3(0.5,0.4f,0.f));
 	//sphere2->Initialize(GeometryGenerator::RTBox(0.4f, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.5, 0, 0.5));
-	sphere2->BuildAccelerationStructures<RaytracingVertex>(m_device, m_dxrCommandList);
+	sphere2->BuildAccelerationStructures<RaytracingVertex, uint16_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupSphere2");
 
 	std::shared_ptr<Core::StaticMesh> plane = std::make_shared<Core::StaticMesh>();
 	plane->Initialize(GeometryGenerator::RTBox(100.f,1.f,100.f), m_device, m_commandList, Vector3(0.0, -1.0f, 0.f));
-	plane->BuildAccelerationStructures<RaytracingVertex>(m_device, m_dxrCommandList);
+	plane->BuildAccelerationStructures<RaytracingVertex, uint16_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupPlane");
 
 	std::shared_ptr<Core::StaticMesh> cubeMap = std::make_shared<Core::StaticMesh>();
 	cubeMap->Initialize(GeometryGenerator::RTCubeMapBox(100.f), m_device, m_commandList);
 	cubeMap->SetTexturePath(cubeMapTextureName);
 	cubeMap->SetIsCubeMap(true);
-	cubeMap->BuildAccelerationStructures<RaytracingVertex>(m_device, m_dxrCommandList);
+	cubeMap->BuildAccelerationStructures<RaytracingVertex, uint16_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupCube");
 	
 	m_staticMeshes.push_back(cubeMap);

@@ -9,7 +9,7 @@
 #include "AnimationClip.h"
 #include "RaytracingHlslCompat.h"
 
-using RaytracingMeshData = MeshData<RaytracingVertex>;
+using RaytracingMeshData = MeshData<RaytracingVertex, uint16_t>;
 
 class GeometryGenerator {
 public:
@@ -36,7 +36,9 @@ public:
 	static PbrMeshData PbrSphere(const float& radius, const int& x, const int& y, const std::wstring& texturePath, 
 		float uvDeltaX = 1.f, float uvDeltaY = 1.f);
 	static PbrMeshData PbrUseTesslationSphere(const float& radius, const int& x, const int& y, const std::wstring& texturePath, float uvDeltaX, float uvDeltaY);
-	static std::tuple<std::vector<PbrMeshData>, Animation::AnimationData> ReadFromFile_Pbr(std::string filename, bool loadAnimation = false);
+
+	static std::tuple<std::vector<PbrMeshData>, Animation::AnimationData> ReadFromFile_Pbr(std::string filename, bool loadAnimation, bool updateTangent = false);
+	static std::tuple<std::vector<PbrMeshData32>, Animation::AnimationData> ReadFromFile_Pbr32(std::string filename, bool loadAnimation, bool updateTangent = false);
 
 	static RaytracingMeshData RTTriangle(const float& length, const std::wstring& texturePath = L"");
 	static RaytracingMeshData RTRectangle(const float& length, const std::wstring& texturePath = L"");

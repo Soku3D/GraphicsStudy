@@ -67,7 +67,7 @@ void Network::SteamOnlineSystem::OnLobbyMatchList(LobbyMatchList_t* pCallback)
         for (uint32 i = 0; i < pCallback->m_nLobbiesMatching; i++)
         {
             CSteamID lobbyID = SteamMatchmaking()->GetLobbyByIndex(i);
-            CSteamID ownerID = SteamMatchmaking()->GetLobbyOwner(lobbyID);
+            //CSteamID ownerID = SteamMatchmaking()->GetLobbyOwner(lobbyID);
             std::string ownerName = SteamMatchmaking()->GetLobbyData(lobbyID, "owner_name");
             std::cout << "Lobby " << i << " Owner : " << ownerName << std::endl;
         }
@@ -99,7 +99,7 @@ void Network::SteamOnlineSystem::OnLobbyEnter(LobbyEnter_t* pCallback)
                 continue;
             }
         }
-
+        hostID = SteamMatchmaking()->GetLobbyOwner(pCallback->m_ulSteamIDLobby);
         SteamNetworkingIdentity identity;
         identity.SetSteamID(hostID);
 
@@ -125,36 +125,43 @@ void Network::SteamOnlineSystem::EnterLobby(int lobbyIndex)
     hostID = SteamMatchmaking()->GetLobbyOwner(hostLobbyID);
     SteamMatchmaking()->JoinLobby(hostLobbyID);
 }
+void Network::SteamOnlineSystem::UpdateData(PlayerData& data) {
+    mData = data;
+}
 
 void Network::SteamOnlineSystem::Update()
 {
     SteamAPI_RunCallbacks();
-    networking->RunCallbacks();
-    if (isHost) {
-        uint32 size;
-        PlayerPosition clientPosition;
-        if (SteamNetworking()->IsP2PPacketAvailable(&size)) {
-            CSteamID clientSteamID;
-            if (SteamNetworking()->ReadP2PPacket(&clientPosition, sizeof(PlayerPosition), &size, &clientSteamID))
-            {
-                mGameState.clientPositions[clientSteamID] = clientPosition;
-                if (std::find(clientList.begin(), clientList.end(), clientSteamID) == clientList.end()) {
-                    clientList.emplace_back(clientSteamID);
+    if(networking!=nullptr)
+    {
+        networking->RunCallbacks();
+        if (isHost) {
+            uint32 size;
+            PlayerData clientData;
+            if (SteamNetworking()->IsP2PPacketAvailable(&size)) {
+                CSteamID clientSteamID;
+                // 패킷 송신 후 Client ID & Data 저장
+                if (SteamNetworking()->ReadP2PPacket(&clientData, sizeof(PlayerData), &size, &clientSteamID))
+                {
+                    mGameState.clientData[clientSteamID] = clientData;
+                    if (std::find(clientList.begin(), clientList.end(), clientSteamID) == clientList.end()) {
+                        clientList.emplace_back(clientSteamID);
+                    }
                 }
             }
-        }
-        if (!clientList.empty()) {
-            for (size_t i = 0; i < clientList.size(); ++i) {
-                std::cout << "Position " << i << " : "
-                    << mGameState.clientPositions[clientList[i]].x << ", "
-                    << mGameState.clientPositions[clientList[i]].y << ", "
-                    << mGameState.clientPositions[clientList[i]].z << " ";
+            if (!clientList.empty()) {
+                for (size_t i = 0; i < clientList.size(); ++i) {
+                    std::cout << "Position " << i << " : "
+                        << mGameState.clientData[clientList[i]].position.x << ", "
+                        << mGameState.clientData[clientList[i]].position.y << ", "
+                        << mGameState.clientData[clientList[i]].position.z << " ";
+                }
+                std::cout << std::endl;
             }
-            std::cout << std::endl;
+
         }
-        
-    }
-    else {
-        SteamNetworking()->SendP2PPacket(hostID, &mPosition, sizeof(PlayerPosition), k_EP2PSendReliable);
+        else {
+            SteamNetworking()->SendP2PPacket(hostID, &mData, sizeof(GameState), k_EP2PSendReliable);
+        }
     }
 }

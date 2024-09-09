@@ -49,7 +49,7 @@ SimpleMeshData GeometryGenerator::SimpleBox(const float& length)
 	SimpleMeshData data;
 
 	float l = length;
- 
+
 	std::vector<Renderer::SimpleVertex> vertices = {
 		{Vector3(-l, -l, -l)},{Vector3(-l, l, -l)},{Vector3(l, l, -l)},{Vector3(l, -l, -l)},
 		{Vector3(-l, -l, l)},{Vector3(-l, l, l)},{Vector3(l, l, l)},{Vector3(l, -l, l)}
@@ -97,7 +97,7 @@ BasicMeshData GeometryGenerator::Rectangle(const float& length, const std::wstri
 
 	float hX = length / 2.f;
 	float hY = length / 2.f;
-	
+
 
 	std::vector<Renderer::Vertex> vertices = {
 		{Vector3(-hX, -hY, 0.f), Vector3(0.f,0.f,-1.f), Vector2(0.f, 1.f)},
@@ -129,7 +129,7 @@ BasicMeshData GeometryGenerator::Box(const float& x, const float& y, const float
 	float hX = x / 2.f;
 	float hY = y / 2.f;
 	float hZ = z / 2.f;
-	
+
 	std::vector<Renderer::Vertex> vertices = {
 		{Vector3(-hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(0.f, 1.f)},
 		{Vector3(-hX, hY, -hZ), Vector3(0.f,0.f,-1.f), Vector2(0.f, 0.f)},
@@ -187,7 +187,7 @@ BasicMeshData GeometryGenerator::Grid(const float& xLength, const float& yLength
 		return data;
 	}
 	Vector3 basePosition(Vector3(-xLength / 2.f, yLength / 2.f, 0.f));
-	
+
 	float delX = xLength / x;
 	float dely = yLength / y;
 
@@ -198,12 +198,12 @@ BasicMeshData GeometryGenerator::Grid(const float& xLength, const float& yLength
 
 	std::vector<Vertex> vertices;
 	std::vector<uint16_t> indices;
-	for (int j = 0; j < y+1; ++j)
+	for (int j = 0; j < y + 1; ++j)
 	{
 		Vector3 position = basePosition - Vector3(0.f, j * dely, 0.f);
-		for (int i = 0; i < x+1; ++i)
+		for (int i = 0; i < x + 1; ++i)
 		{
-			vertices.push_back(Vertex(Vector3(position + Vector3(i * delX, 0.f, 0.f)), Vector3(0.f,0.f,-1.f), Vector2(i*uvDelX, j*uvDelY)));
+			vertices.push_back(Vertex(Vector3(position + Vector3(i * delX, 0.f, 0.f)), Vector3(0.f, 0.f, -1.f), Vector2(i * uvDelX, j * uvDelY)));
 		}
 	}
 
@@ -216,7 +216,7 @@ BasicMeshData GeometryGenerator::Grid(const float& xLength, const float& yLength
 			indices.push_back(idx + x + 1);
 			indices.push_back(idx);
 			indices.push_back(idx + 1);
-			
+
 			indices.push_back(idx + x + 1);
 			indices.push_back(idx + 1);
 			indices.push_back(idx + x + 2);
@@ -227,8 +227,8 @@ BasicMeshData GeometryGenerator::Grid(const float& xLength, const float& yLength
 	return data;
 }
 
-BasicMeshData GeometryGenerator::Cyilinder(const float& topRadius, const float& bottomRadius, const float& height,  const int& x, const int& y, const std::wstring& texturePath) {
-	
+BasicMeshData GeometryGenerator::Cyilinder(const float& topRadius, const float& bottomRadius, const float& height, const int& x, const int& y, const std::wstring& texturePath) {
+
 	BasicMeshData data;
 	if (x == 0 || y == 0)
 	{
@@ -249,7 +249,7 @@ BasicMeshData GeometryGenerator::Cyilinder(const float& topRadius, const float& 
 	std::vector<uint16_t> indices;
 	for (int j = 0; j < y + 1; ++j)
 	{
-		Vector3 position = basePosition - Vector3(j*delX, j * delY, 0.f);
+		Vector3 position = basePosition - Vector3(j * delX, j * delY, 0.f);
 		for (int i = 0; i < x + 1; ++i)
 		{
 			Vertex v;
@@ -337,32 +337,32 @@ BasicMeshData GeometryGenerator::Sphere(const float& radius, const int& x, const
 
 	return data;
 }
-						   
+
 std::tuple<std::vector<BasicMeshData>, Animation::AnimationData> GeometryGenerator::ReadFromFile(std::string filename, bool loadAnimation) {
 
-    using namespace DirectX;
+	using namespace DirectX;
 
 	std::shared_ptr<ModelLoader> modelLoader = std::make_shared<ModelLoader>();
-	
-    modelLoader->Load(filename, loadAnimation);
-    std::vector<BasicMeshData> &meshes = modelLoader->meshes;
-	   
-    /*Vector3 vmin(1000, 1000, 1000);
-    Vector3 vmax(-1000, -1000, -1000);
-    for (auto &mesh : meshes) {
-        for (auto &v : mesh.m_vertices) {
-            vmin.x = XMMin(vmin.x, v.position.x);
-            vmin.y = XMMin(vmin.y, v.position.y);
-            vmin.z = XMMin(vmin.z, v.position.z);
-            vmax.x = XMMax(vmax.x, v.position.x);
-            vmax.y = XMMax(vmax.y, v.position.y);
-            vmax.z = XMMax(vmax.z, v.position.z);
-        }
-    }
 
-    float dx = vmax.x - vmin.x, dy = vmax.y - vmin.y, dz = vmax.z - vmin.z;
+	modelLoader->Load(filename, loadAnimation);
+	std::vector<BasicMeshData>& meshes = modelLoader->meshes;
+
+	/*Vector3 vmin(1000, 1000, 1000);
+	Vector3 vmax(-1000, -1000, -1000);
+	for (auto &mesh : meshes) {
+		for (auto &v : mesh.m_vertices) {
+			vmin.x = XMMin(vmin.x, v.position.x);
+			vmin.y = XMMin(vmin.y, v.position.y);
+			vmin.z = XMMin(vmin.z, v.position.z);
+			vmax.x = XMMax(vmax.x, v.position.x);
+			vmax.y = XMMax(vmax.y, v.position.y);
+			vmax.z = XMMax(vmax.z, v.position.z);
+		}
+	}
+
+	float dx = vmax.x - vmin.x, dy = vmax.y - vmin.y, dz = vmax.z - vmin.z;
 	float scale = 1.f / XMMax(XMMax(dx, dy), dz);
-    
+
 	Vector3 translation = -(vmin + vmax) * 0.5f;
 
 	for (auto& mesh : meshes) {
@@ -451,7 +451,7 @@ PbrMeshData GeometryGenerator::PbrUseTesslationBox(const float& length, const st
 {
 	return PbrUseTesslationBox(length, length, length, texturePath);
 }
-PbrMeshData GeometryGenerator::PbrUseTesslationBox(const float& x, const float& y, const float& z, const std::wstring& texturePath, const float maxUVX,const float maxUVY, const float maxUVZ)
+PbrMeshData GeometryGenerator::PbrUseTesslationBox(const float& x, const float& y, const float& z, const std::wstring& texturePath, const float maxUVX, const float maxUVY, const float maxUVZ)
 {
 	PbrMeshData data;
 
@@ -502,7 +502,7 @@ PbrMeshData GeometryGenerator::PbrUseTesslationBox(const float& x, const float& 
 		indices.push_back(idx + 2);
 		indices.push_back(idx);
 		indices.push_back(idx + 3);
-		
+
 		ComputeTangent(vertices[idx], vertices[idx + 1], vertices[idx + 2]);
 		ComputeTangent(vertices[idx + 1], vertices[idx + 3], vertices[idx + 2]);
 	}
@@ -632,13 +632,13 @@ PbrMeshData GeometryGenerator::PbrSphere(const float& radius, const int& x, cons
 			int idx = index + j;
 			if (i == 0) {
 				indices.push_back(idx + x + 1);
-				indices.push_back(idx+1);
+				indices.push_back(idx + 1);
 				indices.push_back(idx + x + 2);
 			}
-			else if (i == y-1) {
+			else if (i == y - 1) {
 				indices.push_back(index + x + 1);
 				indices.push_back(idx);
-				indices.push_back(idx + 1);			
+				indices.push_back(idx + 1);
 			}
 			else {
 				indices.push_back(idx + x + 1);
@@ -649,7 +649,7 @@ PbrMeshData GeometryGenerator::PbrSphere(const float& radius, const int& x, cons
 				indices.push_back(idx + 1);
 				indices.push_back(idx + x + 2);
 			}
-			
+
 		}
 	}
 	for (size_t i = 0; i < indices.size(); i += 3) {
@@ -661,10 +661,10 @@ PbrMeshData GeometryGenerator::PbrSphere(const float& radius, const int& x, cons
 		Renderer::PbrVertex& v1 = vertices[idx1];
 		Renderer::PbrVertex& v2 = vertices[idx2];
 
-		ComputeTangent(v0, v1, v2);  
+		ComputeTangent(v0, v1, v2);
 	}
 	//vertices[0].tangent = Vector3(0, 0, 0);
-	
+
 	data.Initialize(vertices, indices, texturePath);
 
 	return data;
@@ -715,7 +715,7 @@ PbrMeshData GeometryGenerator::PbrUseTesslationSphere(const float& radius, const
 			indices.push_back(idx);
 			indices.push_back(idx + 1);
 			indices.push_back(idx + x + 1);
-			indices.push_back(idx + x +2);
+			indices.push_back(idx + x + 2);
 
 			if (i != 0)
 				ComputeTangent(vertices[idx + x + 1], vertices[idx], vertices[idx + 1]);
@@ -735,7 +735,8 @@ PbrMeshData GeometryGenerator::PbrUseTesslationSphere(const float& radius, const
 	return data;
 }
 
-std::tuple<std::vector<PbrMeshData>, Animation::AnimationData> GeometryGenerator::ReadFromFile_Pbr(std::string filename, bool loadAnimation)
+std::tuple<std::vector<PbrMeshData>, Animation::AnimationData> GeometryGenerator::ReadFromFile_Pbr(std::string filename, bool loadAnimation,
+	bool updateTangent)
 {
 	using namespace DirectX;
 
@@ -743,7 +744,82 @@ std::tuple<std::vector<PbrMeshData>, Animation::AnimationData> GeometryGenerator
 
 	modelLoader->LoadPbr(filename, loadAnimation);
 	std::vector<PbrMeshData>& meshes = modelLoader->pbrMeshes;
-	
+	Vector3 vmin(1000, 1000, 1000);
+	Vector3 vmax(-1000, -1000, -1000);
+	for (auto& mesh : meshes) {
+		for (auto& v : mesh.m_vertices) {
+			vmin.x = XMMin(vmin.x, v.position.x);
+			vmin.y = XMMin(vmin.y, v.position.y);
+			vmin.z = XMMin(vmin.z, v.position.z);
+			vmax.x = XMMax(vmax.x, v.position.x);
+			vmax.y = XMMax(vmax.y, v.position.y);
+			vmax.z = XMMax(vmax.z, v.position.z);
+		}
+	}
+
+	float dx = vmax.x - vmin.x, dy = vmax.y - vmin.y, dz = vmax.z - vmin.z;
+	float scale = 1.f / XMMax(XMMax(dx, dy), dz);
+
+	Vector3 translation = -(vmin + vmax) * 0.5f;
+
+	for (auto& mesh : meshes) {
+		for (auto& v : mesh.m_vertices) {
+			v.position = (v.position + translation) * scale;
+		}
+	}
+	if (updateTangent) {
+		for (auto& mesh : meshes)
+		{
+			for (size_t i = 0; i < mesh.m_indices.size(); i += 3)
+			{
+				ComputeTangent(mesh.m_vertices[i], mesh.m_vertices[i+1], mesh.m_vertices[i + 2]);
+			}
+		}
+	}
+	return { meshes, modelLoader->m_animeData };
+}
+
+std::tuple<std::vector<PbrMeshData32>, Animation::AnimationData> GeometryGenerator::ReadFromFile_Pbr32(std::string filename, 
+	bool loadAnimation, bool updateTangent)
+{
+	using namespace DirectX;
+
+	std::shared_ptr<ModelLoader> modelLoader = std::make_shared<ModelLoader>();
+
+	modelLoader->LoadPbr32(filename, loadAnimation);
+	std::vector<PbrMeshData32>& meshes = modelLoader->pbrMeshes32;
+	Vector3 vmin(1000, 1000, 1000);
+	Vector3 vmax(-1000, -1000, -1000);
+	for (auto& mesh : meshes) {
+		for (auto& v : mesh.m_vertices) {
+			vmin.x = XMMin(vmin.x, v.position.x);
+			vmin.y = XMMin(vmin.y, v.position.y);
+			vmin.z = XMMin(vmin.z, v.position.z);
+			vmax.x = XMMax(vmax.x, v.position.x);
+			vmax.y = XMMax(vmax.y, v.position.y);
+			vmax.z = XMMax(vmax.z, v.position.z);
+		}
+	}
+
+	float dx = vmax.x - vmin.x, dy = vmax.y - vmin.y, dz = vmax.z - vmin.z;
+	float scale = 1.f / XMMax(XMMax(dx, dy), dz);
+
+	Vector3 translation = -(vmin + vmax) * 0.5f;
+
+	for (auto& mesh : meshes) {
+		for (auto& v : mesh.m_vertices) {
+			v.position = (v.position + translation) * scale;
+		}
+	}
+	if (updateTangent) {
+		for (auto& mesh : meshes)
+		{
+			for (size_t i = 0; i < mesh.m_indices.size(); i += 3)
+			{
+				ComputeTangent(mesh.m_vertices[i], mesh.m_vertices[i + 1], mesh.m_vertices[i + 2]);
+			}
+		}
+	}
 	return { meshes, modelLoader->m_animeData };
 }
 
@@ -771,7 +847,7 @@ RaytracingMeshData GeometryGenerator::RTBox(const float& x, const float& y, cons
 	float hZ = z;
 	Vector3 uv0 = Vector3(0, 1, 0);
 	Vector3 uv1 = Vector3(0, 0, 0);
-	Vector3 uv2 = Vector3(1, 0 , 0);
+	Vector3 uv2 = Vector3(1, 0, 0);
 	Vector3 uv3 = Vector3(1, 1, 0);
 	std::vector<RaytracingVertex> vertices = {
 		{Vector3(-hX, -hY, -hZ), Vector3(0.f,0.f,-1.f), uv0, uv0},
@@ -831,7 +907,7 @@ RaytracingMeshData GeometryGenerator::RTCubeMapBox(const float& length)
 
 	float l = length;
 
-	std::vector<RaytracingVertex> vertices = 
+	std::vector<RaytracingVertex> vertices =
 	{
 		{Vector3(-l, -l, -l)},{Vector3(-l, l, -l)},{Vector3(l, l, -l)},{Vector3(l, -l, -l)},
 		{Vector3(-l, -l, l)},{Vector3(-l, l, l)},{Vector3(l, l, l)},{Vector3(l, -l, l)}

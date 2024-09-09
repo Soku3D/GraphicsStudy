@@ -148,6 +148,7 @@ void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
 	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 	D3D12App::PostProcessing(deltaTime);
 	CopyResourceToSwapChain(deltaTime);
+	
 }
 
 void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
