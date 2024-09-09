@@ -26,7 +26,7 @@ void Network::SteamOnlineSystem::OnLobbyCreated(LobbyCreated_t* pCallback)
     if (pCallback->m_eResult == k_EResultOK) {
         isHost = true;
         std::cout << "Create Lobby Complete" << std::endl;
-        SteamMatchmaking()->SetLobbyData(pCallback->m_ulSteamIDLobby, "owner_name", SteamFriends()->GetPersonaName());
+        //SteamMatchmaking()->SetLobbyData(pCallback->m_ulSteamIDLobby, "owner_name", SteamFriends()->GetPersonaName());
     }
     else {
         std::cout << "Failed to Create Lobby" << std::endl;
@@ -117,6 +117,10 @@ void Network::SteamOnlineSystem::OnLobbyEnter(LobbyEnter_t* pCallback)
 void Network::SteamOnlineSystem::CreateLobby(int maxMembers)
 {
     SteamMatchmaking()->CreateLobby(k_ELobbyTypePublic, maxMembers);
+}
+
+void Network::SteamOnlineSystem::FindLobby() {
+    SteamMatchmaking()->RequestLobbyList();
 }
 
 void Network::SteamOnlineSystem::EnterLobby(int lobbyIndex)

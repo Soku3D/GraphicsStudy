@@ -123,7 +123,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	}
 	if (findSession) {
 		findSession = false;
-		onlineSystem.EnterLobby(0);
+		onlineSystem.FindLobby();
 	}
 	Network::PlayerData data;
 	data.position = m_camera->GetPosition();
