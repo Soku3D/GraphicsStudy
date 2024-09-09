@@ -17,6 +17,14 @@
 Network::SteamOnlineSystem::SteamOnlineSystem(Renderer::D3D12App* engine)
     :pEngine(engine)
 {
+    if (!SteamAPI_Init()) {
+        std::cerr << "Steam API 초기화 실패!" << std::endl;
+    }
+    else {
+        std::cout << "Steam API 초기화 성공!" << std::endl;
+
+    }
+    networking = SteamNetworkingSockets();
 }
 
 Network::SteamOnlineSystem::~SteamOnlineSystem()
