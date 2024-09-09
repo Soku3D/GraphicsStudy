@@ -1,5 +1,8 @@
 #pragma once
 
+namespace Renderer {
+	class D3D12App;
+}
 
 #define _SILENCE_CXX20_CISO646_REMOVED_WARNING
 #include "SimpleApp.h"
@@ -13,8 +16,8 @@
 #include "directxtk12/GraphicsMemory.h"
 #include "pix3.h"
 
-#include "SteamOnlineSystem.h"
 #include "Buffer.h"
+#include "SteamOnlineSystem.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -263,9 +266,16 @@ namespace Renderer {
 		AudioEmitter emitter;
 
 	protected:
-		Network::SteamOnlineSystem onlineSystem;
+		class Network::SteamOnlineSystem* onlineSystem;
 		bool bIsHost = false;
 		bool createSession = false;
 		bool findSession = false;
+
+		std::shared_ptr<Core::StaticMesh> mCharacter;
+		
+	public:
+		std::vector<std::shared_ptr<Core::StaticMesh>> mPlayers;
+		void AddPlayer();
+		void UpdatePlayer(int index, DirectX::SimpleMath::Vector3& position);
 	};
 }

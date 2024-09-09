@@ -1,6 +1,9 @@
 #include "D3D12PassApp.h"
 #include "Renderer.h"
 #include <DirectXTexEXR.h>
+#include "SteamOnlineSystem.h"
+
+using namespace Network;
 
 Renderer::D3D12PassApp::D3D12PassApp(const int& width, const int& height)
 	:D3D12App(width, height)
@@ -47,13 +50,13 @@ void Renderer::D3D12PassApp::InitScene()
 	//sphere->SetBoundingBoxHalfLength(0.5f);
 	//m_staticMeshes.push_back(sphere);
 
-	character = std::make_shared<Core::StaticMesh>();
-	character->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100,
+	mCharacter = std::make_shared<Core::StaticMesh>();
+	mCharacter->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100,
 		L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f),
 		m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
 		true /*AO*/, true /*Metallic*/, true /*Height*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
-	character->SetBoundingBoxHalfLength(0.5f);
+	mCharacter->SetBoundingBoxHalfLength(0.5f);
 
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
 	plane->Initialize(GeometryGenerator::PbrBox(10, 1, 10, L"worn-painted-metal_Albedo.dds", 10, 1, 10), m_device, m_commandList, 
@@ -119,17 +122,17 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 {
 	if (createSession) {
 		createSession = false;
-		onlineSystem.CreateLobby(4);
+		onlineSystem->CreateLobby(4);
 	}
 	if (findSession) {
 		findSession = false;
-		onlineSystem.FindLobby();
+		onlineSystem->FindLobby();
 	}
 	Network::PlayerData data;
 	data.position = m_camera->GetPosition();
 
-	onlineSystem.UpdateData(data);
-	onlineSystem.Update();
+	onlineSystem->UpdateData(data);
+	onlineSystem->Update();
 
 	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
 	{
@@ -159,9 +162,9 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	using DirectX::SimpleMath::Vector3;
 
 	Vector3 characterPos = m_camera->GetPosition() + (m_camera->GetForwardDirection() * 2.f);
-	character->UpdateMaterial(gui_material);
-	character->UpdateWorldRow(DirectX::XMMatrixTranslation(characterPos.x, characterPos.y, characterPos.z));
-	character->Update(deltaTime);
+	mCharacter->UpdateMaterial(gui_material);
+	mCharacter->UpdateWorldRow(DirectX::XMMatrixTranslation(characterPos.x, characterPos.y, characterPos.z));
+	mCharacter->Update(deltaTime);
 
 	for (auto& mesh : m_staticMeshes) {
 		mesh->Update(deltaTime);
@@ -308,15 +311,31 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 			}
 
 		}
+		
+		// Render Player
 		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
-		if (m_textureMap.count(character->GetTexturePath()) > 0) {
-			handle.Offset(m_textureMap[character->GetTexturePath()], m_csuHeapSize);
+		if (m_textureMap.count(mCharacter->GetTexturePath()) > 0) {
+			handle.Offset(m_textureMap[mCharacter->GetTexturePath()], m_csuHeapSize);
 		}
 		else {
 			handle.Offset(m_textureMap[L"zzzdefaultAlbedo.dds"], m_csuHeapSize);
 		}
 		m_commandList->SetGraphicsRootDescriptorTable(0, handle);
-		character->Render(deltaTime, m_commandList, true);
+		mCharacter->Render(deltaTime, m_commandList, true);
+
+
+		for (int i = 0; i < mPlayers.size(); ++i) {
+			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
+
+			if (m_textureMap.count(mPlayers[i]->GetTexturePath()) > 0) {
+				handle.Offset(m_textureMap[mPlayers[i]->GetTexturePath()], m_csuHeapSize);
+			}
+			else {
+				handle.Offset(m_textureMap[L"zzzdefaultAlbedo.dds"], m_csuHeapSize);
+			}
+			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
+			mPlayers[i]->Render(deltaTime, m_commandList, true);
+		}
 	}
 
 	ThrowIfFailed(m_commandList->Close());

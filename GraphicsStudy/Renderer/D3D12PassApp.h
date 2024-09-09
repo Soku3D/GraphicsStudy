@@ -81,6 +81,6 @@ namespace Renderer {
 		const wchar_t* cubeMapPassEvent = L"CubeMap Pass ";
 
 	protected:
-		std::shared_ptr<Core::StaticMesh> character;
+		
 	};
 }

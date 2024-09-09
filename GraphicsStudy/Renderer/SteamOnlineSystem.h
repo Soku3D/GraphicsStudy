@@ -1,13 +1,18 @@
 #pragma once
 #pragma warning(disable : 4996)
 #pragma warning(disable : 4828)
+namespace Network {
+	class SteamOnlineSystem;
+}
 
 #include <steam/steam_api.h>
 #include <map>
 #include <vector>
 #include "directxtk/SimpleMath.h"
+#include "D3D12App.h"
 
 namespace Network {
+
 	struct PlayerData {
 		DirectX::SimpleMath::Vector3 position;
 	};
@@ -18,7 +23,7 @@ namespace Network {
 
 	class SteamOnlineSystem {
 	public:
-		SteamOnlineSystem();
+		SteamOnlineSystem(class Renderer::D3D12App* engine);
 		~SteamOnlineSystem();
 
 		STEAM_CALLBACK(SteamOnlineSystem, OnLobbyCreated, LobbyCreated_t);
@@ -54,5 +59,7 @@ namespace Network {
 		std::vector<CSteamID> clientList;
 		GameState mGameState;
 		PlayerData mData = { {0,0,0} };
+
+		class Renderer::D3D12App* pEngine;
 	};
 }

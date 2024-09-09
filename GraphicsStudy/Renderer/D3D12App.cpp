@@ -10,7 +10,7 @@
 #include "pix3.h"
 #include <fp16.h>
 #include <ctime>
-#include "SteamOnlineSystem.h"
+
 
 #pragma warning(disable : 4996)
 
@@ -20,6 +20,7 @@
 #include "stb_image_write.h"
 
 using namespace Core;
+using namespace Network;
 
 Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	:SimpleApp(width, height),
@@ -28,6 +29,8 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	m_viewport(D3D12_VIEWPORT()),
 	m_scissorRect(D3D12_RECT())
 {
+	onlineSystem = new SteamOnlineSystem(this);
+
 	m_passConstantData = new GlobalVertexConstantData();
 	m_ligthPassConstantData = new LightPassConstantData();
 
@@ -1620,6 +1623,25 @@ D3D12_CPU_DESCRIPTOR_HANDLE Renderer::D3D12App::GeometryPassRTV() const
 D3D12_CPU_DESCRIPTOR_HANDLE Renderer::D3D12App::GeometryPassMsaaRTV() const
 {
 	return m_geometryPassMsaaRtvHeap->GetCPUDescriptorHandleForHeapStart();
+}
+
+void Renderer::D3D12App::AddPlayer()
+{
+	std::shared_ptr<Core::StaticMesh> mesh = std::make_shared<Core::StaticMesh>();
+	mesh->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100,
+		L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f),
+		m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, 0.f, 0.f),
+		Material(1.f, 1.f, 1.f, 1.f),
+		true /*AO*/, true /*Metallic*/, true /*Height*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
+	mesh->SetBoundingBoxHalfLength(0.5f);
+
+	mPlayers.push_back(mesh);
+}
+
+void Renderer::D3D12App::UpdatePlayer(int index, DirectX::SimpleMath::Vector3& position)
+{
+	mPlayers[index]->UpdateWorldRow(DirectX::XMMatrixTranslation(position.x, position.y, position.z));
+	mPlayers[index]->Update(1/60.f);
 }
 
 

@@ -1,17 +1,22 @@
 #include "SteamOnlineSystem.h"
 #include <iostream>
 
+//Network::SteamOnlineSystem::SteamOnlineSystem(Renderer::D3D12App* engine)
+//    :pEngine(engine)
+//{
+//    if (!SteamAPI_Init()) {
+//        std::cerr << "Steam API 초기화 실패!" << std::endl;
+//    }
+//    else {
+//        std::cout << "Steam API 초기화 성공!" << std::endl;
+//
+//    }
+//    networking = SteamNetworkingSockets();
+//}
 
-Network::SteamOnlineSystem::SteamOnlineSystem()
+Network::SteamOnlineSystem::SteamOnlineSystem(Renderer::D3D12App* engine)
+    :pEngine(engine)
 {
-    if (!SteamAPI_Init()) {
-        std::cerr << "Steam API 초기화 실패!" << std::endl;
-    }
-    else {
-        std::cout << "Steam API 초기화 성공!" << std::endl;
-
-    }
-    networking = SteamNetworkingSockets();
 }
 
 Network::SteamOnlineSystem::~SteamOnlineSystem()
@@ -150,9 +155,14 @@ void Network::SteamOnlineSystem::Update()
                     mGameState.clientData[clientSteamID] = clientData;
                     if (std::find(clientList.begin(), clientList.end(), clientSteamID) == clientList.end()) {
                         clientList.emplace_back(clientSteamID);
+                        pEngine->AddPlayer();
                     }
                 }
             }
+            //for (size_t i = 0; i < clientList.size(); i++)
+            //{
+            //    pEngine->
+            //}
             if (!clientList.empty()) {
                 for (size_t i = 0; i < clientList.size(); ++i) {
                     std::cout << "Position " << i << " : "
