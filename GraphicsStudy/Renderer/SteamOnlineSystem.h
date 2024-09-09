@@ -36,6 +36,8 @@ namespace Network {
 		void CreateLobby(int maxMembers);
 		void EnterLobby(int lobbyIndex);
 
+		void UpdateData(PlayerData& data);
+
 		void Update();
 		//void UpdatePosition();
 
