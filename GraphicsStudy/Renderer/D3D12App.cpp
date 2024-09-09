@@ -1627,6 +1627,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE Renderer::D3D12App::GeometryPassMsaaRTV() const
 
 void Renderer::D3D12App::AddPlayer()
 {
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
+
 	std::shared_ptr<Core::StaticMesh> mesh = std::make_shared<Core::StaticMesh>();
 	mesh->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100,
 		L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f),
@@ -1636,6 +1639,8 @@ void Renderer::D3D12App::AddPlayer()
 	mesh->SetBoundingBoxHalfLength(0.5f);
 
 	mPlayers.push_back(mesh);
+
+	FlushCommandList(m_commandList);
 }
 
 void Renderer::D3D12App::UpdatePlayer(int index, DirectX::SimpleMath::Vector3& position)

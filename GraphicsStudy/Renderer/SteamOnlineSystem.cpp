@@ -173,12 +173,13 @@ void Network::SteamOnlineSystem::Update()
             //}
             if (!clientList.empty()) {
                 for (size_t i = 0; i < clientList.size(); ++i) {
-                    std::cout << "Position " << i << " : "
+                   /* std::cout << "Position " << i << " : "
                         << mGameState.clientData[clientList[i]].position.x << ", "
                         << mGameState.clientData[clientList[i]].position.y << ", "
-                        << mGameState.clientData[clientList[i]].position.z << " ";
+                        << mGameState.clientData[clientList[i]].position.z << " ";*/
+                    pEngine->UpdatePlayer(i, mGameState.clientData[clientList[i]].position);
                 }
-                std::cout << std::endl;
+                /*std::cout << std::endl;*/
             }
 
         }
