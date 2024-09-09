@@ -26,12 +26,6 @@ bool Renderer::D3D12PassApp::Initialize()
 
 void Renderer::D3D12PassApp::InitConstantBuffers() 
 {
-	psConstantData = new CSConstantData();
-	psConstantData->time = 0;
-	Utility::CreateConstantBuffer(m_device, sizeof(CSConstantData), m_csBuffer, &m_pCbufferBegin);
-
-	memcpy(m_pCbufferBegin, psConstantData, sizeof(CSConstantData));
-
 	m_pCubeMapConstantData = new CubeMapConstantData();
 	m_pCubeMapConstantData->expose = gui_cubeMapExpose;
 	m_pCubeMapConstantData->lodLevel = gui_cubeMapLod;
@@ -119,6 +113,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	}
 
 	onlineSystem.Update();
+
 	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
 	{
 		m_passConstantData->ViewMat = m_camera->GetViewMatrix();
@@ -159,8 +154,8 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	}
 
 	// ComputeShader(PostProcessing)
-	psConstantData->time = (float)m_timer.GetElapsedTime();
-	memcpy(m_pCbufferBegin, psConstantData, sizeof(CSConstantData));
+	mCsBuffer.mStructure.time = min(deltaTime, 1 / 60.f);
+	mCsBuffer.UpdateBuffer();
 
 	// CubeMap ConstantBuffer
 	m_pCubeMapConstantData->expose = gui_cubeMapExpose;
@@ -220,12 +215,10 @@ void Renderer::D3D12PassApp::Render(float& deltaTime)
 	LightPass(deltaTime);
 	RenderNormalPass(deltaTime);
 	RenderBoundingBoxPass(deltaTime);
-	//CopyResourceToSwapChain(deltaTime);
-	
+	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 
-	//PostProcessing(deltaTime);
-	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
-	//CopyResourceToSwapChain(deltaTime);
+	PostProcessing(deltaTime);
+	CopyResourceToSwapChain(deltaTime);
 }
 
 void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
@@ -612,54 +605,6 @@ void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 	PIXEndEvent(m_commandQueue.Get());
 }
 
-void Renderer::D3D12PassApp::PostProcessing(float& deltaTime) {
-
-	//D3D12App::Render(deltaTime);
-
-	auto& pso = computePsoList["PostPrcessing"];
-
-	ThrowIfFailed(m_commandAllocator->Reset());
-	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
-
-	{
-		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 0, 255), postprocessingEvent);
-
-		m_commandList->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(
-				HDRRenderTargetBuffer(),
-				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-			));
-
-		m_commandList->SetComputeRootSignature(pso.GetRootSignature());
-
-		// UAV Heap 
-		ID3D12DescriptorHeap* ppHeaps[] = { m_hdrUavHeap.Get() };
-		m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
-		m_commandList->SetComputeRootDescriptorTable(0, m_hdrUavHeap->GetGPUDescriptorHandleForHeapStart());
-
-		m_commandList->SetComputeRootConstantBufferView(1, m_csBuffer->GetGPUVirtualAddress());
-		m_commandList->Dispatch((UINT)ceil(m_screenWidth / 32.f), (UINT)ceil(m_screenHeight / 32.f), 1);
-
-		m_commandList->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(
-				HDRRenderTargetBuffer(),
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-				D3D12_RESOURCE_STATE_RENDER_TARGET
-			));
-
-		ThrowIfFailed(m_commandList->Close());
-
-		ID3D12CommandList* lists[] = { m_commandList.Get() };
-		m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
-
-		FlushCommandQueue();
-		PIXEndEvent(m_commandQueue.Get());
-
-	}
-
-}
 
 void Renderer::D3D12PassApp::RenderGUI(float& deltaTime)
 {

@@ -7,10 +7,8 @@ void main( int3 gID : SV_GroupID ,uint3 DTid : SV_DispatchThreadID )
 {
     float a = 2.2f;
     float invA = 1 / 2.2f;
-    float3 color = pow(gOutput[DTid.xy].rgb, a);
+    float3 color = pow(gOutput[DTid.xy].rgb, invA);
     //color -= 3.f * deltaTime;
-    if (DTid.x > 500)
-    {
-        gOutput[DTid.xy] = float4(color, 1.f);
-    }
+    gOutput[DTid.xy] = float4(color, 1.f);
+  
 }

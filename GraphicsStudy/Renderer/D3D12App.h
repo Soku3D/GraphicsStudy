@@ -14,6 +14,7 @@
 #include "pix3.h"
 
 #include "SteamOnlineSystem.h"
+#include "Buffer.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -98,6 +99,7 @@ namespace Renderer {
 		void CaptureBufferToPNG() override;
 		/*void CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce, ComPtr<ID3D12DescriptorHeap>& heap, const Renderer::DescriptorType& type, int Numdescriptors,
 			D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);*/
+		virtual void PostProcessing(float& deltaTime);
 
 	protected:
 		bool bUseWarpAdapter;
@@ -109,8 +111,8 @@ namespace Renderer {
 
 		UINT m_numQualityLevels = 0;
 		UINT m_sampleCount = 4;
-		//DXGI_FORMAT m_backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-		DXGI_FORMAT m_backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		DXGI_FORMAT m_backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		//DXGI_FORMAT m_backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		DXGI_FORMAT m_hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		DXGI_FORMAT m_msaaFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		DXGI_FORMAT m_depthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -225,6 +227,11 @@ namespace Renderer {
 
 		D3D12_CPU_DESCRIPTOR_HANDLE GeometryPassRTV() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE GeometryPassMsaaRTV() const;
+
+
+		Core::ConstantBuffer<CSConstantData> mCsBuffer;
+		const wchar_t* postprocessingEvent = L"Postprocessing Pass ";
+
 	protected:
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> samplerHeap;
 

@@ -36,12 +36,9 @@ namespace Renderer {
 		void RenderCubeMap(float& deltaTime) override;
 		void RenderGUI(float& deltaTime) override;
 
-		virtual void PostProcessing(float& deltaTime);
+		//virtual void PostProcessing(float& deltaTime);
 
 	protected:
-		CSConstantData* psConstantData;
-		void* m_pCbufferBegin = nullptr;
-		ComPtr<ID3D12Resource> m_csBuffer;
 
 		CubeMapConstantData* m_pCubeMapConstantData;
 		void* m_pCubeMapCbufferBegin = nullptr;
@@ -82,7 +79,6 @@ namespace Renderer {
 		const wchar_t* drawNormalPassEvent = L"DrawNormal Pass ";
 		const wchar_t* renderBoundingBoxPassEvent = L"RenderBoundingBox Pass ";
 		const wchar_t* cubeMapPassEvent = L"CubeMap Pass ";
-		const wchar_t* postprocessingEvent = L"Postprocessing Pass ";
 
 	protected:
 		std::shared_ptr<Core::StaticMesh> character;

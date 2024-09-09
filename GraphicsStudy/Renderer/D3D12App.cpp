@@ -352,6 +352,8 @@ void Renderer::D3D12App::Update(float& deltaTime)
 	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
 	memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
 
+	mCsBuffer.mStructure.time = min(deltaTime, 1 / 60.f);
+	mCsBuffer.UpdateBuffer();
 
 	for (auto& mesh : m_staticMeshes) {
 		mesh->Update(deltaTime);
@@ -742,6 +744,9 @@ void Renderer::D3D12App::CreateConstantBuffer()
 	Utility::CreateUploadBuffer(psConstantData, m_ligthPassConstantBuffer, m_device);
 
 	ThrowIfFailed(m_ligthPassConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pLPCDataBegin)));
+
+	Utility::CreateConstantBuffer(m_device, mCsBuffer);
+
 }
 
 
@@ -1615,4 +1620,54 @@ D3D12_CPU_DESCRIPTOR_HANDLE Renderer::D3D12App::GeometryPassRTV() const
 D3D12_CPU_DESCRIPTOR_HANDLE Renderer::D3D12App::GeometryPassMsaaRTV() const
 {
 	return m_geometryPassMsaaRtvHeap->GetCPUDescriptorHandleForHeapStart();
+}
+
+
+void Renderer::D3D12App::PostProcessing(float& deltaTime) {
+
+	//D3D12App::Render(deltaTime);
+
+	auto& pso = computePsoList["PostProcessing"];
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+
+	{
+		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 0, 255), postprocessingEvent);
+
+		m_commandList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				HDRRenderTargetBuffer(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+			));
+
+		m_commandList->SetComputeRootSignature(pso.GetRootSignature());
+
+		// UAV Heap 
+		ID3D12DescriptorHeap* ppHeaps[] = { m_hdrUavHeap.Get() };
+		m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+		m_commandList->SetComputeRootDescriptorTable(0, m_hdrUavHeap->GetGPUDescriptorHandleForHeapStart());
+
+		m_commandList->SetComputeRootConstantBufferView(1, mCsBuffer.GetGpuAddress());
+		m_commandList->Dispatch((UINT)ceil(m_screenWidth / 32.f), (UINT)ceil(m_screenHeight / 32.f), 1);
+
+		m_commandList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				HDRRenderTargetBuffer(),
+				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+				D3D12_RESOURCE_STATE_RENDER_TARGET
+			));
+
+		ThrowIfFailed(m_commandList->Close());
+
+		ID3D12CommandList* lists[] = { m_commandList.Get() };
+		m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
+
+		FlushCommandQueue();
+		PIXEndEvent(m_commandQueue.Get());
+
+	}
+
 }

@@ -65,6 +65,9 @@ void Renderer::D3D12SimulationApp::OnResize()
 void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 {
 	D3D12App::Update(deltaTime);
+
+
+
 	CopyResource(m_commandList, sphParticle.GetReadBack(), sphParticle.GetGpu(),
 		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	sphParticle.CopyToCpu();
@@ -142,7 +145,9 @@ void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
 	SPHSimulationPass(deltaTime);
 	SPHSimulationRenderPass(deltaTime);
 	//PostProcessing(deltaTime);
-	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	D3D12App::PostProcessing(deltaTime);
+	CopyResourceToSwapChain(deltaTime);
 }
 
 void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)

@@ -263,6 +263,15 @@ void Renderer::D3D12PhysxSimulationApp::InitScene()
 
 	m_screenMesh = std::make_shared<Core::StaticMesh>();
 	m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
+
+	character = std::make_shared<Core::StaticMesh>();
+	character->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100,
+		L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f),
+		m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
+		Material(1.f, 1.f, 1.f, 1.f),
+		true /*AO*/, true /*Metallic*/, true /*Height*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
+	character->SetBoundingBoxHalfLength(0.5f);
+
 }
 
 void Renderer::D3D12PhysxSimulationApp::CreateDynamicBox(const DirectX::SimpleMath::Vector3& position, const DirectX::SimpleMath::Vector3& velocityDir, float velocity, float halfExtend)

@@ -39,8 +39,8 @@
 #include "SimulationPostProcessingCS.h"
 
 namespace Renderer {
-	DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_FORMAT hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	DXGI_FORMAT geometryPassFormats[geometryPassNum] =
 	{

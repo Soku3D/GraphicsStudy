@@ -52,6 +52,9 @@ bool Renderer::D3D12RayTracingApp::Initialize()
 	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&localRootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, signature.GetAddressOf(), error.GetAddressOf()));
 	m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_raytracingLocalSignature));
 
+	m_screenMesh = std::make_shared<Core::StaticMesh>();
+	m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
+
 	CreateConstantBuffer();
 	InitRayTracingScene();
 	InitializeViews();
@@ -370,6 +373,8 @@ void Renderer::D3D12RayTracingApp::CreateConstantBuffer()
 	D3D12_RANGE range(0, 0);
 	ThrowIfFailed(m_sceneCB->Map(0, &range, reinterpret_cast<void**>(&pSceneBegin)));
 	memcpy(pSceneBegin, &m_sceneCBData, sizeof(RaytraingSceneConstantData));
+
+	Utility::CreateConstantBuffer(m_device, mCsBuffer);
 }
 
 bool Renderer::D3D12RayTracingApp::InitDirectX()
@@ -561,9 +566,10 @@ void Renderer::D3D12RayTracingApp::UpdateGUI(float& deltaTime)
 
 void Renderer::D3D12RayTracingApp::Render(float& deltaTime)
 {
-
 	RaytracingPass(deltaTime);
-	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	PostProcessing(deltaTime);
+	CopyResourceToSwapChain(deltaTime);
 }
 void Renderer::D3D12RayTracingApp::RaytracingPass(float& deltaTime)
 {
