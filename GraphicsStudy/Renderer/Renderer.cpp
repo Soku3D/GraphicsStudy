@@ -133,7 +133,7 @@ namespace Renderer {
 		// Init Signatures
 		defaultSignature.Initialize(1, 3, 1, &wrapLinearSampler);
 		computeSignature.InitializeUAV(1, 0, 0, nullptr);
-		computeSignature.InitializeUAV(1, 0, 0, nullptr);
+		//computeSignature.InitializeUAV(1, 0, 0, nullptr);
 		cubeMapSignature.Initialize(1, 2, 1, &wrapLinearSampler);
 		copySignature.Initialize(1, 0, 1, &wrapLinearSampler);
 

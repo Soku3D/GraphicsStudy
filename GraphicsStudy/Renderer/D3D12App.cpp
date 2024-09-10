@@ -1570,13 +1570,7 @@ void Renderer::D3D12App::CaptureBufferToPNG() {
 
 	for (size_t i = 0; i < imageSize; i++)
 	{
-
-		if (m_appName == "PhysxSimulationApp" || m_appName == "PassApp" || m_appName == "RaytracingApp") {
-			imageUnorm[i] = (uint8_t)(pow(std::clamp(fp16_ieee_to_fp32_value(imagef16[i]), 0.f, 1.f), invGamma) * 255.f);
-		}
-		else {
-			imageUnorm[i] = (uint8_t)(std::clamp(fp16_ieee_to_fp32_value(imagef16[i]), 0.f, 1.f) * 255.f);
-		}
+		imageUnorm[i] = (uint8_t)(std::clamp(fp16_ieee_to_fp32_value(imagef16[i]), 0.f, 1.f) * 255.f);
 	}
 	time_t timer = time(NULL);
 	tm* t;
@@ -1597,6 +1591,8 @@ void Renderer::D3D12App::CaptureBufferToPNG() {
 	}
 	ss << '-' << t->tm_hour << t->tm_min << ".png";
 	stbi_write_png(ss.str().c_str(), width, height, 4, imageUnorm.data(), width * channels);
+	imageUnorm.clear();
+	imagef16.clear();
 }
 
 void Renderer::D3D12App::CreateSamplers() {
@@ -1677,7 +1673,7 @@ void Renderer::D3D12App::PostProcessing(float& deltaTime) {
 
 		m_commandList->SetComputeRootDescriptorTable(0, m_hdrUavHeap->GetGPUDescriptorHandleForHeapStart());
 
-		m_commandList->SetComputeRootConstantBufferView(1, mCsBuffer.GetGpuAddress());
+		//m_commandList->SetComputeRootConstantBufferView(1, mCsBuffer.GetGpuAddress());
 		m_commandList->Dispatch((UINT)ceil(m_screenWidth / 32.f), (UINT)ceil(m_screenHeight / 32.f), 1);
 
 		m_commandList->ResourceBarrier(1,

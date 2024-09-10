@@ -29,6 +29,8 @@ bool Renderer::D3D12PassApp::Initialize()
 
 void Renderer::D3D12PassApp::InitConstantBuffers() 
 {
+	Utility::CreateConstantBuffer(m_device, mCsBuffer);
+
 	m_pCubeMapConstantData = new CubeMapConstantData();
 	m_pCubeMapConstantData->expose = gui_cubeMapExpose;
 	m_pCubeMapConstantData->lodLevel = gui_cubeMapLod;
