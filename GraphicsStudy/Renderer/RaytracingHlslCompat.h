@@ -16,15 +16,18 @@ struct SceneConstantBuffer {
 	XMVECTOR cameraPosition;
 	float d;
 };
+
 struct PrimitiveConstantBuffer {
 	XMMATRIX invTranspose;
 };
+
 struct RayPayload
 {
 	XMFLOAT4 color;
 	UINT   recursionDepth;
 	bool isHit;
 };
+
 struct RaytracingVertex
 {
 	XMFLOAT3 position;

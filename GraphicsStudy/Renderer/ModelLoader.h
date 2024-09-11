@@ -151,8 +151,9 @@ namespace Renderer {
 					vertex.normal.x = mesh->mNormals[i].x;
 					vertex.normal.y = mesh->mNormals[i].y;
 					vertex.normal.z = mesh->mNormals[i].z;
-
-					vertex.normal.Normalize();
+					DirectX::SimpleMath::Vector3 n = vertex.normal;
+					n.Normalize();
+					vertex.normal = n;
 				}
 				else {
 					//std::cout << "NULL Normals" << std::endl;

@@ -3,6 +3,7 @@
 #include "D3D12App.h"
 #include "Renderer.h"
 #include "RaytracingHlslCompat.h"
+#include "RaytracingHelper.h"
 
 namespace Renderer {
 
@@ -55,6 +56,8 @@ namespace Renderer {
 		uint8_t* pHitgroupsData1;
 		ComPtr<ID3D12DescriptorHeap> m_descriptorHeap;
 
+		class ShaderTable* hitShaderTable;
+		Core::StaticMesh* mCharacterMesh;
 		//std::vector<D3D12_STATE_SUBOBJECT> subObjects;
 		//D3D12_STATE_OBJECT_DESC rtStateObject;
 		//D3D12_STATE_SUBOBJECT config;

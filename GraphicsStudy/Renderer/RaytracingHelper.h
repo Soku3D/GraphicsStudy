@@ -39,6 +39,11 @@ public:
         ThrowIfFailed(m_table->Map(0, &readRange, reinterpret_cast<void**>(&m_mappedShaderRecoreds)));
     }
 
+    void ResetMap() {
+        CD3DX12_RANGE readRange(0, 0);
+        ThrowIfFailed(m_table->Map(0, &readRange, reinterpret_cast<void**>(&m_mappedShaderRecoreds)));
+    }
+
     void push_back(const ShaderRecord& shaderRecord) {
        
         memcpy(m_mappedShaderRecoreds, shaderRecord.shaderIdentifier.ptr, shaderRecord.shaderIdentifier.size);
@@ -50,6 +55,7 @@ public:
         }
     }
     ComPtr<ID3D12Resource> GetResource() { return m_table; }
+    D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress() { return m_table->GetGPUVirtualAddress(); }
     uint8_t* m_mappedShaderRecoreds;
 
 private:

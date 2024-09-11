@@ -1,6 +1,6 @@
 #include "D3D12RaytracingApp.h"
 #include "Raytracing.hlsl.h"
-#include "RaytracingHelper.h"
+
 
 using namespace std;
 
@@ -20,12 +20,14 @@ Renderer::D3D12RayTracingApp::D3D12RayTracingApp(const int& width, const int& he
 	m_appName = "RaytracingApp";
 	/*m_camera->SetPositionAndDirection(DirectX::SimpleMath::Vector3(0, 0, 0),
 		DirectX::SimpleMath::Vector3(0, 0, 1));*/
-	//m_camera->SetPositionAndDirection(DirectX::SimpleMath::Vector3(0, 0, 0),
-	//	DirectX::SimpleMath::Vector3(0, 0, 1));
+		//m_camera->SetPositionAndDirection(DirectX::SimpleMath::Vector3(0, 0, 0),
+		//	DirectX::SimpleMath::Vector3(0, 0, 1));
 }
 
 Renderer::D3D12RayTracingApp::~D3D12RayTracingApp()
 {
+	delete mCharacterMesh;
+	delete hitShaderTable;
 	std::cout << "~D3D12RayTracingApp" << std::endl;
 }
 
@@ -33,7 +35,7 @@ bool Renderer::D3D12RayTracingApp::Initialize()
 {
 	if (!D3D12App::Initialize())
 		return false;
-		
+
 	// Direct RayTracing Command List 생성
 	ThrowIfFailed(m_commandList->QueryInterface(IID_PPV_ARGS(&m_dxrCommandList)));
 	m_commandAllocator->Reset();
@@ -46,7 +48,7 @@ bool Renderer::D3D12RayTracingApp::Initialize()
 	CD3DX12_ROOT_PARAMETER1 rootParameters[2];
 	rootParameters[0].InitAsDescriptorTable(ARRAYSIZE(rangeTable), rangeTable);
 	rootParameters[1].InitAsConstants(SizeOfInUint32(PrimitiveConstantBuffer), 1, 0);
-	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC localRootSignatureDesc(ARRAYSIZE(rootParameters), rootParameters,0,nullptr, D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
+	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC localRootSignatureDesc(ARRAYSIZE(rootParameters), rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
 	Microsoft::WRL::ComPtr<ID3DBlob> signature;
 	Microsoft::WRL::ComPtr<ID3DBlob> error;
 	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&localRootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, signature.GetAddressOf(), error.GetAddressOf()));
@@ -63,7 +65,7 @@ bool Renderer::D3D12RayTracingApp::Initialize()
 	CreateStateObjects();
 	CreateShaderTable();
 
-	
+
 	ThrowIfFailed(m_dxrCommandList->Close());
 	ID3D12CommandList* pCmdLists[] = { m_dxrCommandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(pCmdLists), pCmdLists);
@@ -263,14 +265,14 @@ void Renderer::D3D12RayTracingApp::CreateShaderTable()
 	ComPtr<ID3D12StateObjectProperties> stateObjectProperties;
 	ThrowIfFailed(m_rtpso.As(&stateObjectProperties));
 	UINT shaderIdentifierSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-	
+
 	void* rayGenShaderID;
 	void* missShaderIDs;
 	std::vector<void*> hitGroupShaderIDs(hitGroupNames.size());
-	
+
 	rayGenShaderID = stateObjectProperties->GetShaderIdentifier(rayGenerationShaderName);
 	missShaderIDs = stateObjectProperties->GetShaderIdentifier(missShaderName);
-	
+
 	for (size_t i = 0; i < hitGroupNames.size(); i++)
 	{
 		hitGroupShaderIDs[i] = stateObjectProperties->GetShaderIdentifier(hitGroupNames[i]);
@@ -286,15 +288,15 @@ void Renderer::D3D12RayTracingApp::CreateShaderTable()
 
 	UINT numShaderRecords = (UINT)m_staticMeshes.size();
 	UINT shaderRecordSize = 128;
-	
-	ShaderTable hitShaderTable(m_device, numShaderRecords, shaderRecordSize);
+
+	hitShaderTable = new ShaderTable(m_device, numShaderRecords, shaderRecordSize);
 
 	for (size_t i = 0; i < hitGroupNames.size(); i++)
 	{
 		//hitShaderTable.push_back(ShaderRecord(hitGroupShaderIDs[i], shaderIdentifierSize, &(m_textureHeap->GetGPUDescriptorHandleForHeapStart().ptr), sizeof(m_textureHeap->GetGPUDescriptorHandleForHeapStart().ptr)));
 		//hitShaderTable.push_back(ShaderRecord(hitGroupShaderIDs[i], 0, &(m_staticMeshes[i]->m_primitiveConstantData), 32));
-		memcpy(hitShaderTable.m_mappedShaderRecoreds, hitGroupShaderIDs[i], shaderIdentifierSize);
-		hitShaderTable.m_mappedShaderRecoreds += 32;
+		memcpy(hitShaderTable->m_mappedShaderRecoreds, hitGroupShaderIDs[i], shaderIdentifierSize);
+		hitShaderTable->m_mappedShaderRecoreds += 32;
 
 		CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
 		if (m_textureMap.count(m_staticMeshes[i]->GetTexturePath()) > 0) {
@@ -306,14 +308,11 @@ void Renderer::D3D12RayTracingApp::CreateShaderTable()
 
 		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_raytracingHeaps[i]->GetGPUDescriptorHandleForHeapStart());
 		//CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_staticMeshes[i]->GetIndexGpuHandle());
-		memcpy(hitShaderTable.m_mappedShaderRecoreds, &handle.ptr, sizeof(handle.ptr));
-		hitShaderTable.m_mappedShaderRecoreds += 8;
-		memcpy(hitShaderTable.m_mappedShaderRecoreds, &(m_staticMeshes[i]->m_primitiveConstantData), sizeof(PrimitiveConstantBuffer));
-		hitShaderTable.m_mappedShaderRecoreds += 88;
+		memcpy(hitShaderTable->m_mappedShaderRecoreds, &handle.ptr, sizeof(handle.ptr));
+		hitShaderTable->m_mappedShaderRecoreds += 8;
+		memcpy(hitShaderTable->m_mappedShaderRecoreds, &(m_staticMeshes[i]->m_primitiveConstantData), sizeof(PrimitiveConstantBuffer));
+		hitShaderTable->m_mappedShaderRecoreds += 88;
 	}
-	
-	m_hitGroupsTable = hitShaderTable.GetResource();
-
 }
 
 void Renderer::D3D12RayTracingApp::InitializeViews() {
@@ -357,7 +356,7 @@ void Renderer::D3D12RayTracingApp::InitializeViews() {
 	}
 	m_device->CopyDescriptorsSimple(4, destHandle, srvCubeTextureHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	
+
 }
 
 void Renderer::D3D12RayTracingApp::CreateConstantBuffer()
@@ -395,20 +394,31 @@ void Renderer::D3D12RayTracingApp::OnResize()
 void Renderer::D3D12RayTracingApp::InitRayTracingScene()
 {
 	using DirectX::SimpleMath::Vector3;
-	std::shared_ptr<Core::StaticMesh> sphere1 = std::make_shared<Core::StaticMesh>();
+
+
+	auto [soldier, _] = GeometryGenerator::ReadFromFile<RaytracingVertex, uint32_t>("swat.fbx", false, true);
+	for (size_t i = 0; i < soldier.size(); i++)
+		mCharacterMesh = new Core::StaticMesh();
+	mCharacterMesh->Initialize(soldier, m_device, m_commandList,
+		Vector3(0.f, 0.f, 0.f),
+		Material(1.f, 1.f, 1.f, 1.f),
+		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
+	mCharacter->SetStaticMeshComponent(mCharacterMesh);
+
+	std::shared_ptr<Core::StaticMesh> box = std::make_shared<Core::StaticMesh>();
 	//sphere1->Initialize(GeometryGenerator::RTSphere(0.45f, 100, 100), m_device, m_commandList, Vector3(-0.5, 0, 0));
-	sphere1->Initialize(GeometryGenerator::RTBox(0.4f, L"DiamondPlate008C_4K-PNG_Albedo.dds"), m_device, m_commandList, Vector3(-0.5, 0.4f, 0.5));
-	sphere1->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
+	box->Initialize(GeometryGenerator::RTBox(0.4f, L"DiamondPlate008C_4K-PNG_Albedo.dds"), m_device, m_commandList, Vector3(-0.5, 0.4f, 0.5));
+	box->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupSphere1");
 
-	std::shared_ptr<Core::StaticMesh> sphere2 = std::make_shared<Core::StaticMesh>();
-	sphere2->Initialize(GeometryGenerator::RTSphere(0.4f, 100, 100, L"worn-painted-metal_Albedo.dds"), m_device, m_commandList, Vector3(0.5,0.4f,0.f));
+	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
+	sphere->Initialize(GeometryGenerator::RTSphere(0.4f, 100, 100, L"worn-painted-metal_Albedo.dds"), m_device, m_commandList, Vector3(0.5, 0.4f, 0.f));
 	//sphere2->Initialize(GeometryGenerator::RTBox(0.4f, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.5, 0, 0.5));
-	sphere2->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
+	sphere->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupSphere2");
 
 	std::shared_ptr<Core::StaticMesh> plane = std::make_shared<Core::StaticMesh>();
-	plane->Initialize(GeometryGenerator::RTBox(100.f,1.f,100.f), m_device, m_commandList, Vector3(0.0, -1.0f, 0.f));
+	plane->Initialize(GeometryGenerator::RTBox(100.f, 1.f, 100.f), m_device, m_commandList, Vector3(0.0, -1.0f, 0.f));
 	plane->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupPlane");
 
@@ -418,25 +428,30 @@ void Renderer::D3D12RayTracingApp::InitRayTracingScene()
 	cubeMap->SetIsCubeMap(true);
 	cubeMap->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupCube");
-	
-	std::shared_ptr<Core::StaticMesh> characterMesh = std::make_shared<Core::StaticMesh>();
-
-	auto [soldier, _] = GeometryGenerator::ReadFromFile<RaytracingVertex,uint32_t>("swat.fbx", false, true);
-	characterMesh->Initialize(soldier, m_device, m_commandList,
-		Vector3(0.f, 0.f, 0.f),
-		Material(1.f, 1.f, 1.f, 1.f),
-		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
-	characterMesh->SetTexturePath(L"angel_armor_Albedo.dds");
-	characterMesh->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
-	hitGroupNames.push_back(L"HitGroupCharacter");
-
-	//mCharacter->SetStaticMeshComponent(characterMesh);
 
 	m_staticMeshes.push_back(cubeMap);
-	m_staticMeshes.push_back(sphere1);
-	m_staticMeshes.push_back(sphere2);
+	m_staticMeshes.push_back(box);
+	m_staticMeshes.push_back(sphere);
 	m_staticMeshes.push_back(plane);
-	m_staticMeshes.push_back(characterMesh);
+
+	std::vector<std::wstring> pathList = {
+		L"Soldier_Body_Albedo.png",
+		L"Soldier_head_Albedo.png",
+		L"Soldier_Body_Albedo.png"
+	};
+	
+	for (size_t i = 0; i < soldier.size(); i++)
+	{
+		std::shared_ptr<Core::StaticMesh> character = std::make_shared<Core::StaticMesh>();
+		character->Initialize(soldier[i], m_device, m_commandList,
+			Vector3(0.f, 0.45f, 0.f),
+			Material(1.f, 1.f, 1.f, 1.f),
+			false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
+		character->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
+		character->SetTexturePath(pathList[i]);
+		hitGroupNames.push_back(L"HitGroupCharacter"+ i);
+		m_staticMeshes.push_back(character);
+	}
 }
 
 // TLAS 생성
@@ -451,34 +466,33 @@ void Renderer::D3D12RayTracingApp::BuildAccelerationStructures()
 	topLevelInputs.NumDescs = (UINT)m_staticMeshes.size();
 	topLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
+	UINT id = 0;
+
 	for (size_t i = 0; i < m_staticMeshes.size(); i++)
 	{
-		D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
 		//instanceDesc.Transform[0][0] = instanceDesc.Transform[1][1] = instanceDesc.Transform[2][2] = 1;
 		DirectX::SimpleMath::Matrix Model = m_staticMeshes[i]->GetTransformMatrix();
-		for (size_t j = 0; j < m_staticMeshes[i]->meshCount; j++)
+		D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
+		for (int x = 0; x < 3; x++)
 		{
-			for (int x = 0; x < 3; x++)
+			for (int y = 0; y <= 3; y++)
 			{
-				for (int y = 0; y <= 3; y++)
-				{
-					instanceDesc.Transform[x][y] = Model.m[x][y];
-				}
+				instanceDesc.Transform[x][y] = Model.m[x][y];
 			}
-			if (i == 0) {
-				instanceDesc.InstanceMask = 0x02;
-			}
-			else {
-				instanceDesc.InstanceMask = 0x01;
-			}
-			instanceDesc.InstanceID = i;
-			instanceDesc.InstanceContributionToHitGroupIndex = i;
-			instanceDesc.AccelerationStructure = m_staticMeshes[i]->GetBlas(j);
-			m_instances.push_back(instanceDesc);
 		}
-	
+		if (id == 0) {
+			instanceDesc.InstanceMask = 0x02;
+		}
+		else {
+			instanceDesc.InstanceMask = 0x01;
+		}
+		instanceDesc.InstanceID = id;
+		instanceDesc.InstanceContributionToHitGroupIndex = id;
+		instanceDesc.AccelerationStructure = m_staticMeshes[i]->GetBlas();
+		m_instances.push_back(instanceDesc);
+		id++;
 	}
-	
+
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelPrebuildInfo = {};
 	m_device->GetRaytracingAccelerationStructurePrebuildInfo(&topLevelInputs, &topLevelPrebuildInfo);
 
@@ -492,13 +506,13 @@ void Renderer::D3D12RayTracingApp::BuildAccelerationStructures()
 		D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
 		m_tlas);
 
-		
+
 	UINT64 datasize = (UINT64)(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * m_instances.size());
 
-	Utility::CreateBuffer(m_device, D3D12_HEAP_TYPE_UPLOAD, D3D12_HEAP_FLAG_NONE, datasize, D3D12_RESOURCE_FLAG_NONE, 
+	Utility::CreateBuffer(m_device, D3D12_HEAP_TYPE_UPLOAD, D3D12_HEAP_FLAG_NONE, datasize, D3D12_RESOURCE_FLAG_NONE,
 		D3D12_RESOURCE_STATE_GENERIC_READ, m_instanceDescs);
 
-	
+
 	m_instanceDescs->Map(0, nullptr, reinterpret_cast<void**>(&pInstancesMappedData));
 	memcpy(pInstancesMappedData, m_instances.data(), datasize);
 	//m_instanceDescs->Unmap(0, nullptr);
@@ -529,10 +543,11 @@ void Renderer::D3D12RayTracingApp::Update(float& deltaTime)
 	using DirectX::SimpleMath::Matrix;
 
 	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
-	
+
 	m_sceneCBData.cameraPosition = m_camera->GetPosition();
+
 	Matrix view = m_camera->GetViewMatrix();
-	Matrix projection = m_camera->GetProjMatrix() * DirectX::XMMatrixTranslation(0,0,m_camera->d);
+	Matrix projection = m_camera->GetProjMatrix() * DirectX::XMMatrixTranslation(0, 0, m_camera->d);
 
 	projection = projection.Invert();
 	projection = projection.Transpose();
@@ -549,34 +564,48 @@ void Renderer::D3D12RayTracingApp::Update(float& deltaTime)
 	view.m[2][3] = 0;
 
 	m_sceneCBData.cubeMapView = view;
-		
+
 	memcpy(pSceneBegin, &m_sceneCBData, sizeof(SceneConstantBuffer));
+	
+
+	float delAngle = (3.14f / 3.f) * deltaTime;
+	static float angle = 0.f;
+	angle += delAngle;
+	Matrix rotate = DirectX::XMMatrixRotationY(angle);
+	rotate = rotate.Transpose();
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			m_instances[2].Transform[i][j] = rotate.m[i][j];
+
+		}
+	}
+	UINT64 datasize = (UINT64)(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * m_instances.size());
+	m_instanceDescs->Map(0, nullptr, reinterpret_cast<void**>(&pInstancesMappedData));
+	memcpy(pInstancesMappedData, m_instances.data(), datasize);
+	
+	m_staticMeshes[2]->UpdateWorldRow(rotate);
 
 	for (auto& mesh : m_staticMeshes) {
 		mesh->Update(deltaTime);
 	}
-	//float delAngle = (3.14f / 3.f) * deltaTime;
-	//static float angle = 0.f;
-	//angle += delAngle;
-	//Matrix rotate = DirectX::XMMatrixRotationY(angle);
-	//rotate = rotate.Transpose();
-	//for (int i = 0; i < 3; i++)
-	//{
-	//	for (int j = 0; j < 3; j++)
-	//	{
-	//		m_instances[0].Transform[i][j] = rotate.m[i][j];
 
-	//	}
-	//}
-	//UINT64 datasize = (UINT64)(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * m_instances.size());
-	//m_instanceDescs->Map(0, nullptr, reinterpret_cast<void**>(&pInstancesMappedData));
-	//memcpy(pInstancesMappedData, m_instances.data(), datasize);
+	UINT numShaderRecords = (UINT)m_staticMeshes.size();
+	UINT shaderRecordSize = 128;
+
+	hitShaderTable->ResetMap();
+	for (size_t i = 0; i < hitGroupNames.size(); i++)
+	{
+		hitShaderTable->m_mappedShaderRecoreds += 40;
+		memcpy(hitShaderTable->m_mappedShaderRecoreds, &(m_staticMeshes[i]->m_primitiveConstantData), sizeof(PrimitiveConstantBuffer));
+		hitShaderTable->m_mappedShaderRecoreds += 88;
+	}
 }
 
 void Renderer::D3D12RayTracingApp::UpdateGUI(float& deltaTime)
 {
 	//D3D12App::UpdateGUI(deltaTime);
-
 }
 
 void Renderer::D3D12RayTracingApp::Render(float& deltaTime)
@@ -597,7 +626,7 @@ void Renderer::D3D12RayTracingApp::RaytracingPass(float& deltaTime)
 
 	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 0, 255), raytracingPass);
 
-	// m_dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
+	m_dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
 
 	FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
 	m_dxrCommandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
@@ -622,11 +651,11 @@ void Renderer::D3D12RayTracingApp::RaytracingPass(float& deltaTime)
 	D3D12_DISPATCH_RAYS_DESC dispactchRays = {};
 
 	dispactchRays.RayGenerationShaderRecord.StartAddress = m_rgsTable->GetGPUVirtualAddress();
-	
+
 	dispactchRays.RayGenerationShaderRecord.SizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
-    //TODO : size
-	dispactchRays.HitGroupTable.StartAddress = m_hitGroupsTable->GetGPUVirtualAddress();
+	//TODO : size
+	dispactchRays.HitGroupTable.StartAddress = hitShaderTable->GetGPUVirtualAddress();
 	dispactchRays.HitGroupTable.SizeInBytes = 128 * 2;
 	dispactchRays.HitGroupTable.StrideInBytes = 128;
 

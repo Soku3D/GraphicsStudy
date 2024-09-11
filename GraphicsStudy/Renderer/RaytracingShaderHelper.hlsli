@@ -4,8 +4,6 @@
 RWTexture2D<float4> output : register(u0);
 RaytracingAccelerationStructure gSceneTlas : register(t0);
 
-
-
 ByteAddressBuffer g_indices : register(t1);
 StructuredBuffer<RaytracingVertex> g_vertices : register(t2);
 

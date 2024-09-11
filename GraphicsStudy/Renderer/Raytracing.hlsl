@@ -130,7 +130,9 @@ void Hit(inout RayPayload rayPayload : SV_Payload, BuiltInAttribute att)
    
         float2 uv = (w * (g_vertices[indices.x].texcoord) + u * (g_vertices[indices.y].texcoord) + v * (g_vertices[indices.z].texcoord)).rg;
         float3 normal = w * (g_vertices[indices.x].normal) + u * (g_vertices[indices.y].normal) + v * (g_vertices[indices.z].normal);
-       
+        normal = mul(float4(normal, 0), l_materialCB.invTranspose).rgb;
+        //rayPayload.color = float4(normal, 1.f);
+        
         Ray ray;
         ray.direction = normalize(reflect(WorldRayDirection(), normal));
         ray.origin = HitWorldPosition();
