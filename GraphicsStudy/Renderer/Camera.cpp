@@ -4,24 +4,24 @@
 namespace Core {
 
 	Camera::Camera() :
-		m_position(DirectX::SimpleMath::Vector3(0,0,-1)),
-		m_forwardDirection(DirectX::SimpleMath::Vector3(0,0,1)),
-		m_upDirection(DirectX::SimpleMath::Vector3(0.f, 1.f, 0.f)),
-		m_rightDirection(DirectX::SimpleMath::Vector3(1.f, 0.f, 0.f)),
+		mPosition(DirectX::SimpleMath::Vector3(0,0,-1)),
+		mForwardDirection(DirectX::SimpleMath::Vector3(0,0,1)),
+		mUpDirection(DirectX::SimpleMath::Vector3(0.f, 1.f, 0.f)),
+		mRightDirection(DirectX::SimpleMath::Vector3(1.f, 0.f, 0.f)),
 		m_farZ(1000.f),
 		m_nearZ(0.1f),
 		Actor()
 	{
 		using DirectX::SimpleMath::Vector3;
 
-		m_forwardDirection.Normalize();
+		mForwardDirection.Normalize();
 	
 		m_fov = DirectX::XMConvertToRadians(70.f);
 		m_delTheta = DirectX::XMConvertToRadians(0.2f);
 		m_delSine = sin(m_delTheta / 2.f);
 		m_delCosine = cos(m_delTheta / 2.f);
 	
-		m_standardDirection = Vector3(0,0,1);
+		mStandardDirection = Vector3(0,0,1);
 		
 		d = 1.f/tan(m_fov/2.f);
 	}
@@ -31,11 +31,11 @@ namespace Core {
 	{
 		using DirectX::SimpleMath::Vector3;
 
-		m_position = position;
-		m_forwardDirection = direction;
+		mPosition = position;
+		mForwardDirection = direction;
 
-		Vector3 v0 = Vector3(0, m_forwardDirection.y, m_forwardDirection.z);
-		Vector3 v1 = Vector3(m_forwardDirection.x, 0, m_forwardDirection.z);
+		Vector3 v0 = Vector3(0, mForwardDirection.y, mForwardDirection.z);
+		Vector3 v1 = Vector3(mForwardDirection.x, 0, mForwardDirection.z);
 		v0.Normalize();
 		v1.Normalize();
 		float cosTheta1 = abs(v0.Dot(Vector3(0, 0, 1)));
@@ -53,9 +53,9 @@ namespace Core {
 		m_delSine = sin(m_delTheta / 2.f);
 		m_delCosine = cos(m_delTheta / 2.f);
 
-		m_forwardDirection = Vector3::Transform(m_standardDirection, DirectX::XMMatrixRotationX(m_xTheta));
-		m_forwardDirection = Vector3::Transform(m_forwardDirection, DirectX::XMMatrixRotationY(m_yTheta));
-		m_forwardDirection.Normalize();
+		mForwardDirection = Vector3::Transform(mStandardDirection, DirectX::XMMatrixRotationX(m_xTheta));
+		mForwardDirection = Vector3::Transform(mForwardDirection, DirectX::XMMatrixRotationY(m_yTheta));
+		mForwardDirection.Normalize();
 	}
 	void Camera::SetAspectRation(float aspectRatio)
 	{
@@ -70,7 +70,7 @@ namespace Core {
 
 	void Camera::SetSpeed(float velocity)
 	{
-		m_velocity = velocity;
+		mVelocity = velocity;
 	}
 
 	void Camera::SetRotation(int deltaX, int deltaY) {
@@ -87,54 +87,54 @@ namespace Core {
 
 	void Camera::RotateDirection() {
 		using DirectX::SimpleMath::Vector3;
-	/*	if (m_forwardDirection.Dot(Vector3(0.f, 1.f, 0.f)) < 0.99f && m_forwardDirection.Dot(Vector3(0.f, -1.f, 0.f)) > -0.99f) {
-		m_forwardDirection = Vector3::Transform(m_forwardDirection, DirectX::XMMatrixRotationQuaternion(m_quaternion));
-		m_forwardDirection.Normalize();
+	/*	if (mViewDirection.Dot(Vector3(0.f, 1.f, 0.f)) < 0.99f && mViewDirection.Dot(Vector3(0.f, -1.f, 0.f)) > -0.99f) {
+		mViewDirection = Vector3::Transform(mViewDirection, DirectX::XMMatrixRotationQuaternion(m_quaternion));
+		mViewDirection.Normalize();
 		m_quaternion = DirectX::SimpleMath::Quaternion();
 		
 		}*/
-		m_forwardDirection = Vector3::Transform(m_standardDirection, DirectX::XMMatrixRotationX(m_xTheta));
-		m_forwardDirection = Vector3::Transform(m_forwardDirection, DirectX::XMMatrixRotationY(m_yTheta));
-		m_forwardDirection.Normalize();
+		mForwardDirection = Vector3::Transform(mStandardDirection, DirectX::XMMatrixRotationX(m_xTheta));
+		mForwardDirection = Vector3::Transform(mForwardDirection, DirectX::XMMatrixRotationY(m_yTheta));
+		mForwardDirection.Normalize();
 
 		m_quaternion = DirectX::SimpleMath::Quaternion();
-		m_rightDirection = m_upDirection.Cross(m_forwardDirection);
-		m_rightDirection.Normalize();
+		mRightDirection = mUpDirection.Cross(mForwardDirection);
+		mRightDirection.Normalize();
 	}
 
 	void Camera::MoveUp(float deltaTime)
 	{
-		m_position += (m_velocity * deltaTime) * m_upDirection;
+		mPosition += (mVelocity * deltaTime) * mUpDirection;
 	}
 
 	void Camera::MoveDown(float deltaTime)
 	{
-		m_position += (m_velocity * deltaTime) * -m_upDirection;
+		mPosition += (mVelocity * deltaTime) * -mUpDirection;
 	}
 
 	void Camera::MoveRight(float deltaTime)
 	{
-		m_position += (m_velocity * deltaTime) * m_rightDirection;
+		mPosition += (mVelocity * deltaTime) * mRightDirection;
 	}
 
 	void Camera::MoveLeft(float deltaTime)
 	{
-		m_position += (m_velocity * deltaTime) * -m_rightDirection;
+		mPosition += (mVelocity * deltaTime) * -mRightDirection;
 	}
 
 	void Camera::MoveForward(float deltaTime)
 	{
-		m_position += (m_velocity * deltaTime) * m_forwardDirection;
+		mPosition += (mVelocity * deltaTime) * mForwardDirection;
 	}
 
 	void Camera::MoveBackward(float deltaTime)
 	{
-		m_position += (m_velocity * deltaTime) * -m_forwardDirection;
+		mPosition += (mVelocity * deltaTime) * -mForwardDirection;
 	}
 
 	DirectX::SimpleMath::Matrix Camera::GetViewMatrix() const
 	{
-		return DirectX::XMMatrixLookToLH(m_position, m_forwardDirection, m_upDirection);
+		return DirectX::XMMatrixLookToLH(mPosition, mForwardDirection, mUpDirection);
 	}
 
 	DirectX::SimpleMath::Matrix Camera::GetProjMatrix() const
@@ -143,14 +143,14 @@ namespace Core {
 	}
 	DirectX::SimpleMath::Vector3 Camera::GetPosition() const
 	{
-		return m_position;
+		return mPosition;
 	}
 	DirectX::SimpleMath::Vector3 Camera::GetForwardDirection() const
 	{
-		return m_forwardDirection;
+		return mForwardDirection;
 	}
 	DirectX::SimpleMath::Vector3 Camera::GetUpDirection() const
 	{
-		return m_upDirection;
+		return mUpDirection;
 	}
 }

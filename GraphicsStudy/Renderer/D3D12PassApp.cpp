@@ -41,63 +41,66 @@ void Renderer::D3D12PassApp::InitConstantBuffers()
 void Renderer::D3D12PassApp::InitScene()
 {
 	using DirectX::SimpleMath::Vector3;
+	using DirectX::SimpleMath::Matrix;
 	using namespace Core;
 
-	//std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
-	//sphere->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, 
+	//std::shared_ptr<Core::StaticMesh> characterMesh = std::make_shared< Core::StaticMesh>();
+	Core::StaticMesh* characterMesh = new Core::StaticMesh();
+	//Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
+	//auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, false);
+	//characterMesh->Initialize(soldier, m_device, m_commandList,
+	//	Vector3(0.f, 0.f, 0.f),
+	//	Material(1.f, 1.f, 1.f, 1.f),
+	//	false /*AO*/, false /*Height*/, false /*Metallic*/, false /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
+	//characterMesh->SetTexturePath(L"Soldier_Body_Albedo.png", 0);
+	//characterMesh->SetTexturePath(L"Soldier_head_Albedo.png", 1);
+	//characterMesh->SetTexturePath(L"Soldier_Body_Albedo.png", 2);
+	//characterMesh->SetBoundingBoxHalfLength(1.f);
+
+	auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, false);
+	characterMesh->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f), m_device, m_commandList,
+		Vector3(0.f, 0.f, 0.f),
+		Material(1.f, 1.f, 1.f, 1.f),
+		true /*AO*/, true /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
+	characterMesh->SetBoundingBoxHalfLength(0.5f);
+	mCharacter->SetStaticMeshComponent(characterMesh);
+
+	//mCharacter->SetForwardDirection(XMFLOAT3(0, 0, -1));
+	//staticMesh->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100,
 	//	L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f),
 	//	m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
 	//	Material(1.f, 1.f, 1.f, 1.f),
 	//	true /*AO*/, true /*Metallic*/, true /*Height*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
-	//sphere->SetBoundingBoxHalfLength(0.5f);
-	//m_staticMeshes.push_back(sphere);
+	//staticMesh->SetBoundingBoxHalfLength(0.5f);
+	//mCharacter->SetStaticMeshComponent(staticMesh);
 
-	mCharacter = std::make_shared<Core::StaticMesh>();
-	mCharacter->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100,
-		L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f),
-		m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
-		Material(1.f, 1.f, 1.f, 1.f),
-		true /*AO*/, true /*Metallic*/, true /*Height*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
-	mCharacter->SetBoundingBoxHalfLength(0.5f);
 
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
-	plane->Initialize(GeometryGenerator::PbrBox(10, 1, 10, L"worn-painted-metal_Albedo.dds", 10, 1, 10), m_device, m_commandList, 
+	std::vector<PbrMeshData> planeData = { GeometryGenerator::PbrBox(10, 1, 10, L"worn-painted-metal_Albedo.dds", 10, 1, 10) };
+	plane->Initialize(planeData, m_device, m_commandList,
 		Vector3(0.f, -1.5f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
 		true, true, true, true, true, true);
 	m_staticMeshes.push_back(plane);
 
-	//auto [soldier, _] = GeometryGenerator::ReadFromFile_Pbr32("soldier.fbx", false, true);
-	////soldier[0].m_texturePath = L"worn-painted-metal_Albedo.dds";
-	//for (size_t i = 0; i < soldier.size(); i++)
-	//{
-	//	std::shared_ptr<StaticMesh> soldierMesh = std::make_shared<StaticMesh>();
-	//	soldierMesh->Initialize(soldier[i], m_device, m_commandList,
-	//		Vector3(0.f, 0.f, 0.f),
-	//		Material(1.f, 1.f, 1.f, 1.f),
-	//		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
-	//	soldierMesh->SetTexturePath(L"angel_armor_Albedo.dds");
-	//	m_staticMeshes.push_back(soldierMesh);
-	//}
-	
+	//auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile_Pbr("uvtest4.fbx", true);
+	//std::shared_ptr<Animation::FBX> wallDistructionFbx = std::make_shared<Animation::FBX>();
+	//wallDistructionFbx->Initialize(box_destruction, box_destruction_animation, m_device, m_commandList,
+	//	true /*loopAnimation*/,
+	//	1.5f /*animationSpeed*/,
+	//	Vector3(0.f, 1.f, 0.f),
+	//	L"uvtest_DefaultMaterial_Albedo.dds");
 
-
-	auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile_Pbr("uvtest4.fbx", true);
-	std::shared_ptr<Animation::FBX> wallDistructionFbx = std::make_shared<Animation::FBX>();
-	wallDistructionFbx->Initialize(box_destruction, box_destruction_animation, m_device, m_commandList,
-		true /*loopAnimation*/,
-		1.5f /*animationSpeed*/,
-		Vector3(0.f, 1.f, 0.f),
-		L"uvtest_DefaultMaterial_Albedo.dds");
-
-	m_fbxList.push_back(wallDistructionFbx);
+	//m_fbxList.push_back(wallDistructionFbx);
 
 	m_cubeMap = std::make_shared<Core::StaticMesh>();
+
 	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(500.f), m_device, m_commandList);
 	m_cubeMap->SetTexturePath(std::wstring(L"Outdoor") + L"EnvHDR.dds");
 
 	m_screenMesh = std::make_shared<Core::StaticMesh>();
-	m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
+	std::vector<BasicMeshData> screeData = { GeometryGenerator::Rectangle(2.f, L"") };
+	m_screenMesh->Initialize(screeData, m_device, m_commandList);
 }
 
 bool Renderer::D3D12PassApp::InitGUI()
@@ -131,16 +134,25 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		onlineSystem->FindLobby();
 	}
 	Network::PlayerData data;
-	data.position = m_camera->GetPosition();
+	data.position = mCharacter->GetPosition();
 
 	onlineSystem->UpdateData(data);
 	onlineSystem->Update();
 
-	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
+	m_inputHandler->ExicuteCommand(mCharacter.get(), deltaTime, bIsFPSMode);
+
+	mCharacter->Update(deltaTime);
+
 	{
-		m_passConstantData->ViewMat = m_camera->GetViewMatrix();
-		m_passConstantData->ProjMat = m_camera->GetProjMatrix();
-		m_passConstantData->eyePosition = m_camera->GetPosition();
+		// 카메라 고정
+		//m_passConstantData->ViewMat = m_camera->GetViewMatrix();
+		//m_passConstantData->ProjMat = m_camera->GetProjMatrix();
+		//m_passConstantData->eyePosition = m_camera->GetPosition();
+
+		// 카메라 캐릭터 고정
+		m_passConstantData->ViewMat = mCharacter->GetViewMatrix();
+		m_passConstantData->ProjMat = mCharacter->GetProjMatrix();
+		m_passConstantData->eyePosition = mCharacter->GetPosition();
 
 		m_passConstantData->ViewMat = m_passConstantData->ViewMat.Transpose();
 		m_passConstantData->ProjMat = m_passConstantData->ProjMat.Transpose();
@@ -149,7 +161,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 	// LightPass ConstantBuffer
 	{
-		m_ligthPassConstantData->eyePos = m_camera->GetPosition();
+		m_ligthPassConstantData->eyePos = m_passConstantData->eyePosition;
 		m_ligthPassConstantData->lod = gui_lod;
 		m_ligthPassConstantData->light[0].position = gui_lightPos;
 
@@ -161,13 +173,6 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
 	}
 
-	using DirectX::SimpleMath::Vector3;
-
-	Vector3 characterPos = m_camera->GetPosition() + (m_camera->GetForwardDirection() * 2.f);
-	mCharacter->UpdateMaterial(gui_material);
-	mCharacter->UpdateWorldRow(DirectX::XMMatrixTranslation(characterPos.x, characterPos.y, characterPos.z));
-	mCharacter->Update(deltaTime);
-
 	for (auto& mesh : m_staticMeshes) {
 		mesh->Update(deltaTime);
 	}
@@ -176,7 +181,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	}
 
 	// ComputeShader(PostProcessing)
-	mCsBuffer.mStructure.time = min(deltaTime, 1 / 60.f);
+	mCsBuffer.mStructure.time = std::min(deltaTime, 1 / 60.f);
 	mCsBuffer.UpdateBuffer();
 
 	// CubeMap ConstantBuffer
@@ -323,8 +328,7 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 			handle.Offset(m_textureMap[L"zzzdefaultAlbedo.dds"], m_csuHeapSize);
 		}
 		m_commandList->SetGraphicsRootDescriptorTable(0, handle);
-		mCharacter->Render(deltaTime, m_commandList, true);
-
+		mCharacter->Render(deltaTime, m_commandList);
 
 		for (int i = 0; i < mPlayers.size(); ++i) {
 			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
@@ -521,6 +525,7 @@ void Renderer::D3D12PassApp::RenderBoundingBoxPass(float& deltaTime) {
 					m_staticMeshes[i]->RenderBoundingBox(deltaTime, m_commandList);
 				}
 			}
+			mCharacter->RenderBoundingBox(deltaTime, m_commandList);
 		}
 
 		ThrowIfFailed(m_commandList->Close());

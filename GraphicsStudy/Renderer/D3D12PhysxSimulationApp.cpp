@@ -76,16 +76,16 @@ void Renderer::D3D12PhysxSimulationApp::OnResize()
 void Renderer::D3D12PhysxSimulationApp::Update(float& deltaTime)
 {
 	if (fire) {
-		auto cameraPos = m_camera->GetPosition();
-		auto cameraForwardDir = m_camera->GetForwardDirection();
-		CreateDynamicSphere(cameraPos, cameraForwardDir, 100);
+		auto chracterPos = mCharacter->GetPosition();
+		auto characterViewDir = mCharacter->GetViewDirection();
+		CreateDynamicSphere(chracterPos, characterViewDir, 100);
 
 		fire = false;
 		//std::cout << "Fire!";
-		PlaySoundEffect("Shoting", m_camera->GetPosition() + m_camera->GetForwardDirection(), 0.3f);
+		PlaySoundEffect("Shoting", chracterPos + characterViewDir, 0.3f);
 	}
 
-	gScene->simulate(min(deltaTime, 1 / 30.f));
+	gScene->simulate(std::min(deltaTime, 1 / 30.f));
 	gScene->fetchResults(true);
 
 	// gScene->getActors()
@@ -239,7 +239,7 @@ void Renderer::D3D12PhysxSimulationApp::InitPhysics(bool interactive)
 
 	std::shared_ptr<Core::StaticMesh> plane = std::make_shared<Core::StaticMesh>();
 
-	plane->Initialize(GeometryGenerator::PbrBox(300, 1, 300, L"DiamondPlate008C_4K-PNG_Albedo.dds", 50,1,50), m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, -1.f, -1.f),
+	plane->Initialize(GeometryGenerator::PbrBox(300, 1, 300, L"DiamondPlate008C_4K-PNG_Albedo.dds", 50,1,50), m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, -1.f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
 		true, true, true, true, true, true);
 
@@ -264,14 +264,20 @@ void Renderer::D3D12PhysxSimulationApp::InitScene()
 	m_screenMesh = std::make_shared<Core::StaticMesh>();
 	m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
 
-	mCharacter = std::make_shared<Core::StaticMesh>();
-	mCharacter->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100,
-		L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f),
-		m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
+	characterMesh = new Core::StaticMesh();
+	DirectX::SimpleMath::Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
+	auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
+	characterMesh->Initialize(soldier, m_device, m_commandList,
+		Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
-		true /*AO*/, true /*Metallic*/, true /*Height*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
-	mCharacter->SetBoundingBoxHalfLength(0.5f);
-
+		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
+	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.png", 0);
+	characterMesh->SetTexturePath(L"Soldier_Body_head.png", 1);
+	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
+	characterMesh->SetBoundingBoxHalfLength(1.f);
+	mCharacter->SetStaticMeshComponent(characterMesh);
+	mCharacter->SetPosition(XMFLOAT3(0, 1, -1));
+	mCharacter->SetVelocity(3.f);
 }
 
 void Renderer::D3D12PhysxSimulationApp::CreateDynamicBox(const DirectX::SimpleMath::Vector3& position, const DirectX::SimpleMath::Vector3& velocityDir, float velocity, float halfExtend)

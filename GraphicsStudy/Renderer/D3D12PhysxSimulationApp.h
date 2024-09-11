@@ -26,6 +26,8 @@ namespace Renderer {
 	public:
 		D3D12PhysxSimulationApp(const int& width, const int& height);
 		virtual ~D3D12PhysxSimulationApp() {
+			delete characterMesh;
+
 			PX_RELEASE(gScene);
 			PX_RELEASE(gDispatcher);
 			PX_RELEASE(gPhysics);
@@ -56,7 +58,7 @@ namespace Renderer {
 		void InitPhysics(bool interactive);
 
 		void InitScene() override;
-
+		Core::StaticMesh* characterMesh;
 		void CreateDynamicBox(const DirectX::SimpleMath::Vector3& position, const DirectX::SimpleMath::Vector3& velocityDir, float velocity = 100.f, float halfExtend = 0.3f);
 		void CreateDynamicSphere(const DirectX::SimpleMath::Vector3& position, const DirectX::SimpleMath::Vector3& velocityDir, float velocity = 100.f, float halfExtend = 0.3f);
 

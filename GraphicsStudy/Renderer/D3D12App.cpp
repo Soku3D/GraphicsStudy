@@ -355,7 +355,7 @@ void Renderer::D3D12App::Update(float& deltaTime)
 	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
 	memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
 
-	mCsBuffer.mStructure.time = min(deltaTime, 1 / 60.f);
+	mCsBuffer.mStructure.time = std::min(deltaTime, 1 / 60.f);
 	mCsBuffer.UpdateBuffer();
 
 	for (auto& mesh : m_staticMeshes) {

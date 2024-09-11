@@ -13,8 +13,10 @@ Renderer::SimpleApp::SimpleApp(const int& width, const int& height) :
 	m_pApp = this;
 	m_camera = std::make_shared<Core::Camera>();
 	m_inputHandler = std::make_unique<InputHandler>();
+	mCharacter = std::make_unique<Core::Character>();
 
 	m_camera->SetAspectRation(width / (float)height);
+	mCharacter->SetCameraAspectRatio(width / (float)height);
 }
 
 Renderer::SimpleApp::~SimpleApp()
@@ -23,10 +25,11 @@ Renderer::SimpleApp::~SimpleApp()
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
-
+	
 	m_mainWnd = NULL;
 	m_pApp = nullptr;
 	m_camera.reset();
+	mCharacter.reset();
 }
 
 bool Renderer::SimpleApp::Initialize()
@@ -179,7 +182,10 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 		m_screenWidth = LOWORD(lParam);
 		m_screenHeight = HIWORD(lParam);
 		if (m_camera != nullptr)
+		{
 			m_camera->SetAspectRation(m_screenWidth / (float)m_screenHeight);
+			mCharacter->SetCameraAspectRatio(m_screenWidth / (float)m_screenHeight);
+		}
 		OnResize();
 
 		return 0;
@@ -227,6 +233,7 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 		if (m_camera != nullptr && bIsFPSMode)
 		{
 			m_camera->SetRotation(deltaX, deltaY);
+			mCharacter->SetRotation(deltaX, deltaY);
 			// m_camera->SetQuaternion(deltaX, deltaY);
 		}
 

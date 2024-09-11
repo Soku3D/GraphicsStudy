@@ -19,6 +19,7 @@ namespace Renderer {
 #include "Buffer.h"
 #include "SteamOnlineSystem.h"
 
+
 using Microsoft::WRL::ComPtr;
 
 namespace Renderer {
@@ -271,11 +272,13 @@ namespace Renderer {
 		bool createSession = false;
 		bool findSession = false;
 
-		std::shared_ptr<Core::StaticMesh> mCharacter;
+		//std::shared_ptr<Core::StaticMesh> mCharacter;
 		
 	public:
 		std::vector<std::shared_ptr<Core::StaticMesh>> mPlayers;
 		void AddPlayer();
 		void UpdatePlayer(int index, DirectX::SimpleMath::Vector3& position);
+
+		class Core::Actor* mActor;
 	};
 }

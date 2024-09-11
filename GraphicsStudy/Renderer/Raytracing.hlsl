@@ -116,8 +116,8 @@ void Hit(inout RayPayload rayPayload : SV_Payload, BuiltInAttribute att)
     }
     else
     {
-          //uint16_t
-        uint indexSizeInBytes = 2;
+        //uint32_t
+        uint indexSizeInBytes = 4;
         uint indicesPerTrianlge = 3;
         uint indexStride = indexSizeInBytes * indicesPerTrianlge;
         uint offsetBytes = PrimitiveIndex() * indexStride;

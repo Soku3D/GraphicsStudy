@@ -1,8 +1,6 @@
 #include "StaticMesh.h"
 
 Core::StaticMesh::StaticMesh() :
-	m_vertexBufferView(D3D12_VERTEX_BUFFER_VIEW()),
-	m_indexBufferView(D3D12_INDEX_BUFFER_VIEW()),
 	m_pCbvDataBegin(nullptr),
 	m_objectConstantData(nullptr)
 {
@@ -11,29 +9,28 @@ Core::StaticMesh::StaticMesh() :
 
 void Core::StaticMesh::Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat)
 {
-	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-	commandList->IASetIndexBuffer(&m_indexBufferView);
-
-	if (bUseModelMat) 
+	for (size_t i = 0; i < mVertexGpu.size(); i++)
 	{
-		commandList->SetGraphicsRootConstantBufferView(1, m_objectConstantBuffer->GetGPUVirtualAddress());
+		commandList->IASetVertexBuffers(0, 1, &mVertexBufferView[i]);
+		commandList->IASetIndexBuffer(&mIndexBufferView[i]);
+
+		if (bUseModelMat)
+		{
+			commandList->SetGraphicsRootConstantBufferView(1, m_objectConstantBuffer->GetGPUVirtualAddress());
+		}
+		commandList->DrawIndexedInstanced(mIndexCount[i], 1, 0, 0, 0);
 	}
-	commandList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
 }
 
 void Core::StaticMesh::RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat)
 {
-	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-	commandList->IASetIndexBuffer(&m_indexBufferView);
-
-	if (bUseModelMat) {
-		commandList->SetGraphicsRootConstantBufferView(0, m_objectConstantBuffer->GetGPUVirtualAddress());
-	}
-	commandList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
+	Render(deltaTime, commandList, bUseModelMat);
 }
-void Core::StaticMesh::RenderBoundingBox(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList) {
+
+void Core::StaticMesh::RenderBoundingBox(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
+{
 	commandList->SetGraphicsRootConstantBufferView(0, m_objectConstantBuffer->GetGPUVirtualAddress());
-	commandList->DrawIndexedInstanced(1, 1, 0, 0, 0);
+	commandList->DrawInstanced(1, 1, 0, 0);
 }
 
 void Core::StaticMesh::UpdateAnimation(const float& deltaTime, Animation::AnimationData& animationData)

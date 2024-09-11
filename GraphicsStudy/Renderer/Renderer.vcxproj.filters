@@ -42,9 +42,6 @@
     <ClCompile Include="SceneComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="BoxComponent.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Camera.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -99,6 +96,12 @@
     <ClCompile Include="SteamOnlineSystem.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="CameraComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Character.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3D12App.h">
@@ -138,9 +141,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="PrimitiveComponent.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="BoxComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="CameraComponent.h">
@@ -207,6 +207,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="SteamOnlineSystem.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Character.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

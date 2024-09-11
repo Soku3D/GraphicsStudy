@@ -398,34 +398,45 @@ void Renderer::D3D12RayTracingApp::InitRayTracingScene()
 	std::shared_ptr<Core::StaticMesh> sphere1 = std::make_shared<Core::StaticMesh>();
 	//sphere1->Initialize(GeometryGenerator::RTSphere(0.45f, 100, 100), m_device, m_commandList, Vector3(-0.5, 0, 0));
 	sphere1->Initialize(GeometryGenerator::RTBox(0.4f, L"DiamondPlate008C_4K-PNG_Albedo.dds"), m_device, m_commandList, Vector3(-0.5, 0.4f, 0.5));
-	sphere1->BuildAccelerationStructures<RaytracingVertex, uint16_t>(m_device, m_dxrCommandList);
+	sphere1->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupSphere1");
 
 	std::shared_ptr<Core::StaticMesh> sphere2 = std::make_shared<Core::StaticMesh>();
 	sphere2->Initialize(GeometryGenerator::RTSphere(0.4f, 100, 100, L"worn-painted-metal_Albedo.dds"), m_device, m_commandList, Vector3(0.5,0.4f,0.f));
 	//sphere2->Initialize(GeometryGenerator::RTBox(0.4f, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.5, 0, 0.5));
-	sphere2->BuildAccelerationStructures<RaytracingVertex, uint16_t>(m_device, m_dxrCommandList);
+	sphere2->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupSphere2");
 
 	std::shared_ptr<Core::StaticMesh> plane = std::make_shared<Core::StaticMesh>();
 	plane->Initialize(GeometryGenerator::RTBox(100.f,1.f,100.f), m_device, m_commandList, Vector3(0.0, -1.0f, 0.f));
-	plane->BuildAccelerationStructures<RaytracingVertex, uint16_t>(m_device, m_dxrCommandList);
+	plane->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupPlane");
 
 	std::shared_ptr<Core::StaticMesh> cubeMap = std::make_shared<Core::StaticMesh>();
 	cubeMap->Initialize(GeometryGenerator::RTCubeMapBox(100.f), m_device, m_commandList);
 	cubeMap->SetTexturePath(cubeMapTextureName);
 	cubeMap->SetIsCubeMap(true);
-	cubeMap->BuildAccelerationStructures<RaytracingVertex, uint16_t>(m_device, m_dxrCommandList);
+	cubeMap->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupCube");
 	
+	std::shared_ptr<Core::StaticMesh> characterMesh = std::make_shared<Core::StaticMesh>();
+
+	auto [soldier, _] = GeometryGenerator::ReadFromFile<RaytracingVertex,uint32_t>("swat.fbx", false, true);
+	characterMesh->Initialize(soldier, m_device, m_commandList,
+		Vector3(0.f, 0.f, 0.f),
+		Material(1.f, 1.f, 1.f, 1.f),
+		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
+	characterMesh->SetTexturePath(L"angel_armor_Albedo.dds");
+	characterMesh->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
+	hitGroupNames.push_back(L"HitGroupCharacter");
+
+	//mCharacter->SetStaticMeshComponent(characterMesh);
+
 	m_staticMeshes.push_back(cubeMap);
 	m_staticMeshes.push_back(sphere1);
 	m_staticMeshes.push_back(sphere2);
 	m_staticMeshes.push_back(plane);
-
-	
-
+	m_staticMeshes.push_back(characterMesh);
 }
 
 // TLAS 생성
@@ -445,23 +456,27 @@ void Renderer::D3D12RayTracingApp::BuildAccelerationStructures()
 		D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
 		//instanceDesc.Transform[0][0] = instanceDesc.Transform[1][1] = instanceDesc.Transform[2][2] = 1;
 		DirectX::SimpleMath::Matrix Model = m_staticMeshes[i]->GetTransformMatrix();
-		for (int i = 0; i < 3; i++)
+		for (size_t j = 0; j < m_staticMeshes[i]->meshCount; j++)
 		{
-			for (int j = 0; j <= 3; j++)
+			for (int x = 0; x < 3; x++)
 			{
-				instanceDesc.Transform[i][j] = Model.m[i][j];
+				for (int y = 0; y <= 3; y++)
+				{
+					instanceDesc.Transform[x][y] = Model.m[x][y];
+				}
 			}
+			if (i == 0) {
+				instanceDesc.InstanceMask = 0x02;
+			}
+			else {
+				instanceDesc.InstanceMask = 0x01;
+			}
+			instanceDesc.InstanceID = i;
+			instanceDesc.InstanceContributionToHitGroupIndex = i;
+			instanceDesc.AccelerationStructure = m_staticMeshes[i]->GetBlas(j);
+			m_instances.push_back(instanceDesc);
 		}
-		if (i == 0) {
-			instanceDesc.InstanceMask = 0x02;
-		}
-		else {
-			instanceDesc.InstanceMask = 0x01;
-		}
-		instanceDesc.InstanceID = i;
-		instanceDesc.InstanceContributionToHitGroupIndex = i;
-		instanceDesc.AccelerationStructure = m_staticMeshes[i]->GetBlas();
-		m_instances.push_back(instanceDesc);
+	
 	}
 	
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelPrebuildInfo = {};
@@ -470,7 +485,7 @@ void Renderer::D3D12RayTracingApp::BuildAccelerationStructures()
 	Utility::CreateBuffer(m_device, D3D12_HEAP_TYPE_DEFAULT, D3D12_HEAP_FLAG_NONE,
 		topLevelPrebuildInfo.ScratchDataSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
 		D3D12_RESOURCE_STATE_COMMON,
-		m_scratchResource);
+		mScratchResource);
 
 	Utility::CreateBuffer(m_device, D3D12_HEAP_TYPE_DEFAULT, D3D12_HEAP_FLAG_NONE,
 		topLevelPrebuildInfo.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
@@ -492,13 +507,13 @@ void Renderer::D3D12RayTracingApp::BuildAccelerationStructures()
 
 	topLevelInputs.InstanceDescs = m_instanceDescs->GetGPUVirtualAddress();
 	topLevelBuildDesc.Inputs = topLevelInputs;
-	topLevelBuildDesc.ScratchAccelerationStructureData = m_scratchResource->GetGPUVirtualAddress();
+	topLevelBuildDesc.ScratchAccelerationStructureData = mScratchResource->GetGPUVirtualAddress();
 	topLevelBuildDesc.DestAccelerationStructureData = m_tlas->GetGPUVirtualAddress();
 
 	m_dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
 
 	m_dxrCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_tlas.Get()));
-	m_dxrCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_scratchResource.Get()));
+	m_dxrCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(mScratchResource.Get()));
 
 	//commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_tlas.Get()));
 

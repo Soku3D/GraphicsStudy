@@ -31,22 +31,25 @@ ConstantBuffer<PrimitiveConstantBuffer> l_materialCB : register(b1);
 
 uint3 LoadIndices(uint offsetBytes)
 {
-    const uint dwordAlignedOffset = offsetBytes & ~3;
-    const uint2 four16BitIndices = g_indices.Load2(dwordAlignedOffset);
+    //const uint dwordAlignedOffset = offsetBytes & ~3;
+    const uint3 four32BitIndices = g_indices.Load3(offsetBytes);
     uint3 indices;
-    //Little Endian
-    if (dwordAlignedOffset == offsetBytes)
-    {
-        indices.x = four16BitIndices.x & 0xffff;
-        indices.y = (four16BitIndices.x >> 16) & 0xffff;
-        indices.z = four16BitIndices.y & 0xffff;
-    }
-    else // Not aligned: { - 0 | 1 2 }
-    {
-        indices.x = (four16BitIndices.x >> 16) & 0xffff;
-        indices.y = four16BitIndices.y & 0xffff;
-        indices.z = (four16BitIndices.y >> 16) & 0xffff;
-    }
+    ////Little Endian
+    //if (dwordAlignedOffset == offsetBytes)
+    //{
+    //    indices.x = four16BitIndices.x & 0xffff;
+    //    indices.y = (four16BitIndices.x >> 16) & 0xffff;
+    //    indices.z = four16BitIndices.y & 0xffff;
+    //}
+    //else // Not aligned: { - 0 | 1 2 }
+    //{
+    //    indices.x = (four16BitIndices.x >> 16) & 0xffff;
+    //    indices.y = four16BitIndices.y & 0xffff;
+    //    indices.z = (four16BitIndices.y >> 16) & 0xffff;
+    //}
+    indices.x = four32BitIndices.x;
+    indices.y = four32BitIndices.y;
+    indices.z = four32BitIndices.z;
     
     return indices;
     

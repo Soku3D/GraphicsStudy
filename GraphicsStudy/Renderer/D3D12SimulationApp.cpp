@@ -67,7 +67,6 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 	D3D12App::Update(deltaTime);
 
 
-
 	CopyResource(m_commandList, sphParticle.GetReadBack(), sphParticle.GetGpu(),
 		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	sphParticle.CopyToCpu();
@@ -118,7 +117,7 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 
 	FlushCommandList(m_commandList);
 
-	mSimulationConstantBuffer.mStructure.time = min(1 / 60.f, deltaTime);
+	mSimulationConstantBuffer.mStructure.time = std::min(1 / 60.f, deltaTime);
 	mSimulationConstantBuffer.UpdateBuffer();
 }
 

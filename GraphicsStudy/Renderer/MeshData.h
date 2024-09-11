@@ -17,9 +17,9 @@ public:
 	std::string m_name;
 };
 //typedef MeshData<Renderer::SimpleVertex> SimpleMeshData;
-using SimpleMeshData = MeshData<Renderer::SimpleVertex, uint16_t>;
-using BasicMeshData = MeshData<Renderer::Vertex, uint16_t>;
-using PbrMeshData = MeshData<Renderer::PbrVertex, uint16_t>;
+using SimpleMeshData = MeshData<Renderer::SimpleVertex, uint32_t>;
+using BasicMeshData = MeshData<Renderer::Vertex, uint32_t>;
+using PbrMeshData = MeshData<Renderer::PbrVertex, uint32_t>;
 using PbrMeshData32 = MeshData<Renderer::PbrVertex, uint32_t>;
 
 

@@ -14,12 +14,8 @@ namespace Core {
 			m_objectConstantData = nullptr;
 			m_objectConstantBuffer.Reset();
 			m_pCbvDataBegin = nullptr;
-			m_vertexUploadBuffer.Reset();
-			m_vertexUpload.Reset();
-			m_vertexGpu.Reset();
-			m_indexUpload.Reset();
-			m_indexGpu.Reset();
 		};
+
 		std::vector<Animation::AnimationClip::Key> m_keys;
 		std::string m_name;
 		double m_secondPerFrames = 0.f;
@@ -30,10 +26,61 @@ namespace Core {
 		float frame = 0.f;
 		bool bIsCubeMap = false;
 
+		UINT meshCount = 0;
+
 		PrimitiveConstantBuffer m_primitiveConstantData;
 
+		D3D12_GPU_VIRTUAL_ADDRESS GetBlas(int index = 0) { return m_blas[index]->GetGPUVirtualAddress(); }
+		void Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat = true);
+		void RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat);
+		void RenderBoundingBox(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
+		void UpdateAnimation(const float& deltaTime, Animation::AnimationData& animationData);
+		void Update(const float& deltaTime);
+
+		std::wstring GetTexturePath(int index = 0) const { return mTexturePath[index]; }
+		void SetIsCubeMap(bool isCubeMap) { bIsCubeMap = isCubeMap; }
+		void SetTexturePath(std::wstring path, int index = 0) { mTexturePath[index] = path; }
+		void SetBoundingBoxHalfLength(const float& halfLength) { m_objectConstantData->boundingBoxHalfLength = halfLength; }
+		void UpdateWorldRow(const DirectX::SimpleMath::Matrix& worldRow);
+		void UpdateMaterial(const Material& material);
+		Material& GetMaterial() const;
+		DirectX::SimpleMath::Matrix GetTransformMatrix() { return m_objectConstantData->Model; }
+
+
+
+		D3D12_GPU_DESCRIPTOR_HANDLE GetIndexGpuHandle(int index = 0) { return mIndicesSrvHeap[index]->GetGPUDescriptorHandleForHeapStart(); }
+		D3D12_CPU_DESCRIPTOR_HANDLE GetIndexCpuHandle(int index = 0) { return mIndicesSrvHeap[index]->GetCPUDescriptorHandleForHeapStart(); }
+
+	private:
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_objectConstantBuffer;
+		ObjectConstantData* m_objectConstantData;
+		UINT8* m_pCbvDataBegin;
+		float m_delTeta = 1.f / (3.141592f * 2.f);
+		float m_currTheta = 0.f;
+		
+		std::vector < Microsoft::WRL::ComPtr<ID3D12Resource>> mScratchResource;
+		std::vector < Microsoft::WRL::ComPtr<ID3D12Resource>> m_blas;
+		std::vector < Microsoft::WRL::ComPtr<ID3D12Resource>> m_instanceDescs;
+		std::vector < Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>> m_blasSrvHeap;
+
+		std::vector < Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>> mIndicesSrvHeap;
+
+	private:
+		std::vector < Microsoft::WRL::ComPtr<ID3D12Resource>> mVertexUpload;
+		std::vector < Microsoft::WRL::ComPtr<ID3D12Resource>> mVertexGpu;
+		std::vector < D3D12_VERTEX_BUFFER_VIEW> mVertexBufferView;
+
+		std::vector < Microsoft::WRL::ComPtr<ID3D12Resource>> mIndexUpload;
+		std::vector < Microsoft::WRL::ComPtr<ID3D12Resource>> mIndexGpu;
+
+	
+		std::vector <D3D12_INDEX_BUFFER_VIEW> mIndexBufferView;
+		std::vector <UINT> mIndexCount;
+		std::vector<std::wstring> mTexturePath;
+
+	public:
 		template <typename Vertex, typename Index>
-		void Initialize(MeshData<Vertex, Index>& meshData,
+		void Initialize(MeshData<Vertex, Index> & meshData,
 			Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList,
 			const DirectX::SimpleMath::Vector3& modelPosition = DirectX::SimpleMath::Vector3::Zero,
@@ -45,58 +92,43 @@ namespace Core {
 			bool bUseRoughnessMap = false,
 			bool bUseTesslation = false)
 		{
-			m_name = meshData.m_name;
+			std::vector< MeshData<Vertex, Index>> meshes = { meshData };
+			Initialize(meshes, device, commandList, modelPosition, material,
+				bUseAoMap,
+				bUseHeightMap,
+				bUseMetalnessMap,
+				bUseNormalMap,
+				bUseRoughnessMap,
+				bUseTesslation);
+		}
 
-			Renderer::Utility::CreateBuffer(meshData.m_vertices, m_vertexUpload, m_vertexGpu, device, commandList);
-			Renderer::Utility::CreateBuffer(meshData.m_indices, m_indexUpload, m_indexGpu, device, commandList);
+		template <typename Vertex, typename Index>
+		void Initialize(std::vector<MeshData<Vertex, Index>>& meshData,
+			Microsoft::WRL::ComPtr<ID3D12Device5>& device,
+			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList,
+			const DirectX::SimpleMath::Vector3& modelPosition = DirectX::SimpleMath::Vector3::Zero,
+			Material& material = Material(),
+			bool bUseAoMap = false,
+			bool bUseHeightMap = false,
+			bool bUseMetalnessMap = false,
+			bool bUseNormalMap = false,
+			bool bUseRoughnessMap = false,
+			bool bUseTesslation = false)
+		{
+			m_name = meshData[0].m_name;
 
-			m_vertexBufferView.BufferLocation = m_vertexGpu->GetGPUVirtualAddress();
-			m_vertexBufferView.SizeInBytes = (UINT)(meshData.m_vertices.size() * sizeof(Vertex));
-			m_vertexBufferView.StrideInBytes = sizeof(Vertex);
+			mVertexUpload.resize(meshData.size());
+			mVertexGpu.resize(meshData.size());
+			mVertexBufferView.resize(meshData.size());
+			mIndexUpload.resize(meshData.size());
+			mIndexGpu.resize(meshData.size());
+			mIndexBufferView.resize(meshData.size());
+			mIndexCount.resize(meshData.size());
+			mTexturePath.resize(meshData.size());
+			mIndicesSrvHeap.resize(meshData.size());
+			meshCount = (UINT)meshData.size();
 
-			m_indexBufferView.BufferLocation = m_indexGpu->GetGPUVirtualAddress();
-			if (sizeof(Index) == 2) {
-				m_indexBufferView.Format = DXGI_FORMAT_R16_UINT;
-			}
-			else {
-				m_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
-			}
-			m_indexBufferView.SizeInBytes = UINT(sizeof(Index) * meshData.m_indices.size());
 			m_objectConstantData = new ObjectConstantData();
-
-			Renderer::Utility::CreateDescriptorHeap(device, m_indicesSrvHeap, Renderer::DescriptorType::SRV, 2);
-
-			D3D12_SHADER_RESOURCE_VIEW_DESC SRVDescVertex = {};
-
-			SRVDescVertex.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-			SRVDescVertex.Buffer.NumElements = (UINT)meshData.m_vertices.size();
-			SRVDescVertex.Buffer.FirstElement = 0;
-			SRVDescVertex.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-			SRVDescVertex.Format = DXGI_FORMAT_UNKNOWN;
-			SRVDescVertex.Buffer.StructureByteStride = sizeof(Vertex);
-			SRVDescVertex.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-
-			D3D12_SHADER_RESOURCE_VIEW_DESC SRVDescIndex = {};
-			SRVDescIndex.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-			SRVDescIndex.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-			if (sizeof(Index) == 2) {
-				SRVDescIndex.Buffer.NumElements = (UINT)(meshData.m_indices.size() / 2);
-
-			}
-			else {
-				SRVDescIndex.Buffer.NumElements = (UINT)(meshData.m_indices.size());
-			}
-			SRVDescIndex.Format = DXGI_FORMAT_R32_TYPELESS;
-			SRVDescIndex.Buffer.StructureByteStride = 0;
-			SRVDescIndex.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
-
-			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_indicesSrvHeap->GetCPUDescriptorHandleForHeapStart());
-			UINT srvIncreaseSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			
-			device->CreateShaderResourceView(m_indexGpu.Get(), &SRVDescIndex, handle);
-			handle.Offset(1, srvIncreaseSize);
-			device->CreateShaderResourceView(m_vertexGpu.Get(), &SRVDescVertex, handle);
-
 			m_objectConstantData->Material = material;
 			m_objectConstantData->bUseAoMap = bUseAoMap;
 			m_objectConstantData->bUseHeightMap = bUseHeightMap;
@@ -114,127 +146,125 @@ namespace Core {
 
 			std::vector<ObjectConstantData> constantData = { *m_objectConstantData };
 			Renderer::Utility::CreateUploadBuffer(constantData, m_objectConstantBuffer, device);
-			indexCount = (UINT)meshData.m_indices.size();
+
 
 			CD3DX12_RANGE range(0, 0);
 			ThrowIfFailed(m_objectConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
 			memcpy(m_pCbvDataBegin, m_objectConstantData, sizeof(ObjectConstantData));
-			m_texturePath = meshData.GetTexturePath();
+
+			for (size_t i = 0; i < meshData.size(); i++)
+			{
+				Renderer::Utility::CreateBuffer(meshData[i].m_vertices, mVertexUpload[i], mVertexGpu[i], device, commandList);
+				Renderer::Utility::CreateBuffer(meshData[i].m_indices, mIndexUpload[i], mIndexGpu[i], device, commandList);
+
+				mVertexBufferView[i].BufferLocation = mVertexGpu[i]->GetGPUVirtualAddress();
+				mVertexBufferView[i].SizeInBytes = (UINT)(meshData[i].m_vertices.size() * sizeof(Vertex));
+				mVertexBufferView[i].StrideInBytes = sizeof(Vertex);
+
+				mIndexBufferView[i].BufferLocation = mIndexGpu[i]->GetGPUVirtualAddress();
+
+				if (sizeof(Index) == 2) {
+					mIndexBufferView[i].Format = DXGI_FORMAT_R16_UINT;
+				}
+				else {
+					mIndexBufferView[i].Format = DXGI_FORMAT_R32_UINT;
+				}
+				mIndexBufferView[i].SizeInBytes = UINT(sizeof(Index) * meshData[i].m_indices.size());
+				mIndexCount[i] = (UINT)meshData[i].m_indices.size();
+				mTexturePath[i] = meshData[i].GetTexturePath();
+
+				Renderer::Utility::CreateDescriptorHeap(device, mIndicesSrvHeap[i], Renderer::DescriptorType::SRV, 2);
+
+				D3D12_SHADER_RESOURCE_VIEW_DESC SRVDescVertex = {};
+				SRVDescVertex.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+				SRVDescVertex.Buffer.NumElements = (UINT)meshData[i].m_vertices.size();
+				SRVDescVertex.Buffer.FirstElement = 0;
+				SRVDescVertex.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+				SRVDescVertex.Format = DXGI_FORMAT_UNKNOWN;
+				SRVDescVertex.Buffer.StructureByteStride = sizeof(Vertex);
+				SRVDescVertex.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+				D3D12_SHADER_RESOURCE_VIEW_DESC SRVDescIndex = {};
+				SRVDescIndex.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+				SRVDescIndex.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+				SRVDescIndex.Buffer.NumElements = (UINT)(meshData[i].m_indices.size());
+				SRVDescIndex.Format = DXGI_FORMAT_R32_TYPELESS;
+				SRVDescIndex.Buffer.StructureByteStride = 0;
+				SRVDescIndex.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
+
+				CD3DX12_CPU_DESCRIPTOR_HANDLE handle(mIndicesSrvHeap[i]->GetCPUDescriptorHandleForHeapStart());
+				UINT srvIncreaseSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+				device->CreateShaderResourceView(mIndexGpu[i].Get(), &SRVDescIndex, handle);
+				handle.Offset(1, srvIncreaseSize);
+				device->CreateShaderResourceView(mVertexGpu[i].Get(), &SRVDescVertex, handle);
+			}
 		}
-		
+
 		template <typename Vertex, typename Index>
 		void BuildAccelerationStructures(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4>& commandList)
 		{
-			
-			D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc;
-			geometryDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-			geometryDesc.Triangles.IndexBuffer = m_indexGpu->GetGPUVirtualAddress();
-			geometryDesc.Triangles.IndexCount = static_cast<UINT>(m_indexGpu->GetDesc().Width) / sizeof(Index);
-			if (sizeof(Index) == 2) {
-				geometryDesc.Triangles.IndexFormat = DXGI_FORMAT_R16_UINT;
-			}
-			else {
-				geometryDesc.Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
-			}
-			
-			geometryDesc.Triangles.Transform3x4 = 0;
-			geometryDesc.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
-			geometryDesc.Triangles.VertexCount = static_cast<UINT>(m_vertexGpu->GetDesc().Width) / sizeof(Vertex);
-			geometryDesc.Triangles.VertexBuffer.StartAddress = m_vertexGpu->GetGPUVirtualAddress();
-			geometryDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Vertex);
-			geometryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
+			mScratchResource.resize(meshCount);
+			m_blas.resize(meshCount);
+			m_instanceDescs.resize(meshCount);
 
-			D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO bottomLevelPrebuildInfo = {};
-			D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS bottomLevelInputs = {};
-			bottomLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-			bottomLevelInputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
-			bottomLevelInputs.NumDescs = 1;
-			bottomLevelInputs.pGeometryDescs = &geometryDesc;
-			device->GetRaytracingAccelerationStructurePrebuildInfo(&bottomLevelInputs, &bottomLevelPrebuildInfo);
-
-			if (bottomLevelPrebuildInfo.ResultDataMaxSizeInBytes < 0)
+			for (UINT i = 0; i < meshCount; i++)
 			{
-				std::cout << "Failed GetRaytracingAccelerationStructurePrebuildInfo(BLAS)\n";
-				return;
+				D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc;
+				geometryDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+				geometryDesc.Triangles.IndexBuffer = mIndexGpu[i]->GetGPUVirtualAddress();
+				geometryDesc.Triangles.IndexCount = static_cast<UINT>(mIndexGpu[i]->GetDesc().Width) / sizeof(Index);
+				geometryDesc.Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
+				geometryDesc.Triangles.Transform3x4 = 0;
+				geometryDesc.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+				geometryDesc.Triangles.VertexCount = static_cast<UINT>(mVertexGpu[i]->GetDesc().Width) / sizeof(Vertex);
+				geometryDesc.Triangles.VertexBuffer.StartAddress = mVertexGpu[i]->GetGPUVirtualAddress();
+				geometryDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Vertex);
+				geometryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
+
+				D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO bottomLevelPrebuildInfo = {};
+				D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS bottomLevelInputs = {};
+				bottomLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+				bottomLevelInputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+				bottomLevelInputs.NumDescs = 1;
+				bottomLevelInputs.pGeometryDescs = &geometryDesc;
+				device->GetRaytracingAccelerationStructurePrebuildInfo(&bottomLevelInputs, &bottomLevelPrebuildInfo);
+
+				if (bottomLevelPrebuildInfo.ResultDataMaxSizeInBytes < 0)
+				{
+					std::cout << "Failed GetRaytracingAccelerationStructurePrebuildInfo(BLAS)\n";
+					return;
+				}
+
+				UINT64 buffersize = bottomLevelPrebuildInfo.ScratchDataSizeInBytes;
+
+				Renderer::Utility::CreateBuffer(device, D3D12_HEAP_TYPE_DEFAULT, D3D12_HEAP_FLAG_NONE,
+					buffersize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+					D3D12_RESOURCE_STATE_COMMON,
+					mScratchResource[i]);
+
+				Renderer::Utility::CreateBuffer(device, D3D12_HEAP_TYPE_DEFAULT, D3D12_HEAP_FLAG_NONE,
+					bottomLevelPrebuildInfo.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+					D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, m_blas[i]);
+
+				D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC bottomLevelBuildDesc = {};
+
+				bottomLevelBuildDesc.Inputs = bottomLevelInputs;
+				bottomLevelBuildDesc.ScratchAccelerationStructureData = mScratchResource[i]->GetGPUVirtualAddress();
+				bottomLevelBuildDesc.DestAccelerationStructureData = m_blas[i]->GetGPUVirtualAddress();
+
+				commandList->BuildRaytracingAccelerationStructure(&bottomLevelBuildDesc, 0, nullptr);
+				commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_blas[i].Get()));
+				commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(mScratchResource[i].Get()));
+
+				std::wstring name(m_name.begin(), m_name.end());
+				std::wstringstream blassName;
+				blassName << L"BLAS - " << name;
+
+				//m_tlas->SetName(tlassName.str().c_str());
+				m_blas[i]->SetName(blassName.str().c_str());
 			}
-			
-			UINT64 buffersize = bottomLevelPrebuildInfo.ScratchDataSizeInBytes;
-			
-			Renderer::Utility::CreateBuffer(device, D3D12_HEAP_TYPE_DEFAULT, D3D12_HEAP_FLAG_NONE, 
-				buffersize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
-				D3D12_RESOURCE_STATE_COMMON,
-				m_scratchResource);
-
-			Renderer::Utility::CreateBuffer(device, D3D12_HEAP_TYPE_DEFAULT, D3D12_HEAP_FLAG_NONE,
-				bottomLevelPrebuildInfo.ResultDataMaxSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, 
-				D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, m_blas);
-
-			D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC bottomLevelBuildDesc = {};
-
-			bottomLevelBuildDesc.Inputs = bottomLevelInputs;
-			bottomLevelBuildDesc.ScratchAccelerationStructureData = m_scratchResource->GetGPUVirtualAddress();
-			bottomLevelBuildDesc.DestAccelerationStructureData = m_blas->GetGPUVirtualAddress();
-
-			commandList->BuildRaytracingAccelerationStructure(&bottomLevelBuildDesc, 0, nullptr);
-			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_blas.Get()));
-			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_scratchResource.Get()));
-
-			std::wstring name(m_name.begin(), m_name.end());
-			std::wstringstream blassName;
-			blassName << L"BLAS - " << name;
-
-			//m_tlas->SetName(tlassName.str().c_str());
-			m_blas->SetName(blassName.str().c_str());
 		}
-
-		D3D12_GPU_VIRTUAL_ADDRESS GetBlas() { return m_blas->GetGPUVirtualAddress(); }
-		//D3D12_GPU_VIRTUAL_ADDRESS GetTlas() { return m_tlas->GetGPUVirtualAddress(); }
-		void Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat = true);
-		void RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat);
-		void RenderBoundingBox(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
-		void UpdateAnimation(const float& deltaTime, Animation::AnimationData& animationData);
-		void Update(const float& deltaTime);
-
-		//void UpdateDomain(const float& deltaTime, float gui_edge0, float gui_edge1, float gui_edge2, float gui_edge3, float gui_inside0, float gui_inside1);
-
-		std::wstring GetTexturePath() const { return m_texturePath; }
-		void SetIsCubeMap(bool isCubeMap) { bIsCubeMap = isCubeMap; }
-		void SetTexturePath(std::wstring path) { m_texturePath = path; }
-		void SetBoundingBoxHalfLength(const float& halfLength) { m_objectConstantData->boundingBoxHalfLength = halfLength; }
-		void UpdateWorldRow(const DirectX::SimpleMath::Matrix& worldRow);
-		void UpdateMaterial(const Material& material);
-		Material& GetMaterial() const;
-		DirectX::SimpleMath::Matrix GetTransformMatrix() { return m_objectConstantData->Model; }
-
-		D3D12_GPU_DESCRIPTOR_HANDLE GetIndexGpuHandle() { return m_indicesSrvHeap->GetGPUDescriptorHandleForHeapStart(); }
-		D3D12_CPU_DESCRIPTOR_HANDLE GetIndexCpuHandle() { return m_indicesSrvHeap->GetCPUDescriptorHandleForHeapStart(); }
-
-	private:
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_objectConstantBuffer;
-		ObjectConstantData* m_objectConstantData;
-		UINT8* m_pCbvDataBegin;
-		float m_delTeta = 1.f / (3.141592f * 2.f);
-		float m_currTheta = 0.f;
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexUploadBuffer;
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexUpload;
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexGpu;
-		D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
-
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_indexUpload;
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_indexGpu;
-
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_scratchResource;
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_blas;
-		//Microsoft::WRL::ComPtr<ID3D12Resource> m_tlas;
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_instanceDescs;
-
-		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_blasSrvHeap;
-
-		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_indicesSrvHeap;
-
-		D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
-		UINT indexCount = 0;
-		std::wstring m_texturePath = L"";
 	};
 }

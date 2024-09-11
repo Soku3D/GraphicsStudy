@@ -1,11 +1,13 @@
 #pragma once
 
-#include "Object.h"
-#include "InputHandler.h"
-#include "Camera.h"
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx12.h"
+
+#include "Object.h"
+#include "InputHandler.h"
+#include "Camera.h"
+#include "Character.h"
 
 namespace Renderer {
 	class SimpleApp {
@@ -43,6 +45,7 @@ namespace Renderer {
 		
 		std::shared_ptr<Core::Camera> m_camera;
 		std::unique_ptr<InputHandler> m_inputHandler;
+		std::unique_ptr<Core::Character> mCharacter;
 		
 		bool bIsFPSMode = false;
 		bool bUseGUI = true;

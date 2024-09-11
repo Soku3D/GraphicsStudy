@@ -61,7 +61,7 @@ namespace Renderer {
 	protected:
 		std::vector< D3D12_RAYTRACING_INSTANCE_DESC> m_instances;
 		ComPtr<ID3D12Resource> m_tlas;
-		ComPtr<ID3D12Resource> m_scratchResource;
+		ComPtr<ID3D12Resource> mScratchResource;
 		ComPtr<ID3D12Resource> m_instanceDescs;
 		D3D12_GPU_VIRTUAL_ADDRESS GetTlas() { return m_tlas->GetGPUVirtualAddress(); }
 	protected:

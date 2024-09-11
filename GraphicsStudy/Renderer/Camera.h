@@ -14,12 +14,12 @@ namespace Core {
 		float m_nearZ;
 		float m_farZ;
 		float d;
-		DirectX::SimpleMath::Vector3 m_position;
-		DirectX::SimpleMath::Vector3 m_forwardDirection;
-		DirectX::SimpleMath::Vector3 m_standardDirection;
-		DirectX::SimpleMath::Vector3 m_rightDirection;
-		DirectX::SimpleMath::Vector3 m_upDirection;
-		float m_velocity = 1.f;
+		DirectX::SimpleMath::Vector3 mPosition;
+		DirectX::SimpleMath::Vector3 mForwardDirection;
+		DirectX::SimpleMath::Vector3 mStandardDirection;
+		DirectX::SimpleMath::Vector3 mRightDirection;
+		DirectX::SimpleMath::Vector3 mUpDirection;
+		float mVelocity = 1.f;
 		float m_delTheta;
 		float m_delSine;
 		float m_delCosine;

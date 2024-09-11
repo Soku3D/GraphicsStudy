@@ -154,9 +154,10 @@
   <ItemGroup>
     <ClCompile Include="Actor.cpp" />
     <ClCompile Include="AnimationClip.cpp" />
-    <ClCompile Include="BoxComponent.cpp" />
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CameraComponent.cpp" />
+    <ClCompile Include="Character.cpp" />
     <ClCompile Include="Command.cpp" />
     <ClCompile Include="D3D12App.cpp" />
     <ClCompile Include="D3D12ComputeShaderApp.cpp" />
@@ -185,10 +186,10 @@
     <ClInclude Include="Actor.h" />
     <ClInclude Include="ActorComponent.h" />
     <ClInclude Include="AnimationClip.h" />
-    <ClInclude Include="BoxComponent.h" />
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CameraComponent.h" />
+    <ClInclude Include="Character.h" />
     <ClInclude Include="Command.h" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="D3D12App.h" />
