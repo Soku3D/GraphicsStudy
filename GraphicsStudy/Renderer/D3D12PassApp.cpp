@@ -44,35 +44,24 @@ void Renderer::D3D12PassApp::InitScene()
 	using DirectX::SimpleMath::Matrix;
 	using namespace Core;
 
-	//std::shared_ptr<Core::StaticMesh> characterMesh = std::make_shared< Core::StaticMesh>();
-	Core::StaticMesh* characterMesh = new Core::StaticMesh();
-	//Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
-	//auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, false);
-	//characterMesh->Initialize(soldier, m_device, m_commandList,
-	//	Vector3(0.f, 0.f, 0.f),
-	//	Material(1.f, 1.f, 1.f, 1.f),
-	//	false /*AO*/, false /*Height*/, false /*Metallic*/, false /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
-	//characterMesh->SetTexturePath(L"Soldier_Body_Albedo.png", 0);
-	//characterMesh->SetTexturePath(L"Soldier_head_Albedo.png", 1);
-	//characterMesh->SetTexturePath(L"Soldier_Body_Albedo.png", 2);
-	//characterMesh->SetBoundingBoxHalfLength(1.f);
-
-	auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, false);
-	characterMesh->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f), m_device, m_commandList,
+	characterMesh = new Core::StaticMesh();
+	Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
+	auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
+	characterMesh->Initialize(soldier, m_device, m_commandList,
 		Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
-		true /*AO*/, true /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
-	characterMesh->SetBoundingBoxHalfLength(0.5f);
+		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
+	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.png", 0);
+	characterMesh->SetTexturePath(L"Soldier_head_Albedo.png", 1);
+	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.png", 2);
+	characterMesh->SetBoundingBoxHalfLength(1.f);
 	mCharacter->SetStaticMeshComponent(characterMesh);
-
-	//mCharacter->SetForwardDirection(XMFLOAT3(0, 0, -1));
-	//staticMesh->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100,
-	//	L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f),
-	//	m_device, m_commandList, Vector3(0.f, 0.f, 0.f),
+	//characterMesh->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f), m_device, m_commandList,
+	//	Vector3(0.f, 0.f, 0.f),
 	//	Material(1.f, 1.f, 1.f, 1.f),
-	//	true /*AO*/, true /*Metallic*/, true /*Height*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
-	//staticMesh->SetBoundingBoxHalfLength(0.5f);
-	//mCharacter->SetStaticMeshComponent(staticMesh);
+	//	true /*AO*/, true /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
+	//
+	
 
 
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
@@ -142,12 +131,11 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	m_inputHandler->ExicuteCommand(mCharacter.get(), deltaTime, bIsFPSMode);
 
 	mCharacter->Update(deltaTime);
-
 	{
 		// 카메라 고정
-		//m_passConstantData->ViewMat = m_camera->GetViewMatrix();
-		//m_passConstantData->ProjMat = m_camera->GetProjMatrix();
-		//m_passConstantData->eyePosition = m_camera->GetPosition();
+		/*m_passConstantData->ViewMat = m_camera->GetViewMatrix();
+		m_passConstantData->ProjMat = m_camera->GetProjMatrix();
+		m_passConstantData->eyePosition = m_camera->GetPosition();*/
 
 		// 카메라 캐릭터 고정
 		m_passConstantData->ViewMat = mCharacter->GetViewMatrix();
@@ -172,6 +160,8 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 		memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
 	}
+
+
 
 	for (auto& mesh : m_staticMeshes) {
 		mesh->Update(deltaTime);
@@ -487,6 +477,7 @@ void Renderer::D3D12PassApp::RenderNormalPass(float& deltaTime) {
 					m_staticMeshes[i]->RenderNormal(deltaTime, m_commandList, true);
 				}
 			}
+			mCharacter->RenderNormal(deltaTime, m_commandList, true);
 		}
 
 		ThrowIfFailed(m_commandList->Close());

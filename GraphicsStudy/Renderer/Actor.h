@@ -16,6 +16,7 @@ namespace Core {
 		virtual void Update(float deltaTime);
 		virtual void Render(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 		virtual void RenderBoundingBox(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
+		void RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat);
 		virtual void RotateDirection() {};
 		virtual void MoveUp(float deltaTime) {};
 		virtual void MoveDown(float deltaTime) {};
@@ -45,8 +46,8 @@ namespace Core {
 		float m_delCosine;
 
 		DirectX::SimpleMath::Quaternion m_quaternion;
-		float m_xTheta = 0.f;
-		float m_yTheta = 0.f;
+		float m_xTheta = 0.0;
+		float m_yTheta = 0.0;
 
 	protected:
 		class Core::StaticMesh* mStaticMesh;

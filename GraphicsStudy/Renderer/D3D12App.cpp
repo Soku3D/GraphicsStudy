@@ -449,7 +449,7 @@ void Renderer::D3D12App::RenderGUI(float& deltaTime)
 		ID3D12CommandList* lists[] = { m_guiCommandList.Get() };
 		m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
 	}
-	ThrowIfFailed(m_swapChain->Present(0, 0));
+	ThrowIfFailed(m_swapChain->Present(1, 0));
 	m_frameIndex = (m_frameIndex + 1) % m_swapChainCount;
 
 	FlushCommandQueue();

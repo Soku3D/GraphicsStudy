@@ -8,13 +8,14 @@ Core::Character::Character()
 	mCamera = new CameraComponent();
 	std::cout << "RightDirection : " << mRightDirection.x << ' ' << mRightDirection.y << ' ' << mRightDirection.z << '\n';
 
-	m_delTheta = DirectX::XMConvertToRadians(0.2f);
+	m_delTheta = DirectX::XMConvertToRadians(0.05f);
 	m_delSine = sin(m_delTheta / 2.f);
 	m_delCosine = cos(m_delTheta / 2.f);
 }
+
 void Core::Character::SetRotation(int deltaX, int deltaY) {
-	//m_xTheta += deltaY * mCamera->m_aspectRatio * m_delTheta;
-	m_yTheta += (float)deltaX * m_delTheta;
+	m_xTheta += deltaY * mCamera->m_aspectRatio * m_delTheta;
+	m_yTheta += deltaX * m_delTheta;
 
 	if (m_xTheta >= DirectX::XM_PIDIV2 - 0.001f) {
 		m_xTheta = DirectX::XM_PIDIV2 - 0.001f;
@@ -22,6 +23,13 @@ void Core::Character::SetRotation(int deltaX, int deltaY) {
 	if (m_xTheta <= -DirectX::XM_PIDIV2 + 0.001f) {
 		m_xTheta = -DirectX::XM_PIDIV2 + 0.001f;
 	}
+
+	/*if (m_yTheta >= -DirectX::XM_2PI) {
+		m_yTheta -= DirectX::XM_2PI;
+	}
+	if (m_yTheta <= -DirectX::XM_2PI) {
+		m_yTheta += DirectX::XM_2PI;
+	}*/
 }
 
 void Core::Character::SetCameraAspectRatio(float ratio)
@@ -67,14 +75,16 @@ void Core::Character::Update(float deltaTime)
 
 	if (mStaticMesh != nullptr) 
 	{
+		//std::cout << "Model Rotate : " << m_yTheta << ' ';
 		Matrix Model = DirectX::XMMatrixRotationY(m_yTheta) * DirectX::XMMatrixTranslation(mPosition.x, mPosition.y, mPosition.z);
 		mStaticMesh->UpdateWorldRow(Model);
-		mStaticMesh->Update(deltaTime);
+	    mStaticMesh->Update(deltaTime);
 	}
 
 	if (mCamera != nullptr) 
 	{
 		mCamera->Update(mPosition, m_xTheta, m_yTheta);
+		//mCamera->SetPositionAndDirection(mPosition + XMFLOAT3(0, 0, -1), XMFLOAT3(0, 0, 1));
 	}
 
 }
@@ -89,6 +99,11 @@ void Core::Character::RenderBoundingBox(float deltaTime, Microsoft::WRL::ComPtr<
 	Actor::RenderBoundingBox(deltaTime, commandList);
 }
 
+void Core::Character::RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat)
+{
+	Actor::RenderNormal(deltaTime, commandList, bUseModelMat);
+}
+
 void Core::Character::RotateDirection() {
 	using DirectX::SimpleMath::Vector3;
 	/*	if (mViewDirection.Dot(Vector3(0.f, 1.f, 0.f)) < 0.99f && mViewDirection.Dot(Vector3(0.f, -1.f, 0.f)) > -0.99f) {
@@ -97,14 +112,13 @@ void Core::Character::RotateDirection() {
 		m_quaternion = DirectX::SimpleMath::Quaternion();
 
 		}*/
-	mViewDirection = Vector3::Transform(mStandardDirection, DirectX::XMMatrixRotationX(m_xTheta));
-	mViewDirection = Vector3::Transform(mViewDirection, DirectX::XMMatrixRotationY(m_yTheta));
+	DirectX::SimpleMath::Matrix mat = DirectX::XMMatrixRotationX(m_xTheta) * DirectX::XMMatrixRotationY(m_yTheta);
+	mViewDirection = Vector3::Transform(mStandardDirection, mat);
 	mViewDirection.Normalize();
 
 	mForwardDirection = Vector3::Transform(mStandardDirection, DirectX::XMMatrixRotationY(m_yTheta));
 	mForwardDirection.Normalize();
 
-	m_quaternion = DirectX::SimpleMath::Quaternion();
 	mRightDirection = mUpDirection.Cross(mForwardDirection);
 	mRightDirection.Normalize();
 }

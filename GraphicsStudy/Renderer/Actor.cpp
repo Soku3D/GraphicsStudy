@@ -30,6 +30,17 @@ void Core::Actor::RenderBoundingBox(float deltaTime, Microsoft::WRL::ComPtr<ID3D
 	}
 }
 
+void Core::Actor::RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat)
+{
+	if (mStaticMesh != nullptr)
+	{
+		mStaticMesh->RenderNormal(deltaTime, commandList, bUseModelMat);
+	}
+}
+
+
+
+
 void Core::Actor::SetStaticMeshComponent(StaticMesh* staticMesh)
 {
 	mStaticMesh = staticMesh;
@@ -69,11 +80,11 @@ void Core::Actor::SetForwardDirection(const DirectX::SimpleMath::Vector3& direct
 	m_delSine = sin(m_delTheta / 2.f);
 	m_delCosine = cos(m_delTheta / 2.f);
 
-	mViewDirection = Vector3::Transform(mStandardDirection, DirectX::XMMatrixRotationX(m_xTheta));
-	mViewDirection = Vector3::Transform(mViewDirection, DirectX::XMMatrixRotationY(m_yTheta));
+	mViewDirection = Vector3::Transform(mStandardDirection, DirectX::XMMatrixRotationX((float)m_xTheta));
+	mViewDirection = Vector3::Transform(mViewDirection, DirectX::XMMatrixRotationY((float)m_yTheta));
 	mViewDirection.Normalize();
 
-	mForwardDirection = Vector3::Transform(mStandardDirection, DirectX::XMMatrixRotationY(m_yTheta));;
+	mForwardDirection = Vector3::Transform(mStandardDirection, DirectX::XMMatrixRotationY((float)m_yTheta));;
 	mForwardDirection.Normalize();
 
 	mRightDirection = mUpDirection.Cross(mForwardDirection);

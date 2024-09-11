@@ -15,6 +15,7 @@ namespace Core {
 		float d;
 
 		DirectX::SimpleMath::Vector3 mPosition;
+		DirectX::SimpleMath::Vector3 mLookPosition;
 		DirectX::SimpleMath::Vector3 mForwardDirection;
 		DirectX::SimpleMath::Vector3 mStandardDirection;
 		DirectX::SimpleMath::Vector3 mRightDirection;
@@ -43,9 +44,9 @@ namespace Core {
 		void SetRotation(int deltaX, int deltaY);
 
 	public:
-		DirectX::SimpleMath::Matrix GetViewMatrix() const;
-		DirectX::SimpleMath::Matrix GetProjMatrix() const;
-		DirectX::SimpleMath::Vector3 GetPosition() const;
+		DirectX::SimpleMath::Matrix GetViewMatrix();
+		DirectX::SimpleMath::Matrix GetProjMatrix();
+		DirectX::SimpleMath::Vector3 GetPosition() const ;
 
 		DirectX::SimpleMath::Vector3 GetForwardDirection() const;
 		DirectX::SimpleMath::Vector3 GetUpDirection() const;

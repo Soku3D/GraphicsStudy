@@ -276,7 +276,7 @@ void Renderer::D3D12PhysxSimulationApp::InitScene()
 	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
 	characterMesh->SetBoundingBoxHalfLength(1.f);
 	mCharacter->SetStaticMeshComponent(characterMesh);
-	mCharacter->SetPosition(XMFLOAT3(0, 1, -1));
+	mCharacter->SetPosition(XMFLOAT3(0, 0, 0));
 	mCharacter->SetVelocity(3.f);
 }
 

@@ -14,6 +14,8 @@ namespace Core {
 		void Update(float deltaTime) override;
 		void Render(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 		void RenderBoundingBox(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
+		void RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat);
+
 		void RotateDirection() override;
 		void MoveUp(float deltaTime) override;
 		void MoveDown(float deltaTime) override;
