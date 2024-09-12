@@ -1,9 +1,9 @@
 struct Material
 {
     float albedo;
-    float diffuse;
-    float specular;
-    float shininess;
+    float ao;
+    float metalic;
+    float roughness;
 };
 
 cbuffer cbPerObject : register(b0)
@@ -11,14 +11,21 @@ cbuffer cbPerObject : register(b0)
     matrix Model;
     matrix invTranspose;
     Material material;
+    
+    bool useAoMap;
+    bool useHeightMap;
+    bool useMetalnessMap;
     bool useNormalMap;
-    float3 dummy;
+    bool useRoughnessMap;
+    
+    bool useTesslation;
 }
 
 cbuffer cbPass : register(b1)
 {
     matrix View;
     matrix Projection;
+    float3 eyePosition;
 }
 
 struct VSInput
@@ -37,7 +44,6 @@ struct GSInput
 };
 struct PSInput
 {
+    float4 worldPoition : POSITION;
     float4 svPosition : SV_POSITION;
-    float3 worldPoition : POSITION;
-    float3 coordinate : POISTION2;
 };

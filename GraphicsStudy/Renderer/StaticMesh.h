@@ -31,7 +31,7 @@ namespace Core {
 		PrimitiveConstantBuffer m_primitiveConstantData;
 
 		D3D12_GPU_VIRTUAL_ADDRESS GetBlas(int index = 0) { return m_blas[index]->GetGPUVirtualAddress(); }
-		void Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat = true);
+		void Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat = true, int index =  0);
 		void RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat);
 		void RenderBoundingBox(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 		void UpdateAnimation(const float& deltaTime, Animation::AnimationData& animationData);

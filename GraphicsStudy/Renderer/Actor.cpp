@@ -14,11 +14,11 @@ void Core::Actor::Update(float deltaTime)
 {
 }
 
-void Core::Actor::Render(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
+void Core::Actor::Render(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, int index)
 {
 	if (mStaticMesh != nullptr)
 	{
-		mStaticMesh->Render(deltaTime, commandList, true);
+		mStaticMesh->Render(deltaTime, commandList, true, index);
 	}
 }
 
@@ -46,9 +46,9 @@ void Core::Actor::SetStaticMeshComponent(StaticMesh* staticMesh)
 	mStaticMesh = staticMesh;
 }
 
-std::wstring Core::Actor::GetTexturePath() const
+std::wstring Core::Actor::GetTexturePath(int index) const
 {
-	return mStaticMesh->GetTexturePath();
+	return mStaticMesh->GetTexturePath(index);
 }
 
 void Core::Actor::SetPosition(const DirectX::SimpleMath::Vector3& position)

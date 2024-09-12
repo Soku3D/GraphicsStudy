@@ -38,6 +38,10 @@ namespace Renderer {
 		void RenderCubeMap(float& deltaTime) override;
 		void RenderGUI(float& deltaTime) override;
 
+		void RenderStaticMeshes(float& deltaTime);
+		void RenderCharacter(float& deltaTime);
+		void RenderPlayers(float& deltaTime);
+
 		//virtual void PostProcessing(float& deltaTime);
 
 	protected:

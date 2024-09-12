@@ -27,7 +27,7 @@ bool Renderer::D3D12PassApp::Initialize()
 	return true;
 }
 
-void Renderer::D3D12PassApp::InitConstantBuffers() 
+void Renderer::D3D12PassApp::InitConstantBuffers()
 {
 	Utility::CreateConstantBuffer(m_device, mCsBuffer);
 
@@ -49,20 +49,21 @@ void Renderer::D3D12PassApp::InitScene()
 	auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
 	characterMesh->Initialize(soldier, m_device, m_commandList,
 		Vector3(0.f, 0.f, 0.f),
-		Material(1.f, 1.f, 1.f, 1.f),
+		Material(1.f, 1.f, 1.f, 0.5f),
 		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
-	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.png", 0);
-	characterMesh->SetTexturePath(L"Soldier_head_Albedo.png", 1);
-	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.png", 2);
+
+	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 0);
+	characterMesh->SetTexturePath(L"Soldier_head_Albedo.dds", 1);
+	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
 	characterMesh->SetBoundingBoxHalfLength(1.f);
 	mCharacter->SetStaticMeshComponent(characterMesh);
-	//characterMesh->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f), m_device, m_commandList,
-	//	Vector3(0.f, 0.f, 0.f),
-	//	Material(1.f, 1.f, 1.f, 1.f),
-	//	true /*AO*/, true /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
-	//
 	
-
+	std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
+	sphere->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f), m_device, m_commandList,
+		Vector3(0.f, 0.f, 0.f),
+		Material(1.f, 1.f, 1.f, 1.f),
+		true /*AO*/, true /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
+	m_staticMeshes.push_back(sphere);
 
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
 	std::vector<PbrMeshData> planeData = { GeometryGenerator::PbrBox(10, 1, 10, L"worn-painted-metal_Albedo.dds", 10, 1, 10) };
@@ -133,14 +134,14 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	mCharacter->Update(deltaTime);
 	{
 		// 카메라 고정
-		/*m_passConstantData->ViewMat = m_camera->GetViewMatrix();
+		m_passConstantData->ViewMat = m_camera->GetViewMatrix();
 		m_passConstantData->ProjMat = m_camera->GetProjMatrix();
-		m_passConstantData->eyePosition = m_camera->GetPosition();*/
+		m_passConstantData->eyePosition = m_camera->GetPosition();
 
 		// 카메라 캐릭터 고정
-		m_passConstantData->ViewMat = mCharacter->GetViewMatrix();
+		/*m_passConstantData->ViewMat = mCharacter->GetViewMatrix();
 		m_passConstantData->ProjMat = mCharacter->GetProjMatrix();
-		m_passConstantData->eyePosition = mCharacter->GetPosition();
+		m_passConstantData->eyePosition = mCharacter->GetPosition();*/
 
 		m_passConstantData->ViewMat = m_passConstantData->ViewMat.Transpose();
 		m_passConstantData->ProjMat = m_passConstantData->ProjMat.Transpose();
@@ -161,8 +162,6 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
 	}
 
-
-
 	for (auto& mesh : m_staticMeshes) {
 		mesh->Update(deltaTime);
 	}
@@ -171,7 +170,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	}
 
 	// ComputeShader(PostProcessing)
-	mCsBuffer.mStructure.time = std::min(deltaTime, 1 / 60.f);
+	mCsBuffer.mStructure.time = ((deltaTime) < (1 / 60.f) ? deltaTime : (1 / 60.f));
 	mCsBuffer.UpdateBuffer();
 
 	// CubeMap ConstantBuffer
@@ -249,7 +248,6 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 		msaaMode = false;
 	}
 
-
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 	{
@@ -292,46 +290,16 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 		// Texture SRV Heap 
 		ID3D12DescriptorHeap* ppSrvHeaps[] = { m_textureHeap.Get() };
 		m_commandList->SetDescriptorHeaps(_countof(ppSrvHeaps), ppSrvHeaps);
-		if (bRenderMeshes) {
-			for (int i = 0; i < m_staticMeshes.size(); ++i) {
-				CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
 
-				if (m_textureMap.count(m_staticMeshes[i]->GetTexturePath()) > 0) {
-					handle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath()], m_csuHeapSize);
-				}
-				else {
-					handle.Offset(m_textureMap[L"zzzdefaultAlbedo.dds"], m_csuHeapSize);
-				}
-				m_commandList->SetGraphicsRootDescriptorTable(0, handle);
-				//m_commandList->SetGraphicsRootDescriptorTable(1, normalHandle);
-				m_staticMeshes[i]->Render(deltaTime, m_commandList, true);
-			}
-
+		if (bRenderMeshes)
+		{
+			RenderStaticMeshes(deltaTime);
 		}
-		
+
 		// Render Player
-		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
-		if (m_textureMap.count(mCharacter->GetTexturePath()) > 0) {
-			handle.Offset(m_textureMap[mCharacter->GetTexturePath()], m_csuHeapSize);
-		}
-		else {
-			handle.Offset(m_textureMap[L"zzzdefaultAlbedo.dds"], m_csuHeapSize);
-		}
-		m_commandList->SetGraphicsRootDescriptorTable(0, handle);
-		mCharacter->Render(deltaTime, m_commandList);
+		RenderCharacter(deltaTime);
+		RenderPlayers(deltaTime);
 
-		for (int i = 0; i < mPlayers.size(); ++i) {
-			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
-
-			if (m_textureMap.count(mPlayers[i]->GetTexturePath()) > 0) {
-				handle.Offset(m_textureMap[mPlayers[i]->GetTexturePath()], m_csuHeapSize);
-			}
-			else {
-				handle.Offset(m_textureMap[L"zzzdefaultAlbedo.dds"], m_csuHeapSize);
-			}
-			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
-			mPlayers[i]->Render(deltaTime, m_commandList, true);
-		}
 	}
 
 	ThrowIfFailed(m_commandList->Close());
@@ -448,8 +416,6 @@ void Renderer::D3D12PassApp::LightPass(float& deltaTime) {
 	PIXEndEvent(m_commandQueue.Get());
 
 }
-
-
 
 void Renderer::D3D12PassApp::RenderNormalPass(float& deltaTime) {
 
@@ -643,4 +609,56 @@ void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 void Renderer::D3D12PassApp::RenderGUI(float& deltaTime)
 {
 	D3D12App::RenderGUI(deltaTime);
+}
+
+void Renderer::D3D12PassApp::RenderStaticMeshes(float& deltaTime) {
+	for (int i = 0; i < m_staticMeshes.size(); ++i) {
+		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
+
+		for (size_t j = 0; j < m_staticMeshes[i]->meshCount; j++)
+		{
+			if (m_textureMap.count(m_staticMeshes[i]->GetTexturePath(j)) > 0) {
+				handle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath(j)], m_csuHeapSize);
+			}
+			else {
+				handle.Offset(m_textureMap[L"zzzdefaultAlbedo.dds"], m_csuHeapSize);
+			}
+			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
+			m_staticMeshes[i]->Render(deltaTime, m_commandList, true, j);
+		}
+
+	}
+}
+
+void Renderer::D3D12PassApp::RenderCharacter(float& deltaTime) {
+
+	for (size_t j = 0; j < mCharacter->GetMeshCount(); j++)
+	{
+		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
+		if (m_textureMap.count(mCharacter->GetTexturePath(j)) > 0) {
+			handle.Offset(m_textureMap[mCharacter->GetTexturePath(j)], m_csuHeapSize);
+		}
+		else {
+			handle.Offset(m_textureMap[L"zzzdefaultAlbedo.dds"], m_csuHeapSize);
+		}
+		m_commandList->SetGraphicsRootDescriptorTable(0, handle);
+		mCharacter->Render(deltaTime, m_commandList, j);
+	}
+}
+
+void Renderer::D3D12PassApp::RenderPlayers(float& deltaTime) {
+	for (int i = 0; i < mPlayers.size(); ++i) {
+		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
+		for (size_t j = 0; j < mPlayers[i]->meshCount; j++)
+		{
+			if (m_textureMap.count(mPlayers[i]->GetTexturePath(j)) > 0) {
+				handle.Offset(m_textureMap[mPlayers[i]->GetTexturePath(j)], m_csuHeapSize);
+			}
+			else {
+				handle.Offset(m_textureMap[L"zzzdefaultAlbedo.dds"], m_csuHeapSize);
+			}
+			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
+			mPlayers[i]->Render(deltaTime, m_commandList, true, j);
+		}
+	}
 }
