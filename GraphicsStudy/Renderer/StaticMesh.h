@@ -32,7 +32,7 @@ namespace Core {
 
 		D3D12_GPU_VIRTUAL_ADDRESS GetBlas(int index = 0) { return m_blas[index]->GetGPUVirtualAddress(); }
 		void Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat = true, int index =  0);
-		void RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat);
+		void RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat, int index = 0);
 		void RenderBoundingBox(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 		void UpdateAnimation(const float& deltaTime, Animation::AnimationData& animationData);
 		void Update(const float& deltaTime);
@@ -45,8 +45,6 @@ namespace Core {
 		void UpdateMaterial(const Material& material);
 		Material& GetMaterial() const;
 		DirectX::SimpleMath::Matrix GetTransformMatrix() { return m_objectConstantData->Model; }
-
-
 
 		D3D12_GPU_DESCRIPTOR_HANDLE GetIndexGpuHandle(int index = 0) { return mIndicesSrvHeap[index]->GetGPUDescriptorHandleForHeapStart(); }
 		D3D12_CPU_DESCRIPTOR_HANDLE GetIndexCpuHandle(int index = 0) { return mIndicesSrvHeap[index]->GetCPUDescriptorHandleForHeapStart(); }
@@ -76,6 +74,7 @@ namespace Core {
 	
 		std::vector <D3D12_INDEX_BUFFER_VIEW> mIndexBufferView;
 		std::vector <UINT> mIndexCount;
+		std::vector <UINT> mVertexCount;
 		std::vector<std::wstring> mTexturePath;
 
 	public:
@@ -124,6 +123,7 @@ namespace Core {
 			mIndexGpu.resize(meshData.size());
 			mIndexBufferView.resize(meshData.size());
 			mIndexCount.resize(meshData.size());
+			mVertexCount.resize(meshData.size());
 			mTexturePath.resize(meshData.size());
 			mIndicesSrvHeap.resize(meshData.size());
 			meshCount = (UINT)meshData.size();
@@ -146,7 +146,6 @@ namespace Core {
 
 			std::vector<ObjectConstantData> constantData = { *m_objectConstantData };
 			Renderer::Utility::CreateUploadBuffer(constantData, m_objectConstantBuffer, device);
-
 
 			CD3DX12_RANGE range(0, 0);
 			ThrowIfFailed(m_objectConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
@@ -171,6 +170,7 @@ namespace Core {
 				}
 				mIndexBufferView[i].SizeInBytes = UINT(sizeof(Index) * meshData[i].m_indices.size());
 				mIndexCount[i] = (UINT)meshData[i].m_indices.size();
+				mVertexCount[i] = (UINT)meshData[i].m_vertices.size();
 				mTexturePath[i] = meshData[i].GetTexturePath();
 
 				Renderer::Utility::CreateDescriptorHeap(device, mIndicesSrvHeap[i], Renderer::DescriptorType::SRV, 2);

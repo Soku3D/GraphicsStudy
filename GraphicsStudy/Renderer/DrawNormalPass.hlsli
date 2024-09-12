@@ -6,7 +6,7 @@ struct Material
     float roughness;
 };
 
-cbuffer cbPerObject : register(b0)
+cbuffer cbPerObject : register(b1)
 {
     matrix Model;
     matrix invTranspose;
@@ -21,7 +21,7 @@ cbuffer cbPerObject : register(b0)
     bool useTesslation;
 }
 
-cbuffer cbPass : register(b1)
+cbuffer cbPass : register(b0)
 {
     matrix View;
     matrix Projection;
@@ -38,12 +38,12 @@ struct VSInput
 
 struct GSInput
 {
-    float3 worldPoition : POSITION;
+    float4 worldPoition : POSITION;
     float3 normal : NORMAL;
     float3 tangent : TANGENT;
 };
 struct PSInput
 {
-    float4 worldPoition : POSITION;
     float4 svPosition : SV_POSITION;
+    float2 texcoord : TEXCOORD;
 };

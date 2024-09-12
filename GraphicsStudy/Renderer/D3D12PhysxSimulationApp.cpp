@@ -11,8 +11,8 @@ static physx::PxFilterFlags contactReportFilterShader(physx::PxFilterObjectAttri
 
 	PX_UNUSED(attributes0);
 	PX_UNUSED(attributes1);
-	//PX_UNUSED(filterData0);
-	//PX_UNUSED(filterData1);
+	PX_UNUSED(filterData0);
+	PX_UNUSED(filterData1);
 	PX_UNUSED(constantBlockSize);
 	PX_UNUSED(constantBlock);
 
@@ -20,10 +20,10 @@ static physx::PxFilterFlags contactReportFilterShader(physx::PxFilterObjectAttri
 	//if(filterData0.word0)
 	pairFlags =
 		PxPairFlag::eSOLVE_CONTACT |
-		PxPairFlag::eDETECT_DISCRETE_CONTACT;/* |
+		PxPairFlag::eDETECT_DISCRETE_CONTACT |
 		PxPairFlag::eNOTIFY_TOUCH_FOUND |
 		PxPairFlag::eNOTIFY_TOUCH_PERSISTS |
-		PxPairFlag::eNOTIFY_CONTACT_POINTS*/
+		PxPairFlag::eNOTIFY_CONTACT_POINTS;
 
 	return PxFilterFlag::eDEFAULT;
 }
@@ -200,8 +200,8 @@ void Renderer::D3D12PhysxSimulationApp::PlaySoundEffect(std::string soundName,co
 	effect.release();
 	effect = m_soundEffects[soundMap[soundName]]->CreateInstance(SoundEffectInstance_Use3D);
 
-	listener.SetPosition(m_camera->GetPosition());
-	listener.SetOrientation(m_camera->GetForwardDirection(), m_camera->GetUpDirection());
+	listener.SetPosition(mCharacter->GetPosition());
+	listener.SetOrientation(mCharacter->GetForwardDirection(), mCharacter->GetUpDirection());
 
 	emitter.SetPosition(emitterPosition);
 	effect->SetVolume(volume);
@@ -277,7 +277,7 @@ void Renderer::D3D12PhysxSimulationApp::InitScene()
 	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
 	characterMesh->SetBoundingBoxHalfLength(1.f);
 	mCharacter->SetStaticMeshComponent(characterMesh);
-	mCharacter->SetPosition(XMFLOAT3(0, 0, 0));
+	mCharacter->SetPosition(XMFLOAT3(0, 0.4f, 0));
 	mCharacter->SetVelocity(3.f);
 }
 

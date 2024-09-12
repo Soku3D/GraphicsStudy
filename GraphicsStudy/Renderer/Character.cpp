@@ -8,7 +8,7 @@ Core::Character::Character()
 	mCamera = new CameraComponent();
 	std::cout << "RightDirection : " << mRightDirection.x << ' ' << mRightDirection.y << ' ' << mRightDirection.z << '\n';
 
-	m_delTheta = DirectX::XMConvertToRadians(0.05f);
+	m_delTheta = DirectX::XMConvertToRadians(0.2f);
 	m_delSine = sin(m_delTheta / 2.f);
 	m_delCosine = cos(m_delTheta / 2.f);
 }
@@ -68,6 +68,16 @@ DirectX::SimpleMath::Vector3 Core::Character::GetViewDirection()
 	return mViewDirection;
 }
 
+DirectX::SimpleMath::Vector3 Core::Character::GetForwardDirection()
+{
+	return mForwardDirection;
+}
+
+DirectX::SimpleMath::Vector3 Core::Character::GetUpDirection()
+{
+	return mUpDirection;
+}
+
 DirectX::SimpleMath::Vector3 Core::Character::GetPosition()
 {
 	if (mCamera != nullptr) {
@@ -107,9 +117,9 @@ void Core::Character::RenderBoundingBox(float deltaTime, Microsoft::WRL::ComPtr<
 	Actor::RenderBoundingBox(deltaTime, commandList);
 }
 
-void Core::Character::RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat)
+void Core::Character::RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat, int index)
 {
-	Actor::RenderNormal(deltaTime, commandList, bUseModelMat);
+	Actor::RenderNormal(deltaTime, commandList, bUseModelMat, index);
 }
 
 void Core::Character::RotateDirection() {

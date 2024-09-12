@@ -58,12 +58,12 @@ void Renderer::D3D12PassApp::InitScene()
 	characterMesh->SetBoundingBoxHalfLength(1.f);
 	mCharacter->SetStaticMeshComponent(characterMesh);
 	
-	std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
-	sphere->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f), m_device, m_commandList,
-		Vector3(0.f, 0.f, 0.f),
-		Material(1.f, 1.f, 1.f, 1.f),
-		true /*AO*/, true /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
-	m_staticMeshes.push_back(sphere);
+	//std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
+	//sphere->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f), m_device, m_commandList,
+	//	Vector3(0.f, 0.f, 0.f),
+	//	Material(1.f, 1.f, 1.f, 1.f),
+	//	true /*AO*/, true /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
+	//m_staticMeshes.push_back(sphere);
 
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
 	std::vector<PbrMeshData> planeData = { GeometryGenerator::PbrBox(10, 1, 10, L"worn-painted-metal_Albedo.dds", 10, 1, 10) };
@@ -130,18 +130,19 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	onlineSystem->Update();
 
 	m_inputHandler->ExicuteCommand(mCharacter.get(), deltaTime, bIsFPSMode);
+	//m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
 
 	mCharacter->Update(deltaTime);
 	{
 		// 카메라 고정
-		m_passConstantData->ViewMat = m_camera->GetViewMatrix();
+		/*m_passConstantData->ViewMat = m_camera->GetViewMatrix();
 		m_passConstantData->ProjMat = m_camera->GetProjMatrix();
-		m_passConstantData->eyePosition = m_camera->GetPosition();
+		m_passConstantData->eyePosition = m_camera->GetPosition();*/
 
 		// 카메라 캐릭터 고정
-		/*m_passConstantData->ViewMat = mCharacter->GetViewMatrix();
+		m_passConstantData->ViewMat = mCharacter->GetViewMatrix();
 		m_passConstantData->ProjMat = mCharacter->GetProjMatrix();
-		m_passConstantData->eyePosition = mCharacter->GetPosition();*/
+		m_passConstantData->eyePosition = mCharacter->GetPosition();
 
 		m_passConstantData->ViewMat = m_passConstantData->ViewMat.Transpose();
 		m_passConstantData->ProjMat = m_passConstantData->ProjMat.Transpose();
@@ -347,8 +348,6 @@ void Renderer::D3D12PassApp::FbxGeometryPass(float& deltaTime) {
 		}
 	}
 
-
-
 	ThrowIfFailed(m_commandList->Close());
 
 	ID3D12CommandList* plists[] = { m_commandList.Get() };
@@ -436,14 +435,18 @@ void Renderer::D3D12PassApp::RenderNormalPass(float& deltaTime) {
 			m_commandList->RSSetScissorRects(1, &m_scissorRect);
 			m_commandList->RSSetViewports(1, &m_viewport);
 
-			m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer->GetGPUVirtualAddress());
+			m_commandList->SetGraphicsRootConstantBufferView(0, m_passConstantBuffer->GetGPUVirtualAddress());
 
 			if (bRenderMeshes) {
 				for (int i = 0; i < m_staticMeshes.size(); ++i) {
-					m_staticMeshes[i]->RenderNormal(deltaTime, m_commandList, true);
+					for (int j = 0; j < m_staticMeshes[i]->meshCount; j++) {
+						m_staticMeshes[i]->RenderNormal(deltaTime, m_commandList, true, j);
+					}
 				}
 			}
-			mCharacter->RenderNormal(deltaTime, m_commandList, true);
+			for (int j = 0; j < mCharacter->GetMeshCount(); j++) {
+				mCharacter->RenderNormal(deltaTime, m_commandList, true, j);
+			}
 		}
 
 		ThrowIfFailed(m_commandList->Close());
@@ -615,16 +618,16 @@ void Renderer::D3D12PassApp::RenderStaticMeshes(float& deltaTime) {
 	for (int i = 0; i < m_staticMeshes.size(); ++i) {
 		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
 
-		for (size_t j = 0; j < m_staticMeshes[i]->meshCount; j++)
+		for (int j = 0; j < m_staticMeshes[i]->meshCount; j++)
 		{
-			if (m_textureMap.count(m_staticMeshes[i]->GetTexturePath(j)) > 0) {
+			if ((int)m_textureMap.count(m_staticMeshes[i]->GetTexturePath(j)) > 0) {
 				handle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath(j)], m_csuHeapSize);
 			}
 			else {
 				handle.Offset(m_textureMap[L"zzzdefaultAlbedo.dds"], m_csuHeapSize);
 			}
 			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
-			m_staticMeshes[i]->Render(deltaTime, m_commandList, true, j);
+			m_staticMeshes[i]->Render(deltaTime, m_commandList, true, (int)j);
 		}
 
 	}
@@ -632,10 +635,10 @@ void Renderer::D3D12PassApp::RenderStaticMeshes(float& deltaTime) {
 
 void Renderer::D3D12PassApp::RenderCharacter(float& deltaTime) {
 
-	for (size_t j = 0; j < mCharacter->GetMeshCount(); j++)
+	for (int j = 0; j < mCharacter->GetMeshCount(); j++)
 	{
 		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
-		if (m_textureMap.count(mCharacter->GetTexturePath(j)) > 0) {
+		if ((int)m_textureMap.count(mCharacter->GetTexturePath(j)) > 0) {
 			handle.Offset(m_textureMap[mCharacter->GetTexturePath(j)], m_csuHeapSize);
 		}
 		else {
@@ -649,7 +652,7 @@ void Renderer::D3D12PassApp::RenderCharacter(float& deltaTime) {
 void Renderer::D3D12PassApp::RenderPlayers(float& deltaTime) {
 	for (int i = 0; i < mPlayers.size(); ++i) {
 		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
-		for (size_t j = 0; j < mPlayers[i]->meshCount; j++)
+		for (int j = 0; j < mPlayers[i]->meshCount; j++)
 		{
 			if (m_textureMap.count(mPlayers[i]->GetTexturePath(j)) > 0) {
 				handle.Offset(m_textureMap[mPlayers[i]->GetTexturePath(j)], m_csuHeapSize);

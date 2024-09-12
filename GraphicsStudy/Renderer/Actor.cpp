@@ -30,11 +30,11 @@ void Core::Actor::RenderBoundingBox(float deltaTime, Microsoft::WRL::ComPtr<ID3D
 	}
 }
 
-void Core::Actor::RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat)
+void Core::Actor::RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat, int index)
 {
 	if (mStaticMesh != nullptr)
 	{
-		mStaticMesh->RenderNormal(deltaTime, commandList, bUseModelMat);
+		mStaticMesh->RenderNormal(deltaTime, commandList, bUseModelMat, index);
 	}
 }
 

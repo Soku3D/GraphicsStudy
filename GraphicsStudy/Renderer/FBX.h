@@ -16,7 +16,8 @@ namespace Animation {
 			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool loopAnimation = false, float animationSpeed = 1.f, 
 			const Vector3& ModelTranslation = Vector3::Zero, const std::wstring& texture = L"");
 
-		void Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat, Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& heap, std::map<std::wstring, unsigned int>& textureMap, UINT heapSize);
+		void Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList,
+			bool bUseModelMat, Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& heap, std::map<std::wstring, unsigned int>& textureMap, UINT heapSize);
 
 		void Update(float& deltaTime);
 

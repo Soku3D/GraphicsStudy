@@ -19,9 +19,16 @@ void Core::StaticMesh::Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3
 	commandList->DrawIndexedInstanced(mIndexCount[i], 1, 0, 0, 0);
 }
 
-void Core::StaticMesh::RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat)
+void Core::StaticMesh::RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat, int i)
 {
-	Render(deltaTime, commandList, bUseModelMat);
+	commandList->IASetVertexBuffers(0, 1, &mVertexBufferView[i]);
+	commandList->IASetIndexBuffer(&mIndexBufferView[i]);
+
+	if (bUseModelMat)
+	{
+		commandList->SetGraphicsRootConstantBufferView(1, m_objectConstantBuffer->GetGPUVirtualAddress());
+	}
+	commandList->DrawInstanced(mVertexCount[i], 1, 0, 0);
 }
 
 void Core::StaticMesh::RenderBoundingBox(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)

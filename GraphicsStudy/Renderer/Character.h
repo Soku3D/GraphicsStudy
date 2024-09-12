@@ -14,8 +14,7 @@ namespace Core {
 		void Update(float deltaTime) override;
 		void Render(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, int index = 0);
 		void RenderBoundingBox(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
-		void RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat);
-
+		void RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat, int index);
 		void RotateDirection() override;
 		void MoveUp(float deltaTime) override;
 		void MoveDown(float deltaTime) override;
@@ -31,6 +30,8 @@ namespace Core {
 		DirectX::SimpleMath::Matrix GetViewMatrix();
 		DirectX::SimpleMath::Matrix GetProjMatrix();
 		DirectX::SimpleMath::Vector3 GetViewDirection();
+		DirectX::SimpleMath::Vector3 GetForwardDirection();
+		DirectX::SimpleMath::Vector3 GetUpDirection();
 		DirectX::SimpleMath::Vector3 GetPosition();
 
 	protected:

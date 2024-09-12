@@ -3,26 +3,25 @@
 [maxvertexcount(6)]
 void main(
 	point GSInput input[1],
-	inout PointStream<PSInput> output
+	inout LineStream<PSInput> output
 )
 {
     PSInput p0;
-    p0.worldPoition = float4(input[0].worldPoition, 1);
-    //float4 position = float4(p0.worldPoition, 1.f);
-    //position = mul(position, View);
-    //position = mul(position, Projection);
-    p0.svPosition = p0.worldPoition;
-    //p0.coordinate = float3(0.f, 0.f, 0.f);
+    float3 position = input[0].worldPoition.xyz;
+    float4 svPosition = mul(float4(position, 1.f), View);
+    svPosition = mul(svPosition, Projection);
+    p0.svPosition = svPosition;
+    p0.texcoord = float2(0.f, 0.f);
     output.Append(p0);
     
-    //PSInput p1;
-    //p1.worldPoition = p0.worldPoition + 0.5f * input[0].normal;
-    //position = float4(p1.worldPoition, 1.f);
-    //position = mul(position, View);
-    //position = mul(position, Projection);
-    //p1.svPosition = position;
-    //p1.coordinate = float3(1.f, 0.f, 0.f);
-    //output.Append(p1);
+    PSInput p1;
+
+    position = input[0].worldPoition.xyz + 0.02f * input[0].normal;
+    svPosition = mul(float4(position, 1.f), View);
+    svPosition = mul(svPosition, Projection);
+    p1.svPosition = svPosition;
+    p1.texcoord = float2(1.f, 0.f);
+    output.Append(p1);
     
     //output.RestartStrip();
     
