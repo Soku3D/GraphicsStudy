@@ -177,7 +177,7 @@ void Network::SteamOnlineSystem::Update()
                         << mGameState.clientData[clientList[i]].position.x << ", "
                         << mGameState.clientData[clientList[i]].position.y << ", "
                         << mGameState.clientData[clientList[i]].position.z << " ";*/
-                    pEngine->UpdatePlayer(i, mGameState.clientData[clientList[i]].position);
+                    pEngine->UpdatePlayer((int)i, mGameState.clientData[clientList[i]].position);
                 }
                 /*std::cout << std::endl;*/
             }

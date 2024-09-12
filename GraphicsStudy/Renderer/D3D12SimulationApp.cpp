@@ -87,7 +87,7 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 		{
 			if (sphParticle[i].mLife <= 0.f) {
 				sphParticle[i].mPosition = ndcPosition;
-				sphParticle[i].mVelocity = XMFLOAT2(std::cos(distribVelocityDir(gen)) * 2.f, std::sin(distribVelocityDir(gen)) * 2.f);
+				sphParticle[i].mVelocity = XMFLOAT2((float)std::cos(distribVelocityDir(gen)) * 2.f, (float)std::sin(distribVelocityDir(gen)) * 2.f);
 				sphParticle[i].mLife = 5.f;
 				++sleepCount;
 				if (sleepCount == fireCount)
@@ -117,7 +117,7 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 
 	FlushCommandList(m_commandList);
 
-	mSimulationConstantBuffer.mStructure.time = std::min(1 / 60.f, deltaTime);
+	mSimulationConstantBuffer.mStructure.time = ((deltaTime) < (1 / 60.f) ? deltaTime : (1 / 60.f));
 	mSimulationConstantBuffer.UpdateBuffer();
 }
 

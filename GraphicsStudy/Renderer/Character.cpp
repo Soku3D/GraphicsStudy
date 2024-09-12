@@ -13,6 +13,14 @@ Core::Character::Character()
 	m_delCosine = cos(m_delTheta / 2.f);
 }
 
+size_t Core::Character::GetMeshCount() const
+{
+	if (mStaticMesh != nullptr) {
+		return mStaticMesh->meshCount;
+	}
+	return 0;
+}
+
 void Core::Character::SetRotation(int deltaX, int deltaY) {
 	m_xTheta += deltaY * mCamera->m_aspectRatio * m_delTheta;
 	m_yTheta += deltaX * m_delTheta;
@@ -89,9 +97,9 @@ void Core::Character::Update(float deltaTime)
 
 }
 
-void Core::Character::Render(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
+void Core::Character::Render(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, int index)
 {
-	Actor::Render(deltaTime, commandList);
+	Actor::Render(deltaTime, commandList, index);
 }
 
 void Core::Character::RenderBoundingBox(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)

@@ -14,7 +14,7 @@ namespace Core {
 		
 	public:
 		virtual void Update(float deltaTime);
-		virtual void Render(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
+		virtual void Render(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, int index = 0);
 		virtual void RenderBoundingBox(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 		void RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat);
 		virtual void RotateDirection() {};
@@ -26,7 +26,7 @@ namespace Core {
 		virtual void MoveBackward(float deltaTime){};
 
 		void SetStaticMeshComponent(class StaticMesh* staticMesh);
-		std::wstring GetTexturePath() const;
+		std::wstring GetTexturePath(int index = 0) const;
 		DirectX::SimpleMath::Vector3 GetPosition() const { return mPosition; }
 		void SetPosition(const DirectX::SimpleMath::Vector3& position);
 		void SetForwardDirection(const DirectX::SimpleMath::Vector3& direction);

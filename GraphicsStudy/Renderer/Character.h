@@ -12,7 +12,7 @@ namespace Core {
 
 	public:
 		void Update(float deltaTime) override;
-		void Render(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
+		void Render(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, int index = 0);
 		void RenderBoundingBox(float deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 		void RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat);
 
@@ -24,6 +24,7 @@ namespace Core {
 		void MoveForward(float deltaTime) override;
 		void MoveBackward(float deltaTime) override;
 		
+		size_t GetMeshCount() const;
 		void SetRotation(int deltaX, int deltaY);
 		void SetCameraAspectRatio(float ratio);
 

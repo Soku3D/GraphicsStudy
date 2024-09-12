@@ -85,7 +85,8 @@ void Renderer::D3D12PhysxSimulationApp::Update(float& deltaTime)
 		PlaySoundEffect("Shoting", chracterPos + characterViewDir, 0.3f);
 	}
 
-	gScene->simulate(std::min(deltaTime, 1 / 30.f));
+	float simulationTick = ((deltaTime) < (1 / 60.f) ? deltaTime : (1 / 60.f));;
+	gScene->simulate(simulationTick);
 	gScene->fetchResults(true);
 
 	// gScene->getActors()
@@ -271,8 +272,8 @@ void Renderer::D3D12PhysxSimulationApp::InitScene()
 		Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
 		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
-	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.png", 0);
-	characterMesh->SetTexturePath(L"Soldier_Body_head.png", 1);
+	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 0);
+	characterMesh->SetTexturePath(L"Soldier_Body_head.dds", 1);
 	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
 	characterMesh->SetBoundingBoxHalfLength(1.f);
 	mCharacter->SetStaticMeshComponent(characterMesh);

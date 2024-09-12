@@ -7,19 +7,16 @@ Core::StaticMesh::StaticMesh() :
 }
 
 
-void Core::StaticMesh::Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat)
+void Core::StaticMesh::Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat, int i)
 {
-	for (size_t i = 0; i < mVertexGpu.size(); i++)
-	{
-		commandList->IASetVertexBuffers(0, 1, &mVertexBufferView[i]);
-		commandList->IASetIndexBuffer(&mIndexBufferView[i]);
+	commandList->IASetVertexBuffers(0, 1, &mVertexBufferView[i]);
+	commandList->IASetIndexBuffer(&mIndexBufferView[i]);
 
-		if (bUseModelMat)
-		{
-			commandList->SetGraphicsRootConstantBufferView(1, m_objectConstantBuffer->GetGPUVirtualAddress());
-		}
-		commandList->DrawIndexedInstanced(mIndexCount[i], 1, 0, 0, 0);
+	if (bUseModelMat)
+	{
+		commandList->SetGraphicsRootConstantBufferView(1, m_objectConstantBuffer->GetGPUVirtualAddress());
 	}
+	commandList->DrawIndexedInstanced(mIndexCount[i], 1, 0, 0, 0);
 }
 
 void Core::StaticMesh::RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat)
