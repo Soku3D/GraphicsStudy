@@ -13,7 +13,7 @@ int main() {
         D3D12RayTracingApp = 4
     };
 
-    auto currentApp = 3;
+    auto currentApp = 2;
 
     try
     {
@@ -24,7 +24,7 @@ int main() {
             m_app = new Renderer::D3D12PassApp(1280, 720);
             break;
         case AppType::D3D12SimulationApp:
-            m_app = new Renderer::D3D12SimulationApp(1024, 1024);
+            m_app = new Renderer::D3D12SimulationApp(768, 768);
             break;
         case AppType::D3D12PhysxSimulationApp:
             m_app = new Renderer::D3D12PhysxSimulationApp(1280, 720);

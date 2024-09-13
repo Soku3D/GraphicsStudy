@@ -1,13 +1,5 @@
-struct Particle
-{
-    float3 position;
-    float3 originPosition;
-    float3 color;
-    float2 velocity;
-    float2 originVelocity;
-    float life;
-    float radius;
-};
+#include "Particle.hlsli"
+
 StructuredBuffer<Particle> particles : register(t0);
 struct VSInput
 {

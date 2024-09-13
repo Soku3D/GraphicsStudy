@@ -23,7 +23,7 @@ namespace Renderer {
 		void ParticleSimulation(float& deltaTime);
 		void SPH(float& deltaTime);
 		void SimulationPass(float& deltaTime);
-		void SPHSimulationPass(float& deltaTime);
+		void SPHSimulationPass(float& deltaTime, const std::string& psoName);
 		void PostProcessing(float& deltaTime);
 		void SimulationRenderPass(float& deltaTime);
 		void SPHSimulationRenderPass(float& deltaTime);

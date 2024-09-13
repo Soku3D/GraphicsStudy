@@ -214,6 +214,7 @@
     <ClInclude Include="RootSignature.h" />
     <ClInclude Include="SceneComponent.h" />
     <ClInclude Include="SimpleApp.h" />
+    <ClInclude Include="SimulationHlslCompat.h" />
     <ClInclude Include="StaticMesh.h" />
     <ClInclude Include="SteamOnlineSystem.h" />
     <ClInclude Include="Timer.h" />
@@ -433,6 +434,16 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.3</ShaderModel>
     </FxCompile>
+    <FxCompile Include="SphComputeRhoCS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.3</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+    </FxCompile>
     <FxCompile Include="SphSimulationParticlesCS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.3</ShaderModel>
@@ -474,6 +485,7 @@
     <None Include="GeometryPass.hlsli" />
     <None Include="LightPass.hlsli" />
     <None Include="packages.config" />
+    <None Include="Particle.hlsli" />
     <None Include="RaytracingShaderHelper.hlsli" />
     <None Include="RenderBoundingBoxPass.hlsli" />
     <None Include="SimulationParticles.hlsli" />

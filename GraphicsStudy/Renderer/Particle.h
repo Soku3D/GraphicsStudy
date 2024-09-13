@@ -11,8 +11,11 @@ struct Particle {
 	DirectX::SimpleMath::Vector3 mColor;
 	DirectX::SimpleMath::Vector2 mVelocity;
 	DirectX::SimpleMath::Vector2 mOriginVelocity;
+	DirectX::SimpleMath::Vector3 mPressure;
+	float rho;
 	float mLife;
 	float mRadius;
+
 };
 
 class Particles {

@@ -1,13 +1,4 @@
-struct Particle
-{
-    float3 position;
-    float3 originPosition;
-    float3 color;
-    float2 velocity;
-    float2 originVelocity;
-    float life;
-    float radius;
-};
+#include "Particle.hlsli"
 
 RWStructuredBuffer<Particle> particles : register(u0);
 struct SimulationConstant
@@ -31,7 +22,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
     p.velocity += a.xy * gConstantBuffer.delTime;
     
     
-    float f = 0.8f;
+    float f = 0.5f;
     
     if (p.position.y <= -1.f + p.radius)
     {

@@ -26,7 +26,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	particle.Initialize(100);
 	particle.BuildResources(m_device, m_commandList);
 
-	sphParticle.InitializeSPH(SIMULATION_PARTICLE_SIZE*2);
+	sphParticle.InitializeSPH(SIMULATION_PARTICLE_SIZE);
 	sphParticle.BuildResources(m_device, m_commandList);
 
 	m_commandList->Close();
@@ -66,9 +66,8 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 {
 	D3D12App::Update(deltaTime);
 
-
 	CopyResource(m_commandList, sphParticle.GetReadBack(), sphParticle.GetGpu(),
-		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	sphParticle.CopyToCpu();
 
 	std::random_device rd;
@@ -87,8 +86,9 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 		{
 			if (sphParticle[i].mLife <= 0.f) {
 				sphParticle[i].mPosition = ndcPosition;
-				sphParticle[i].mVelocity = XMFLOAT2((float)std::cos(distribVelocityDir(gen)) * 2.f, (float)std::sin(distribVelocityDir(gen)) * 2.f);
-				sphParticle[i].mLife = 5.f;
+				float theta = distribVelocityDir(gen);;
+				sphParticle[i].mVelocity = XMFLOAT2((float)std::cos(theta) * 2.f, (float)std::sin(theta) * 2.f);
+				sphParticle[i].mLife = 3.f;
 				++sleepCount;
 				if (sleepCount == fireCount)
 					break;
@@ -96,7 +96,7 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 		}
 		std::cout << "sleep particle Count : " << sleepCount << '\n';
 	}
-	/*for (UINT i = 0; i < sphParticle.GetParticleCount(); i++)
+	for (UINT i = 0; i < sphParticle.GetParticleCount(); i++)
 	{
 		int sleepCount = 0;
 		int spawnCount = 100;
@@ -104,12 +104,12 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 		{
 			sphParticle[i].mPosition = sphParticle[i].mOriginPosition;
 			sphParticle[i].mVelocity = sphParticle[i].mOriginVelocity;
-			sphParticle[i].mLife = 5.f;
+			sphParticle[i].mLife = 3.f;
 			++sleepCount;
 			if (sleepCount == spawnCount)
 				break;
 		}
-	}*/
+	}
 	m_commandAllocator->Reset();
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
@@ -128,6 +128,7 @@ void Renderer::D3D12SimulationApp::UpdateGUI(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::Render(float& deltaTime)
 {
+	//std::cout << 1 / deltaTime << ' ';
 	//ParticleSimulation(deltaTime);
 	SPH(deltaTime);
 }
@@ -141,7 +142,8 @@ void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
 {
-	SPHSimulationPass(deltaTime);
+	//SPHSimulationPass(deltaTime, "SphComputeRho");
+	SPHSimulationPass(deltaTime, "SphSimulationCompute");
 	SPHSimulationRenderPass(deltaTime);
 	//PostProcessing(deltaTime);
 	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
@@ -180,10 +182,9 @@ void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
 	PIXEndEvent(m_commandQueue.Get());
 }
 
-
-void Renderer::D3D12SimulationApp::SPHSimulationPass(float& deltaTime)
+void Renderer::D3D12SimulationApp::SPHSimulationPass(float& deltaTime,const std::string& psoName)
 {
-	auto& pso = computePsoList["SphSimulationCompute"];
+	auto& pso = computePsoList[psoName];
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
@@ -210,7 +211,6 @@ void Renderer::D3D12SimulationApp::SPHSimulationPass(float& deltaTime)
 
 	PIXEndEvent(m_commandQueue.Get());
 }
-
 
 void Renderer::D3D12SimulationApp::PostProcessing(float& deltaTime) {
 

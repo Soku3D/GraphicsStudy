@@ -65,9 +65,9 @@ void Renderer::D3D12App::InitSoundEngine()
 	ThrowIfFailed(CoInitializeEx(nullptr, COINIT_MULTITHREADED));
 	m_audioEngine = std::make_unique<DirectX::AudioEngine>(eflags);
 	m_audioEngine->SetReverb(Reverb_ConcertHall);
-	
+
 	m_soundEffects.resize(2);
-	
+
 	auto path = soundBasePath + L"Explosions/media_Explo4.wav";
 	m_soundEffects[0] = std::make_unique<DirectX::SoundEffect>(
 		m_audioEngine.get(),
@@ -285,7 +285,7 @@ void Renderer::D3D12App::OnResize()
 
 	CreateResourceBuffer(m_msaaRenderTarget, m_msaaFormat, true, rtvFlag);
 	CreateResourceBuffer(m_hdrRenderTarget, m_hdrFormat, false, uavFlag);
-	
+
 	UINT copyBufferSize = m_screenWidth * m_screenHeight * 4 * sizeof(uint16_t);
 	m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
@@ -295,7 +295,7 @@ void Renderer::D3D12App::OnResize()
 		nullptr,
 		IID_PPV_ARGS(&imageBuffer));
 
-	/*CreateResourceBuffer(m_copyBuffer, m_hdrFormat, false, D3D12_RESOURCE_FLAG_NONE, 
+	/*CreateResourceBuffer(m_copyBuffer, m_hdrFormat, false, D3D12_RESOURCE_FLAG_NONE,
 		D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST, false);
 	m_hdrRenderTarget->SetName(L"HDR RenderTarget");*/
 	//UINT dataSize = m_screenWidth * m_screenHeight * 4 * sizeof(uint16_t);
@@ -354,7 +354,7 @@ void Renderer::D3D12App::Update(float& deltaTime)
 	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
 	memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
 
-	mCsBuffer.mStructure.time = ((deltaTime) < (1 / 60.f) ?  deltaTime: (1/60.f));
+	mCsBuffer.mStructure.time = ((deltaTime) < (1 / 60.f) ? deltaTime : (1 / 60.f));
 	mCsBuffer.UpdateBuffer();
 
 	for (auto& mesh : m_staticMeshes) {
@@ -602,7 +602,7 @@ void Renderer::D3D12App::CreateCommandObjects()
 	D3D12_COMMAND_QUEUE_DESC cqDesc;
 	ZeroMemory(&cqDesc, sizeof(cqDesc));
 	cqDesc.Type = m_commandType;
-	
+
 	m_device->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&m_commandQueue));
 
 	ThrowIfFailed(m_device->CreateCommandList(
@@ -686,10 +686,10 @@ void Renderer::D3D12App::InitScene()
 
 		m_staticMeshes.push_back(box);*/
 
-	/*auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile_Pbr("box_destruction.fbx", true);
-	std::shared_ptr<Animation::FBX> wallDistructionFbx = std::make_shared<Animation::FBX>();
-	wallDistructionFbx->Initialize(box_destruction, box_destruction_animation, m_device, m_commandList, true, 1.f);
-	m_fbxList.push_back(wallDistructionFbx);*/
+		/*auto [box_destruction, box_destruction_animation] = GeometryGenerator::ReadFromFile_Pbr("box_destruction.fbx", true);
+		std::shared_ptr<Animation::FBX> wallDistructionFbx = std::make_shared<Animation::FBX>();
+		wallDistructionFbx->Initialize(box_destruction, box_destruction_animation, m_device, m_commandList, true, 1.f);
+		m_fbxList.push_back(wallDistructionFbx);*/
 
 	m_cubeMap = std::make_shared<StaticMesh>();
 	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(400.f), m_device, m_commandList);
@@ -875,7 +875,7 @@ void Renderer::D3D12App::CreateCubeMapTextures() {
 				if (fileName.substr(fileName.size() - 8, 4) == L"Brdf") {
 					IsCubeMap = false;
 				}
-				else{
+				else {
 					IsCubeMap = true;
 				}
 				Utility::CreateTextureBuffer(cubeMapTextureBasePath + fileName, m_cubeMaptextureResources[mapIdx], m_cubeMapTextureHeapNSV, m_device, m_commandQueue, m_commandList, mapIdx, m_csuHeapSize, &IsCubeMap);
@@ -885,7 +885,7 @@ void Renderer::D3D12App::CreateCubeMapTextures() {
 		}
 	}
 	std::vector<std::wstring> fileNames(file_count);
-	std::vector<bool> isCubeMapFlags(file_count, true);  
+	std::vector<bool> isCubeMapFlags(file_count, true);
 
 	//if (fs::exists(path) && fs::is_directory(path)) {
 	//	int idx = 0;
@@ -1268,33 +1268,44 @@ void  Renderer::D3D12App::CopyResource(ComPtr<ID3D12GraphicsCommandList>& comman
 
 	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 255, 0), copyResourceEvent);
 
-	D3D12_RESOURCE_BARRIER startBarrierList[2] = {
-		CD3DX12_RESOURCE_BARRIER::Transition(
-			dest,
-			destState,
-			D3D12_RESOURCE_STATE_COPY_DEST),
+	std::vector<D3D12_RESOURCE_BARRIER> startBarrierList;
+	std::vector<D3D12_RESOURCE_BARRIER> endBarrierList;
+	if (destState != D3D12_RESOURCE_STATE_COPY_DEST)
+	{
+		startBarrierList.push_back(
+			CD3DX12_RESOURCE_BARRIER::Transition(
+				dest,
+				destState,
+				D3D12_RESOURCE_STATE_COPY_DEST));
 
-		CD3DX12_RESOURCE_BARRIER::Transition(
-			src,
-			srcState,
-			D3D12_RESOURCE_STATE_COPY_SOURCE)
-	};
-	D3D12_RESOURCE_BARRIER endBarrierList[2] = {
-		CD3DX12_RESOURCE_BARRIER::Transition(
-			src,
-			D3D12_RESOURCE_STATE_COPY_SOURCE,
-			srcState),
+		endBarrierList.push_back(
+			CD3DX12_RESOURCE_BARRIER::Transition(
+				dest,
+				D3D12_RESOURCE_STATE_COPY_DEST,
+				destState));
 
-		CD3DX12_RESOURCE_BARRIER::Transition(
-			dest,
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			destState)
 	};
-	commandList->ResourceBarrier(2, startBarrierList);
+
+	if (srcState != D3D12_RESOURCE_STATE_COPY_SOURCE)
+	{
+
+		startBarrierList.push_back(
+			CD3DX12_RESOURCE_BARRIER::Transition(
+				src,
+				srcState,
+				D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+		endBarrierList.push_back(
+			CD3DX12_RESOURCE_BARRIER::Transition(
+				src,
+				D3D12_RESOURCE_STATE_COPY_SOURCE,
+				srcState));
+	};
+	commandList->ResourceBarrier(startBarrierList.size(), startBarrierList.data());
 
 	commandList->CopyResource(dest, src);
 
-	commandList->ResourceBarrier(2, endBarrierList);
+	commandList->ResourceBarrier(endBarrierList.size(), endBarrierList.data());
 
 
 	ThrowIfFailed(m_commandList->Close());
@@ -1455,7 +1466,7 @@ void Renderer::D3D12App::CreateResourceBuffer(ComPtr<ID3D12Resource>& buffer, DX
 			&optClearRtv,
 			IID_PPV_ARGS(buffer.ReleaseAndGetAddressOf())));
 	}
-	else 
+	else
 	{
 		ThrowIfFailed(m_device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(heapType),
@@ -1515,10 +1526,10 @@ void Renderer::D3D12App::CreateResourceView(ComPtr<ID3D12Resource>& buffer,
 		srvDesc.Texture2D.MipLevels = 1;
 		m_device->CreateShaderResourceView(buffer.Get(), &srvDesc, handle);
 	}
-	
+
 }
 void Renderer::D3D12App::CaptureBufferToPNG() {
-	
+
 	m_commandAllocator->Reset();
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
@@ -1526,7 +1537,7 @@ void Renderer::D3D12App::CaptureBufferToPNG() {
 	UINT64 requiredSize = 0;
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
 	m_device->GetCopyableFootprints(&desc, 0, 1, 0, &footprint, nullptr, nullptr, &requiredSize);
-	
+
 	m_commandList->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
 			HDRRenderTargetBuffer(),
@@ -1542,7 +1553,7 @@ void Renderer::D3D12App::CaptureBufferToPNG() {
 			HDRRenderTargetBuffer(),
 			D3D12_RESOURCE_STATE_COPY_SOURCE,
 			D3D12_RESOURCE_STATE_RENDER_TARGET
-			));
+		));
 
 	m_commandList->Close();
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
@@ -1579,10 +1590,10 @@ void Renderer::D3D12App::CaptureBufferToPNG() {
 	if (t->tm_mon < 9) {
 		ss << '0' << t->tm_mon + 1;
 	}
-	else{
+	else {
 		ss << t->tm_mon + 1;
 	}
-	if (t->tm_mday < 9)	{
+	if (t->tm_mday < 9) {
 		ss << '0' << t->tm_mday;
 	}
 	else {
@@ -1641,7 +1652,7 @@ void Renderer::D3D12App::AddPlayer()
 void Renderer::D3D12App::UpdatePlayer(int index, DirectX::SimpleMath::Vector3& position)
 {
 	mPlayers[index]->UpdateWorldRow(DirectX::XMMatrixTranslation(position.x, position.y, position.z));
-	mPlayers[index]->Update(1/60.f);
+	mPlayers[index]->Update(1 / 60.f);
 }
 
 

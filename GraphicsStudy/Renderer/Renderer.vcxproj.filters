@@ -212,6 +212,9 @@
     <ClInclude Include="Character.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="SimulationHlslCompat.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="TestVS.hlsl" />
@@ -244,6 +247,7 @@
     <FxCompile Include="RenderBoundingBoxPassPS.hlsl" />
     <FxCompile Include="SimulationPostProcessingCS.hlsl" />
     <FxCompile Include="SphSimulationParticlesCS.hlsl" />
+    <FxCompile Include="SphComputeRhoCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />
@@ -254,5 +258,6 @@
     <None Include="RaytracingShaderHelper.hlsli" />
     <None Include="LightPass.hlsli" />
     <None Include="RenderBoundingBoxPass.hlsli" />
+    <None Include="Particle.hlsli" />
   </ItemGroup>
 </Project>

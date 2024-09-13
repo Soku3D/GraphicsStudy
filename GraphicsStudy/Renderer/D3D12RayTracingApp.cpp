@@ -65,7 +65,6 @@ bool Renderer::D3D12RayTracingApp::Initialize()
 	CreateStateObjects();
 	CreateShaderTable();
 
-
 	ThrowIfFailed(m_dxrCommandList->Close());
 	ID3D12CommandList* pCmdLists[] = { m_dxrCommandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(pCmdLists), pCmdLists);

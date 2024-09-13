@@ -35,8 +35,10 @@
 #include "SimulationParticlesGS.h"
 #include "SimulationParticlesPS.h"
 #include "SimulationParticlesCS.h"
-#include "SphSimulationParticlesCS.h"
 #include "SimulationPostProcessingCS.h"
+
+#include "SphSimulationParticlesCS.h"
+#include "SphComputeRhoCS.h"
 
 namespace Renderer {
 	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -171,8 +173,11 @@ namespace Renderer {
 
 		ComputePSO simulationPostProcessingPso("SimulationPostProcessing");
 		ComputePSO simulationComputePso("SimulationCompute");
-		ComputePSO sphSimulationComputePso("SphSimulationCompute");
 		GraphicsPSO simulationRenderPso("SimulationRenderPass");
+
+		ComputePSO sphSimulationComputePso("SphSimulationCompute");
+		ComputePSO sphComputeRhoPso("SphComputeRho");
+
 
 		defaultElement =
 		{
@@ -337,6 +342,9 @@ namespace Renderer {
 		sphSimulationComputePso.SetComputeShader(g_pSphSimulationParticlesCS, sizeof(g_pSphSimulationParticlesCS));
 		sphSimulationComputePso.SetRootSignature(&simulationComputeSignature);
 
+		sphComputeRhoPso.SetComputeShader(g_pSphComputeRhoCS, sizeof(g_pSphComputeRhoCS));
+		sphComputeRhoPso.SetRootSignature(&simulationComputeSignature);
+
 		simulationPostProcessingPso.SetRootSignature(&simulationPostProcessingSignature);
 		simulationPostProcessingPso.SetComputeShader(g_pSimulationPostProcessingCS, sizeof(g_pSimulationPostProcessingCS));
 
@@ -367,6 +375,7 @@ namespace Renderer {
 		computePsoList[simulationPostProcessingPso.GetName()] = simulationPostProcessingPso;
 		
 		computePsoList[sphSimulationComputePso.GetName()] = sphSimulationComputePso;
+		computePsoList[sphComputeRhoPso.GetName()] = sphComputeRhoPso;
 	}
 
 	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device)

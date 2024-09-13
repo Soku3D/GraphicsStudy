@@ -41,7 +41,8 @@ void Particles::InitializeSPH(int numPatricles)
 		particle.mColor = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
 		particle.mPosition = Vector3((float)distribPos(gen), (float)distribPos(gen), 0.f);
 		particle.mOriginPosition = Vector3((float)distribPos(gen), (float)distribPos(gen), 0.f);
-		particle.mRadius = (float)distribRadius(gen);
+		particle.mRadius =0.02f;
+		//particle.mRadius = (float)distribRadius(gen);
 		particle.mVelocity = Vector2((float)distribVeolcity(gen), 0.f);
 		particle.mOriginVelocity = particle.mVelocity;
 		//particle.mLife = 10.f;
@@ -90,7 +91,7 @@ void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Mi
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
-		D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
 		IID_PPV_ARGS(&mReadBack)));
 
