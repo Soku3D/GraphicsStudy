@@ -6,18 +6,20 @@
 #include "d3d12.h"
 
 struct Particle {
-	DirectX::SimpleMath::Vector3 mPosition;
-	DirectX::SimpleMath::Vector3 mOriginPosition;
-	DirectX::SimpleMath::Vector3 mColor;
-	DirectX::SimpleMath::Vector3 mPrevVelocity;
-	DirectX::SimpleMath::Vector3 mCurrVelocity;
-	DirectX::SimpleMath::Vector3 mOriginVelocity;
-	DirectX::SimpleMath::Vector3 mForce;
-	float mPressure;
-	float mRho;
-	float mLife;
-	float mRadius;
-	float mMass;
+	DirectX::SimpleMath::Vector3 position;
+	DirectX::SimpleMath::Vector3 originPosition;
+	DirectX::SimpleMath::Vector3 color;
+	DirectX::SimpleMath::Vector3 velocity;
+	DirectX::SimpleMath::Vector3 originVelocity;
+	DirectX::SimpleMath::Vector3 force;
+	float pressure;
+	float pressureCoeff;
+	float viscosity;
+	float density;
+	float density0;
+	float life;
+	float radius;
+	float mass;
 };
 
 class Particles {

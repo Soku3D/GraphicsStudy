@@ -6,13 +6,13 @@
 #endif
 
 struct Particle {
-	XMFLOAT3 mPosition;
-	XMFLOAT3 mOriginPosition;
-	XMFLOAT3 mColor;
-	XMFLOAT3 mVelocity;
-	XMFLOAT3 mOriginVelocity;
-	float mLife;
-	float mRadius;
+	XMFLOAT3 position;
+	XMFLOAT3 originPosition;
+	XMFLOAT3 color;
+	XMFLOAT3 velocity;
+	XMFLOAT3 originVelocity;
+	float life;
+	float radius;
 };
 
 #endif

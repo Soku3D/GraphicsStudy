@@ -11,7 +11,7 @@ void main(
 	inout TriangleStream<PSInput> output)
 {
     float2 center = input[0].position.xy;
-    float radius = input[0].radius;
+    float radius = input[0].radius / 3.f;
     
     float PIX2 = 3.141592f * 2.f;
     float delTheta = PIX2 / 10.f;

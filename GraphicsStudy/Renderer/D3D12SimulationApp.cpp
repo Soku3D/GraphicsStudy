@@ -3,6 +3,7 @@
 #include <numeric>
 
 #define SIMULATION_PARTICLE_SIZE 768
+#define SPH_SIMULATION_PARTICLE_SIZE SIMULATION_PARTICLE_SIZE * 5
 
 Renderer::D3D12SimulationApp::D3D12SimulationApp(const int& width, const int& height)
 	:D3D12App(width, height)
@@ -27,7 +28,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	particle.Initialize(100);
 	particle.BuildResources(m_device, m_commandList);
 
-	sphParticle.InitializeSPH(SIMULATION_PARTICLE_SIZE);
+	sphParticle.InitializeSPH(SPH_SIMULATION_PARTICLE_SIZE);
 	sphParticle.BuildResources(m_device, m_commandList);
 
 	m_commandList->Close();
@@ -62,38 +63,14 @@ void Renderer::D3D12SimulationApp::OnResize()
 {
 	D3D12App::OnResize();
 }
-static float CubicSpline(const float q) {
-	assert(q >= 0.0f);
 
-	constexpr float coeff = 3.0f / (2.0f * 3.141592f);
-
-	if (q < 1.0f)
-		return coeff * (2.0f / 3.0f - q * q + 0.5f * q * q * q);
-	else if (q < 2.0f)
-		return coeff * pow(2.0f - q, 3.0f) / 6.0f;
-	else // q >= 2.0f
-		return 0.0f;
-}
-static float CubicSplineGrad(const float q) {
-
-	assert(q >= 0.0f);
-
-	constexpr float coeff = 3.0f / (2.0f * 3.141592f);
-
-	if (q < 1.0f)
-		return coeff * (-2.0f * q + 1.5f * q * q);
-	else if (q < 2.0f)
-		return coeff * -0.5f * (2.0f - q) * (2.0f - q);
-	else // q >= 2.0f
-		return 0.0f;
-}
 void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 {
 	using DirectX::SimpleMath::Vector3;
 
 	D3D12App::Update(deltaTime);
 
-	mSimulationConstantBuffer.mStructure.time = 1 / 300.f;
+	mSimulationConstantBuffer.mStructure.time = (deltaTime < 1 / 300.f ? deltaTime : 1 / 300.f);
 	mSimulationConstantBuffer.UpdateBuffer();
 }
 
@@ -338,11 +315,11 @@ void Renderer::D3D12SimulationApp::FireParticles(const int& fireCount)
 		int sleepCount = 0;
 		for (UINT i = 0; i < sphParticle.GetParticleCount(); i++)
 		{
-			if (sphParticle[i].mLife <= 0.f) {
-				sphParticle[i].mPosition = ndcPosition;
+			if (sphParticle[i].life <= 0.f) {
+				sphParticle[i].position = ndcPosition;
 				float theta = (float)distribVelocityDir(gen);;
-				sphParticle[i].mPrevVelocity = XMFLOAT3((float)std::cos(theta) * 2.f, (float)std::sin(theta) * 2.f, 0.f);
-				sphParticle[i].mLife = 3.f;
+				sphParticle[i].velocity = XMFLOAT3((float)std::cos(theta) * 2.f, (float)std::sin(theta) * 2.f, 0.f);
+				sphParticle[i].life = 3.f;
 				++sleepCount;
 				if (sleepCount == fireCount)
 					break;

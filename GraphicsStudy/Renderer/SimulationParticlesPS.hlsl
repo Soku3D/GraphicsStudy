@@ -6,7 +6,7 @@ float smoothstep(float x)
 float4 main(PSInput input) : SV_TARGET
 {
     float x = length(input.position - input.center) / input.radius;
-    float kd = smoothstep(1.f - x) * 100.f * input.radius;
+    float kd = smoothstep(1.f - x);
    // return float4(1, 1, 1, 1);
-    return float4(input.color * kd * min(input.life, 1.f), 1);
+    return float4(input.color * kd , 1);
 }

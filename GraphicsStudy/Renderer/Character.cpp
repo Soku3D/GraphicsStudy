@@ -102,7 +102,7 @@ void Core::Character::Update(float deltaTime)
 	if (mCamera != nullptr) 
 	{
 		mCamera->Update(mPosition, m_xTheta, m_yTheta);
-		//mCamera->SetPositionAndDirection(mPosition + XMFLOAT3(0, 0, -1), XMFLOAT3(0, 0, 1));
+		//mCamera->SetPositionAndDirection(position + XMFLOAT3(0, 0, -1), XMFLOAT3(0, 0, 1));
 	}
 
 }
@@ -143,13 +143,12 @@ void Core::Character::RotateDirection() {
 
 void Core::Character::MoveUp(float deltaTime)
 {
-	/*std::cout << "MoveUp";
-	mPosition += (mVelocity * deltaTime) * mUpDirection;*/
+
 }
 
 void Core::Character::MoveDown(float deltaTime)
 {
-	//mPosition += (mVelocity * deltaTime) * -mUpDirection;
+
 }
 
 void Core::Character::MoveRight(float deltaTime)

@@ -84,7 +84,7 @@ namespace Core {
 
 	DirectX::SimpleMath::Matrix CameraComponent::GetViewMatrix()
 	{
-		//return DirectX::XMMatrixLookAtLH(mPosition, DirectX::SimpleMath::Vector3::Zero , mUpDirection);
+		//return DirectX::XMMatrixLookAtLH(position, DirectX::SimpleMath::Vector3::Zero , mUpDirection);
 		return DirectX::XMMatrixLookToLH(mPosition, mForwardDirection, mUpDirection);
 
 	}

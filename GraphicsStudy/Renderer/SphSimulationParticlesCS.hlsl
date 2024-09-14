@@ -17,36 +17,49 @@ void main(uint3 DTid : SV_DispatchThreadID)
         p.life += gConstantBuffer.delTime;
         if (p.life > 0.f)
         {
-            p.life = 1.f;
+            p.life = 0.5f;
             p.position = p.originPosition;
-            p.currVelocity = p.originVelocity;
-            p.prevVelocity = p.originVelocity;
+            p.velocity = p.originVelocity;
         }
     }
     else
     {
         float3 position = p.position;
     
-        p.currVelocity += (p.force / p.mass) * gConstantBuffer.delTime;
-        p.position += p.currVelocity * gConstantBuffer.delTime;
-        p.prevVelocity = p.currVelocity;
+        p.velocity += (p.force / p.mass) * gConstantBuffer.delTime;
+        p.position += p.velocity * gConstantBuffer.delTime;
     
         float f = 0.5f;
-    
-        if (p.position.y <= -1.f + p.radius)
-        {
-            p.position.y = -1.f + p.radius;
-            p.currVelocity.y *= -f;
-        }
-        if (p.position.x <= -1.f + p.radius || p.position.x >= 1.f - p.radius)
-        {
-            if (p.position.x <= -1.f + p.radius)
-                p.position.x = -1.f + p.radius;
-            if (p.position.x >= 1.f - p.radius)
-                p.position.x = 1.f - p.radius;
         
-            p.currVelocity.x *= -f;
+        float xStart = -0.9f;
+        float xEnd = 0.9f;
+        float yEnd = -0.9f;
+        
+        // 벽면 충돌
+        if (p.position.y <= yEnd)
+        {
+            p.position.y = yEnd;
+            p.velocity.y *= -f;
         }
+        if (p.position.x <= xStart || p.position.x >= xEnd)
+        {
+            if (p.position.x <= xStart)
+                p.position.x = xStart;
+            if (p.position.x >= xEnd)
+                p.position.x = xEnd;
+        
+            p.velocity.x *= -f;
+        }
+        
+        // 속도에 따른 색
+        //if (length(p.velocity) > 0.1f)
+        //{
+        //    p.color = float3(1, 1, 1);
+        //}
+        //else
+        //{
+        //    p.color = float3(0, 0, 1);
+        //}
     }
       
     particles[DTid.x] = p;

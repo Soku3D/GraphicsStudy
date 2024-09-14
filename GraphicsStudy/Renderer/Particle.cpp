@@ -15,11 +15,11 @@ void Particles::Initialize(int numPatricles)
 	for (int i = 0; i < numPatricles; i++)
 	{
 		Particle particle;
-		particle.mColor = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
-		particle.mPosition = Vector3((float)distribPos(gen), (float)distribPos(gen), 0.f);
-		particle.mRadius = (float)distribRadius(gen);
-		particle.mLife = 1.f;
-		particle.mMass = 1.f;
+		particle.color = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
+		particle.position = Vector3((float)distribPos(gen), (float)distribPos(gen), 0.f);
+		particle.radius = (float)distribRadius(gen);
+		particle.life = 1.f;
+		particle.mass = 1.f;
 		mCpu[i] = particle;
 	}
 }
@@ -34,28 +34,32 @@ void Particles::InitializeSPH(int numPatricles)
 	std::uniform_real_distribution<> distribColor(0.f, 1.f);
 	std::uniform_real_distribution<> distribRadius(0.01f, 0.04f);
 	std::uniform_real_distribution<> distribVeolcity(-2.f, -0.3f);
-	std::uniform_real_distribution<> distribLife(-10.f, -1.f);
+	std::uniform_real_distribution<> distribLife(-10.f, 0.f);
 	std::uniform_real_distribution<> randomTheta(-3.14f, 3.14f);
 	mCpu.resize(numPatricles);
 	float radius = 0.06f;
 	for (int i = 0; i < numPatricles; i++)
 	{
 		Particle particle;
-		particle.mColor = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
-		//particle.mColor = Vector3(0.f, 0.f, 0.f);
-		particle.mPosition = Vector3(100.f, 0.f, 0.f);
+		particle.color = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
+		//particle.color = Vector3(0.f, 0.f, 0.f);
+		particle.position = Vector3(100.f, 0.f, 0.f);
 		float theta = randomTheta(gen);
-		particle.mOriginPosition = Vector3(-0.5f + cos(theta) * 0.1f, sin(theta) * 0.1f, 0.f);
-		particle.mRadius = radius;
-		//particle.mRadius = (float)distribRadius(gen);
-		particle.mPrevVelocity = Vector3(2.f, 0.f, 0.f);
-		particle.mCurrVelocity = particle.mPrevVelocity;
-		particle.mOriginVelocity = particle.mCurrVelocity;
-		particle.mForce = Vector3::Zero;
-		particle.mRho = 0.f;
-		particle.mPressure = 0.f;
-		particle.mMass = 1.f;
-		particle.mLife = (float)distribLife(gen);
+		particle.originPosition = Vector3(-0.5f + cos(theta) * 0.1f, sin(theta) * 0.1f, 0.f);
+		particle.radius = radius;
+		particle.velocity = Vector3(1.f, 0.f, 0.f);
+		particle.originVelocity = particle.velocity;
+		particle.force = Vector3::Zero;
+		
+		particle.density = 0.f;
+		particle.pressure = 0.f;
+		particle.mass = 1.f;
+		particle.life = (float)distribLife(gen);
+
+		particle.density0 = 1.f;
+		particle.pressureCoeff = 2.f;
+		particle.viscosity = 0.5f;
+
 		mCpu[i] = particle;
 	}
 }
