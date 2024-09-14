@@ -19,6 +19,7 @@ void Particles::Initialize(int numPatricles)
 		particle.mPosition = Vector3((float)distribPos(gen), (float)distribPos(gen), 0.f);
 		particle.mRadius = (float)distribRadius(gen);
 		particle.mLife = 1.f;
+		particle.mMass = 1.f;
 		mCpu[i] = particle;
 	}
 }
@@ -29,23 +30,31 @@ void Particles::InitializeSPH(int numPatricles)
 
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_real_distribution<> distribPos(-0.08, 0.08f);
+	std::uniform_real_distribution<> distribPos(-0.04, 0.04f);
 	std::uniform_real_distribution<> distribColor(0.f, 1.f);
 	std::uniform_real_distribution<> distribRadius(0.01f, 0.04f);
 	std::uniform_real_distribution<> distribVeolcity(-2.f, -0.3f);
-	std::uniform_real_distribution<> distribLife(0.f, 5.f);
+	std::uniform_real_distribution<> distribLife(-10.f, -1.f);
+	std::uniform_real_distribution<> randomTheta(-3.14f, 3.14f);
 	mCpu.resize(numPatricles);
+	float radius = 0.06f;
 	for (int i = 0; i < numPatricles; i++)
 	{
 		Particle particle;
 		particle.mColor = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
-		particle.mPosition = Vector3((float)distribPos(gen), (float)distribPos(gen), 0.f);
-		particle.mOriginPosition = Vector3((float)distribPos(gen), (float)distribPos(gen), 0.f);
-		particle.mRadius =0.02f;
+		//particle.mColor = Vector3(0.f, 0.f, 0.f);
+		particle.mPosition = Vector3(100.f, 0.f, 0.f);
+		float theta = randomTheta(gen);
+		particle.mOriginPosition = Vector3(-0.5f + cos(theta) * 0.1f, sin(theta) * 0.1f, 0.f);
+		particle.mRadius = radius;
 		//particle.mRadius = (float)distribRadius(gen);
-		particle.mVelocity = Vector2((float)distribVeolcity(gen), 0.f);
-		particle.mOriginVelocity = particle.mVelocity;
-		//particle.mLife = 10.f;
+		particle.mPrevVelocity = Vector3(2.f, 0.f, 0.f);
+		particle.mCurrVelocity = particle.mPrevVelocity;
+		particle.mOriginVelocity = particle.mCurrVelocity;
+		particle.mForce = Vector3::Zero;
+		particle.mRho = 0.f;
+		particle.mPressure = 0.f;
+		particle.mMass = 1.f;
 		particle.mLife = (float)distribLife(gen);
 		mCpu[i] = particle;
 	}

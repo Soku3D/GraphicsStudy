@@ -39,6 +39,7 @@
 
 #include "SphSimulationParticlesCS.h"
 #include "SphComputeRhoCS.h"
+#include "SphComputeForcesCS.h"
 
 namespace Renderer {
 	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -104,6 +105,7 @@ namespace Renderer {
 	D3D12_BLEND_DESC defaultBlender;
 	D3D12_BLEND_DESC alphaBlender;
 	D3D12_BLEND_DESC simulationBlender;
+	D3D12_BLEND_DESC sphSimulationBlender;
 
 	void Initialize(void)
 	{
@@ -177,6 +179,7 @@ namespace Renderer {
 
 		ComputePSO sphSimulationComputePso("SphSimulationCompute");
 		ComputePSO sphComputeRhoPso("SphComputeRho");
+		ComputePSO sphComputeForcesPso("SphComputeForces");
 
 
 		defaultElement =
@@ -224,6 +227,16 @@ namespace Renderer {
 		simulationBlender.RenderTarget[0].SrcBlend= D3D12_BLEND_ONE;
 		simulationBlender.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
 		simulationBlender.RenderTarget[0].BlendOp = D3D12_BLEND_OP_MAX;
+
+		sphSimulationBlender = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+		sphSimulationBlender.RenderTarget[0].BlendEnable = TRUE;
+		sphSimulationBlender.RenderTarget[0].SrcBlend = D3D12_BLEND_BLEND_FACTOR;
+		sphSimulationBlender.RenderTarget[0].DestBlend = D3D12_BLEND_BLEND_FACTOR;
+		sphSimulationBlender.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+		sphSimulationBlender.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+		sphSimulationBlender.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ONE;
+		sphSimulationBlender.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		sphSimulationBlender.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
 		defaultPso.SetVertexShader(g_pTestVS, sizeof(g_pTestVS));
 		defaultPso.SetPixelShader(g_pTestPS, sizeof(g_pTestPS));
@@ -332,9 +345,9 @@ namespace Renderer {
 		simulationRenderPso.SetVertexShader(g_pSimulationParticlesVS, sizeof(g_pSimulationParticlesVS));
 		simulationRenderPso.SetGeometryShader(g_pSimulationParticlesGS, sizeof(g_pSimulationParticlesGS));
 		simulationRenderPso.SetPixelShader(g_pSimulationParticlesPS, sizeof(g_pSimulationParticlesPS));
-		simulationRenderPso.SetRenderTargetFormat(backbufferFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		simulationRenderPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
 		simulationRenderPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
-		simulationRenderPso.SetBlendState(simulationBlender);
+		simulationRenderPso.SetBlendState(sphSimulationBlender);
 
 		simulationComputePso.SetComputeShader(g_pSimulationParticlesCS, sizeof(g_pSimulationParticlesCS));
 		simulationComputePso.SetRootSignature(&simulationComputeSignature);
@@ -344,6 +357,9 @@ namespace Renderer {
 
 		sphComputeRhoPso.SetComputeShader(g_pSphComputeRhoCS, sizeof(g_pSphComputeRhoCS));
 		sphComputeRhoPso.SetRootSignature(&simulationComputeSignature);
+		
+		sphComputeForcesPso.SetComputeShader(g_pSphComputeForcesCS, sizeof(g_pSphComputeForcesCS));
+		sphComputeForcesPso.SetRootSignature(&simulationComputeSignature);
 
 		simulationPostProcessingPso.SetRootSignature(&simulationPostProcessingSignature);
 		simulationPostProcessingPso.SetComputeShader(g_pSimulationPostProcessingCS, sizeof(g_pSimulationPostProcessingCS));
@@ -376,6 +392,7 @@ namespace Renderer {
 		
 		computePsoList[sphSimulationComputePso.GetName()] = sphSimulationComputePso;
 		computePsoList[sphComputeRhoPso.GetName()] = sphComputeRhoPso;
+		computePsoList[sphComputeForcesPso.GetName()] = sphComputeForcesPso;
 	}
 
 	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device)

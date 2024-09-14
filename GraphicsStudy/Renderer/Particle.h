@@ -9,13 +9,15 @@ struct Particle {
 	DirectX::SimpleMath::Vector3 mPosition;
 	DirectX::SimpleMath::Vector3 mOriginPosition;
 	DirectX::SimpleMath::Vector3 mColor;
-	DirectX::SimpleMath::Vector2 mVelocity;
-	DirectX::SimpleMath::Vector2 mOriginVelocity;
-	DirectX::SimpleMath::Vector3 mPressure;
-	float rho;
+	DirectX::SimpleMath::Vector3 mPrevVelocity;
+	DirectX::SimpleMath::Vector3 mCurrVelocity;
+	DirectX::SimpleMath::Vector3 mOriginVelocity;
+	DirectX::SimpleMath::Vector3 mForce;
+	float mPressure;
+	float mRho;
 	float mLife;
 	float mRadius;
-
+	float mMass;
 };
 
 class Particles {
@@ -51,8 +53,10 @@ public:
 	void CopyToGpu(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 	ID3D12Resource* GetGpu() const { return mGpu.Get(); }
 	ID3D12Resource* GetReadBack() const { return mReadBack.Get(); }
-private:
 	std::vector<Particle> mCpu;
+
+private:
+	
 	Microsoft::WRL::ComPtr<ID3D12Resource> mGpu;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mUpload;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mReadBack;

@@ -1,5 +1,6 @@
 #include "D3D12SimulationApp.h"
 #include <random>
+#include <numeric>
 
 #define SIMULATION_PARTICLE_SIZE 768
 
@@ -10,7 +11,7 @@ Renderer::D3D12SimulationApp::D3D12SimulationApp(const int& width, const int& he
 	bUseCubeMapApp = false;
 	bUseGUI = false;
 
-	m_appName =	"SimulationApp";
+	m_appName = "SimulationApp";
 }
 
 bool Renderer::D3D12SimulationApp::Initialize()
@@ -61,63 +62,38 @@ void Renderer::D3D12SimulationApp::OnResize()
 {
 	D3D12App::OnResize();
 }
+static float CubicSpline(const float q) {
+	assert(q >= 0.0f);
 
+	constexpr float coeff = 3.0f / (2.0f * 3.141592f);
+
+	if (q < 1.0f)
+		return coeff * (2.0f / 3.0f - q * q + 0.5f * q * q * q);
+	else if (q < 2.0f)
+		return coeff * pow(2.0f - q, 3.0f) / 6.0f;
+	else // q >= 2.0f
+		return 0.0f;
+}
+static float CubicSplineGrad(const float q) {
+
+	assert(q >= 0.0f);
+
+	constexpr float coeff = 3.0f / (2.0f * 3.141592f);
+
+	if (q < 1.0f)
+		return coeff * (-2.0f * q + 1.5f * q * q);
+	else if (q < 2.0f)
+		return coeff * -0.5f * (2.0f - q) * (2.0f - q);
+	else // q >= 2.0f
+		return 0.0f;
+}
 void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 {
+	using DirectX::SimpleMath::Vector3;
+
 	D3D12App::Update(deltaTime);
 
-	CopyResource(m_commandList, sphParticle.GetReadBack(), sphParticle.GetGpu(),
-		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	sphParticle.CopyToCpu();
-
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	if (fire) {
-		std::uniform_real_distribution<> distribVelocityDir(-3.14f, 3.14f);
-		fire = false;
-		DirectX::SimpleMath::Vector3 ndcPosition = XMFLOAT3((float)mCursorPosition.x / m_screenWidth, (float)mCursorPosition.y / m_screenHeight, 0.f);
-		ndcPosition = ndcPosition * 2.f;
-		ndcPosition -= XMFLOAT3(1.f, 1.f, 0.f);
-		ndcPosition.y *= -1.f;
-		//std::cout << ndcPosition.x << ' ' << ndcPosition.y << ' ';
-		int sleepCount = 0;
-		int fireCount = 200;
-		for (UINT i = 0; i < sphParticle.GetParticleCount(); i++)
-		{
-			if (sphParticle[i].mLife <= 0.f) {
-				sphParticle[i].mPosition = ndcPosition;
-				float theta = distribVelocityDir(gen);;
-				sphParticle[i].mVelocity = XMFLOAT2((float)std::cos(theta) * 2.f, (float)std::sin(theta) * 2.f);
-				sphParticle[i].mLife = 3.f;
-				++sleepCount;
-				if (sleepCount == fireCount)
-					break;
-			}
-		}
-		std::cout << "sleep particle Count : " << sleepCount << '\n';
-	}
-	for (UINT i = 0; i < sphParticle.GetParticleCount(); i++)
-	{
-		int sleepCount = 0;
-		int spawnCount = 100;
-		if (sphParticle[i].mLife <= 0.f) 
-		{
-			sphParticle[i].mPosition = sphParticle[i].mOriginPosition;
-			sphParticle[i].mVelocity = sphParticle[i].mOriginVelocity;
-			sphParticle[i].mLife = 3.f;
-			++sleepCount;
-			if (sleepCount == spawnCount)
-				break;
-		}
-	}
-	m_commandAllocator->Reset();
-	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
-
-	sphParticle.CopyToGpu(m_device, m_commandList);
-
-	FlushCommandList(m_commandList);
-
-	mSimulationConstantBuffer.mStructure.time = ((deltaTime) < (1 / 60.f) ? deltaTime : (1 / 60.f));
+	mSimulationConstantBuffer.mStructure.time = 1 / 300.f;
 	mSimulationConstantBuffer.UpdateBuffer();
 }
 
@@ -142,14 +118,15 @@ void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
 {
-	//SPHSimulationPass(deltaTime, "SphComputeRho");
+	SPHSimulationPass(deltaTime, "SphComputeRho");
+	SPHSimulationPass(deltaTime, "SphComputeForces");
 	SPHSimulationPass(deltaTime, "SphSimulationCompute");
 	SPHSimulationRenderPass(deltaTime);
 	//PostProcessing(deltaTime);
 	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 	D3D12App::PostProcessing(deltaTime);
 	CopyResourceToSwapChain(deltaTime);
-	
+
 }
 
 void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
@@ -159,7 +136,7 @@ void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), simulationPassEvent);
-	
+
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 	ID3D12DescriptorHeap* pHeaps[] = {
 		particle.GetUavHeap()
@@ -172,7 +149,7 @@ void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
 	m_commandList->Dispatch(dispatchX, 1, 1);
 	//m_commandList->ExecuteIndirect(,)
 	ThrowIfFailed(m_commandList->Close());
-	
+
 	ID3D12CommandList* pCmdLists[] = {
 		m_commandList.Get()
 	};
@@ -182,7 +159,7 @@ void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
 	PIXEndEvent(m_commandQueue.Get());
 }
 
-void Renderer::D3D12SimulationApp::SPHSimulationPass(float& deltaTime,const std::string& psoName)
+void Renderer::D3D12SimulationApp::SPHSimulationPass(float& deltaTime, const std::string& psoName)
 {
 	auto& pso = computePsoList[psoName];
 
@@ -271,7 +248,7 @@ void Renderer::D3D12SimulationApp::SimulationRenderPass(float& deltaTime)
 	FLOAT clear[4] = { 0,0,0,0 };
 	//m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clear, 0, nullptr);
 	m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-		1.f,0,0,nullptr);
+		1.f, 0, 0, nullptr);
 	//m_commandList->ClearRenderTargetView(HDRRendertargetView(), clear, 0, nullptr);
 
 	m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
@@ -315,7 +292,7 @@ void Renderer::D3D12SimulationApp::SPHSimulationRenderPass(float& deltaTime)
 	m_commandList->ClearRenderTargetView(HDRRendertargetView(), clear, 0, nullptr);
 
 	m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
-	m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
+	m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), false, nullptr);
 	m_commandList->RSSetViewports(1, &m_viewport);
 	m_commandList->RSSetScissorRects(1, &m_scissorRect);
 
@@ -326,6 +303,8 @@ void Renderer::D3D12SimulationApp::SPHSimulationRenderPass(float& deltaTime)
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetGraphicsRootDescriptorTable(0, sphParticle.GetSrvHandle());
+	const float blendColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	m_commandList->OMSetBlendFactor(blendColor);
 	m_commandList->DrawInstanced(sphParticle.GetParticleCount(), 1, 0, 0);
 	ThrowIfFailed(m_commandList->Close());
 
@@ -341,4 +320,34 @@ void Renderer::D3D12SimulationApp::SPHSimulationRenderPass(float& deltaTime)
 void Renderer::D3D12SimulationApp::RenderGUI(float& deltaTime)
 {
 	D3D12App::RenderGUI(deltaTime);
+}
+
+void Renderer::D3D12SimulationApp::FireParticles(const int& fireCount)
+{
+
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	if (fire) {
+		std::uniform_real_distribution<> distribVelocityDir(-3.14f, 3.14f);
+		fire = false;
+		DirectX::SimpleMath::Vector3 ndcPosition = XMFLOAT3((float)mCursorPosition.x / m_screenWidth, (float)mCursorPosition.y / m_screenHeight, 0.f);
+		ndcPosition = ndcPosition * 2.f;
+		ndcPosition -= XMFLOAT3(1.f, 1.f, 0.f);
+		ndcPosition.y *= -1.f;
+		//std::cout << ndcPosition.x << ' ' << ndcPosition.y << ' ';
+		int sleepCount = 0;
+		for (UINT i = 0; i < sphParticle.GetParticleCount(); i++)
+		{
+			if (sphParticle[i].mLife <= 0.f) {
+				sphParticle[i].mPosition = ndcPosition;
+				float theta = (float)distribVelocityDir(gen);;
+				sphParticle[i].mPrevVelocity = XMFLOAT3((float)std::cos(theta) * 2.f, (float)std::sin(theta) * 2.f, 0.f);
+				sphParticle[i].mLife = 3.f;
+				++sleepCount;
+				if (sleepCount == fireCount)
+					break;
+			}
+		}
+		std::cout << "sleep particle Count : " << sleepCount << '\n';
+	}
 }

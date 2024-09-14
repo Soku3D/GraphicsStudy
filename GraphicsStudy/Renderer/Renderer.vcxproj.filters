@@ -248,6 +248,7 @@
     <FxCompile Include="SimulationPostProcessingCS.hlsl" />
     <FxCompile Include="SphSimulationParticlesCS.hlsl" />
     <FxCompile Include="SphComputeRhoCS.hlsl" />
+    <FxCompile Include="SphComputeForcesCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />

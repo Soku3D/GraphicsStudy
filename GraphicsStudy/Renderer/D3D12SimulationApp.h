@@ -29,6 +29,8 @@ namespace Renderer {
 		void SPHSimulationRenderPass(float& deltaTime);
 		void RenderGUI(float& deltaTime) override;
 
+		void FireParticles(const int& fireCount);
+
 	protected:
 		Particles particle;
 		Particles sphParticle;
