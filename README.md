@@ -18,7 +18,7 @@
 1. Simulation sample
     
     <img src="GraphicsStudy/Renderer/Results/SimulationApp/240905-2056.png" height="200">
-
+    <img src="GraphicsStudy/Renderer/Results/SimulationApp/240914-2159.png" height="200">
 
 
 ### Windows
