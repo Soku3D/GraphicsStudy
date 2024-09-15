@@ -162,10 +162,7 @@ void Network::SteamOnlineSystem::Update()
 				ReadData(clientSteamID, clientData, size);
 				mGameState.clientData[clientSteamID] = clientData;  // 최신 패킷만 저장
 				if (std::find(clientList.begin(), clientList.end(), clientSteamID) == clientList.end()) {
-					clientList.emplace_back(clientSteamID);
-					
-					// 새로운 플레이어 등록
-					//pEngine->AddPlayer();
+					clientList.emplace_back(clientSteamID);			
 					pEngine->addPlayerCount++;
 				}
 			}
@@ -176,7 +173,6 @@ void Network::SteamOnlineSystem::Update()
 					SendData(clientList[i], mGameState);
 				}
 			}
-
 		}
 		else {
 			if (hostID.IsValid()) {
@@ -188,6 +184,7 @@ void Network::SteamOnlineSystem::Update()
 					
 					CSteamID clientSteamID;
 					ReadData(clientSteamID, mGameState, size);
+					std::cout << mGameState.hostData.position.x << ' ';
 					if (std::find(clientList.begin(), clientList.end(), clientSteamID) == clientList.end()) {
 						clientList.emplace_back(clientSteamID);
 
