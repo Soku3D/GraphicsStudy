@@ -145,7 +145,7 @@ namespace Network {
 				boost::archive::text_iarchive ia(iss);
 				ia >> data;
 			}
-			delete buffer;
+			delete[] buffer;
 		}
 	};
 }
