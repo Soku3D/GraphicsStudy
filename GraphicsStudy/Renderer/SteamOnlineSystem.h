@@ -102,7 +102,6 @@ namespace Network {
 		DirectX::SimpleMath::Vector3 GetClientData(int index);
 		void SendGameState(const CSteamID& steamID);
 		void ReadGameState(CSteamID& sender);
-		//void UpdatePosition();
 
 	private:
 		bool isHost = false;
@@ -110,6 +109,7 @@ namespace Network {
 		HSteamNetConnection serverConnection;
 		ISteamNetworkingSockets* networking;
 
+		CSteamID mID;
 		CSteamID hostID;
 		CSteamID hostLobbyID;
 		HSteamListenSocket listenSocket;
