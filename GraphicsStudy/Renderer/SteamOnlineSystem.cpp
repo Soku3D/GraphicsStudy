@@ -159,11 +159,11 @@ void Network::SteamOnlineSystem::Update()
 			PlayerData clientData;
 			while (SteamNetworking()->IsP2PPacketAvailable(&size)) {
 				CSteamID clientSteamID;
-				SteamNetworking()->ReadP2PPacket(&clientData, sizeof(PlayerData), &size, &clientSteamID);
+				ReadData(clientSteamID, clientData, size);
 				mGameState.clientData[clientSteamID] = clientData;  // 최신 패킷만 저장
-
 				if (std::find(clientList.begin(), clientList.end(), clientSteamID) == clientList.end()) {
 					clientList.emplace_back(clientSteamID);
+					
 					// 새로운 플레이어 등록
 					//pEngine->AddPlayer();
 					pEngine->addPlayerCount++;
@@ -173,18 +173,28 @@ void Network::SteamOnlineSystem::Update()
 			{
 				if (clientList[i].IsValid()) {
 					mGameState.hostData = mData;
-					SendGameState(clientList[i]);
+					SendData(clientList[i], mGameState);
 				}
 			}
 
 		}
 		else {
 			if (hostID.IsValid()) {
-				SteamNetworking()->SendP2PPacket(hostID, &mData, sizeof(PlayerData), k_EP2PSendUnreliable);
+				//SteamNetworking()->SendP2PPacket(hostID, &mData, sizeof(PlayerData), k_EP2PSendUnreliable);
+				SendData(hostID, mData);
 
-				CSteamID id;
-				ReadGameState(id);
-				std::cout << mGameState.hostData.position.x << '\n';
+				uint32 size;
+				while (SteamNetworking()->IsP2PPacketAvailable(&size)) {
+					
+					CSteamID clientSteamID;
+					ReadData(clientSteamID, mGameState, size);
+					if (std::find(clientList.begin(), clientList.end(), clientSteamID) == clientList.end()) {
+						clientList.emplace_back(clientSteamID);
+
+						// 새로운 플레이어 등록
+						pEngine->addPlayerCount++;
+					}
+				}
 			}
 			
 		}
@@ -195,35 +205,3 @@ DirectX::SimpleMath::Vector3 Network::SteamOnlineSystem::GetClientData(int index
 	return mGameState.clientData[clientList[index]].position;
 }
 
-
-void Network::SteamOnlineSystem::SendGameState(const CSteamID& steamID) {
-	// GameState를 직렬화
-	std::ostringstream oss;
-	boost::archive::text_oarchive oa(oss);
-	oa << mGameState;
-
-	// 직렬화된 데이터를 문자열로 변환
-	std::string serializedData = oss.str();
-
-	// Steam 네트워크를 통해 직렬화된 데이터 전송
-	SteamNetworking()->SendP2PPacket(steamID, serializedData.c_str(), serializedData.size(), k_EP2PSendReliable);
-}
-
-void Network::SteamOnlineSystem::ReadGameState(CSteamID& sender) {
-	uint32 packetSize;
-	char buffer[4096];
-
-	while (SteamNetworking()->IsP2PPacketAvailable(&packetSize)) {
-		// 패킷 읽기
-		CSteamID remoteSteamID;
-		if (SteamNetworking()->ReadP2PPacket(buffer, sizeof(buffer), &packetSize, &remoteSteamID)) {
-			// 직렬화된 데이터를 문자열로 변환
-			std::string serializedData(buffer, packetSize);
-
-			// 역직렬화
-			std::istringstream iss(serializedData);
-			boost::archive::text_iarchive ia(iss);
-			ia >> mGameState;
-		}
-	}
-}

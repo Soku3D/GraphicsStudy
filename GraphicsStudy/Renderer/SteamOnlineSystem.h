@@ -19,7 +19,7 @@ namespace Network {
 #include "D3D12App.h"
 
 namespace Network {
-	
+
 	struct PlayerData {
 		DirectX::SimpleMath::Vector3 position;
 
@@ -74,7 +74,6 @@ namespace Network {
 		}
 	};
 
-	
 	class SteamOnlineSystem {
 	public:
 		SteamOnlineSystem(class Renderer::D3D12App* engine);
@@ -118,5 +117,35 @@ namespace Network {
 		PlayerData mData = { {0,0,0} };
 
 		class Renderer::D3D12App* pEngine;
+
+		template<typename DataType>
+		void SendData(const CSteamID& steamID, const DataType& data) {
+			// GameState를 직렬화
+			std::ostringstream oss;
+			boost::archive::text_oarchive oa(oss);
+			oa << data;
+
+			// 직렬화된 데이터를 문자열로 변환
+			std::string serializedData = oss.str();
+
+			// Steam 네트워크를 통해 직렬화된 데이터 전송
+			SteamNetworking()->SendP2PPacket(steamID, serializedData.c_str(), serializedData.size(), k_EP2PSendReliable);
+		}
+		template<typename DataType>
+		void ReadData(CSteamID& sender, DataType& data, uint32& packetSize) {
+			char* buffer = new char[packetSize];
+
+			CSteamID remoteSteamID;
+			if (SteamNetworking()->ReadP2PPacket(buffer, packetSize, &packetSize, &remoteSteamID)) {
+				// 직렬화된 데이터를 문자열로 변환
+				std::string serializedData(buffer, packetSize);
+
+				// 역직렬화
+				std::istringstream iss(serializedData);
+				boost::archive::text_iarchive ia(iss);
+				ia >> data;
+			}
+
+		}
 	};
 }
