@@ -165,17 +165,18 @@ void Network::SteamOnlineSystem::Update()
                     if (std::find(clientList.begin(), clientList.end(), clientSteamID) == clientList.end()) {
                         clientList.emplace_back(clientSteamID);
                         // 새로운 플레이어 등록
-                        pEngine->AddPlayer();
+                        //pEngine->AddPlayer();
+                        pEngine->addPlayerCount++;
                     }
                 }
             }
 
-            if (!clientList.empty()) {
+            /*if (!clientList.empty()) {
                 for (size_t i = 0; i < clientList.size(); ++i) 
                 {
                     pEngine->UpdatePlayer((int)i, mGameState.clientData[clientList[i]].position);
                 }
-            }
+            }*/
 
         }
         else {
@@ -184,4 +185,8 @@ void Network::SteamOnlineSystem::Update()
             }
         }
     }
+}
+
+DirectX::SimpleMath::Vector3 Network::SteamOnlineSystem::GetClientData(int index) {
+    return mGameState.clientData[clientList[index]].position;
 }

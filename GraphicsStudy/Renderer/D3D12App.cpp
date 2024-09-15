@@ -1640,18 +1640,18 @@ void Renderer::D3D12App::AddPlayer()
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 
 	std::shared_ptr<Core::StaticMesh> mesh = std::make_shared<Core::StaticMesh>();
-	Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
-
-
+	//mesh->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f), m_device, m_commandList,
+	//		Vector3(0.f, 0.f, 0.f),
+	//		Material(1.f, 1.f, 1.f, 1.f),
+	//		true /*AO*/, true /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
 	mesh->Initialize(soldier, m_device, m_commandList,
 		Vector3(0.f, 0.f, 0.f),
-		Material(1.f, 1.f, 1.f, 0.5f),
+		Material(1.f, 1.f, 1.f, 1.f),
 		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
-
 	mesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 0);
 	mesh->SetTexturePath(L"Soldier_head_Albedo.dds", 1);
 	mesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
-	mesh->SetBoundingBoxHalfLength(1.f);
+	//mesh->SetBoundingBoxHalfLength(1.f);
 	mPlayers.push_back(mesh);
 
 	FlushCommandList(m_commandList);

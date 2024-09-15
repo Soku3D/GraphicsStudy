@@ -118,6 +118,14 @@ void Renderer::D3D12PassApp::OnResize()
 
 void Renderer::D3D12PassApp::Update(float& deltaTime)
 {
+	while (true) {
+		if (addPlayerCount > 0) {
+			addPlayerCount--;
+			AddPlayer();
+		}
+		else
+			break;
+	}
 	if (createSession) {
 		createSession = false;
 		onlineSystem->CreateLobby(4);
@@ -136,6 +144,11 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	//m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
 
 	mCharacter->Update(deltaTime);
+	for (size_t i = 0; i < mPlayers.size(); ++i)
+	{
+		UpdatePlayer((int)i, onlineSystem->GetClientData(i));
+	}
+
 	{
 		// 카메라 고정
 		/*m_passConstantData->ViewMat = m_camera->GetViewMatrix();
@@ -303,7 +316,6 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 		// Render Player
 		RenderCharacter(deltaTime);
 		RenderPlayers(deltaTime);
-
 	}
 
 	ThrowIfFailed(m_commandList->Close());
@@ -654,10 +666,10 @@ void Renderer::D3D12PassApp::RenderCharacter(float& deltaTime) {
 
 void Renderer::D3D12PassApp::RenderPlayers(float& deltaTime) {
 	for (int i = 0; i < mPlayers.size(); ++i) {
-		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
-		for (int j = 0; j < (int)mPlayers[i]->meshCount; j++)
+		for (size_t j = 0; j < mPlayers[i]->meshCount; j++)
 		{
-			if (m_textureMap.count(mPlayers[i]->GetTexturePath(j)) > 0) {
+			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
+			if ((int)m_textureMap.count(mPlayers[i]->GetTexturePath(j)) > 0) {
 				handle.Offset(m_textureMap[mPlayers[i]->GetTexturePath(j)], m_csuHeapSize);
 			}
 			else {
@@ -666,5 +678,6 @@ void Renderer::D3D12PassApp::RenderPlayers(float& deltaTime) {
 			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
 			mPlayers[i]->Render(deltaTime, m_commandList, true, j);
 		}
+		
 	}
 }

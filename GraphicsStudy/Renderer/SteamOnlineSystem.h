@@ -45,6 +45,7 @@ namespace Network {
 		void UpdateData(PlayerData& data);
 
 		void Update();
+		DirectX::SimpleMath::Vector3 GetClientData(int index);
 		//void UpdatePosition();
 
 	private:

@@ -281,6 +281,7 @@ namespace Renderer {
 		
 	public:
 		std::vector<std::shared_ptr<Core::StaticMesh>> mPlayers;
+		int addPlayerCount = 0;
 		void AddPlayer();
 		void UpdatePlayer(int index, DirectX::SimpleMath::Vector3& position);
 
