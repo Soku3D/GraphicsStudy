@@ -175,7 +175,6 @@ void Network::SteamOnlineSystem::Update()
                     mGameState.hostData = mData;
                     SteamNetworking()->SendP2PPacket(clientList[i], &mGameState, sizeof(GameState), k_EP2PSendUnreliable);
                 }
-                pEngine->UpdatePlayer((int)i, mGameState.clientData[clientList[i]].position);
             }
             //if (SteamNetworking()->IsP2PPacketAvailable(&size)) {
             //    // 패킷 송신 후 Client ID & Data 저장
