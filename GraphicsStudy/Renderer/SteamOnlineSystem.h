@@ -37,45 +37,26 @@ namespace Network {
 		PlayerData hostData;
 		std::map<CSteamID, PlayerData> clientData;
 
-		// Boost.Serialization을 위한 저장 함수
+		// Boost.Serialization을 위한 직렬화 함수
 		template<class Archive>
-		void save(Archive& ar, const unsigned int version) const {
-			// hostData 저장
+		void serialize(Archive& ar, const unsigned int version) {
 			ar& hostData;
 
 			// CSteamID를 uint64_t로 변환하여 저장
 			std::map<uint64_t, PlayerData> tempClientData;
-			for (const auto& pair : clientData) {
-				tempClientData[pair.first.ConvertToUint64()] = pair.second;
+			if (Archive::is_saving::value) {
+				for (const auto& pair : clientData) {
+					tempClientData[pair.first.ConvertToUint64()] = pair.second;
+				}
+				ar& tempClientData;
 			}
-
-			// 변환된 맵을 저장
-			ar& tempClientData;
-		}
-		
-
-		// Boost.Serialization을 위한 불러오기 함수
-		template<class Archive>
-		void load(Archive& ar, const unsigned int version) {
-			// hostData 불러오기
-			ar& hostData;
-
-			// uint64_t에서 CSteamID로 변환하여 불러오기
-			std::map<uint64_t, PlayerData> tempClientData;
-			ar& tempClientData;
-
-			// 불러온 후 데이터 갱신
-			std::map<CSteamID, PlayerData> newClientData;
-			for (const auto& pair : tempClientData) {
-				newClientData[CSteamID(pair.first)] = pair.second;
+			else {
+				ar& tempClientData;
+				clientData.clear();
+				for (const auto& pair : tempClientData) {
+					clientData[CSteamID(pair.first)] = pair.second;
+				}
 			}
-			clientData = std::move(newClientData);
-		}
-
-		// 직렬화 함수로 save/load 호출
-		template<class Archive>
-		void serialize(Archive& ar, const unsigned int version) {
-			boost::serialization::split_member(ar, *this, version);
 		}
 	};
 	class SteamOnlineSystem {
