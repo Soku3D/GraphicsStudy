@@ -156,20 +156,26 @@ void Network::SteamOnlineSystem::Update()
         if (isHost) {
             uint32 size;
             PlayerData clientData;
-            if (SteamNetworking()->IsP2PPacketAvailable(&size)) {
+            while (SteamNetworking()->IsP2PPacketAvailable(&size)) {
                 CSteamID clientSteamID;
-                // 패킷 송신 후 Client ID & Data 저장
-                if (SteamNetworking()->ReadP2PPacket(&clientData, sizeof(GameState), &size, &clientSteamID))
-                {
-                    mGameState.clientData[clientSteamID] = clientData;
-                    if (std::find(clientList.begin(), clientList.end(), clientSteamID) == clientList.end()) {
-                        clientList.emplace_back(clientSteamID);
-                        // 새로운 플레이어 등록
-                        //pEngine->AddPlayer();
-                        pEngine->addPlayerCount++;
-                    }
+                SteamNetworking()->ReadP2PPacket(&clientData, sizeof(GameState), &size, &clientSteamID);
+                mGameState.clientData[clientSteamID] = clientData;  // 최신 패킷만 저장
+                
+                if (std::find(clientList.begin(), clientList.end(), clientSteamID) == clientList.end()) {
+                    clientList.emplace_back(clientSteamID);
+                    // 새로운 플레이어 등록
+                    //pEngine->AddPlayer();
+                    pEngine->addPlayerCount++;
                 }
             }
+            //if (SteamNetworking()->IsP2PPacketAvailable(&size)) {
+            //    // 패킷 송신 후 Client ID & Data 저장
+            //    if (SteamNetworking()->ReadP2PPacket(&clientData, sizeof(GameState), &size, &clientSteamID))
+            //    {
+            //        mGameState.clientData[clientSteamID] = clientData;
+            //       
+            //    }
+            //}
 
             /*if (!clientList.empty()) {
                 for (size_t i = 0; i < clientList.size(); ++i) 
