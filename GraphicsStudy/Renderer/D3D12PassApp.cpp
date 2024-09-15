@@ -137,18 +137,26 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	Network::PlayerData data;
 	data.position = mCharacter->GetPosition();
 
-	onlineSystem->UpdateData(data);
-	onlineSystem->Update();
+	static float time = 0.f;
+	time += deltaTime < 1 / 60.f ? deltaTime : 1 / 60.f;
+
+	if(time > 1/30.f)
+	{
+		time = 0.f;
+		onlineSystem->UpdateData(data);
+		onlineSystem->Update();
+		for (size_t i = 0; i < mPlayers.size(); ++i)
+		{
+			UpdatePlayer((int)i, onlineSystem->GetClientData(i));
+		}
+	}
 
 	m_inputHandler->ExicuteCommand(mCharacter.get(), deltaTime, bIsFPSMode);
 	//m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
-
 	mCharacter->Update(deltaTime);
-	for (size_t i = 0; i < mPlayers.size(); ++i)
-	{
-		UpdatePlayer((int)i, onlineSystem->GetClientData(i));
-	}
 
+	
+	
 	{
 		// 카메라 고정
 		/*m_passConstantData->ViewMat = m_camera->GetViewMatrix();
