@@ -1,5 +1,6 @@
 #include "SteamOnlineSystem.h"
-#include <iostream>
+
+
 
 //Network::SteamOnlineSystem::SteamOnlineSystem(Renderer::D3D12App* engine)
 //    :pEngine(engine)
@@ -195,31 +196,34 @@ DirectX::SimpleMath::Vector3 Network::SteamOnlineSystem::GetClientData(int index
     return mGameState.clientData[clientList[index]].position;
 }
 
+
 void Network::SteamOnlineSystem::SendGameState(const CSteamID& steamID) {
-    size_t dataSize = sizeof(mGameState);
-    char* buffer = new char[dataSize];
-    memcpy(buffer, &mGameState, dataSize);
+    // GameState를 직렬화
+    std::ostringstream oss;
+    boost::archive::text_oarchive oa(oss);
+    oa << mGameState;
 
-    // P2P 패킷 전송
-    SteamNetworking()->SendP2PPacket(steamID, buffer, dataSize, k_EP2PSendReliable);
+    // 직렬화된 데이터를 문자열로 변환
+    std::string serializedData = oss.str();
 
-    // 메모리 해제
-    delete[] buffer;
+    // Steam 네트워크를 통해 직렬화된 데이터 전송
+    SteamNetworking()->SendP2PPacket(steamID, serializedData.c_str(), serializedData.size(), k_EP2PSendReliable);
 }
 
 void Network::SteamOnlineSystem::ReadGameState(CSteamID& sender) {
-    uint32_t packetSize;
-    char buffer[1024];
+    uint32 packetSize;
+    char buffer[4096];
     
     while (SteamNetworking()->IsP2PPacketAvailable(&packetSize)) {
         // 패킷 읽기
         CSteamID remoteSteamID;
         if (SteamNetworking()->ReadP2PPacket(buffer, sizeof(buffer), &packetSize, &remoteSteamID)) {
-            // 버퍼의 데이터를 GameState로 변환
-            memcpy(&mGameState, buffer, sizeof(GameState));
+            // 직렬화된 데이터를 문자열로 변환
+            std::string serializedData(buffer, packetSize);
 
-            // 보낸 사람 ID 저장
-            sender = remoteSteamID;
-        }
+            // 역직렬화
+            std::istringstream iss(serializedData);
+            boost::archive::text_iarchive ia(iss);
+            ia >> mGameState;
     }
 }
