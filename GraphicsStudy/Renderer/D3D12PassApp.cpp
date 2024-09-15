@@ -46,7 +46,10 @@ void Renderer::D3D12PassApp::InitScene()
 
 	characterMesh = new Core::StaticMesh();
 	Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
-	auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
+	std::tuple<std::vector<PbrMeshData>, Animation::AnimationData> soldierData;
+	soldierData = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
+	soldier = std::get<0>(soldierData);
+	//auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
 	characterMesh->Initialize(soldier, m_device, m_commandList,
 		Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 0.5f),
@@ -438,13 +441,13 @@ void Renderer::D3D12PassApp::RenderNormalPass(float& deltaTime) {
 			m_commandList->SetGraphicsRootConstantBufferView(0, m_passConstantBuffer->GetGPUVirtualAddress());
 
 			if (bRenderMeshes) {
-				for (int i = 0; i < m_staticMeshes.size(); ++i) {
-					for (int j = 0; j < m_staticMeshes[i]->meshCount; j++) {
+				for (int i = 0; i < (int)m_staticMeshes.size(); ++i) {
+					for (int j = 0; j < (int)m_staticMeshes[i]->meshCount; j++) {
 						m_staticMeshes[i]->RenderNormal(deltaTime, m_commandList, true, j);
 					}
 				}
 			}
-			for (int j = 0; j < mCharacter->GetMeshCount(); j++) {
+			for (int j = 0; j < (int)mCharacter->GetMeshCount(); j++) {
 				mCharacter->RenderNormal(deltaTime, m_commandList, true, j);
 			}
 		}
@@ -618,7 +621,7 @@ void Renderer::D3D12PassApp::RenderStaticMeshes(float& deltaTime) {
 	for (int i = 0; i < m_staticMeshes.size(); ++i) {
 		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
 
-		for (int j = 0; j < m_staticMeshes[i]->meshCount; j++)
+		for (int j = 0; j < (int)m_staticMeshes[i]->meshCount; j++)
 		{
 			if ((int)m_textureMap.count(m_staticMeshes[i]->GetTexturePath(j)) > 0) {
 				handle.Offset(m_textureMap[m_staticMeshes[i]->GetTexturePath(j)], m_csuHeapSize);
@@ -652,7 +655,7 @@ void Renderer::D3D12PassApp::RenderCharacter(float& deltaTime) {
 void Renderer::D3D12PassApp::RenderPlayers(float& deltaTime) {
 	for (int i = 0; i < mPlayers.size(); ++i) {
 		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
-		for (int j = 0; j < mPlayers[i]->meshCount; j++)
+		for (int j = 0; j < (int)mPlayers[i]->meshCount; j++)
 		{
 			if (m_textureMap.count(mPlayers[i]->GetTexturePath(j)) > 0) {
 				handle.Offset(m_textureMap[mPlayers[i]->GetTexturePath(j)], m_csuHeapSize);

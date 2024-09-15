@@ -162,6 +162,8 @@ namespace Renderer {
 		std::vector<std::shared_ptr<Animation::FBX>> m_fbxList;
 
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
+		std::vector<PbrMeshData> soldier;
+		Animation::AnimationData soldierAnimation;
 		
 		std::shared_ptr<Core::StaticMesh> m_cubeMap;
 		std::shared_ptr<Core::StaticMesh> m_screenMesh;

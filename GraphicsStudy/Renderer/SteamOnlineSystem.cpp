@@ -159,7 +159,7 @@ void Network::SteamOnlineSystem::Update()
             if (SteamNetworking()->IsP2PPacketAvailable(&size)) {
                 CSteamID clientSteamID;
                 // 패킷 송신 후 Client ID & Data 저장
-                if (SteamNetworking()->ReadP2PPacket(&clientData, sizeof(PlayerData), &size, &clientSteamID))
+                if (SteamNetworking()->ReadP2PPacket(&clientData, sizeof(GameState), &size, &clientSteamID))
                 {
                     mGameState.clientData[clientSteamID] = clientData;
                     if (std::find(clientList.begin(), clientList.end(), clientSteamID) == clientList.end()) {
@@ -179,7 +179,9 @@ void Network::SteamOnlineSystem::Update()
 
         }
         else {
-            SteamNetworking()->SendP2PPacket(hostID, &mData, sizeof(GameState), k_EP2PSendReliable);
+            if (hostID.IsValid()) {
+                SteamNetworking()->SendP2PPacket(hostID, &mData, sizeof(PlayerData), k_EP2PSendReliable);
+            }
         }
     }
 }

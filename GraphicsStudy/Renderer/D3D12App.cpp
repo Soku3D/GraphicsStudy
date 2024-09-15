@@ -1301,11 +1301,11 @@ void  Renderer::D3D12App::CopyResource(ComPtr<ID3D12GraphicsCommandList>& comman
 				D3D12_RESOURCE_STATE_COPY_SOURCE,
 				srcState));
 	};
-	commandList->ResourceBarrier(startBarrierList.size(), startBarrierList.data());
+	commandList->ResourceBarrier((UINT)startBarrierList.size(), startBarrierList.data());
 
 	commandList->CopyResource(dest, src);
 
-	commandList->ResourceBarrier(endBarrierList.size(), endBarrierList.data());
+	commandList->ResourceBarrier((UINT)endBarrierList.size(), endBarrierList.data());
 
 
 	ThrowIfFailed(m_commandList->Close());
@@ -1641,7 +1641,8 @@ void Renderer::D3D12App::AddPlayer()
 
 	std::shared_ptr<Core::StaticMesh> mesh = std::make_shared<Core::StaticMesh>();
 	Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
-	static auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
+
+
 	mesh->Initialize(soldier, m_device, m_commandList,
 		Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 0.5f),

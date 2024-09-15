@@ -113,7 +113,7 @@ namespace Renderer {
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 				D3D12_HEAP_FLAG_NONE,
 				&CD3DX12_RESOURCE_DESC::Buffer(data.size() * sizeof(V)),
-				D3D12_RESOURCE_STATE_GENERIC_READ,
+				D3D12_RESOURCE_STATE_COMMON,
 				nullptr,
 				IID_PPV_ARGS(&buffer)
 			));
@@ -147,8 +147,12 @@ namespace Renderer {
 			subData.pData = data.data();
 			subData.RowPitch = data.size() * sizeof(V);
 			subData.SlicePitch = subData.RowPitch;
+			D3D12_RESOURCE_BARRIER barriers[] = {
+				CD3DX12_RESOURCE_BARRIER::Transition(gpuBuffer.Get(),D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST),
+				CD3DX12_RESOURCE_BARRIER::Transition(uploadBuffer.Get(),D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_GENERIC_READ),
+			};
+			commandList->ResourceBarrier(2, barriers);
 
-			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(gpuBuffer.Get(),D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST));
 			UpdateSubresources<1>(commandList.Get(), gpuBuffer.Get(), uploadBuffer.Get(), 0, 0, 1, &subData);
 			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(gpuBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
 		}
