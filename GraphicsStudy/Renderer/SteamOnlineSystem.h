@@ -12,6 +12,7 @@ namespace Network {
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/split_member.hpp>
+#include <boost/serialization/version.hpp>
 
 #include <sstream>
 #include <iostream>
@@ -31,7 +32,7 @@ namespace Network {
 			ar& position.z;
 		}
 	};
-
+	
 	struct GameState {
 		PlayerData hostData;
 		std::map<CSteamID, PlayerData> clientData;
@@ -51,6 +52,7 @@ namespace Network {
 			// 변환된 맵을 저장
 			ar& tempClientData;
 		}
+		
 
 		// Boost.Serialization을 위한 불러오기 함수
 		template<class Archive>
@@ -76,7 +78,6 @@ namespace Network {
 			boost::serialization::split_member(ar, *this, version);
 		}
 	};
-
 	class SteamOnlineSystem {
 	public:
 		SteamOnlineSystem(class Renderer::D3D12App* engine);
@@ -160,3 +161,5 @@ namespace Network {
 
 	};
 }
+BOOST_CLASS_VERSION(Network::PlayerData, 1)
+BOOST_CLASS_VERSION(Network::GameState, 1)
