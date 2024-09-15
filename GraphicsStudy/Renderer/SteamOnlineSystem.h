@@ -132,20 +132,31 @@ namespace Network {
 			// Steam 네트워크를 통해 직렬화된 데이터 전송
 			SteamNetworking()->SendP2PPacket(steamID, serializedData.c_str(), serializedData.size(), k_EP2PSendUnreliable);
 		}
+
 		template<typename DataType>
 		void ReadData(CSteamID& sender, DataType& data, uint32& packetSize) {
-			char* buffer = new char[packetSize];
+			if (packetSize == 0) {
+				return; // 패킷 크기가 0인 경우 처리하지 않음
+			}
 
-			if (SteamNetworking()->ReadP2PPacket(buffer, packetSize, &packetSize, &sender)) {
+			std::vector<char> buffer(packetSize);
+
+			if (SteamNetworking()->ReadP2PPacket(buffer.data(), packetSize, &packetSize, &sender)) {
 				// 직렬화된 데이터를 문자열로 변환
-				std::string serializedData(buffer, packetSize);
+				std::string serializedData(buffer.data(), packetSize);
 
 				// 역직렬화
 				std::istringstream iss(serializedData);
-				boost::archive::text_iarchive ia(iss);
-				ia >> data;
+				try {
+					boost::archive::text_iarchive ia(iss);
+					ia >> data;
+				}
+				catch (const boost::archive::archive_exception& e) {
+					std::cerr << "역직렬화 실패: " << e.what() << std::endl;
+					return;
+				}
 			}
-			delete[] buffer;
 		}
+
 	};
 }
