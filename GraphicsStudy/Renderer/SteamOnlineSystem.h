@@ -129,14 +129,13 @@ namespace Network {
 			std::string serializedData = oss.str();
 
 			// Steam 네트워크를 통해 직렬화된 데이터 전송
-			SteamNetworking()->SendP2PPacket(steamID, serializedData.c_str(), serializedData.size(), k_EP2PSendReliable);
+			SteamNetworking()->SendP2PPacket(steamID, serializedData.c_str(), serializedData.size(), k_EP2PSendUnreliable);
 		}
 		template<typename DataType>
 		void ReadData(CSteamID& sender, DataType& data, uint32& packetSize) {
 			char* buffer = new char[packetSize];
 
-			CSteamID remoteSteamID;
-			if (SteamNetworking()->ReadP2PPacket(buffer, packetSize, &packetSize, &remoteSteamID)) {
+			if (SteamNetworking()->ReadP2PPacket(buffer, packetSize, &packetSize, &sender)) {
 				// 직렬화된 데이터를 문자열로 변환
 				std::string serializedData(buffer, packetSize);
 
