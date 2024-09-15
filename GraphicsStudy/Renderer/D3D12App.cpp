@@ -1641,7 +1641,7 @@ void Renderer::D3D12App::AddPlayer()
 
 	std::shared_ptr<Core::StaticMesh> mesh = std::make_shared<Core::StaticMesh>();
 	Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
-	auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
+	static auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
 	mesh->Initialize(soldier, m_device, m_commandList,
 		Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 0.5f),
