@@ -181,7 +181,7 @@ void Network::SteamOnlineSystem::Update()
         }
         else {
             if (hostID.IsValid()) {
-                SteamNetworking()->SendP2PPacket(hostID, &mData, sizeof(PlayerData), k_EP2PSendReliable);
+                SteamNetworking()->SendP2PPacket(hostID, &mData, sizeof(PlayerData), k_EP2PSendUnreliable);
             }
         }
     }

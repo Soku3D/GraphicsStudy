@@ -138,7 +138,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	data.position = mCharacter->GetPosition();
 
 	static float time = 0.f;
-	time += deltaTime < 1 / 60.f ? deltaTime : 1 / 60.f;
+	time += (deltaTime < 1 / 30.f ? deltaTime : 1 / 30.f);
 
 	if(time > 1/30.f)
 	{
