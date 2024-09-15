@@ -173,24 +173,10 @@ void Network::SteamOnlineSystem::Update()
                 if (clientList[i].IsValid()) {
                     // 호스트 데이터
                     mGameState.hostData = mData;
-                    SteamNetworking()->SendP2PPacket(clientList[i], &mGameState, sizeof(GameState), k_EP2PSendUnreliable);
+                    UINT stateSize = sizeof(GameState);
+                    SteamNetworking()->SendP2PPacket(clientList[i], &mGameState.hostData, sizeof(PlayerData), k_EP2PSendUnreliable);
                 }
             }
-            //if (SteamNetworking()->IsP2PPacketAvailable(&size)) {
-            //    // 패킷 송신 후 Client ID & Data 저장
-            //    if (SteamNetworking()->ReadP2PPacket(&clientData, sizeof(GameState), &size, &clientSteamID))
-            //    {
-            //        mGameState.clientData[clientSteamID] = clientData;
-            //       
-            //    }
-            //}
-
-            /*if (!clientList.empty()) {
-                for (size_t i = 0; i < clientList.size(); ++i) 
-                {
-                    pEngine->UpdatePlayer((int)i, mGameState.clientData[clientList[i]].position);
-                }
-            }*/
 
         }
         else {
@@ -201,15 +187,14 @@ void Network::SteamOnlineSystem::Update()
                 GameState gameData;
                 while (SteamNetworking()->IsP2PPacketAvailable(&size)) {
                     CSteamID clientSteamID;
-                    SteamNetworking()->ReadP2PPacket(&gameData, sizeof(GameState), &size, &clientSteamID);
-                    mGameState.hostData = gameData.hostData;  // 최신 패킷만 저장
+                    if (size > sizeof(PlayerData)) {
+                        // 버퍼가 충분하지 않으면 패킷을 무시
+                        size = sizeof(PlayerData);
+                    }
+                    SteamNetworking()->ReadP2PPacket(&gameData, size, &size, &clientSteamID);
 
-                    //if (std::find(clientList.begin(), clientList.end(), clientSteamID) == clientList.end()) {
-                    //    clientList.emplace_back(clientSteamID);
-                    //    // 새로운 플레이어 등록
-                    //    //pEngine->AddPlayer();
-                    //    pEngine->addPlayerCount++;
-                    //}
+                    // 최신 패킷 저장
+                    mGameState.hostData = gameData.hostData;
                 }
             }
             
