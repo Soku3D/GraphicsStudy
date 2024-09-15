@@ -5,6 +5,7 @@
 1. Deferred Shading sample
     
     <img src="GraphicsStudy/Renderer/Results/PassApp/240828-2342.png" height="200">
+    <img src="GraphicsStudy/Renderer/Results/PassApp/240915-1314.png" height="200">
 
 1. Physx Simulation sample
     
