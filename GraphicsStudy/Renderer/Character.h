@@ -32,6 +32,8 @@ namespace Core {
 		DirectX::SimpleMath::Vector3 GetViewDirection();
 		DirectX::SimpleMath::Vector3 GetForwardDirection();
 		DirectX::SimpleMath::Vector3 GetUpDirection();
+		DirectX::SimpleMath::Vector3 GetCameraPosition();
+
 		DirectX::SimpleMath::Vector3 GetPosition();
 
 	protected:

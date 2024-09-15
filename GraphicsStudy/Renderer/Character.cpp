@@ -78,13 +78,18 @@ DirectX::SimpleMath::Vector3 Core::Character::GetUpDirection()
 	return mUpDirection;
 }
 
-DirectX::SimpleMath::Vector3 Core::Character::GetPosition()
+DirectX::SimpleMath::Vector3 Core::Character::GetCameraPosition()
 {
 	if (mCamera != nullptr) {
 		return mCamera->GetPosition();
 	}
 
 	return DirectX::SimpleMath::Vector3();
+}
+
+DirectX::SimpleMath::Vector3 Core::Character::GetPosition()
+{
+	return mPosition;
 }
 
 void Core::Character::Update(float deltaTime)

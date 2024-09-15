@@ -29,7 +29,8 @@ Network::SteamOnlineSystem::SteamOnlineSystem(Renderer::D3D12App* engine)
 
 Network::SteamOnlineSystem::~SteamOnlineSystem()
 {
-    //networking->CloseConnection(connection, 0, nullptr, false);
+    //if(serverConnection != k_HSteamNetConnection_Invalid)
+    networking->CloseConnection(serverConnection, 0, nullptr, false);
     SteamAPI_Shutdown();
 }
 
@@ -163,23 +164,17 @@ void Network::SteamOnlineSystem::Update()
                     mGameState.clientData[clientSteamID] = clientData;
                     if (std::find(clientList.begin(), clientList.end(), clientSteamID) == clientList.end()) {
                         clientList.emplace_back(clientSteamID);
+                        // 새로운 플레이어 등록
                         pEngine->AddPlayer();
                     }
                 }
             }
-            //for (size_t i = 0; i < clientList.size(); i++)
-            //{
-            //    pEngine->
-            //}
+
             if (!clientList.empty()) {
-                for (size_t i = 0; i < clientList.size(); ++i) {
-                   /* std::cout << "Position " << i << " : "
-                        << mGameState.clientData[clientList[i]].position.x << ", "
-                        << mGameState.clientData[clientList[i]].position.y << ", "
-                        << mGameState.clientData[clientList[i]].position.z << " ";*/
+                for (size_t i = 0; i < clientList.size(); ++i) 
+                {
                     pEngine->UpdatePlayer((int)i, mGameState.clientData[clientList[i]].position);
                 }
-                /*std::cout << std::endl;*/
             }
 
         }

@@ -137,12 +137,12 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		// 카메라 고정
 		/*m_passConstantData->ViewMat = m_camera->GetViewMatrix();
 		m_passConstantData->ProjMat = m_camera->GetProjMatrix();
-		m_passConstantData->eyePosition = m_camera->GetPosition();*/
+		m_passConstantData->eyePosition = m_camera->GetCameraPosition();*/
 
 		// 카메라 캐릭터 고정
 		m_passConstantData->ViewMat = mCharacter->GetViewMatrix();
 		m_passConstantData->ProjMat = mCharacter->GetProjMatrix();
-		m_passConstantData->eyePosition = mCharacter->GetPosition();
+		m_passConstantData->eyePosition = mCharacter->GetCameraPosition();
 
 		m_passConstantData->ViewMat = m_passConstantData->ViewMat.Transpose();
 		m_passConstantData->ProjMat = m_passConstantData->ProjMat.Transpose();
