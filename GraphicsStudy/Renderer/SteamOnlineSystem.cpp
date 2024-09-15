@@ -30,7 +30,6 @@ Network::SteamOnlineSystem::SteamOnlineSystem(Renderer::D3D12App* engine)
 Network::SteamOnlineSystem::~SteamOnlineSystem()
 {
     //if(serverConnection != k_HSteamNetConnection_Invalid)
-    networking->CloseConnection(serverConnection, 0, nullptr, false);
     SteamAPI_Shutdown();
 }
 
@@ -171,10 +170,12 @@ void Network::SteamOnlineSystem::Update()
             for (size_t i = 0; i < clientList.size(); ++i)
             {
                 if (clientList[i].IsValid()) {
-                    // 호스트 데이터
+                    //// 호스트 데이터
+                    //mGameState.hostData = mData;
+                    //UINT stateSize = sizeof(GameState);
+                    //SteamNetworking()->SendP2PPacket(clientList[i], &mGameState.hostData, sizeof(PlayerData), k_EP2PSendUnreliable);
                     mGameState.hostData = mData;
-                    UINT stateSize = sizeof(GameState);
-                    SteamNetworking()->SendP2PPacket(clientList[i], &mGameState.hostData, sizeof(PlayerData), k_EP2PSendUnreliable);
+                    SendGameState(clientList[i]);
                 }
             }
 
@@ -182,26 +183,43 @@ void Network::SteamOnlineSystem::Update()
         else {
             if (hostID.IsValid()) {
                 SteamNetworking()->SendP2PPacket(hostID, &mData, sizeof(PlayerData), k_EP2PSendUnreliable);
-
-                uint32 size;
-                GameState gameData;
-                while (SteamNetworking()->IsP2PPacketAvailable(&size)) {
-                    CSteamID clientSteamID;
-                    if (size > sizeof(PlayerData)) {
-                        // 버퍼가 충분하지 않으면 패킷을 무시
-                        size = sizeof(PlayerData);
-                    }
-                    SteamNetworking()->ReadP2PPacket(&gameData, size, &size, &clientSteamID);
-
-                    // 최신 패킷 저장
-                    mGameState.hostData = gameData.hostData;
-                }
             }
-            
+            CSteamID id;
+            ReadGameState(id);
+                        
         }
     }
 }
 
 DirectX::SimpleMath::Vector3 Network::SteamOnlineSystem::GetClientData(int index) {
     return mGameState.clientData[clientList[index]].position;
+}
+
+void Network::SteamOnlineSystem::SendGameState(const CSteamID& steamID) {
+    size_t dataSize = sizeof(mGameState);
+    char* buffer = new char[dataSize];
+    memcpy(buffer, &mGameState, dataSize);
+
+    // P2P 패킷 전송
+    SteamNetworking()->SendP2PPacket(steamID, buffer, dataSize, k_EP2PSendReliable);
+
+    // 메모리 해제
+    delete[] buffer;
+}
+
+void Network::SteamOnlineSystem::ReadGameState(CSteamID& sender) {
+    uint32_t packetSize;
+    char buffer[1024];
+    
+    while (SteamNetworking()->IsP2PPacketAvailable(&packetSize)) {
+        // 패킷 읽기
+        CSteamID remoteSteamID;
+        if (SteamNetworking()->ReadP2PPacket(buffer, sizeof(buffer), &packetSize, &remoteSteamID)) {
+            // 버퍼의 데이터를 GameState로 변환
+            memcpy(&mGameState, buffer, sizeof(GameState));
+
+            // 보낸 사람 ID 저장
+            sender = remoteSteamID;
+        }
+    }
 }

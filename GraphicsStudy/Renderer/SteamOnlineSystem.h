@@ -46,6 +46,8 @@ namespace Network {
 
 		void Update();
 		DirectX::SimpleMath::Vector3 GetClientData(int index);
+		void SendGameState(const CSteamID& steamID);
+		void ReadGameState(CSteamID& sender);
 		//void UpdatePosition();
 
 	private:
