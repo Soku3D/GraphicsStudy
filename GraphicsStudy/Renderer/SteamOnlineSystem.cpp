@@ -198,10 +198,18 @@ void Network::SteamOnlineSystem::Update()
                 SteamNetworking()->SendP2PPacket(hostID, &mData, sizeof(PlayerData), k_EP2PSendUnreliable);
 
                 uint32 size;
-                while (SteamNetworking()->IsP2PPacketAvailable(&size)) 
-                {
-                    SteamNetworking()->ReadP2PPacket(&mGameState, sizeof(GameState), &size, &hostID);
-                    std::cout << mGameState.hostData.position.x << '\n';
+                GameState gameData;
+                while (SteamNetworking()->IsP2PPacketAvailable(&size)) {
+                    CSteamID clientSteamID;
+                    SteamNetworking()->ReadP2PPacket(&gameData, sizeof(GameState), &size, &clientSteamID);
+                    mGameState.hostData = gameData.hostData;  // 최신 패킷만 저장
+
+                    //if (std::find(clientList.begin(), clientList.end(), clientSteamID) == clientList.end()) {
+                    //    clientList.emplace_back(clientSteamID);
+                    //    // 새로운 플레이어 등록
+                    //    //pEngine->AddPlayer();
+                    //    pEngine->addPlayerCount++;
+                    //}
                 }
             }
             
