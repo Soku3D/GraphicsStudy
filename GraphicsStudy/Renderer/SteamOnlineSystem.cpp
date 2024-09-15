@@ -181,10 +181,12 @@ void Network::SteamOnlineSystem::Update()
 		else {
 			if (hostID.IsValid()) {
 				SteamNetworking()->SendP2PPacket(hostID, &mData, sizeof(PlayerData), k_EP2PSendUnreliable);
+
+				CSteamID id;
+				ReadGameState(id);
+				std::cout << mGameState.hostData.position.x << '\n';
 			}
-			CSteamID id;
-			ReadGameState(id);
-			std::cout << mGameState.hostData.position.x << '\n';
+			
 		}
 	}
 }

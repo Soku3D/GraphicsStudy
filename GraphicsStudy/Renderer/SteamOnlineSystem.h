@@ -10,6 +10,8 @@ namespace Network {
 #include <vector>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
+#include <boost/serialization/map.hpp>
+
 #include <sstream>
 #include <iostream>
 
@@ -17,25 +19,10 @@ namespace Network {
 #include "D3D12App.h"
 
 namespace Network {
-
-	//struct PlayerData {
-	//	DirectX::SimpleMath::Vector3 position;
-	//};
-	//struct GameState {
-	//	PlayerData hostData;
-	//	std::map<CSteamID, PlayerData> clientData;
-
-
-	//	template<class Archive>
-	//	void serialize(Archive& ar, const unsigned int version) {
-	//		ar& hostData;
-	//		ar& clientData;
-	//	}
-	//};
+	
 	struct PlayerData {
 		DirectX::SimpleMath::Vector3 position;
 
-		// Boost.Serialization을 위한 직렬화 함수
 		template<class Archive>
 		void serialize(Archive& ar, const unsigned int version) {
 			ar& position.x;
@@ -48,33 +35,46 @@ namespace Network {
 		PlayerData hostData;
 		std::map<CSteamID, PlayerData> clientData;
 
-		// Boost.Serialization을 위한 직렬화/역직렬화 함수
+		// Boost.Serialization을 위한 저장 함수
 		template<class Archive>
-		void serialize(Archive& ar, const unsigned int version) {
+		void save(Archive& ar, const unsigned int version) const {
+			// hostData 저장
 			ar& hostData;
 
-			// 임시 맵을 사용하여 CSteamID -> uint64_t 변환
+			// CSteamID를 uint64_t로 변환하여 저장
 			std::map<uint64_t, PlayerData> tempClientData;
-			if (Archive::is_saving::value) {
-				// 직렬화 시 CSteamID -> uint64_t 변환
-				for (const auto& pair : clientData) {
-					tempClientData[pair.first.ConvertToUint64()] = pair.second;
-				}
+			for (const auto& pair : clientData) {
+				tempClientData[pair.first.ConvertToUint64()] = pair.second;
 			}
 
-			// 변환된 tempClientData를 직렬화 또는 역직렬화
+			// 변환된 맵을 저장
+			ar& tempClientData;
+		}
+
+		// Boost.Serialization을 위한 불러오기 함수
+		template<class Archive>
+		void load(Archive& ar, const unsigned int version) {
+			// hostData 불러오기
+			ar& hostData;
+
+			// uint64_t에서 CSteamID로 변환하여 불러오기
+			std::map<uint64_t, PlayerData> tempClientData;
 			ar& tempClientData;
 
-			if (Archive::is_loading::value) {
-				// 역직렬화 시 uint64_t -> CSteamID 변환
-				clientData.clear();
-				for (const auto& pair : tempClientData) {
-					clientData[CSteamID(pair.first)] = pair.second;
-				}
+			clientData.clear();
+			for (const auto& pair : tempClientData) {
+				clientData[CSteamID(pair.first)] = pair.second;
 			}
+		}
+
+		// 직렬화 함수로 save/load 호출
+		template<class Archive>
+		void serialize(Archive& ar, const unsigned int version) {
+			boost::serialization::split_member(ar, *this, version);
 		}
 	};
 
+	
 	class SteamOnlineSystem {
 	public:
 		SteamOnlineSystem(class Renderer::D3D12App* engine);

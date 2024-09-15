@@ -145,7 +145,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		time = 0.f;
 		onlineSystem->UpdateData(data);
 		onlineSystem->Update();
-		for (size_t i = 0; i < mPlayers.size(); ++i)
+		for (int i = 0; i < (int)mPlayers.size(); ++i)
 		{
 			UpdatePlayer((int)i, onlineSystem->GetClientData(i));
 		}
@@ -658,7 +658,7 @@ void Renderer::D3D12PassApp::RenderStaticMeshes(float& deltaTime) {
 
 void Renderer::D3D12PassApp::RenderCharacter(float& deltaTime) {
 
-	for (int j = 0; j < mCharacter->GetMeshCount(); j++)
+	for (int j = 0; j < (int)mCharacter->GetMeshCount(); j++)
 	{
 		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
 		if ((int)m_textureMap.count(mCharacter->GetTexturePath(j)) > 0) {
@@ -674,7 +674,7 @@ void Renderer::D3D12PassApp::RenderCharacter(float& deltaTime) {
 
 void Renderer::D3D12PassApp::RenderPlayers(float& deltaTime) {
 	for (int i = 0; i < mPlayers.size(); ++i) {
-		for (size_t j = 0; j < mPlayers[i]->meshCount; j++)
+		for (int j = 0; j < (int)mPlayers[i]->meshCount; j++)
 		{
 			CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
 			if ((int)m_textureMap.count(mPlayers[i]->GetTexturePath(j)) > 0) {
