@@ -283,6 +283,12 @@ void Renderer::D3D12SimulationApp::SPHSimulationRenderPass(float& deltaTime)
 	const float blendColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	m_commandList->OMSetBlendFactor(blendColor);
 	m_commandList->DrawInstanced(sphParticle.GetParticleCount(), 1, 0, 0);
+
+	int fps = (int)(1.f / deltaTime);
+	std::wstringstream wss;
+	wss << L"FPS : " << fps;
+	RenderFonts(wss.str(), m_resourceDescriptors, m_spriteBatch, m_font, m_commandList);
+
 	ThrowIfFailed(m_commandList->Close());
 
 	ID3D12CommandList* pCmdLists[] = {
