@@ -11,6 +11,7 @@ namespace Network {
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/serialization/map.hpp>
+#include <boost/serialization/split_member.hpp>
 
 #include <sstream>
 #include <iostream>
@@ -61,10 +62,12 @@ namespace Network {
 			std::map<uint64_t, PlayerData> tempClientData;
 			ar& tempClientData;
 
-			clientData.clear();
+			// 불러온 후 데이터 갱신
+			std::map<CSteamID, PlayerData> newClientData;
 			for (const auto& pair : tempClientData) {
-				clientData[CSteamID(pair.first)] = pair.second;
+				newClientData[CSteamID(pair.first)] = pair.second;
 			}
+			clientData = std::move(newClientData);
 		}
 
 		// 직렬화 함수로 save/load 호출
@@ -99,8 +102,6 @@ namespace Network {
 
 		void Update();
 		DirectX::SimpleMath::Vector3 GetClientData(int index);
-		void SendGameState(const CSteamID& steamID);
-		void ReadGameState(CSteamID& sender);
 
 	private:
 		bool isHost = false;
@@ -144,7 +145,7 @@ namespace Network {
 				boost::archive::text_iarchive ia(iss);
 				ia >> data;
 			}
-
+			delete buffer;
 		}
 	};
 }
