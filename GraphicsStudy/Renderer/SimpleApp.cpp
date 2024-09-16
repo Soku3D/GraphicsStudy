@@ -216,12 +216,10 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 			SetCursorPos(m_fpsModeCursorPos.x, m_fpsModeCursorPos.y);
 		}
 		if (raw.data.mouse.usButtonFlags == RI_MOUSE_LEFT_BUTTON_DOWN) {
+			
 			if (!lMouseButtonClicked) {
 				lMouseButtonClicked = true;
 				fire = true;
-				GetCursorPos(&mCursorPosition);
-				ScreenToClient(hWnd, &mCursorPosition);
-				//std::cout << mCursorPosition.x << ' ';
 			}
 			else {
 				fire = false;

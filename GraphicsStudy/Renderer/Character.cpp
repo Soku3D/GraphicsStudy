@@ -6,7 +6,6 @@ Core::Character::Character()
 	:Actor()
 {
 	mCamera = new CameraComponent();
-	std::cout << "RightDirection : " << mRightDirection.x << ' ' << mRightDirection.y << ' ' << mRightDirection.z << '\n';
 
 	m_delTheta = DirectX::XMConvertToRadians(0.2f);
 	m_delSine = sin(m_delTheta / 2.f);

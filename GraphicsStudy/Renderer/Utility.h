@@ -168,19 +168,27 @@ namespace Renderer {
 		static void CreateBuffer(ComPtr<ID3D12Device5>& deivce, D3D12_HEAP_TYPE heapType, D3D12_HEAP_FLAGS heapFlag, UINT64 buffersize, 
 			D3D12_RESOURCE_FLAGS resourceFlag, D3D12_RESOURCE_STATES resourceState, ComPtr<ID3D12Resource>& buffer);
 
-		static void CreateConstantBuffer(ComPtr<ID3D12Device5>& device, UINT64 buffersize, ComPtr<ID3D12Resource>& buffer, void** pBufferData);
+		static void CreateConstantBuffer(ComPtr<ID3D12Device5>& device, ComPtr<ID3D12GraphicsCommandList>& commandList, UINT64 buffersize, ComPtr<ID3D12Resource>& buffer, void** pBufferData);
 
 		template<typename ConstantStructure>
-		static void CreateConstantBuffer(ComPtr<ID3D12Device5>& device, Core::ConstantBuffer<ConstantStructure>& buffer)
+		static void CreateConstantBuffer(ComPtr<ID3D12Device5>& device, ComPtr<ID3D12GraphicsCommandList>& commandList,
+			Core::ConstantBuffer<ConstantStructure>& buffer)
 		{
 			ThrowIfFailed(
 				device->CreateCommittedResource(
 					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 					D3D12_HEAP_FLAG_NONE,
 					&CD3DX12_RESOURCE_DESC::Buffer(sizeof(ConstantStructure)),
-					D3D12_RESOURCE_STATE_GENERIC_READ,
+					D3D12_RESOURCE_STATE_COMMON,
 					nullptr,
 					IID_PPV_ARGS(buffer.GetAddressOf())));
+
+			commandList->ResourceBarrier(1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(
+					buffer.Get(),
+					D3D12_RESOURCE_STATE_COMMON,
+					D3D12_RESOURCE_STATE_GENERIC_READ
+				));
 
 			CD3DX12_RANGE range(0, 0);
 			ThrowIfFailed(buffer.Get()->Map(0, &range, reinterpret_cast<void**>(buffer.GetData())));

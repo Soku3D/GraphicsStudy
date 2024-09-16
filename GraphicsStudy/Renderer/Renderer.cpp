@@ -40,6 +40,7 @@
 #include "SphSimulationParticlesCS.h"
 #include "SphComputeRhoCS.h"
 #include "SphComputeForcesCS.h"
+#include "StableFluidDynamicsCS.h"
 
 namespace Renderer {
 	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -88,7 +89,8 @@ namespace Renderer {
 	RootSignature simulationComputeSignature;
 	RootSignature simulationSignature;
 	RootSignature simulationPostProcessingSignature;
-	
+	RootSignature cfdSourcingSignature;
+
 	RootSignature raytracingGlobalSignature;
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;
@@ -146,6 +148,7 @@ namespace Renderer {
 		NormalPassSignature.Initialize(2);
 		
 		simulationComputeSignature.InitializeUAV(1, 1, 0, nullptr);
+		cfdSourcingSignature.InitializeUAV(1, 1, 0, nullptr);
 		simulationSignature.Initialize(1, 0, 0, nullptr);
 		simulationPostProcessingSignature.InitializeUAV(1, 1, 0, nullptr);
 
@@ -180,6 +183,7 @@ namespace Renderer {
 		ComputePSO sphSimulationComputePso("SphSimulationCompute");
 		ComputePSO sphComputeRhoPso("SphComputeRho");
 		ComputePSO sphComputeForcesPso("SphComputeForces");
+		ComputePSO CFDSourcingPso("CFDSourcing");
 
 
 		defaultElement =
@@ -364,6 +368,9 @@ namespace Renderer {
 		simulationPostProcessingPso.SetRootSignature(&simulationPostProcessingSignature);
 		simulationPostProcessingPso.SetComputeShader(g_pSimulationPostProcessingCS, sizeof(g_pSimulationPostProcessingCS));
 
+		CFDSourcingPso.SetComputeShader(g_pStableFluidDynamicsCS, sizeof(g_pStableFluidDynamicsCS));
+		CFDSourcingPso.SetRootSignature(&cfdSourcingSignature);
+
 		modePsoLists[defaultPso.GetName()] = defaultPso;
 		modePsoLists[wirePso.GetName()] = wirePso;
 		modePsoLists[msaaPso.GetName()] = msaaPso;
@@ -393,6 +400,7 @@ namespace Renderer {
 		computePsoList[sphSimulationComputePso.GetName()] = sphSimulationComputePso;
 		computePsoList[sphComputeRhoPso.GetName()] = sphComputeRhoPso;
 		computePsoList[sphComputeForcesPso.GetName()] = sphComputeForcesPso;
+		computePsoList[CFDSourcingPso.GetName()] = CFDSourcingPso;
 	}
 
 	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
@@ -407,7 +415,7 @@ namespace Renderer {
 		simulationComputeSignature.Finalize(device);
 		simulationSignature.Finalize(device);
 		simulationPostProcessingSignature.Finalize(device);
-
+		cfdSourcingSignature.Finalize(device);
 		raytracingGlobalSignature.Finalize(device);
 
 		for (auto& pso : modePsoLists) {

@@ -76,13 +76,15 @@ void Renderer::D3D12PhysxSimulationApp::OnResize()
 void Renderer::D3D12PhysxSimulationApp::Update(float& deltaTime)
 {
 	if (fire) {
+
 		auto chracterPos = mCharacter->GetPosition();
 		auto characterViewDir = mCharacter->GetViewDirection();
-		CreateDynamicSphere(chracterPos, characterViewDir, 100);
+		DirectX::SimpleMath::Vector3 spawnPosition = chracterPos + XMFLOAT3(0.f, 0.5f, 0.f);
+		CreateDynamicSphere(spawnPosition, characterViewDir, 100);
 
 		fire = false;
 		//std::cout << "Fire!";
-		PlaySoundEffect("Shoting", chracterPos + characterViewDir, 0.3f);
+		PlaySoundEffect("Shoting", spawnPosition, 0.3f);
 	}
 
 	float simulationTick = ((deltaTime) < (1 / 60.f) ? deltaTime : (1 / 60.f));;
@@ -277,7 +279,7 @@ void Renderer::D3D12PhysxSimulationApp::InitScene()
 	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
 	characterMesh->SetBoundingBoxHalfLength(1.f);
 	mCharacter->SetStaticMeshComponent(characterMesh);
-	mCharacter->SetPosition(XMFLOAT3(0, 0.4f, 0));
+	mCharacter->SetPosition(XMFLOAT3(1.3f, 0.45f, -2.f));
 	mCharacter->SetVelocity(3.f);
 }
 

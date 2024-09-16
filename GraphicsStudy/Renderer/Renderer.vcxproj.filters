@@ -102,6 +102,9 @@
     <ClCompile Include="Character.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="StableFluids.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3D12App.h">
@@ -218,6 +221,9 @@
     <ClInclude Include="GameState.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="StableFluids.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="TestVS.hlsl" />
@@ -252,6 +258,7 @@
     <FxCompile Include="SphSimulationParticlesCS.hlsl" />
     <FxCompile Include="SphComputeRhoCS.hlsl" />
     <FxCompile Include="SphComputeForcesCS.hlsl" />
+    <FxCompile Include="StableFluidDynamicsCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />
@@ -263,5 +270,6 @@
     <None Include="LightPass.hlsli" />
     <None Include="RenderBoundingBoxPass.hlsli" />
     <None Include="Particle.hlsli" />
+    <None Include="CFD.hlsli" />
   </ItemGroup>
 </Project>

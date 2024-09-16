@@ -105,7 +105,8 @@ bool Renderer::D3D12App::Initialize()
 		InitScene();
 	}
 	CreateFontFromFile(L"Fonts/default.spritefont", m_font, m_spriteBatch, m_resourceDescriptors, false, m_geometryPassFormat, m_depthStencilFormat);
-	CreateFontFromFile(L"Fonts/default.spritefont", m_msaaFont, m_msaaSpriteBatch, m_msaaResourceDescriptors, true, m_geometryPassFormat, m_depthStencilFormat);
+	CreateFontFromFile(L"Fonts/default.spritefont", m_fontHDR, m_spriteBatchHDR, m_hdrResourceDescriptors, false, m_hdrFormat, m_depthStencilFormat);
+	CreateFontFromFile(L"Fonts/default.spritefont", m_msaaFont, m_msaaSpriteBatch, m_msaaResourceDescriptors, true, m_hdrFormat, m_depthStencilFormat);
 
 	ThrowIfFailed(m_commandList->Close());
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
@@ -747,7 +748,7 @@ void Renderer::D3D12App::CreateConstantBuffer()
 
 	ThrowIfFailed(m_ligthPassConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pLPCDataBegin)));
 
-	Utility::CreateConstantBuffer(m_device, mCsBuffer);
+	Utility::CreateConstantBuffer(m_device, m_commandList, mCsBuffer);
 
 }
 

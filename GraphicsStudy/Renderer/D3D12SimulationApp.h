@@ -3,7 +3,7 @@
 #include "D3D12App.h"
 #include "Renderer.h"
 #include "Particle.h"
-
+#include "StableFluids.h"
 
 namespace Renderer {
 
@@ -22,20 +22,27 @@ namespace Renderer {
 		void Render(float& deltaTime) override;
 		void ParticleSimulation(float& deltaTime);
 		void SPH(float& deltaTime);
+		void CFD(float& deltaTime);
 		void SimulationPass(float& deltaTime);
 		void SPHSimulationPass(float& deltaTime, const std::string& psoName);
 		void PostProcessing(float& deltaTime);
 		void SimulationRenderPass(float& deltaTime);
 		void SPHSimulationRenderPass(float& deltaTime);
+		void CFDPass(float& deltaTime, const std::string& psoName);
 		void RenderGUI(float& deltaTime) override;
 
 		void FireParticles(const int& fireCount);
 
+		void CopyDensityToSwapChain(float& deltaTime);
+
 	protected:
 		Particles particle;
 		Particles sphParticle;
+		StableFluids stableFluids;
 		Core::ConstantBuffer<SimulationCSConstantData> mSimulationConstantBuffer;
+		Core::ConstantBuffer<CFDConstantData> mCFDConstantBuffer;
 
+		std::vector<XMFLOAT3> colorLists;
 
 		const wchar_t* simulationRenderPassEvent = L"Simulation Render Pass ";
 		const wchar_t* sphSimulationRenderPassEvent = L"SPH Simulation Render Pass ";

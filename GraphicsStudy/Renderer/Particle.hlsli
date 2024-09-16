@@ -58,7 +58,8 @@ float3 Del(float3 xij, float rhoi, float rhoj, float3 Ai, float3 Aj, float h, fl
 {
     float q = (dist * 2.f) / h;
     
-    return (xij / dist) * (rhoi * m * (Ai / pow(rhoi, 2.f) + Aj / pow(rhoj, 2.f)) * DelKernel(q));
+    //return (xij / dist) * (rhoi * m * (Ai / pow(rhoi, 2.f) + Aj / pow(rhoj, 2.f)) * DelKernel(q));
+    return (xij / dist) * (m / rhoj * Aj * DelKernel(q));
 }
 
 float3 LaplaceOperator(float3 xij, float rhoi, float rhoj, float3 Ai, float3 Aj, float h, float m, float dist)
@@ -66,9 +67,10 @@ float3 LaplaceOperator(float3 xij, float rhoi, float rhoj, float3 Ai, float3 Aj,
     float3 Aij = Ai - Aj;
 
     float q = (dist * 2.f) / h;
-   
-    return Aij * 2.f * (m / rhoj) * ((dot(xij, xij / dist) * DelKernel(q)) / (dot(xij, xij) + 0.01 * pow(h, 2.f)));
-
+    float d = 2.f;
+    return 2 * (d + 2) * (m / rhoj) * (dot(Aij, xij) / (dot(xij, xij) + 0.01f * h * h)) * (xij / dist) * DelKernel(q);
+    
+    //return Aij * 2.f * (m / rhoj) * ((dot(xij, xij / dist) * DelKernel(q)) / (dot(xij, xij) + 0.01 * pow(h, 2.f)));
 }
 
 float ComputeWeight(float3 xij, float h)

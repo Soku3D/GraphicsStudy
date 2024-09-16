@@ -20,16 +20,28 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	if (!D3D12App::Initialize())
 		return false;
 
+	colorLists = {
+		XMFLOAT3(1.f,0.f,0.f),
+		XMFLOAT3(0.f,1.f,0.f),
+		XMFLOAT3(0.f,0.f,1.f),
+		XMFLOAT3(1.f,1.f,0.f),
+		XMFLOAT3(1.f,1.f,1.f),
+		XMFLOAT3(0.f,1.f,1.f),
+	};
+
 	m_commandAllocator->Reset();
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
-	Utility::CreateConstantBuffer(m_device, mSimulationConstantBuffer);
+	Utility::CreateConstantBuffer(m_device, m_commandList, mSimulationConstantBuffer);
+	Utility::CreateConstantBuffer(m_device, m_commandList, mCFDConstantBuffer);
 
 	particle.Initialize(100);
 	particle.BuildResources(m_device, m_commandList);
 
 	sphParticle.InitializeSPH(SPH_SIMULATION_PARTICLE_SIZE);
 	sphParticle.BuildResources(m_device, m_commandList);
+
+	stableFluids.Initialize();
 
 	m_commandList->Close();
 	ID3D12CommandList* pCmdLists[] = {
@@ -62,6 +74,16 @@ bool Renderer::D3D12SimulationApp::InitDirectX()
 void Renderer::D3D12SimulationApp::OnResize()
 {
 	D3D12App::OnResize();
+
+	if (m_device == nullptr)
+		return;
+
+	FlushCommandQueue();
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
+
+	stableFluids.BuildResources(m_device, m_commandList, m_screenWidth, m_screenHeight, m_backbufferFormat);
+
+	FlushCommandList(m_commandList);
 }
 
 void Renderer::D3D12SimulationApp::Update(float& deltaTime)
@@ -72,6 +94,26 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 
 	mSimulationConstantBuffer.mStructure.time = (deltaTime < 1 / 300.f ? deltaTime : 1 / 300.f);
 	mSimulationConstantBuffer.UpdateBuffer();
+
+	static int colorIndex = 0;
+	
+	mCFDConstantBuffer.mStructure.color = colorLists[colorIndex];
+	if (lMouseButtonClicked) {
+		GetCursorPos(&mCursorPosition);
+		ScreenToClient(m_mainWnd, &mCursorPosition);
+		if (fire) {
+			colorIndex = (colorIndex + 1) % colorLists.size();
+			fire = false;
+		}
+		mCFDConstantBuffer.mStructure.i = mCursorPosition.x;
+		mCFDConstantBuffer.mStructure.j = mCursorPosition.y;
+	}
+	else {
+		mCFDConstantBuffer.mStructure.i = -1;
+		mCFDConstantBuffer.mStructure.j = -1;
+	}
+	mCFDConstantBuffer.UpdateBuffer();
+
 }
 
 void Renderer::D3D12SimulationApp::UpdateGUI(float& deltaTime)
@@ -81,16 +123,17 @@ void Renderer::D3D12SimulationApp::UpdateGUI(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::Render(float& deltaTime)
 {
-	//std::cout << 1 / deltaTime << ' ';
 	//ParticleSimulation(deltaTime);
-	SPH(deltaTime);
+	//SPH(deltaTime);
+	CFD(deltaTime);
 }
 void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
 {
 	SimulationPass(deltaTime);
 	SimulationRenderPass(deltaTime);
 	PostProcessing(deltaTime);
-	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	CopyResourceToSwapChain(deltaTime);
 }
 
 void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
@@ -104,6 +147,11 @@ void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
 	D3D12App::PostProcessing(deltaTime);
 	CopyResourceToSwapChain(deltaTime);
 
+}
+void Renderer::D3D12SimulationApp::CFD(float& deltaTime)
+{
+	CFDPass(deltaTime, "CFDSourcing");
+	CopyResource(m_commandList, CurrentBackBuffer(), stableFluids.GetDensityResource(),D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 }
 
 void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
@@ -229,7 +277,7 @@ void Renderer::D3D12SimulationApp::SimulationRenderPass(float& deltaTime)
 	//m_commandList->ClearRenderTargetView(HDRRendertargetView(), clear, 0, nullptr);
 
 	m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
-	m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
+	m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), false, nullptr);
 	m_commandList->RSSetViewports(1, &m_viewport);
 	m_commandList->RSSetScissorRects(1, &m_scissorRect);
 
@@ -287,7 +335,7 @@ void Renderer::D3D12SimulationApp::SPHSimulationRenderPass(float& deltaTime)
 	int fps = (int)(1.f / deltaTime);
 	std::wstringstream wss;
 	wss << L"FPS : " << fps;
-	RenderFonts(wss.str(), m_resourceDescriptors, m_spriteBatch, m_font, m_commandList);
+	RenderFonts(wss.str(), m_hdrResourceDescriptors, m_spriteBatchHDR, m_fontHDR, m_commandList);
 
 	ThrowIfFailed(m_commandList->Close());
 
@@ -300,6 +348,33 @@ void Renderer::D3D12SimulationApp::SPHSimulationRenderPass(float& deltaTime)
 	PIXEndEvent(m_commandQueue.Get());
 }
 
+void Renderer::D3D12SimulationApp::CFDPass(float& deltaTime, const std::string& psoName)
+{
+	auto& pso = computePsoList[psoName];
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), simulationPassEvent);
+
+	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
+	ID3D12DescriptorHeap* pHeaps[] = {
+		stableFluids.GetUavHeap()
+	};
+	m_commandList->SetDescriptorHeaps(1, pHeaps);
+	m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetUavHandle());
+	m_commandList->SetComputeRootConstantBufferView(1, mCFDConstantBuffer.GetGpuAddress());
+	m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
+
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* pCmdLists[] = {
+		m_commandList.Get()
+	};
+	m_commandQueue->ExecuteCommandLists(1, pCmdLists);
+	FlushCommandQueue();
+
+	PIXEndEvent(m_commandQueue.Get());
+}
 void Renderer::D3D12SimulationApp::RenderGUI(float& deltaTime)
 {
 	D3D12App::RenderGUI(deltaTime);
@@ -311,6 +386,8 @@ void Renderer::D3D12SimulationApp::FireParticles(const int& fireCount)
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	if (fire) {
+		GetCursorPos(&mCursorPosition);
+		ScreenToClient(m_mainWnd, &mCursorPosition);
 		std::uniform_real_distribution<> distribVelocityDir(-3.14f, 3.14f);
 		fire = false;
 		DirectX::SimpleMath::Vector3 ndcPosition = XMFLOAT3((float)mCursorPosition.x / m_screenWidth, (float)mCursorPosition.y / m_screenHeight, 0.f);
@@ -333,4 +410,8 @@ void Renderer::D3D12SimulationApp::FireParticles(const int& fireCount)
 		}
 		std::cout << "sleep particle Count : " << sleepCount << '\n';
 	}
+}
+
+void Renderer::D3D12SimulationApp::CopyDensityToSwapChain(float& deltaTime) {
+	
 }

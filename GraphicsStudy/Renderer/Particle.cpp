@@ -10,7 +10,7 @@ void Particles::Initialize(int numPatricles)
 	std::uniform_real_distribution<> distribPos(-1.3f, 1.3f);
 	std::uniform_real_distribution<> distribColor(0.f, 1.f);
 	std::uniform_real_distribution<> distribRadius(0.01f, 0.04f);
-	
+
 	mCpu.resize(numPatricles);
 	for (int i = 0; i < numPatricles; i++)
 	{
@@ -50,7 +50,7 @@ void Particles::InitializeSPH(int numPatricles)
 		particle.velocity = Vector3(1.f, 0.f, 0.f);
 		particle.originVelocity = particle.velocity;
 		particle.force = Vector3::Zero;
-		
+
 		particle.density = 0.f;
 		particle.pressure = 0.f;
 		particle.mass = 1.f;
@@ -96,7 +96,7 @@ void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Mi
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
+		D3D12_RESOURCE_STATE_COMMON,
 		nullptr,
 		IID_PPV_ARGS(&mUpload)));
 
@@ -113,14 +113,22 @@ void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Mi
 	subResourceData.RowPitch = bufferSize;
 	subResourceData.SlicePitch = bufferSize;
 
-	commandList->ResourceBarrier(1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(
-			mGpu.Get(), 
-			D3D12_RESOURCE_STATE_COMMON, 
-			D3D12_RESOURCE_STATE_COPY_DEST));
+	D3D12_RESOURCE_BARRIER barriers[] = {
+		CD3DX12_RESOURCE_BARRIER::Transition(
+			mGpu.Get(),
+			D3D12_RESOURCE_STATE_COMMON,
+			D3D12_RESOURCE_STATE_COPY_DEST),
+
+		CD3DX12_RESOURCE_BARRIER::Transition(
+			mUpload.Get(),
+			D3D12_RESOURCE_STATE_COMMON,
+			D3D12_RESOURCE_STATE_GENERIC_READ)
+	};
+
+	commandList->ResourceBarrier(2,	barriers);
 
 	UpdateSubresources(commandList.Get(), mGpu.Get(), mUpload.Get(), 0, 0, 1, &subResourceData);
-	
+
 	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 		mGpu.Get(),
 		D3D12_RESOURCE_STATE_COPY_DEST,
@@ -136,7 +144,7 @@ void Particles::BuildDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device, 
 	Renderer::Utility::CreateDescriptorHeap(device, m_uavHeap, Renderer::DescriptorType::UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
-	
+
 	SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	SRVDesc.Buffer.NumElements = (UINT)mCpu.size();
 	SRVDesc.Buffer.FirstElement = 0;
@@ -169,7 +177,7 @@ void Particles::CopyToGpu(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microso
 	subResourceData.pData = mCpu.data();
 	subResourceData.RowPitch = bufferSize;
 	subResourceData.SlicePitch = bufferSize;
-	
+
 	commandList->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
 			mGpu.Get(),

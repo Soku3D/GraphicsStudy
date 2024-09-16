@@ -371,7 +371,7 @@ void Renderer::D3D12RayTracingApp::InitializeViews() {
 		destHandle.Offset(indicesBufferCount, m_csuHeapSize);
 		m_device->CopyDescriptorsSimple(textureBufferCount, destHandle, srvTextureHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
-	for (size_t i = 0; i < mCharacter->GetMeshCount(); i++)
+	for (int i = 0; i < (int)mCharacter->GetMeshCount(); i++)
 	{
 		Utility::CreateDescriptorHeap(m_device, mChracterRaytracingHeaps[i], DescriptorType::SRV, srvCount, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 		CD3DX12_CPU_DESCRIPTOR_HANDLE srvTextureHandle(m_textureHeapNSV->GetCPUDescriptorHandleForHeapStart());
@@ -418,7 +418,7 @@ void Renderer::D3D12RayTracingApp::CreateConstantBuffer()
 	ThrowIfFailed(m_sceneCB->Map(0, &range, reinterpret_cast<void**>(&pSceneBegin)));
 	memcpy(pSceneBegin, &m_sceneCBData, sizeof(RaytraingSceneConstantData));
 
-	Utility::CreateConstantBuffer(m_device, mCsBuffer);
+	Utility::CreateConstantBuffer(m_device, m_commandList, mCsBuffer);
 }
 
 bool Renderer::D3D12RayTracingApp::InitDirectX()
