@@ -33,4 +33,5 @@ vcpkg install fp16:x64-windows glm:x64-windows
 vcpkg install imgui[core,dx11-binding,dx12-binding,win32-binding]:x64-windows
 vcpkg install assimp:x64-windows
 vcpkg install boost-serialization:x64-windows
+vcpkg install physx:x64-windows
 ``` 
