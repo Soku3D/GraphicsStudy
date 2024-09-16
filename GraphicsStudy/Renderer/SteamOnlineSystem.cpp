@@ -182,11 +182,14 @@ void Network::SteamOnlineSystem::Update()
 				uint32 size;
 				while (SteamNetworking()->IsP2PPacketAvailable(&size)) {
 					
-					CSteamID clientSteamID;
-					ReadData(clientSteamID, mGameState, size);
-					std::cout << mGameState.hostData.position.x << ' ';
-					if (std::find(clientList.begin(), clientList.end(), clientSteamID) == clientList.end()) {
-						clientList.emplace_back(clientSteamID);
+					//TODO host 이외의 클라이언트 중 본인을 제외한 유저 업데이트
+					CSteamID hosttSteamID;
+					ReadData(hosttSteamID, mGameState, size);
+					mGameState.clientData[hosttSteamID] = mGameState.hostData;  // 최신 패킷만 저장
+
+					//std::cout << mGameState.hostData.position.x << ' ';
+					if (std::find(clientList.begin(), clientList.end(), hosttSteamID) == clientList.end()) {
+						clientList.emplace_back(hosttSteamID);
 
 						// 새로운 플레이어 등록
 						pEngine->addPlayerCount++;
