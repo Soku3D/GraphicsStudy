@@ -72,6 +72,7 @@ namespace Renderer {
 		const wchar_t* rayGenerationShaderName = L"RayGen";
 		const wchar_t* closestHitShaderName = L"Hit";
 		std::vector<const wchar_t*> hitGroupNames;
+		std::vector<const wchar_t*> characterHitGroupNames;
 		const wchar_t* missShaderName = L"Miss";
 
 		/*RayGenConstantBufferData m_rayGenCB;*/
@@ -85,8 +86,12 @@ namespace Renderer {
 
 	protected:
 		std::vector<ComPtr<ID3D12DescriptorHeap>> m_raytracingHeaps;
+		std::vector<ComPtr<ID3D12DescriptorHeap>> mChracterRaytracingHeaps;
 		ComPtr<ID3D12DescriptorHeap> m_raytracingGlobalHeap;
 		const wchar_t* cubeMapTextureName = L"DefaultEnvHDR.dds";
 
+	protected:
+		Core::StaticMesh* characterMesh;
+		UINT characterInstanceId = 0;
 	};
 }

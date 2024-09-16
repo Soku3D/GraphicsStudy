@@ -1,7 +1,7 @@
 #include "Actor.h"
 #include "StaticMesh.h"
 
-Core::Actor::Actor():
+Core::Actor::Actor() :
 	mPosition(DirectX::SimpleMath::Vector3(0, 0, 0)),
 	mViewDirection(DirectX::SimpleMath::Vector3(0, 0, 1)),
 	mUpDirection(DirectX::SimpleMath::Vector3(0.f, 1.f, 0.f)),
@@ -94,4 +94,38 @@ void Core::Actor::SetForwardDirection(const DirectX::SimpleMath::Vector3& direct
 void Core::Actor::SetVelocity(const float& velocity)
 {
 	mVelocity = velocity;
+}
+
+DirectX::SimpleMath::Matrix Core::Actor::GetTransformMatrix()
+{
+	if (mStaticMesh != nullptr) {
+		return mStaticMesh->GetTransformMatrix();
+	}
+	return DirectX::SimpleMath::Matrix();
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS Core::Actor::GetBlas(int index)
+{
+	if (mStaticMesh != nullptr) {
+		return mStaticMesh->GetBlas(index);
+	}
+	return D3D12_GPU_VIRTUAL_ADDRESS();
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE Core::Actor::GetIndexCpuHandle(int index)
+{
+	if (mStaticMesh != nullptr) {
+		return mStaticMesh->GetIndexCpuHandle(index);
+	}
+	return D3D12_CPU_DESCRIPTOR_HANDLE();
+}
+
+PrimitiveConstantBuffer Core::Actor::GetprimitiveConstantData()
+{
+
+	if (mStaticMesh != nullptr) {
+		return mStaticMesh->m_primitiveConstantData;
+	}
+
+	return PrimitiveConstantBuffer();
 }

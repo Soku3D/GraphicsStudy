@@ -44,7 +44,7 @@ void Particles::InitializeSPH(int numPatricles)
 		particle.color = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
 		//particle.color = Vector3(0.f, 0.f, 0.f);
 		particle.position = Vector3(100.f, 0.f, 0.f);
-		float theta = randomTheta(gen);
+		float theta = (float)randomTheta(gen);
 		particle.originPosition = Vector3(-0.5f + cos(theta) * 0.1f, sin(theta) * 0.1f, 0.f);
 		particle.radius = radius;
 		particle.velocity = Vector3(1.f, 0.f, 0.f);

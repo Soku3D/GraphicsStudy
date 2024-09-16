@@ -98,7 +98,6 @@ void Core::Character::Update(float deltaTime)
 
 	if (mStaticMesh != nullptr) 
 	{
-		//std::cout << "Model Rotate : " << m_yTheta << ' ';
 		Matrix Model = DirectX::XMMatrixRotationY(m_yTheta) * DirectX::XMMatrixTranslation(mPosition.x, mPosition.y, mPosition.z);
 		mStaticMesh->UpdateWorldRow(Model);
 	    mStaticMesh->Update(deltaTime);

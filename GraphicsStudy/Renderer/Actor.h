@@ -4,6 +4,8 @@
 #include <d3d12.h>
 #include <directxtk/SimpleMath.h>
 #include <string>
+#include "RaytracingHlslCompat.h"
+
 namespace Core {
 
 	class Actor {
@@ -33,6 +35,10 @@ namespace Core {
 		void SetVelocity(const float& velocity);
 		
 		float GetYTheta() const { return m_yTheta; };
+		DirectX::SimpleMath::Matrix GetTransformMatrix();
+		D3D12_GPU_VIRTUAL_ADDRESS GetBlas(int index = 0);
+		D3D12_CPU_DESCRIPTOR_HANDLE GetIndexCpuHandle(int index = 0);
+		PrimitiveConstantBuffer GetprimitiveConstantData();
 
 	protected:
 
