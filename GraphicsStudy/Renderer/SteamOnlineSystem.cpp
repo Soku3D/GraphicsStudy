@@ -26,7 +26,6 @@ Network::SteamOnlineSystem::SteamOnlineSystem(Renderer::D3D12App* engine)
 
 	}
 	networking = SteamNetworkingSockets();
-	mID = SteamUser()->GetSteamID();
 }
 
 Network::SteamOnlineSystem::~SteamOnlineSystem()
@@ -39,6 +38,7 @@ Network::SteamOnlineSystem::~SteamOnlineSystem()
 void Network::SteamOnlineSystem::OnLobbyCreated(LobbyCreated_t* pCallback)
 {
 	if (pCallback->m_eResult == k_EResultOK) {
+		mID = SteamUser()->GetSteamID();
 		isHost = true;
 		std::cout << "Create Lobby Complete" << std::endl;
 		//SteamMatchmaking()->SetLobbyData(pCallback->m_ulSteamIDLobby, "owner_name", SteamFriends()->GetPersonaName());
@@ -99,6 +99,8 @@ void Network::SteamOnlineSystem::OnLobbyEnter(LobbyEnter_t* pCallback)
 {
 	if (!isHost)
 	{
+		mID = SteamUser()->GetSteamID();
+
 		std::cout << "로비 참가 성공." << std::endl;
 		int memberCount = SteamMatchmaking()->GetNumLobbyMembers(pCallback->m_ulSteamIDLobby);
 
