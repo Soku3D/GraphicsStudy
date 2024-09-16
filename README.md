@@ -15,6 +15,7 @@
     
     <img src="GraphicsStudy/Renderer/Results/RaytracingApp/240911-2317.png" height="200">
     <img src="GraphicsStudy/Renderer/Results/RaytracingApp/240828-2337.png" height="200">
+    <img src="GraphicsStudy/Renderer/Results/RaytracingApp/240916-1228.png" height="200">
 
 1. Simulation sample
     
