@@ -571,6 +571,13 @@ void Renderer::D3D12RayTracingApp::Update(float& deltaTime)
 	static float angle = 0.f;
 	angle += delAngle;
 	Matrix rotate = DirectX::XMMatrixRotationY(angle);
+	m_staticMeshes[2]->UpdateWorldRow(rotate);
+
+	for (auto& mesh : m_staticMeshes) {
+		mesh->Update(deltaTime);
+	}
+
+	// instantce Model 행렬은 Transpose 후 적용
 	rotate = rotate.Transpose();
 	for (int i = 0; i < 3; i++)
 	{
@@ -584,11 +591,6 @@ void Renderer::D3D12RayTracingApp::Update(float& deltaTime)
 	m_instanceDescs->Map(0, nullptr, reinterpret_cast<void**>(&pInstancesMappedData));
 	memcpy(pInstancesMappedData, m_instances.data(), datasize);
 	
-	m_staticMeshes[2]->UpdateWorldRow(rotate);
-
-	for (auto& mesh : m_staticMeshes) {
-		mesh->Update(deltaTime);
-	}
 
 	UINT numShaderRecords = (UINT)m_staticMeshes.size();
 	UINT shaderRecordSize = 128;

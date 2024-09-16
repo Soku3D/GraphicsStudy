@@ -1657,9 +1657,11 @@ void Renderer::D3D12App::AddPlayer()
 	FlushCommandList(m_commandList);
 }
 
-void Renderer::D3D12App::UpdatePlayer(int index, DirectX::SimpleMath::Vector3& position)
+void Renderer::D3D12App::UpdatePlayer(int index, const PlayerData & data)
 {
-	mPlayers[index]->UpdateWorldRow(DirectX::XMMatrixTranslation(position.x, position.y, position.z));
+	DirectX::SimpleMath::Matrix mat = DirectX::XMMatrixRotationY(data.yTheta) *
+		DirectX::XMMatrixTranslation(data.position.x, data.position.y, data.position.z);
+	mPlayers[index]->UpdateWorldRow(mat);
 	mPlayers[index]->Update(1 / 60.f);
 }
 

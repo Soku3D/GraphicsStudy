@@ -215,6 +215,9 @@
     <ClInclude Include="SimulationHlslCompat.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="GameState.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="TestVS.hlsl" />

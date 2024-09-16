@@ -147,7 +147,12 @@ void Network::SteamOnlineSystem::EnterLobby(int lobbyIndex)
 	SteamMatchmaking()->JoinLobby(hostLobbyID);
 }
 void Network::SteamOnlineSystem::UpdateData(PlayerData& data) {
-	mData = data;
+	if (isHost) {
+		mGameState.hostData = data;
+	}
+	else {
+		mData = data;
+	}
 }
 
 void Network::SteamOnlineSystem::Update()
@@ -171,7 +176,7 @@ void Network::SteamOnlineSystem::Update()
 			for (size_t i = 0; i < clientList.size(); ++i)
 			{
 				if (clientList[i].IsValid()) {
-					mGameState.hostData = mData;
+					
 					SendData(clientList[i], mGameState);
 				}
 			}
@@ -185,13 +190,13 @@ void Network::SteamOnlineSystem::Update()
 				while (SteamNetworking()->IsP2PPacketAvailable(&size)) {
 					
 					//TODO host 이외의 클라이언트 중 본인을 제외한 유저 업데이트
-					CSteamID hosttSteamID;
-					ReadData(hosttSteamID, mGameState, size);
-					mGameState.clientData[hosttSteamID] = mGameState.hostData;  // 최신 패킷만 저장
+					CSteamID hostSteamID;
+					ReadData(hostSteamID, mGameState, size);
+					mGameState.clientData[hostSteamID] = mGameState.hostData;  // 최신 패킷만 저장
 
 					//std::cout << mGameState.hostData.position.x << ' ';
-					if (std::find(clientList.begin(), clientList.end(), hosttSteamID) == clientList.end()) {
-						clientList.emplace_back(hosttSteamID);
+					if (std::find(clientList.begin(), clientList.end(), hostSteamID) == clientList.end()) {
+						clientList.emplace_back(hostSteamID);
 
 						// 새로운 플레이어 등록
 						pEngine->addPlayerCount++;
@@ -203,7 +208,7 @@ void Network::SteamOnlineSystem::Update()
 	}
 }
 
-DirectX::SimpleMath::Vector3 Network::SteamOnlineSystem::GetClientData(int index) {
-	return mGameState.clientData[clientList[index]].position;
+PlayerData Network::SteamOnlineSystem::GetClientData(int index) {
+	return mGameState.clientData[clientList[index]];
 }
 

@@ -60,7 +60,7 @@ void Renderer::D3D12PassApp::InitScene()
 	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
 	characterMesh->SetBoundingBoxHalfLength(1.f);
 	mCharacter->SetStaticMeshComponent(characterMesh);
-	
+
 	//std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
 	//sphere->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f), m_device, m_commandList,
 	//	Vector3(0.f, 0.f, 0.f),
@@ -134,29 +134,24 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		findSession = false;
 		onlineSystem->FindLobby();
 	}
-	Network::PlayerData data;
+	PlayerData data;
 	data.position = mCharacter->GetPosition();
+	data.yTheta = mCharacter->GetYTheta();
 
-	static float time = 0.f;
-	time += (deltaTime < 1 / 30.f ? deltaTime : 1 / 30.f);
-
-	if(time > 1/30.f)
+	onlineSystem->UpdateData(data);
+	onlineSystem->Update();
+	for (int i = 0; i < (int)mPlayers.size(); ++i)
 	{
-		time = 0.f;
-		onlineSystem->UpdateData(data);
-		onlineSystem->Update();
-		for (int i = 0; i < (int)mPlayers.size(); ++i)
-		{
-			UpdatePlayer((int)i, onlineSystem->GetClientData(i));
-		}
+		UpdatePlayer((int)i, onlineSystem->GetClientData(i));
 	}
+
 
 	m_inputHandler->ExicuteCommand(mCharacter.get(), deltaTime, bIsFPSMode);
 	//m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
 	mCharacter->Update(deltaTime);
 
-	
-	
+
+
 	{
 		// 카메라 고정
 		/*m_passConstantData->ViewMat = m_camera->GetViewMatrix();
@@ -686,6 +681,6 @@ void Renderer::D3D12PassApp::RenderPlayers(float& deltaTime) {
 			m_commandList->SetGraphicsRootDescriptorTable(0, handle);
 			mPlayers[i]->Render(deltaTime, m_commandList, true, j);
 		}
-		
+
 	}
 }

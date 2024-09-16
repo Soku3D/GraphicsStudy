@@ -199,6 +199,7 @@
     <ClInclude Include="D3D12RayTracingApp.h" />
     <ClInclude Include="D3D12SimulationApp.h" />
     <ClInclude Include="FBX.h" />
+    <ClInclude Include="GameState.h" />
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="HlslCompat.h" />
     <ClInclude Include="InputHandler.h" />

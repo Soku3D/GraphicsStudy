@@ -31,6 +31,8 @@ namespace Core {
 		void SetPosition(const DirectX::SimpleMath::Vector3& position);
 		void SetForwardDirection(const DirectX::SimpleMath::Vector3& direction);
 		void SetVelocity(const float& velocity);
+		
+		float GetYTheta() const { return m_yTheta; };
 
 	protected:
 

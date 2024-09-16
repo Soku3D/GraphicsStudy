@@ -68,7 +68,7 @@ void Core::StaticMesh::UpdateWorldRow(const DirectX::SimpleMath::Matrix& worldRo
 	world.Translation(Vector3(0.f));
 	m_objectConstantData->invTranspose = world.Invert();
 
-	m_primitiveConstantData.invTranspose = worldRow.Invert().Transpose();
+	m_primitiveConstantData.invTranspose = m_objectConstantData->invTranspose;
 }
 
 void Core::StaticMesh::UpdateMaterial(const Material& material)
