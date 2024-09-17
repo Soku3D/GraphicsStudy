@@ -104,6 +104,7 @@ namespace Renderer {
 		void CreateResourceView(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_CPU_DESCRIPTOR_HANDLE& handle, 
 			ComPtr<ID3D12Device5>& deivce, const Renderer::DescriptorType& type);
 		void CaptureBufferToPNG() override;
+		void CaptureBackBufferToPNG() override;
 		/*void CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce, ComPtr<ID3D12DescriptorHeap>& heap, const Renderer::DescriptorType& type, int Numdescriptors,
 			D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);*/
 		virtual void PostProcessing(float& deltaTime);
@@ -261,9 +262,8 @@ namespace Renderer {
 		std::vector<uint16_t> imagef16;
 		std::vector<uint8_t> imageUnorm;
 		ComPtr<ID3D12Resource> imageBuffer;
+		ComPtr<ID3D12Resource> imageUnromBuffer;
 
-	protected:
-		std::string m_appName = "D3D12App";
 
 	protected:
 		std::unique_ptr<DirectX::AudioEngine> m_audioEngine;

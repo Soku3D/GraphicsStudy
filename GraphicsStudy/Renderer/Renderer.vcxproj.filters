@@ -271,5 +271,6 @@
     <None Include="RenderBoundingBoxPass.hlsli" />
     <None Include="Particle.hlsli" />
     <None Include="CFD.hlsli" />
+    <None Include="Utility.hlsli" />
   </ItemGroup>
 </Project>

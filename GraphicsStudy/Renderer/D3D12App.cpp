@@ -296,6 +296,14 @@ void Renderer::D3D12App::OnResize()
 		nullptr,
 		IID_PPV_ARGS(&imageBuffer));
 
+	copyBufferSize = m_screenWidth * m_screenHeight * 4 * sizeof(uint8_t);
+	m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(copyBufferSize),
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(&imageUnromBuffer));
 	/*CreateResourceBuffer(m_copyBuffer, m_hdrFormat, false, D3D12_RESOURCE_FLAG_NONE,
 		D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST, false);
 	m_hdrRenderTarget->SetName(L"HDR RenderTarget");*/
@@ -1365,6 +1373,7 @@ void Renderer::D3D12App::CopyResourceToSwapChain(float& deltaTime)
 			));
 	}
 
+
 	ThrowIfFailed(m_commandList->Close());
 
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
@@ -1605,7 +1614,75 @@ void Renderer::D3D12App::CaptureBufferToPNG() {
 	imageUnorm.clear();
 	imagef16.clear();
 }
+void Renderer::D3D12App::CaptureBackBufferToPNG() {
 
+	m_commandAllocator->Reset();
+	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
+
+	D3D12_RESOURCE_DESC desc = CurrentBackBuffer()->GetDesc();
+	UINT64 requiredSize = 0;
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+	m_device->GetCopyableFootprints(&desc, 0, 1, 0, &footprint, nullptr, nullptr, &requiredSize);
+
+	m_commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_PRESENT,
+			D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+	CD3DX12_TEXTURE_COPY_LOCATION dst(imageUnromBuffer.Get(), footprint);
+	CD3DX12_TEXTURE_COPY_LOCATION src(CurrentBackBuffer(), 0);
+	m_commandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+
+	m_commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_COPY_SOURCE,
+			D3D12_RESOURCE_STATE_PRESENT
+		));
+
+	m_commandList->Close();
+	ID3D12CommandList* lists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
+	FlushCommandQueue();
+
+	D3D12_RANGE range(0, 0);
+	void* pData;
+	UINT width = (UINT)HDRRenderTargetBuffer()->GetDesc().Width;
+	UINT height = HDRRenderTargetBuffer()->GetDesc().Height;
+	UINT channels = 4;
+
+	UINT imageSize = width * height * channels;
+	imagef16.resize(imageSize);
+	imageUnorm.resize(imageSize);
+	UINT dataSize = width * height * channels * sizeof(uint8_t);
+
+	imageUnromBuffer->Map(0, &range, reinterpret_cast<void**>(&pData));
+	memcpy(imageUnorm.data(), pData, dataSize);
+	imageUnromBuffer->Unmap(0, nullptr);
+
+	time_t timer = time(NULL);
+	tm* t;
+	t = localtime(&timer);
+	std::stringstream ss;
+	ss << "Results/" << m_appName << "/" << t->tm_year - 100;
+	if (t->tm_mon < 9) {
+		ss << '0' << t->tm_mon + 1;
+	}
+	else {
+		ss << t->tm_mon + 1;
+	}
+	if (t->tm_mday < 9) {
+		ss << '0' << t->tm_mday;
+	}
+	else {
+		ss << t->tm_mday;
+	}
+	ss << '-' << t->tm_hour << t->tm_min << ".png";
+	stbi_write_png(ss.str().c_str(), width, height, 4, imageUnorm.data(), width * channels);
+	imageUnorm.clear();
+	imagef16.clear();
+}
 void Renderer::D3D12App::CreateSamplers() {
 	/*D3D12_SAMPLER_DESC clampSampler = {};
 	clampSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;

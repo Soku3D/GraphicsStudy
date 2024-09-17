@@ -49,6 +49,7 @@ namespace Renderer {
 		const wchar_t* simulationPassEvent = L"Simulation Pass ";
 		const wchar_t* sphSimulationPassEvent = L"SPH Simulation Pass ";
 		const wchar_t* postprocessingEvent = L"Postprocessing Pass ";
+		const wchar_t* copyDensityToSwapChainEvent = L" copyDensityToSwapChain ";
 
 	};
 }

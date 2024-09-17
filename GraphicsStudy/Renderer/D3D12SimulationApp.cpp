@@ -25,7 +25,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 		XMFLOAT3(0.f,1.f,0.f),
 		XMFLOAT3(0.f,0.f,1.f),
 		XMFLOAT3(1.f,1.f,0.f),
-		XMFLOAT3(1.f,1.f,1.f),
+		XMFLOAT3(1.f,0.f,1.f),
 		XMFLOAT3(0.f,1.f,1.f),
 	};
 
@@ -81,7 +81,7 @@ void Renderer::D3D12SimulationApp::OnResize()
 	FlushCommandQueue();
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 
-	stableFluids.BuildResources(m_device, m_commandList, m_screenWidth, m_screenHeight, m_backbufferFormat);
+	stableFluids.BuildResources(m_device, m_commandList, m_screenWidth, m_screenHeight, m_hdrFormat);
 
 	FlushCommandList(m_commandList);
 }
@@ -97,7 +97,7 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 
 	static int colorIndex = 0;
 	
-	mCFDConstantBuffer.mStructure.color = colorLists[colorIndex];
+	
 	if (lMouseButtonClicked) {
 		GetCursorPos(&mCursorPosition);
 		ScreenToClient(m_mainWnd, &mCursorPosition);
@@ -112,6 +112,9 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 		mCFDConstantBuffer.mStructure.i = -1;
 		mCFDConstantBuffer.mStructure.j = -1;
 	}
+	mCFDConstantBuffer.mStructure.color = colorLists[colorIndex];
+	mCFDConstantBuffer.mStructure.deltaTime = (deltaTime < 1 / 300.f ? deltaTime : 1 / 300.f);
+	mCFDConstantBuffer.mStructure.radius = 20.f;
 	mCFDConstantBuffer.UpdateBuffer();
 
 }
@@ -134,6 +137,12 @@ void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
 	PostProcessing(deltaTime);
 	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 	CopyResourceToSwapChain(deltaTime);
+
+	/*ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
+	ThrowIfFailed(m_swapChain->Present(1, 0));
+	m_frameIndex = (m_frameIndex + 1) % m_swapChainCount;
+	FlushCommandList(m_commandList);*/
 }
 
 void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
@@ -147,11 +156,19 @@ void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
 	D3D12App::PostProcessing(deltaTime);
 	CopyResourceToSwapChain(deltaTime);
 
+	/*ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
+	ThrowIfFailed(m_swapChain->Present(1, 0));
+	m_frameIndex = (m_frameIndex + 1) % m_swapChainCount;
+	FlushCommandList(m_commandList);*/
 }
 void Renderer::D3D12SimulationApp::CFD(float& deltaTime)
 {
 	CFDPass(deltaTime, "CFDSourcing");
-	CopyResource(m_commandList, CurrentBackBuffer(), stableFluids.GetDensityResource(),D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	CopyDensityToSwapChain(deltaTime);
+	/*CopyResource(m_commandList, HDRRenderTargetBuffer(), stableFluids.GetDensityResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	CopyResourceToSwapChain(deltaTime);*/
+	
 }
 
 void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
@@ -358,7 +375,7 @@ void Renderer::D3D12SimulationApp::CFDPass(float& deltaTime, const std::string& 
 
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 	ID3D12DescriptorHeap* pHeaps[] = {
-		stableFluids.GetUavHeap()
+		stableFluids.GetHeap()
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetUavHandle());
@@ -413,5 +430,49 @@ void Renderer::D3D12SimulationApp::FireParticles(const int& fireCount)
 }
 
 void Renderer::D3D12SimulationApp::CopyDensityToSwapChain(float& deltaTime) {
-	
+
+	auto& pso = utilityPsoLists["CopyDensity"];
+	{
+		ThrowIfFailed(m_commandAllocator->Reset());
+		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+
+		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 255, 0), copyDensityToSwapChainEvent);
+
+		m_commandList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				CurrentBackBuffer(),
+				D3D12_RESOURCE_STATE_PRESENT,
+				D3D12_RESOURCE_STATE_RENDER_TARGET
+			));
+
+		FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
+		
+		m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
+		m_commandList->OMSetRenderTargets(1, &CurrentBackBufferView(), false, nullptr);
+		m_commandList->RSSetScissorRects(1, &m_scissorRect);
+		m_commandList->RSSetViewports(1, &m_viewport);
+		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		ID3D12DescriptorHeap* pHeaps[] = { stableFluids.GetHeap() };
+		m_commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(pHeaps)), pHeaps);
+		m_commandList->SetGraphicsRootDescriptorTable(0, stableFluids.GetDensitySrvHandle());
+
+		m_screenMesh->Render(deltaTime, m_commandList, false);
+
+		m_commandList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				CurrentBackBuffer(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_PRESENT
+			));
+	}
+
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* lists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
+
+	FlushCommandQueue();
+	PIXEndEvent(m_commandQueue.Get());
 }

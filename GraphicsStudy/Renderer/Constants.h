@@ -76,6 +76,9 @@ __declspec(align(256)) struct SimulationCSConstantData {
 
 __declspec(align(256)) struct CFDConstantData {
 	DirectX::SimpleMath::Vector3 color;
+	float deltaTime;
+	DirectX::SimpleMath::Vector3 velocity;
+	float radius;
 	uint32_t i;
 	uint32_t j;
 };

@@ -107,7 +107,7 @@ namespace Renderer {
 	D3D12_BLEND_DESC defaultBlender;
 	D3D12_BLEND_DESC alphaBlender;
 	D3D12_BLEND_DESC simulationBlender;
-	D3D12_BLEND_DESC sphSimulationBlender;
+	D3D12_BLEND_DESC addColorBlender;
 
 	void Initialize(void)
 	{
@@ -175,6 +175,7 @@ namespace Renderer {
 		GraphicsPSO renderBoundingBoxPassPso("BoundingBoxPass");
 
 		GraphicsPSO copyPso("Copy");
+		GraphicsPSO copyDensityPso("CopyDensity");
 
 		ComputePSO simulationPostProcessingPso("SimulationPostProcessing");
 		ComputePSO simulationComputePso("SimulationCompute");
@@ -232,15 +233,15 @@ namespace Renderer {
 		simulationBlender.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
 		simulationBlender.RenderTarget[0].BlendOp = D3D12_BLEND_OP_MAX;
 
-		sphSimulationBlender = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		sphSimulationBlender.RenderTarget[0].BlendEnable = TRUE;
-		sphSimulationBlender.RenderTarget[0].SrcBlend = D3D12_BLEND_BLEND_FACTOR;
-		sphSimulationBlender.RenderTarget[0].DestBlend = D3D12_BLEND_BLEND_FACTOR;
-		sphSimulationBlender.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-		sphSimulationBlender.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-		sphSimulationBlender.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-		sphSimulationBlender.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-		sphSimulationBlender.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+		addColorBlender = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+		addColorBlender.RenderTarget[0].BlendEnable = TRUE;
+		addColorBlender.RenderTarget[0].SrcBlend = D3D12_BLEND_BLEND_FACTOR;
+		addColorBlender.RenderTarget[0].DestBlend = D3D12_BLEND_BLEND_FACTOR;
+		addColorBlender.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+		addColorBlender.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+		addColorBlender.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+		addColorBlender.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		addColorBlender.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
 		defaultPso.SetVertexShader(g_pTestVS, sizeof(g_pTestVS));
 		defaultPso.SetPixelShader(g_pTestPS, sizeof(g_pTestPS));
@@ -344,6 +345,9 @@ namespace Renderer {
 		copyPso.SetVertexShader(g_pCopyVS, sizeof(g_pCopyVS));
 		copyPso.SetPixelShader(g_pCopyPS, sizeof(g_pCopyPS));
 
+		copyDensityPso = copyPso;
+		//copyDensityPso.SetBlendState(addColorBlender);
+
 		simulationRenderPso = defaultPso;
 		simulationRenderPso.SetRootSignature(&simulationSignature);
 		simulationRenderPso.SetVertexShader(g_pSimulationParticlesVS, sizeof(g_pSimulationParticlesVS));
@@ -351,7 +355,7 @@ namespace Renderer {
 		simulationRenderPso.SetPixelShader(g_pSimulationParticlesPS, sizeof(g_pSimulationParticlesPS));
 		simulationRenderPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
 		simulationRenderPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
-		simulationRenderPso.SetBlendState(sphSimulationBlender);
+		simulationRenderPso.SetBlendState(addColorBlender);
 
 		simulationComputePso.SetComputeShader(g_pSimulationParticlesCS, sizeof(g_pSimulationParticlesCS));
 		simulationComputePso.SetRootSignature(&simulationComputeSignature);
@@ -388,6 +392,7 @@ namespace Renderer {
 		passPsoLists[renderBoundingBoxPassPso.GetName()] = renderBoundingBoxPassPso;
 
 		utilityPsoLists[copyPso.GetName()] = copyPso;
+		utilityPsoLists[copyDensityPso.GetName()] = copyDensityPso;
 
 		cubePsoLists[cubeMapPso.GetName()] = cubeMapPso;
 		cubePsoLists[msaaCubeMapPso.GetName()] = msaaCubeMapPso;

@@ -20,7 +20,7 @@ void StableFluids::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 	
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	heapDesc.NumDescriptors = 2;
+	heapDesc.NumDescriptors = 4;
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mHeap.ReleaseAndGetAddressOf())));
 
@@ -29,12 +29,26 @@ void StableFluids::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 	uavDesc.Format = format;
 
-	UINT offset = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Format = format;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Texture2D.MipLevels = 1;
+
+	offset = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(mHeap->GetCPUDescriptorHandleForHeapStart());
 	device->CreateUnorderedAccessView(mDensity.Get(), nullptr, &uavDesc, handle);
 	handle.Offset(1, offset);
 	device->CreateUnorderedAccessView(mVelocity.Get(), nullptr, &uavDesc, handle);
+	handle.Offset(1, offset);
+	device->CreateShaderResourceView(mDensity.Get(), &srvDesc, handle);
+	handle.Offset(1, offset);
+	device->CreateShaderResourceView(mVelocity.Get(), &srvDesc, handle);
+
+	commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(mDensity.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 }
+
 void StableFluids::CreateResource(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList,
 	const int& width,
@@ -42,13 +56,6 @@ void StableFluids::CreateResource(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 	DXGI_FORMAT& format,
 	Microsoft::WRL::ComPtr<ID3D12Resource>& resource)
 {
-	D3D12_CLEAR_VALUE clear;
-	clear.Format = format;
-	clear.Color[0] = 0.f;
-	clear.Color[1] = 0.f;
-	clear.Color[2] = 0.f;
-	clear.Color[3] = 0.f;
-
 	D3D12_RESOURCE_DESC resourceDesc = {};
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	resourceDesc.Format = format;
@@ -69,6 +76,4 @@ void StableFluids::CreateResource(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 		nullptr,
 		IID_PPV_ARGS(resource.ReleaseAndGetAddressOf())));
 
-	
-	
 }

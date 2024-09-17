@@ -513,6 +513,7 @@
     <None Include="RaytracingShaderHelper.hlsli" />
     <None Include="RenderBoundingBoxPass.hlsli" />
     <None Include="SimulationParticles.hlsli" />
+    <None Include="Utility.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

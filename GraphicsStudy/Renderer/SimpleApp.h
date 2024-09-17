@@ -32,6 +32,7 @@ namespace Renderer {
 		virtual void UpdateGUI(float& deltaTime) = 0;
 		virtual void Update(float& deltaTime) = 0;
 		virtual void CaptureBufferToPNG() {};
+		virtual void CaptureBackBufferToPNG() {};
 	public:
 		HWND m_mainWnd;
 		static SimpleApp* m_pApp;
@@ -65,5 +66,7 @@ namespace Renderer {
 
 		std::vector< ComPtr<ID3D12CommandQueue>> m_tempCommandQueue;
 
+	protected:
+		std::string m_appName = "SimpleApp";
 	};
 }
