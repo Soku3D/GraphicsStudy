@@ -258,7 +258,9 @@
     <FxCompile Include="SphSimulationParticlesCS.hlsl" />
     <FxCompile Include="SphComputeRhoCS.hlsl" />
     <FxCompile Include="SphComputeForcesCS.hlsl" />
-    <FxCompile Include="StableFluidDynamicsCS.hlsl" />
+    <FxCompile Include="CFDSourcingCS.hlsl" />
+    <FxCompile Include="CFDAdvectionCS.hlsl" />
+    <FxCompile Include="CFDComputePressureCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />

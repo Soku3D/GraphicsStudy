@@ -68,5 +68,7 @@ namespace Renderer {
 
 	protected:
 		std::string m_appName = "SimpleApp";
+		int mouseDeltaX = 0;
+		int mouseDeltaY = 0;
 	};
 }

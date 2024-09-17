@@ -1,30 +1,33 @@
 #include "RootSignature.h"
 #include "Utility.h"
 
-void Renderer::RootSignature::Initialize(UINT srvCount, UINT uavCount, UINT cbCount, int numSamplers, D3D12_STATIC_SAMPLER_DESC* sampler)
+void Renderer::RootSignature::Initialize(UINT srvCount, UINT uavCount, UINT cbCount, std::vector<D3D12_STATIC_SAMPLER_DESC>& sampler)
 {
-	CD3DX12_DESCRIPTOR_RANGE1 rangeTable[2];
-	rangeTable[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, srvCount, 0);
-	rangeTable[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, uavCount, 0);
+	rangeTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, uavCount, 0);
+	rangeTable2.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, srvCount, 0);
 
-	paramenters.resize(cbCount + 1);
-	paramenters[0].InitAsDescriptorTable(2, rangeTable, D3D12_SHADER_VISIBILITY_PIXEL);
+	paramenters.resize(cbCount + 2);
+	paramenters[0].InitAsDescriptorTable(1, &rangeTable);
+	paramenters[1].InitAsDescriptorTable(1, &rangeTable2);
 
-	for (UINT i = 1; i <= cbCount; i++)
+	for (UINT i = 2; i <= 2; i++)
 	{
-		paramenters[i].InitAsConstantBufferView(i - 1);
+		paramenters[i].InitAsConstantBufferView(i - 2);
 	}
 	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	
-	m_sampler = sampler;
-	if (m_sampler == nullptr) {
-		m_rootSignatureDesc.Init_1_1(cbCount + 1, paramenters.data(), 0, nullptr, rootSignatureFlags);
+	m_samplerArray = sampler;
+	//m_samplerArray = sampler;
+	if (m_samplerArray.empty()) {
+		m_rootSignatureDesc.Init_1_1(cbCount + 2, paramenters.data(), 0, nullptr, rootSignatureFlags);
 	}
 	else
 	{
-		m_rootSignatureDesc.Init_1_1(cbCount + 1, paramenters.data(), 1, m_sampler, rootSignatureFlags);
+		m_rootSignatureDesc.Init_1_1(cbCount + 2, paramenters.data(), (UINT)m_samplerArray.size(),
+			m_samplerArray.data(), rootSignatureFlags);
 	}
+	
 }
 void Renderer::RootSignature::InitializeRaytracing(UINT uavCount, UINT srvCount, UINT cbCount, int numSamplers, D3D12_STATIC_SAMPLER_DESC* sampler)
 {

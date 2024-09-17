@@ -1592,6 +1592,7 @@ void Renderer::D3D12App::CaptureBufferToPNG() {
 	{
 		imageUnorm[i] = (uint8_t)(std::clamp(fp16_ieee_to_fp32_value(imagef16[i]), 0.f, 1.f) * 255.f);
 	}
+
 	time_t timer = time(NULL);
 	tm* t;
 	t = localtime(&timer);
@@ -1614,6 +1615,7 @@ void Renderer::D3D12App::CaptureBufferToPNG() {
 	imageUnorm.clear();
 	imagef16.clear();
 }
+
 void Renderer::D3D12App::CaptureBackBufferToPNG() {
 
 	m_commandAllocator->Reset();
@@ -1630,7 +1632,7 @@ void Renderer::D3D12App::CaptureBackBufferToPNG() {
 			D3D12_RESOURCE_STATE_PRESENT,
 			D3D12_RESOURCE_STATE_COPY_SOURCE));
 
-	CD3DX12_TEXTURE_COPY_LOCATION dst(imageUnromBuffer.Get(), footprint);
+	CD3DX12_TEXTURE_COPY_LOCATION dst(imageBuffer.Get(), footprint);
 	CD3DX12_TEXTURE_COPY_LOCATION src(CurrentBackBuffer(), 0);
 	m_commandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
 
@@ -1655,11 +1657,19 @@ void Renderer::D3D12App::CaptureBackBufferToPNG() {
 	UINT imageSize = width * height * channels;
 	imagef16.resize(imageSize);
 	imageUnorm.resize(imageSize);
-	UINT dataSize = width * height * channels * sizeof(uint8_t);
+	UINT dataSize = width * height * channels * sizeof(uint16_t);
 
-	imageUnromBuffer->Map(0, &range, reinterpret_cast<void**>(&pData));
-	memcpy(imageUnorm.data(), pData, dataSize);
-	imageUnromBuffer->Unmap(0, nullptr);
+	imageBuffer->Map(0, &range, reinterpret_cast<void**>(&pData));
+	memcpy(imagef16.data(), pData, dataSize);
+	imageBuffer->Unmap(0, nullptr);
+
+	float gamma = 2.2f;
+	float invGamma = 1.f / gamma;
+
+	for (size_t i = 0; i < imageSize; i++)
+	{
+		imageUnorm[i] = (uint8_t)(std::clamp(fp16_ieee_to_fp32_value(imagef16[i]), 0.f, 1.f) * 255.f);
+	}
 
 	time_t timer = time(NULL);
 	tm* t;

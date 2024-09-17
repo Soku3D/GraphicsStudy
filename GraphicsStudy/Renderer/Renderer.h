@@ -54,9 +54,12 @@ namespace Renderer {
 	extern std::vector<D3D12_INPUT_ELEMENT_DESC> pbrElement;
 
 	extern D3D12_STATIC_SAMPLER_DESC wrapLinearSampler;
+	extern D3D12_STATIC_SAMPLER_DESC wrapPointSampler;
 	extern D3D12_STATIC_SAMPLER_DESC clampLinearSampler;
-	extern std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;
+	extern D3D12_STATIC_SAMPLER_DESC testSampler;
 
+	extern std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;
+	extern std::vector<D3D12_STATIC_SAMPLER_DESC> wrapSamplers;
 
 	extern D3D12_RASTERIZER_DESC defaultRasterizer;
 	extern D3D12_RASTERIZER_DESC wireRasterizer;

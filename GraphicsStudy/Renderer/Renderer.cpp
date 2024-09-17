@@ -40,7 +40,10 @@
 #include "SphSimulationParticlesCS.h"
 #include "SphComputeRhoCS.h"
 #include "SphComputeForcesCS.h"
-#include "StableFluidDynamicsCS.h"
+
+#include "CFDSourcingCS.h"
+#include "CFDAdvectionCS.h"
+#include "CFDComputePressureCS.h"
 
 namespace Renderer {
 	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -89,7 +92,9 @@ namespace Renderer {
 	RootSignature simulationComputeSignature;
 	RootSignature simulationSignature;
 	RootSignature simulationPostProcessingSignature;
+
 	RootSignature cfdSourcingSignature;
+	RootSignature cfdAdvectionSignature;
 
 	RootSignature raytracingGlobalSignature;
 
@@ -98,8 +103,12 @@ namespace Renderer {
 	std::vector<D3D12_INPUT_ELEMENT_DESC> pbrElement;
 
 	D3D12_STATIC_SAMPLER_DESC wrapLinearSampler;
+	D3D12_STATIC_SAMPLER_DESC wrapPointSampler;
 	D3D12_STATIC_SAMPLER_DESC clampLinearSampler;
+	D3D12_STATIC_SAMPLER_DESC testSampler;
+
 	std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;
+	std::vector<D3D12_STATIC_SAMPLER_DESC> wrapSamplers;
 
 	D3D12_RASTERIZER_DESC defaultRasterizer;
 	D3D12_RASTERIZER_DESC wireRasterizer;
@@ -126,6 +135,13 @@ namespace Renderer {
 		wrapLinearSampler.ShaderRegister = 0;
 		wrapLinearSampler.RegisterSpace = 0;
 		wrapLinearSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+		
+		wrapPointSampler = wrapLinearSampler;
+		wrapPointSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+		wrapPointSampler.ShaderRegister = 1;
+
+		testSampler = wrapLinearSampler;
+		testSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 		clampLinearSampler = wrapLinearSampler;
 		clampLinearSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -133,8 +149,12 @@ namespace Renderer {
 		clampLinearSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		clampLinearSampler.ShaderRegister = 1;
 
+
 		samplers.push_back(wrapLinearSampler);
 		samplers.push_back(clampLinearSampler);
+
+		wrapSamplers.push_back(wrapLinearSampler);
+		wrapSamplers.push_back(wrapPointSampler);
 
 		// Init Signatures
 		defaultSignature.Initialize(1, 3, 1, &wrapLinearSampler);
@@ -148,9 +168,11 @@ namespace Renderer {
 		NormalPassSignature.Initialize(2);
 		
 		simulationComputeSignature.InitializeUAV(1, 1, 0, nullptr);
-		cfdSourcingSignature.InitializeUAV(1, 1, 0, nullptr);
 		simulationSignature.Initialize(1, 0, 0, nullptr);
 		simulationPostProcessingSignature.InitializeUAV(1, 1, 0, nullptr);
+		
+		cfdSourcingSignature.InitializeUAV(2, 1, 1, &wrapLinearSampler);
+		cfdAdvectionSignature.Initialize(2, 2, 1, wrapSamplers);
 
 		raytracingGlobalSignature.InitializeRaytracing(1, 4, 1, 1, &wrapLinearSampler);
 
@@ -184,7 +206,10 @@ namespace Renderer {
 		ComputePSO sphSimulationComputePso("SphSimulationCompute");
 		ComputePSO sphComputeRhoPso("SphComputeRho");
 		ComputePSO sphComputeForcesPso("SphComputeForces");
+
 		ComputePSO CFDSourcingPso("CFDSourcing");
+		ComputePSO CFDComputePressurePso("CFDComputePressure");
+		ComputePSO CFDAdvectionPso("CFDAdvection");
 
 
 		defaultElement =
@@ -372,8 +397,14 @@ namespace Renderer {
 		simulationPostProcessingPso.SetRootSignature(&simulationPostProcessingSignature);
 		simulationPostProcessingPso.SetComputeShader(g_pSimulationPostProcessingCS, sizeof(g_pSimulationPostProcessingCS));
 
-		CFDSourcingPso.SetComputeShader(g_pStableFluidDynamicsCS, sizeof(g_pStableFluidDynamicsCS));
+		CFDSourcingPso.SetComputeShader(g_pCFDSourcingCS, sizeof(g_pCFDSourcingCS));
 		CFDSourcingPso.SetRootSignature(&cfdSourcingSignature);
+
+		CFDComputePressurePso.SetComputeShader(g_pCFDComputePressureCS, sizeof(g_pCFDComputePressureCS));
+		CFDComputePressurePso.SetRootSignature(&cfdSourcingSignature);
+
+		CFDAdvectionPso.SetComputeShader(g_pCFDAdvectionCS, sizeof(g_pCFDAdvectionCS));
+		CFDAdvectionPso.SetRootSignature(&cfdAdvectionSignature);
 
 		modePsoLists[defaultPso.GetName()] = defaultPso;
 		modePsoLists[wirePso.GetName()] = wirePso;
@@ -405,7 +436,10 @@ namespace Renderer {
 		computePsoList[sphSimulationComputePso.GetName()] = sphSimulationComputePso;
 		computePsoList[sphComputeRhoPso.GetName()] = sphComputeRhoPso;
 		computePsoList[sphComputeForcesPso.GetName()] = sphComputeForcesPso;
+
 		computePsoList[CFDSourcingPso.GetName()] = CFDSourcingPso;
+		computePsoList[CFDAdvectionPso.GetName()] = CFDAdvectionPso;
+		computePsoList[CFDComputePressurePso.GetName()] = CFDComputePressurePso;
 	}
 
 	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
@@ -421,6 +455,7 @@ namespace Renderer {
 		simulationSignature.Finalize(device);
 		simulationPostProcessingSignature.Finalize(device);
 		cfdSourcingSignature.Finalize(device);
+		cfdAdvectionSignature.Finalize(device);
 		raytracingGlobalSignature.Finalize(device);
 
 		for (auto& pso : modePsoLists) {

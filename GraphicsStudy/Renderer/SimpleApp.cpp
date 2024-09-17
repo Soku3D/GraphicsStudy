@@ -200,8 +200,8 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 			GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT,
 				&raw, &rawSize, sizeof(RAWINPUTHEADER));
 		
-		int deltaX = raw.data.mouse.lLastX;
-		int deltaY = raw.data.mouse.lLastY;
+		mouseDeltaX = raw.data.mouse.lLastX;
+		mouseDeltaY = raw.data.mouse.lLastY;
 		if (raw.data.mouse.usButtonFlags == RI_MOUSE_RIGHT_BUTTON_DOWN) {
 			if (!bIsFPSMode) {
 				GetCursorPos(&m_fpsModeCursorPos);
@@ -230,8 +230,8 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 		}
 		if (m_camera != nullptr && bIsFPSMode)
 		{
-			m_camera->SetRotation(deltaX, deltaY);
-			mCharacter->SetRotation(deltaX, deltaY);
+			m_camera->SetRotation(mouseDeltaX, mouseDeltaY);
+			mCharacter->SetRotation(mouseDeltaX, mouseDeltaY);
 			// m_camera->SetQuaternion(deltaX, deltaY);
 		}
 

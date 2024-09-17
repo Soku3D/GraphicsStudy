@@ -19,13 +19,19 @@ public:
 
 	ID3D12DescriptorHeap* GetHeap()const { return mHeap.Get(); }
 	D3D12_GPU_DESCRIPTOR_HANDLE GetUavHandle() const { return mHeap->GetGPUDescriptorHandleForHeapStart(); }
+	D3D12_GPU_DESCRIPTOR_HANDLE GetTempSrvHandle() const { return CD3DX12_GPU_DESCRIPTOR_HANDLE(mHeap->GetGPUDescriptorHandleForHeapStart(), 4, offset); }
 	D3D12_GPU_DESCRIPTOR_HANDLE GetDensitySrvHandle() const { return CD3DX12_GPU_DESCRIPTOR_HANDLE(mHeap->GetGPUDescriptorHandleForHeapStart(), 2, offset); }
 	ID3D12Resource* GetDensityResource() const { return mDensity.Get(); }
+	ID3D12Resource* GetDensityTempResource() const { return mDensityTemp.Get(); }
 	ID3D12Resource* GetVelocityResource() const { return mVelocity.Get(); }
+	ID3D12Resource* GetVelocityTempResource() const { return mVelocityTemp.Get(); }
 
 private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> mDensity;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mDensityTemp;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mVelocity;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mVelocityTemp;
+
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mHeap;
 	UINT offset;
 };

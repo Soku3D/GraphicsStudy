@@ -29,6 +29,7 @@ namespace Renderer {
 		void SimulationRenderPass(float& deltaTime);
 		void SPHSimulationRenderPass(float& deltaTime);
 		void CFDPass(float& deltaTime, const std::string& psoName);
+		void CFDAdvectionPass(float& deltaTime);
 		void RenderGUI(float& deltaTime) override;
 
 		void FireParticles(const int& fireCount);
@@ -50,6 +51,8 @@ namespace Renderer {
 		const wchar_t* sphSimulationPassEvent = L"SPH Simulation Pass ";
 		const wchar_t* postprocessingEvent = L"Postprocessing Pass ";
 		const wchar_t* copyDensityToSwapChainEvent = L" copyDensityToSwapChain ";
+
+		const wchar_t* cfdAdvectionEvent = L"CFD Advection Pass ";
 
 	};
 }

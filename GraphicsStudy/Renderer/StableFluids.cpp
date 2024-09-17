@@ -18,9 +18,12 @@ void StableFluids::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 	CreateResource(device, commandList, width, height, format, mDensity);
 	CreateResource(device, commandList, width, height, format, mVelocity);
 	
+	CreateResource(device, commandList, width, height, format, mDensityTemp);
+	CreateResource(device, commandList, width, height, format, mVelocityTemp);
+
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	heapDesc.NumDescriptors = 4;
+	heapDesc.NumDescriptors = 6;
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mHeap.ReleaseAndGetAddressOf())));
 
@@ -44,9 +47,17 @@ void StableFluids::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 	device->CreateShaderResourceView(mDensity.Get(), &srvDesc, handle);
 	handle.Offset(1, offset);
 	device->CreateShaderResourceView(mVelocity.Get(), &srvDesc, handle);
+	handle.Offset(1, offset);
+	device->CreateShaderResourceView(mDensityTemp.Get(), &srvDesc, handle);
+	handle.Offset(1, offset);
+	device->CreateShaderResourceView(mVelocityTemp.Get(), &srvDesc, handle);
+	
+	D3D12_RESOURCE_BARRIER barriers[] = {
+		CD3DX12_RESOURCE_BARRIER::Transition(mDensity.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS),
+		CD3DX12_RESOURCE_BARRIER::Transition(mVelocity.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+	};
 
-	commandList->ResourceBarrier(1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(mDensity.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	commandList->ResourceBarrier(2, barriers);
 }
 
 void StableFluids::CreateResource(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
