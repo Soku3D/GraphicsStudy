@@ -4,8 +4,8 @@
 RWTexture2D<float4> density : register(u0);
 RWTexture2D<float4> velocity : register(u1);
 
-Texture2D densityTemp : register(s0);
-Texture2D velocityTemp : register(s1);
+Texture2D densityTemp : register(t0);
+Texture2D velocityTemp : register(t1);
 
 SamplerState gWarpLinearSampler : register(s0);
 SamplerState gWarpPointSampler : register(s1);
@@ -25,8 +25,6 @@ ConstantBuffer<SimulationConstant> gConstantBuffer : register(b0);
 [numthreads(32, 32, 1)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
-    
-    
     uint width, height;
     density.GetDimensions(width, height);
     
@@ -39,17 +37,5 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float2 position = currUVPosition - vel * gConstantBuffer.deltaTime;
     density[DTid.xy] = densityTemp.SampleLevel(gWarpLinearSampler, position, 0.f);
     velocity[DTid.xy] = velocityTemp.SampleLevel(gWarpLinearSampler, position, 0.f);
-    
-    //uint width, height;
-    //velocity.GetDimensions(width, height);
-    //float2 dx = float2(1.0 / width, 1.0 / height);
-    //float2 pos = (DTid.xy + 0.5) * dx; // �� �����尡 ó���ϴ� ���� �߽�
-    
-    //float2 vel = velocityTemp.SampleLevel(gWarpPointSampler, pos, 0.f).xy;
-    
-    //float2 posBack = pos - vel * gConstantBuffer.deltaTime;
-
-    //velocity[DTid.xy] = velocityTemp.SampleLevel(gWarpLinearSampler, posBack, 0.f);
-    //density[DTid.xy] = densityTemp.SampleLevel(gWarpLinearSampler, posBack, 0.f);
 }
 

@@ -44,6 +44,8 @@
 #include "CFDSourcingCS.h"
 #include "CFDAdvectionCS.h"
 #include "CFDComputePressureCS.h"
+#include "CFDComputeDivergenceCS.h"
+#include "CFDApplyPressureCS.h"
 
 namespace Renderer {
 	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -94,7 +96,10 @@ namespace Renderer {
 	RootSignature simulationPostProcessingSignature;
 
 	RootSignature cfdSourcingSignature;
+	RootSignature cfdComputeDivergenceSignature;
+	RootSignature cfdComputePressureSignature;
 	RootSignature cfdAdvectionSignature;
+	RootSignature cfdApplyPressureSignature;
 
 	RootSignature raytracingGlobalSignature;
 
@@ -173,6 +178,9 @@ namespace Renderer {
 		
 		cfdSourcingSignature.InitializeUAV(2, 1, 1, &wrapLinearSampler);
 		cfdAdvectionSignature.Initialize(2, 2, 1, wrapSamplers);
+		cfdComputeDivergenceSignature.Initialize(1, 3, 1, wrapSamplers);
+		cfdComputePressureSignature.Initialize(2, 1, 1, wrapSamplers);
+		cfdApplyPressureSignature.Initialize(1, 1, 1, wrapSamplers);
 
 		raytracingGlobalSignature.InitializeRaytracing(1, 4, 1, 1, &wrapLinearSampler);
 
@@ -209,7 +217,9 @@ namespace Renderer {
 
 		ComputePSO CFDSourcingPso("CFDSourcing");
 		ComputePSO CFDComputePressurePso("CFDComputePressure");
+		ComputePSO CFDComputeDivergencePso("CFDComputeDivergence");
 		ComputePSO CFDAdvectionPso("CFDAdvection");
+		ComputePSO CFDApplyPressurePso("CFDApplyPressure");
 
 
 		defaultElement =
@@ -401,10 +411,16 @@ namespace Renderer {
 		CFDSourcingPso.SetRootSignature(&cfdSourcingSignature);
 
 		CFDComputePressurePso.SetComputeShader(g_pCFDComputePressureCS, sizeof(g_pCFDComputePressureCS));
-		CFDComputePressurePso.SetRootSignature(&cfdSourcingSignature);
+		CFDComputePressurePso.SetRootSignature(&cfdComputePressureSignature);
+
+		CFDComputeDivergencePso.SetComputeShader(g_pCFDComputeDivergenceCS, sizeof(g_pCFDComputeDivergenceCS));
+		CFDComputeDivergencePso.SetRootSignature(&cfdComputeDivergenceSignature);
 
 		CFDAdvectionPso.SetComputeShader(g_pCFDAdvectionCS, sizeof(g_pCFDAdvectionCS));
 		CFDAdvectionPso.SetRootSignature(&cfdAdvectionSignature);
+
+		CFDApplyPressurePso.SetComputeShader(g_pCFDApplyPressureCS, sizeof(g_pCFDApplyPressureCS));
+		CFDApplyPressurePso.SetRootSignature(&cfdAdvectionSignature);
 
 		modePsoLists[defaultPso.GetName()] = defaultPso;
 		modePsoLists[wirePso.GetName()] = wirePso;
@@ -440,6 +456,8 @@ namespace Renderer {
 		computePsoList[CFDSourcingPso.GetName()] = CFDSourcingPso;
 		computePsoList[CFDAdvectionPso.GetName()] = CFDAdvectionPso;
 		computePsoList[CFDComputePressurePso.GetName()] = CFDComputePressurePso;
+		computePsoList[CFDComputeDivergencePso.GetName()] = CFDComputeDivergencePso;
+		computePsoList[CFDApplyPressurePso.GetName()] = CFDApplyPressurePso;
 	}
 
 	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
@@ -451,11 +469,17 @@ namespace Renderer {
 		geometryPassSignature.Finalize(device);
 		lightPassSignature.Finalize(device);
 		NormalPassSignature.Finalize(device);
+		
 		simulationComputeSignature.Finalize(device);
 		simulationSignature.Finalize(device);
 		simulationPostProcessingSignature.Finalize(device);
+		
 		cfdSourcingSignature.Finalize(device);
 		cfdAdvectionSignature.Finalize(device);
+		cfdComputeDivergenceSignature.Finalize(device);
+		cfdComputePressureSignature.Finalize(device);
+		cfdApplyPressureSignature.Finalize(device);
+
 		raytracingGlobalSignature.Finalize(device);
 
 		for (auto& pso : modePsoLists) {

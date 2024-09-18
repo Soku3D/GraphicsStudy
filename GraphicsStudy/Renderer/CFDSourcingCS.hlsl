@@ -45,5 +45,5 @@ void main(uint3 DTid : SV_DispatchThreadID)
         velocity[DTid.xy] += float4(gConstantBuffer.velocity * scale, 0.f);
         
     }
-
+    //density[DTid.xy] = float4(1.f, 0.f, 0.f, 1.f);
 }

@@ -17,15 +17,23 @@ void StableFluids::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 {
 	CreateResource(device, commandList, width, height, format, mDensity);
 	CreateResource(device, commandList, width, height, format, mVelocity);
-	
+	CreateResource(device, commandList, width, height, format, mPressure);
+	CreateResource(device, commandList, width, height, format, mDivergence);
+
 	CreateResource(device, commandList, width, height, format, mDensityTemp);
 	CreateResource(device, commandList, width, height, format, mVelocityTemp);
+	CreateResource(device, commandList, width, height, format, mPressureTemp);
 
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	heapDesc.NumDescriptors = 6;
+	heapDesc.NumDescriptors = 12;
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mHeapNSV.ReleaseAndGetAddressOf())));
+	
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mHeap.ReleaseAndGetAddressOf())));
+	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mHeapPT.ReleaseAndGetAddressOf())));
+	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mHeapP.ReleaseAndGetAddressOf())));
 
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.Texture2D.MipSlice = 0;
@@ -39,25 +47,49 @@ void StableFluids::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 	srvDesc.Texture2D.MipLevels = 1;
 
 	offset = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(mHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(mHeapNSV->GetCPUDescriptorHandleForHeapStart());
+
 	device->CreateUnorderedAccessView(mDensity.Get(), nullptr, &uavDesc, handle);
 	handle.Offset(1, offset);
 	device->CreateUnorderedAccessView(mVelocity.Get(), nullptr, &uavDesc, handle);
 	handle.Offset(1, offset);
-	device->CreateShaderResourceView(mDensity.Get(), &srvDesc, handle);
+	device->CreateUnorderedAccessView(mDivergence.Get(), nullptr, &uavDesc, handle);
+	handle.Offset(1, offset);
+	device->CreateUnorderedAccessView(mPressure.Get(), nullptr, &uavDesc, handle);
+	handle.Offset(1, offset);
+	device->CreateUnorderedAccessView(mPressureTemp.Get(), nullptr, &uavDesc, handle);
+
+	handle.Offset(1, offset);
+	device->CreateShaderResourceView(mDensity.Get(), &srvDesc, handle);  // 5
 	handle.Offset(1, offset);
 	device->CreateShaderResourceView(mVelocity.Get(), &srvDesc, handle);
+	handle.Offset(1, offset);
+	device->CreateShaderResourceView(mDivergence.Get(), &srvDesc, handle);
+	handle.Offset(1, offset);
+	device->CreateShaderResourceView(mPressureTemp.Get(), &srvDesc, handle);
+	handle.Offset(1, offset);
+	device->CreateShaderResourceView(mPressure.Get(), &srvDesc, handle);
 	handle.Offset(1, offset);
 	device->CreateShaderResourceView(mDensityTemp.Get(), &srvDesc, handle);
 	handle.Offset(1, offset);
 	device->CreateShaderResourceView(mVelocityTemp.Get(), &srvDesc, handle);
-	
+	handle.Offset(1, offset);
+
 	D3D12_RESOURCE_BARRIER barriers[] = {
 		CD3DX12_RESOURCE_BARRIER::Transition(mDensity.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS),
 		CD3DX12_RESOURCE_BARRIER::Transition(mVelocity.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
 	};
 
 	commandList->ResourceBarrier(2, barriers);
+
+	DescriptorInsert(device, mHeap, mHeapNSV, 0, 0, 12);
+
+	DescriptorInsert(device, mHeapP, mHeapNSV, 3, 0, 1);
+	DescriptorInsert(device, mHeapPT, mHeapNSV, 4, 0, 1); // Insert PressureTemp Uav 
+	DescriptorInsert(device, mHeapP, mHeapNSV, 8, 1, 1);
+	DescriptorInsert(device, mHeapPT, mHeapNSV, 9, 1, 1);
+	DescriptorInsert(device, mHeapP, mHeapNSV, 7, 2, 1);
+	DescriptorInsert(device, mHeapPT, mHeapNSV, 7, 2, 1);
 }
 
 void StableFluids::CreateResource(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
@@ -87,4 +119,16 @@ void StableFluids::CreateResource(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 		nullptr,
 		IID_PPV_ARGS(resource.ReleaseAndGetAddressOf())));
 
+}
+
+void StableFluids::DescriptorInsert(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& destHeap,
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& srcHeap,
+	const int& srcIndex,
+	const int& destIndex,
+	const int& count)
+{
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dest(destHeap->GetCPUDescriptorHandleForHeapStart(), destIndex, offset);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE src(srcHeap->GetCPUDescriptorHandleForHeapStart(), srcIndex, offset);
+	device->CopyDescriptorsSimple(count, dest, src, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
