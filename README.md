@@ -26,7 +26,7 @@
 
 
 ### Windows
-##### Installing Dependencies
+#### Installing Dependencies
 ```
 vcpkg install directxtex[core,dx11,openexr]:x64-windows
 vcpkg install directxtk12[core,xaudio2-9]:x64-windows
@@ -37,7 +37,7 @@ vcpkg install assimp:x64-windows
 vcpkg install boost-serialization:x64-windows
 vcpkg install physx:x64-windows
 ```
-### Set Up Steam SDK
+#### Set Up Steam SDK
 
 1. Visit the [Steamworks SDK Documentation](https://partner.steamgames.com/doc/sdk).
 2. Download the Steam SDK from the website.
