@@ -42,5 +42,5 @@ vcpkg install physx:x64-windows
 2. Download the Steam SDK from the website.
 3. Once downloaded, extract the SDK files to the following path:
 
-   ```
-   C:\Users\username\sdk
+```
+C:\Users\username\sdk
