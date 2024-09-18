@@ -22,6 +22,7 @@
     <img src="GraphicsStudy/Renderer/Results/SimulationApp/240905-2056.png" height="200">
     <img src="GraphicsStudy/Renderer/Results/SimulationApp/240914-2159.png" height="200">
     <img src="GraphicsStudy/Renderer/Results/SimulationApp/240914-2333.png" height="200">
+    <img src="GraphicsStudy/Renderer/Results/SimulationApp/240918-1725.png" height="200">
 
 
 ### Windows
