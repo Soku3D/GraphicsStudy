@@ -8,16 +8,6 @@ Texture2D divergence : register(t1);
 SamplerState gWarpLinearSampler : register(s0);
 SamplerState gWarpPointSampler : register(s1);
 
-struct SimulationConstant
-{
-    float3 color;
-    float deltaTime;
-    float3 velocity;
-    float radius;
-    uint i;
-    uint j;
-};
-
 ConstantBuffer<SimulationConstant> gConstantBuffer : register(b0);
 
 [numthreads(32, 32, 1)]

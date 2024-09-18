@@ -6,29 +6,18 @@ RWTexture2D<float4> velocity : register(u1);
 
 SamplerState gWarpSampler : register(s0);
 
-struct SimulationConstant
-{
-    float3 color;
-    float deltaTime;
-    float3 velocity;
-    float radius;
-    uint i;
-    uint j;
-};
 ConstantBuffer<SimulationConstant> gConstantBuffer : register(b0);
 
 float smootherstep(float x, float edge0 = 0.0f, float edge1 = 1.0f)
 {
-  // Scale, and clamp x to 0..1 range
     x = clamp((x - edge0) / (edge1 - edge0), 0, 1);
-
     return x * x * x * (3 * x * (2 * x - 5) + 10.0f);
 }
 
 [numthreads(32, 32, 1)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
-    density[DTid.xy] = max(0.0, density[DTid.xy] - 0.001);
+    //density[DTid.xy] = max(0.0, density[DTid.xy] - 0.001);
     
     uint width, height;
     density.GetDimensions(width, height);
@@ -45,5 +34,4 @@ void main(uint3 DTid : SV_DispatchThreadID)
         velocity[DTid.xy] += float4(gConstantBuffer.velocity * scale, 0.f);
         
     }
-    //density[DTid.xy] = float4(1.f, 0.f, 0.f, 1.f);
 }

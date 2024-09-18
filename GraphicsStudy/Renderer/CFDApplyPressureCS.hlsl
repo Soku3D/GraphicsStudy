@@ -4,16 +4,6 @@
 RWTexture2D<float4> velocity : register(u0);
 Texture2D<float4> pressure : register(s0);
 
-struct SimulationConstant
-{
-    float3 color;
-    float deltaTime;
-    float3 velocity;
-    float radius;
-    uint i;
-    uint j;
-};
-
 ConstantBuffer<SimulationConstant> gConstantBuffer : register(b0);
 
 SamplerState gWarpLinearSampler : register(s0);

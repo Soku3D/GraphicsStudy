@@ -46,6 +46,7 @@
 #include "CFDComputePressureCS.h"
 #include "CFDComputeDivergenceCS.h"
 #include "CFDApplyPressureCS.h"
+#include "CFDComputeDiffuseCS.h"
 
 namespace Renderer {
 	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -100,6 +101,7 @@ namespace Renderer {
 	RootSignature cfdComputePressureSignature;
 	RootSignature cfdAdvectionSignature;
 	RootSignature cfdApplyPressureSignature;
+	RootSignature cfdComputeDiffuseSignature;
 
 	RootSignature raytracingGlobalSignature;
 
@@ -181,6 +183,7 @@ namespace Renderer {
 		cfdComputeDivergenceSignature.Initialize(1, 3, 1, wrapSamplers);
 		cfdComputePressureSignature.Initialize(2, 1, 1, wrapSamplers);
 		cfdApplyPressureSignature.Initialize(1, 1, 1, wrapSamplers);
+		cfdComputeDiffuseSignature.Initialize(2, 2, 1, wrapSamplers);
 
 		raytracingGlobalSignature.InitializeRaytracing(1, 4, 1, 1, &wrapLinearSampler);
 
@@ -220,6 +223,7 @@ namespace Renderer {
 		ComputePSO CFDComputeDivergencePso("CFDComputeDivergence");
 		ComputePSO CFDAdvectionPso("CFDAdvection");
 		ComputePSO CFDApplyPressurePso("CFDApplyPressure");
+		ComputePSO CFDComputeDiffusePso("CFDComputeDiffuse");
 
 
 		defaultElement =
@@ -422,6 +426,9 @@ namespace Renderer {
 		CFDApplyPressurePso.SetComputeShader(g_pCFDApplyPressureCS, sizeof(g_pCFDApplyPressureCS));
 		CFDApplyPressurePso.SetRootSignature(&cfdAdvectionSignature);
 
+		CFDComputeDiffusePso.SetComputeShader(g_pCFDComputeDiffuseCS, sizeof(g_pCFDComputeDiffuseCS));
+		CFDComputeDiffusePso.SetRootSignature(&cfdComputeDiffuseSignature);
+
 		modePsoLists[defaultPso.GetName()] = defaultPso;
 		modePsoLists[wirePso.GetName()] = wirePso;
 		modePsoLists[msaaPso.GetName()] = msaaPso;
@@ -458,6 +465,7 @@ namespace Renderer {
 		computePsoList[CFDComputePressurePso.GetName()] = CFDComputePressurePso;
 		computePsoList[CFDComputeDivergencePso.GetName()] = CFDComputeDivergencePso;
 		computePsoList[CFDApplyPressurePso.GetName()] = CFDApplyPressurePso;
+		computePsoList[CFDComputeDiffusePso.GetName()] = CFDComputeDiffusePso;
 	}
 
 	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
@@ -479,6 +487,7 @@ namespace Renderer {
 		cfdComputeDivergenceSignature.Finalize(device);
 		cfdComputePressureSignature.Finalize(device);
 		cfdApplyPressureSignature.Finalize(device);
+		cfdComputeDiffuseSignature.Finalize(device);
 
 		raytracingGlobalSignature.Finalize(device);
 

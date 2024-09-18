@@ -9,16 +9,6 @@ RWTexture2D<float4> pressureTemp : register(u2);
 SamplerState gWarpLinearSampler : register(s0);
 SamplerState gWarpPointSampler : register(s1);
 
-struct SimulationConstant
-{
-    float3 color;
-    float deltaTime;
-    float3 velocity;
-    float radius;
-    uint i;
-    uint j;
-};
-
 ConstantBuffer<SimulationConstant> gConstantBuffer : register(b0);
 
 [numthreads(32, 32, 1)]
@@ -28,9 +18,6 @@ void main(uint3 DTid : SV_DispatchThreadID)
     Divergence.GetDimensions(width, height);
     uint x = DTid.x;
     uint y = DTid.y;
-    
-    float u = DTid.x / (width - 1.f);
-    uint v = DTid.y / (height - 1.f);
     
     float dx = 2.f / width;
     float dy = 2.f / height;
@@ -43,11 +30,11 @@ void main(uint3 DTid : SV_DispatchThreadID)
     uint2 top = uint2(x, ((y - 1 < 0) ? (height - 1) : (y - 1)));
     uint2 bottom = uint2(x, ((y + 1 > height - 1) ? (0) : (y + 1)));
     
-    float vl = velocity[left].x;
-    float vr = velocity[right].x; 
+    float vl = velocity[left].x; 
+    float vr = velocity[right].x;
     float vb = velocity[top].y; 
     float vt = velocity[bottom].y; 
-
+    
     float divergence = (vr - vl) / dx + (vt - vb) / dy;
     
     Divergence[DTid.xy].x = divergence;

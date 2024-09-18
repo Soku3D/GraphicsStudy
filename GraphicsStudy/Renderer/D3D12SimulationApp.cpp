@@ -22,7 +22,8 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	if (!D3D12App::Initialize())
 		return false;
 
-	colorLists = {
+	colorLists = 
+	{
 		{ 1.0f, 0.0f, 0.0f },
 		{ 1.0f, 0.65f, 0.0f },
 		{ 1.0f, 1.0f, 0.0f },
@@ -120,11 +121,9 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 		else {
 			float ndcDeltaX = mouseDeltaX / (m_screenWidth - 1.f);
 			float ndcDeltaY = mouseDeltaY / (m_screenHeight - 1.f);
-
-			mCFDConstantBuffer.mStructure.velocity = DirectX::SimpleMath::Vector3(ndcDeltaX, ndcDeltaY, 0.f);
-
-			/*mCFDConstantBuffer.mStructure.velocity = DirectX::SimpleMath::Vector3(ndcX, ndcY, 0.f) -
-				DirectX::SimpleMath::Vector3(mPrevMouseNdcX, mPrevMouseNdcY, 0.f);*/
+			//mCFDConstantBuffer.mStructure.velocity = DirectX::SimpleMath::Vector3(ndcDeltaX, ndcDeltaY, 0.f);
+			mCFDConstantBuffer.mStructure.velocity = DirectX::SimpleMath::Vector3(ndcX, ndcY, 0.f) -
+				DirectX::SimpleMath::Vector3(mPrevMouseNdcX, mPrevMouseNdcY, 0.f);
 			mCFDConstantBuffer.mStructure.velocity *= 10.0f;
 		}
 		mCFDConstantBuffer.mStructure.i = mCursorPosition.x;
@@ -137,6 +136,7 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 	mCFDConstantBuffer.mStructure.color = colorLists[colorIndex];
 	mCFDConstantBuffer.mStructure.deltaTime = (deltaTime < 1 / 300.f ? deltaTime : 1 / 300.f);
 	mCFDConstantBuffer.mStructure.radius = 50.f;
+	mCFDConstantBuffer.mStructure.viscosity = 10.f;
 	mCFDConstantBuffer.UpdateBuffer();
 
 	mPrevMouseNdcX = ndcX;
@@ -154,6 +154,7 @@ void Renderer::D3D12SimulationApp::Render(float& deltaTime)
 	//SPH(deltaTime);
 	CFD(deltaTime);
 }
+
 void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
 {
 	SimulationPass(deltaTime);
@@ -171,19 +172,20 @@ void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
 	//PostProcessing(deltaTime);
 	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 }
+
 void Renderer::D3D12SimulationApp::CFD(float& deltaTime)
 {
 	CFDPass(deltaTime, "CFDSourcing");
-	CFDAdvectionPass(deltaTime);
+	CFDDiffusePass(deltaTime);
 	CFDComputeDivergencePass(deltaTime);
 	CFDComputePressurePass(deltaTime);
 	CFDApplyPressurePass(deltaTime);
-	
+	CFDAdvectionPass(deltaTime);
+
 	CopyResource(m_commandList, CurrentBackBuffer(), stableFluids.GetDensityResource(),
 		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 	RenderFont(deltaTime);
-
 }
 
 void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
@@ -401,8 +403,6 @@ void Renderer::D3D12SimulationApp::RenderFont(float& deltaTime)
 	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
-
-
 	ThrowIfFailed(m_commandList->Close());
 
 	ID3D12CommandList* pCmdLists[] = {
@@ -424,7 +424,7 @@ void Renderer::D3D12SimulationApp::CFDPass(float& deltaTime, const std::string& 
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
-	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), simulationPassEvent);
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), cfdSourcingEvent);
 
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 	ID3D12DescriptorHeap* pHeaps[] = {
@@ -448,14 +448,29 @@ void Renderer::D3D12SimulationApp::CFDPass(float& deltaTime, const std::string& 
 
 void Renderer::D3D12SimulationApp::CFDAdvectionPass(float& deltaTime)
 {
-	CopyResource(m_commandList, stableFluids.GetDensityTempResource(), stableFluids.GetDensityResource(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	CopyResource(m_commandList, stableFluids.GetVelocityTempResource(), stableFluids.GetVelocityResource(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	CopyResource(m_commandList, stableFluids.GetDensityTempResource(), stableFluids.GetDensityResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	CopyResource(m_commandList, stableFluids.GetVelocityTempResource(), stableFluids.GetVelocityResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 	auto& pso = computePsoList["CFDAdvection"];
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), cfdAdvectionEvent);
+
+	//D3D12_RESOURCE_BARRIER barrierBefore[] = {
+	//	CD3DX12_RESOURCE_BARRIER::Transition(stableFluids.GetDensityTempResource(),
+	//		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON),
+	//	CD3DX12_RESOURCE_BARRIER::Transition(stableFluids.GetVelocityTempResource(),
+	//		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON)
+	//};
+	//D3D12_RESOURCE_BARRIER barrierAfter[] = {
+	//	CD3DX12_RESOURCE_BARRIER::Transition(stableFluids.GetDensityTempResource(),
+	//		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS ),
+	//	CD3DX12_RESOURCE_BARRIER::Transition(stableFluids.GetVelocityTempResource(),
+	//		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+	//};
+	//m_commandList->ResourceBarrier(2,
+	//	barrierBefore);
 
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 	ID3D12DescriptorHeap* pHeaps[] = {
@@ -466,6 +481,9 @@ void Renderer::D3D12SimulationApp::CFDAdvectionPass(float& deltaTime)
 	m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetHandle(10));
 	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
 	m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
+
+	//m_commandList->ResourceBarrier(2,
+	//	barrierAfter);
 
 	ThrowIfFailed(m_commandList->Close());
 
@@ -507,14 +525,13 @@ void Renderer::D3D12SimulationApp::CFDComputeDivergencePass(float& deltaTime)
 	PIXEndEvent(m_commandQueue.Get());
 }
 
-
 void Renderer::D3D12SimulationApp::CFDComputePressurePass(float& deltaTime)
 {
 	auto& pso = computePsoList["CFDComputePressure"];
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
-	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), cfdAdvectionEvent);
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), cfdComputePressureEvent);
 
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 	
@@ -536,6 +553,52 @@ void Renderer::D3D12SimulationApp::CFDComputePressurePass(float& deltaTime)
 			m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetPTHandle(0));
 			m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetPTHandle(1));
 		}
+		m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+		m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
+	}
+	
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* pCmdLists[] = {
+		m_commandList.Get()
+	};
+	m_commandQueue->ExecuteCommandLists(1, pCmdLists);
+	FlushCommandQueue();
+
+	PIXEndEvent(m_commandQueue.Get());
+}
+
+void Renderer::D3D12SimulationApp::CFDDiffusePass(float& deltaTime)
+{
+	//CopyResource(m_commandList, stableFluids.GetDensityTempResource(), stableFluids.GetDensityResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	//CopyResource(m_commandList, stableFluids.GetVelocityTempResource(), stableFluids.GetVelocityResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+	auto& pso = computePsoList["CFDComputeDiffuse"];
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), cfdDiffuseEvent);
+
+	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
+	ID3D12DescriptorHeap* pHeaps[] = {
+				stableFluids.GetHeap()
+	};
+	m_commandList->SetDescriptorHeaps(1, pHeaps);
+	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+	for (int i = 0; i < 10; i++)
+	{
+		if (i % 2 != 0) 
+		{
+			m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetHandle(0));
+			m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetHandle(10));
+		}
+		else 
+		{
+			m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetHandle(12));
+			m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetHandle(5));
+		}
+
 		m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
 		m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
 	}
