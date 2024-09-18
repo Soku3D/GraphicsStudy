@@ -96,7 +96,7 @@ void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Mi
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
-		D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&mUpload)));
 
@@ -117,15 +117,10 @@ void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Mi
 		CD3DX12_RESOURCE_BARRIER::Transition(
 			mGpu.Get(),
 			D3D12_RESOURCE_STATE_COMMON,
-			D3D12_RESOURCE_STATE_COPY_DEST),
-
-		CD3DX12_RESOURCE_BARRIER::Transition(
-			mUpload.Get(),
-			D3D12_RESOURCE_STATE_COMMON,
-			D3D12_RESOURCE_STATE_GENERIC_READ)
+			D3D12_RESOURCE_STATE_COPY_DEST)
 	};
 
-	commandList->ResourceBarrier(2,	barriers);
+	commandList->ResourceBarrier(1,	barriers);
 
 	UpdateSubresources(commandList.Get(), mGpu.Get(), mUpload.Get(), 0, 0, 1, &subResourceData);
 
