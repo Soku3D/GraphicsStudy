@@ -35,4 +35,12 @@ vcpkg install imgui[core,dx11-binding,dx12-binding,win32-binding]:x64-windows
 vcpkg install assimp:x64-windows
 vcpkg install boost-serialization:x64-windows
 vcpkg install physx:x64-windows
-``` 
+```
+### Set Up Steam SDK
+
+1. Visit the [Steamworks SDK Documentation](https://partner.steamgames.com/doc/sdk).
+2. Download the Steam SDK from the website.
+3. Once downloaded, extract the SDK files to the following path:
+
+   ```
+   C:\Users\username\sdk
