@@ -25,18 +25,15 @@ void main(uint3 DTid : SV_DispatchThreadID)
     uint2 top = uint2(x, ((y - 1 < 0) ? (height - 1) : (y - 1)));
     uint2 bottom = uint2(x, ((y + 1 > height - 1) ? (0) : (y + 1)));
     
-    //float d = dencityTemp[DTid.xy];
-    //float dl = dencityTemp[left];
-    //float dr = dencityTemp[right];
-    //float db = dencityTemp[top].x;
-    //float dt = dencityTemp[bottom].x;
+    float4 d = dencityTemp[DTid.xy];
+    float4 dl = dencityTemp[left];
+    float4 dr = dencityTemp[right];
+    float4 db = dencityTemp[top];
+    float4 dt = dencityTemp[bottom];
+    
     //float laplaceVel = dl + dr + db + dt - 5.f * d;
-        
-    dencity[DTid.xy] = dencityTemp[DTid.xy]  +
-        gConstantBuffer.deltaTime * gConstantBuffer.viscosity *
-                (dencityTemp[left] +
-                dencityTemp[right] +
-                dencityTemp[top] +
-                dencityTemp[bottom] - 4.f * dencityTemp[DTid.xy]);
-
+    float kd = gConstantBuffer.viscosity * gConstantBuffer.deltaTime;
+    
+    
+    dencity[DTid.xy] = (d + kd * (dl + dr + db + dt)) / (1 + 4.f * kd);
 }

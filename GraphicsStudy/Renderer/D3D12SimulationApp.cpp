@@ -136,7 +136,7 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 	mCFDConstantBuffer.mStructure.color = colorLists[colorIndex];
 	mCFDConstantBuffer.mStructure.deltaTime = (deltaTime < 1 / 300.f ? deltaTime : 1 / 300.f);
 	mCFDConstantBuffer.mStructure.radius = 50.f;
-	mCFDConstantBuffer.mStructure.viscosity = 10.f;
+	mCFDConstantBuffer.mStructure.viscosity = 1000.f;
 	mCFDConstantBuffer.UpdateBuffer();
 
 	mPrevMouseNdcX = ndcX;
