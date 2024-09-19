@@ -264,6 +264,8 @@
     <FxCompile Include="CFDComputeDivergenceCS.hlsl" />
     <FxCompile Include="CFDApplyPressureCS.hlsl" />
     <FxCompile Include="CFDComputeDiffuseCS.hlsl" />
+    <FxCompile Include="CFDComputeVorticityCS.hlsl" />
+    <FxCompile Include="CFDVorticityConfinementCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />

@@ -80,6 +80,7 @@ __declspec(align(256)) struct CFDConstantData {
 	DirectX::SimpleMath::Vector3 velocity;
 	float radius;
 	float viscosity;
+	float vorticity;
 	uint32_t i;
 	uint32_t j;
 };

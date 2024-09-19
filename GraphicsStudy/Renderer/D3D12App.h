@@ -248,7 +248,7 @@ namespace Renderer {
 	protected:
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> samplerHeap;
 
-	private:
+	protected:
 		const wchar_t* copyResourceToSwapChainEvent = L"CopyResourceoSwapChain Pass ";
 		const wchar_t* copyResourceEvent = L"CopyResource Pass ";
 		const wchar_t* guiPassEvent = L"GUI Pass ";

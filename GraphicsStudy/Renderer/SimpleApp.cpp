@@ -199,7 +199,7 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 		const UINT resultData =
 			GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT,
 				&raw, &rawSize, sizeof(RAWINPUTHEADER));
-		
+
 		mouseDeltaX = raw.data.mouse.lLastX;
 		mouseDeltaY = raw.data.mouse.lLastY;
 		if (raw.data.mouse.usButtonFlags == RI_MOUSE_RIGHT_BUTTON_DOWN) {

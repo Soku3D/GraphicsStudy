@@ -33,6 +33,7 @@ namespace Renderer {
 		void CFDAdvectionPass(float& deltaTime);
 		void CFDComputePressurePass(float& deltaTime);
 		void CFDDiffusePass(float& deltaTime);
+		void CFDVorticityPass(float& deltaTime, const std::string& psoName, int uavIndex, int srvIndex);
 		void CFDApplyPressurePass(float& deltaTime);
 		void CFDComputeDivergencePass(float& deltaTime);
 		void RenderGUI(float& deltaTime) override;
@@ -62,6 +63,10 @@ namespace Renderer {
 		const wchar_t* cfdComputePressureEvent = L"CFD ComputePressure Pass ";
 		const wchar_t* cfdApplyPressureEvent = L"CFD ApplyPressure Pass ";
 		const wchar_t* cfdDiffuseEvent = L"CFD Diffuse Pass ";
+		const wchar_t* cfdVorticityEvent = L"CFD Vorticity Pass ";
+
+	private:
+		float mGuiVorticity = 0.f;
 
 	};
 }

@@ -22,6 +22,7 @@ public:
 	ID3D12DescriptorHeap* GetHeap()const { return mHeap.Get(); }
 	ID3D12DescriptorHeap* GetPHeap()const { return mHeapP.Get(); }
 	ID3D12DescriptorHeap* GetPTHeap()const { return mHeapPT.Get(); }
+	ID3D12DescriptorHeap* GetRTVHeap()const { return mDensityRTVHeap.Get(); }
 
 	ID3D12Resource* GetDensityResource() const { return mDensity.Get(); }
 	ID3D12Resource* GetDensityTempResource() const { return mDensityTemp.Get(); }
@@ -52,12 +53,16 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> mPressure;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mPressureTemp;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mDivergence;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mVorticity;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mVorticityDir;
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mHeapNSV;
 
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mHeapPT;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mHeapP;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mHeapPT;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mDensityRTVHeap;
+
 
 	UINT offset;
 };

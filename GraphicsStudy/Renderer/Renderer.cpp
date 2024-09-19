@@ -47,6 +47,8 @@
 #include "CFDComputeDivergenceCS.h"
 #include "CFDApplyPressureCS.h"
 #include "CFDComputeDiffuseCS.h"
+#include "CFDComputeVorticityCS.h"
+#include "CFDVorticityConfinementCS.h"
 
 namespace Renderer {
 	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -102,6 +104,7 @@ namespace Renderer {
 	RootSignature cfdAdvectionSignature;
 	RootSignature cfdApplyPressureSignature;
 	RootSignature cfdComputeDiffuseSignature;
+	RootSignature cfdVorticitySignature;
 
 	RootSignature raytracingGlobalSignature;
 
@@ -184,6 +187,7 @@ namespace Renderer {
 		cfdComputePressureSignature.Initialize(2, 1, 1, wrapSamplers);
 		cfdApplyPressureSignature.Initialize(1, 1, 1, wrapSamplers);
 		cfdComputeDiffuseSignature.Initialize(2, 2, 1, wrapSamplers);
+		cfdVorticitySignature.Initialize(1, 1, 1, wrapSamplers);
 
 		raytracingGlobalSignature.InitializeRaytracing(1, 4, 1, 1, &wrapLinearSampler);
 
@@ -224,6 +228,8 @@ namespace Renderer {
 		ComputePSO CFDAdvectionPso("CFDAdvection");
 		ComputePSO CFDApplyPressurePso("CFDApplyPressure");
 		ComputePSO CFDComputeDiffusePso("CFDComputeDiffuse");
+		ComputePSO CFDComputeVorticityPso("CFDComputeVorticity");
+		ComputePSO CFDVorticityConfinementPso("CFDVorticityConfinement");
 
 
 		defaultElement =
@@ -385,6 +391,7 @@ namespace Renderer {
 		copyPso.SetPixelShader(g_pCopyPS, sizeof(g_pCopyPS));
 
 		copyDensityPso = copyPso;
+		copyPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
 		//copyDensityPso.SetBlendState(addColorBlender);
 
 		simulationRenderPso = defaultPso;
@@ -429,6 +436,12 @@ namespace Renderer {
 		CFDComputeDiffusePso.SetComputeShader(g_pCFDComputeDiffuseCS, sizeof(g_pCFDComputeDiffuseCS));
 		CFDComputeDiffusePso.SetRootSignature(&cfdComputeDiffuseSignature);
 
+		CFDComputeVorticityPso.SetComputeShader(g_pCFDComputeVorticityCS, sizeof(g_pCFDComputeVorticityCS));
+		CFDComputeVorticityPso.SetRootSignature(&cfdVorticitySignature);
+
+		CFDVorticityConfinementPso.SetComputeShader(g_pCFDVorticityConfinementCS, sizeof(g_pCFDVorticityConfinementCS));
+		CFDVorticityConfinementPso.SetRootSignature(&cfdVorticitySignature);
+
 		modePsoLists[defaultPso.GetName()] = defaultPso;
 		modePsoLists[wirePso.GetName()] = wirePso;
 		modePsoLists[msaaPso.GetName()] = msaaPso;
@@ -466,6 +479,8 @@ namespace Renderer {
 		computePsoList[CFDComputeDivergencePso.GetName()] = CFDComputeDivergencePso;
 		computePsoList[CFDApplyPressurePso.GetName()] = CFDApplyPressurePso;
 		computePsoList[CFDComputeDiffusePso.GetName()] = CFDComputeDiffusePso;
+		computePsoList[CFDVorticityConfinementPso.GetName()] = CFDVorticityConfinementPso;
+		computePsoList[CFDComputeVorticityPso.GetName()] = CFDComputeVorticityPso;
 	}
 
 	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
@@ -488,6 +503,7 @@ namespace Renderer {
 		cfdComputePressureSignature.Finalize(device);
 		cfdApplyPressureSignature.Finalize(device);
 		cfdComputeDiffuseSignature.Finalize(device);
+		cfdVorticitySignature.Finalize(device);
 
 		raytracingGlobalSignature.Finalize(device);
 
