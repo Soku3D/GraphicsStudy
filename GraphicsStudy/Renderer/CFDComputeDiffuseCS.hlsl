@@ -20,10 +20,10 @@ void main(uint3 DTid : SV_DispatchThreadID)
     uint x = DTid.x;
     uint y = DTid.y;
     
-    uint2 left = uint2(((x - 1 < 0) ? (width - 1) : (x - 1)), y);
-    uint2 right = uint2(((x + 1 > width - 1) ? (0) : (x + 1)), y);
-    uint2 top = uint2(x, ((y - 1 < 0) ? (height - 1) : (y - 1)));
-    uint2 bottom = uint2(x, ((y + 1 > height - 1) ? (0) : (y + 1)));
+    uint2 left = uint2(((x == 0) ? (width - 1) : (x - 1)), y);
+    uint2 right = uint2(((x == width - 1) ? (0) : (x + 1)), y);
+    uint2 top = uint2(x, ((y == 0) ? (height - 1) : (y - 1)));
+    uint2 bottom = uint2(x, ((y == height - 1) ? (0) : (y + 1)));
     
     float4 d = dencityTemp[DTid.xy];
     float4 dl = dencityTemp[left];
@@ -31,9 +31,17 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float4 db = dencityTemp[top];
     float4 dt = dencityTemp[bottom];
     
+    float4 v = velocityTemp[DTid.xy];
+    float4 vl = velocityTemp[left];
+    float4 vr = velocityTemp[right];
+    float4 vb = velocityTemp[top];
+    float4 vt = velocityTemp[bottom];
+    
+    
     //float laplaceVel = dl + dr + db + dt - 5.f * d;
     float kd = gConstantBuffer.viscosity * gConstantBuffer.deltaTime;
     
     
     dencity[DTid.xy] = (d + kd * (dl + dr + db + dt)) / (1 + 4.f * kd);
+    velocity[DTid.xy] = (v + kd * (vl + vr + vb + vt)) / (1 + 4.f * kd);
 }

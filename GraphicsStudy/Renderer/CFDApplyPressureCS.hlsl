@@ -17,16 +17,13 @@ void main(uint3 DTid : SV_DispatchThreadID)
     uint x = DTid.x;
     uint y = DTid.y;
     
-    float dx = 2.f / width;
-    float dy = 2.f / height;
-    
-    dx = 2.f;
-    dy = 2.f;
-    
-    uint2 left = uint2(((x - 1 < 0) ? (width - 1) : (x - 1)), y);
-    uint2 right = uint2(((x + 1 > width - 1) ? (0) : (x + 1)), y);
-    uint2 top = uint2(x, ((y - 1 < 0) ? (height - 1) : (y - 1)));
-    uint2 bottom = uint2(x, ((y + 1 > height - 1) ? (0) : (y + 1)));
+    float dx = 2.f;
+    float dy = 2.f;
+       
+    uint2 left = uint2(((x == 0) ? (width - 1) : (x - 1)), y);
+    uint2 right = uint2(((x == width - 1) ? (0) : (x + 1)), y);
+    uint2 top = uint2(x, ((y  == 0) ? (height - 1) : (y - 1)));
+    uint2 bottom = uint2(x, ((y  == height - 1) ? (0) : (y + 1)));
     
     
     float pl = pressure[left].x; 

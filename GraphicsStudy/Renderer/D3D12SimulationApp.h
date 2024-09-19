@@ -67,6 +67,6 @@ namespace Renderer {
 
 	private:
 		float mGuiVorticity = 0.f;
-
+		float mGuiViscosity = 0.f;
 	};
 }

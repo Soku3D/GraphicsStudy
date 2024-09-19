@@ -140,15 +140,17 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 	}
 	mCFDConstantBuffer.mStructure.color = colorLists[colorIndex];
 	mCFDConstantBuffer.mStructure.deltaTime = (deltaTime < 1 / 60.f ? deltaTime : 1 / 60.f);
+	//mCFDConstantBuffer.mStructure.deltaTime = 1 / 60.f;
 	mCFDConstantBuffer.mStructure.radius = 50.f;
-	mCFDConstantBuffer.mStructure.viscosity = 0.f;
+	mCFDConstantBuffer.mStructure.viscosity = mGuiViscosity;
 	mCFDConstantBuffer.mStructure.vorticity = mGuiVorticity;
 	mCFDConstantBuffer.UpdateBuffer();
 }
 
 void Renderer::D3D12SimulationApp::UpdateGUI(float& deltaTime)
 {
-	ImGui::SliderFloat("vorticity value", &mGuiVorticity, 0.f, 20.f);
+	ImGui::SliderFloat("Vorticity value", &mGuiVorticity, 0.f, 0.1f);
+	ImGui::SliderFloat("Viscosity value", &mGuiViscosity, 0.f, 10.f);
 }
 
 void Renderer::D3D12SimulationApp::Render(float& deltaTime)
@@ -179,13 +181,14 @@ void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
 void Renderer::D3D12SimulationApp::CFD(float& deltaTime)
 {
 	CFDPass(deltaTime, "CFDSourcing");
+	CFDVorticityPass(deltaTime, "CFDComputeVorticity", 14, 6);
+	CFDVorticityPass(deltaTime, "CFDVorticityConfinement", 1, 16);
 	CFDDiffusePass(deltaTime);
 
 	CFDComputeDivergencePass(deltaTime);
 	CFDComputePressurePass(deltaTime);
 	CFDApplyPressurePass(deltaTime);
-	CFDVorticityPass(deltaTime, "CFDComputeVorticity", 14, 6);
-	CFDVorticityPass(deltaTime, "CFDVorticityConfinement", 1, 16);
+	
 	CFDAdvectionPass(deltaTime);
 
 	//RenderGUI(deltaTime);
@@ -409,7 +412,7 @@ void Renderer::D3D12SimulationApp::RenderFont(float& deltaTime)
 	D3D12App::RenderFonts(wss.str(), m_hdrResourceDescriptors, m_spriteBatchHDR, m_fontHDR, m_commandList);
 
 	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
-
+		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 	ThrowIfFailed(m_commandList->Close());
 
 	ID3D12CommandList* pCmdLists[] = {

@@ -202,6 +202,10 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 
 		mouseDeltaX = raw.data.mouse.lLastX;
 		mouseDeltaY = raw.data.mouse.lLastY;
+
+
+		
+
 		if (raw.data.mouse.usButtonFlags == RI_MOUSE_RIGHT_BUTTON_DOWN) {
 			if (!bIsFPSMode) {
 				GetCursorPos(&m_fpsModeCursorPos);
@@ -235,6 +239,18 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 			// m_camera->SetQuaternion(deltaX, deltaY);
 		}
 
+		POINT cursorPos;
+		GetCursorPos(&cursorPos);
+		RECT windowRect;
+		GetWindowRect(hWnd, &windowRect);
+
+		if (cursorPos.x < windowRect.left || cursorPos.x > windowRect.right ||
+			cursorPos.y < windowRect.top || cursorPos.y > windowRect.bottom)
+		{
+			// 화면 밖으로 나갔다면 버튼 상태를 해제
+			lMouseButtonClicked = false;
+			fire = false;
+		}
 
 		return 0;
 	}
