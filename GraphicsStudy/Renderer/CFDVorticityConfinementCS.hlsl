@@ -21,6 +21,9 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float dx = 2.f / width;
     float dy = 2.f / height;
     
+    dx = 2.f;
+    dy = 2.f;
+    
     uint2 left = uint2(((x == 0) ? (width - 1) : (x - 1)), y);
     uint2 right = uint2(((x == width - 1) ? (0) : (x + 1)), y);
     uint2 top = uint2(x, ((y == 0) ? (height - 1) : (y - 1)));
@@ -41,5 +44,5 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float3 w = float3(0.f, 0.f, v);
    
    
-    velocity[DTid.xy].xy += gConstantBuffer.vorticity * cross(N, w).xy * 0.002f;
+    velocity[DTid.xy].xy += cross(N, w).xy * gConstantBuffer.vorticity;
 }

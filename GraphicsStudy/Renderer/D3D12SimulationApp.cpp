@@ -10,7 +10,7 @@ Renderer::D3D12SimulationApp::D3D12SimulationApp(const int& width, const int& he
 {
 	bUseTextureApp = false;
 	bUseCubeMapApp = false;
-	bUseGUI = false;
+	bUseGUI = true;
 
 	m_appName = "SimulationApp";
 
@@ -149,7 +149,7 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::UpdateGUI(float& deltaTime)
 {
-	ImGui::SliderFloat("Vorticity value", &mGuiVorticity, 0.f, 0.1f);
+	ImGui::SliderFloat("Vorticity value", &mGuiVorticity, 0.f, 1.f);
 	ImGui::SliderFloat("Viscosity value", &mGuiViscosity, 0.f, 10.f);
 }
 
@@ -667,7 +667,7 @@ void Renderer::D3D12SimulationApp::CFDApplyPressurePass(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::RenderGUI(float& deltaTime)
 {
-	ImGui_ImplDX12_NewFrame();
+	/*ImGui_ImplDX12_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 	ImGui::Begin("GUI");
@@ -710,7 +710,8 @@ void Renderer::D3D12SimulationApp::RenderGUI(float& deltaTime)
 	m_frameIndex = (m_frameIndex + 1) % m_swapChainCount;
 
 	FlushCommandQueue();
-	PIXEndEvent(m_commandQueue.Get());
+	PIXEndEvent(m_commandQueue.Get());*/
+	D3D12App::RenderGUI(deltaTime);
 }
 
 void Renderer::D3D12SimulationApp::FireParticles(const int& fireCount)

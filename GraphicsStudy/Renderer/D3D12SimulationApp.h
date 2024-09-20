@@ -66,7 +66,7 @@ namespace Renderer {
 		const wchar_t* cfdVorticityEvent = L"CFD Vorticity Pass ";
 
 	private:
-		float mGuiVorticity = 0.f;
+		float mGuiVorticity = 0.5f;
 		float mGuiViscosity = 0.f;
 	};
 }
