@@ -31,7 +31,7 @@ namespace Renderer {
 
 		virtual void UpdateGUI(float& deltaTime) = 0;
 		virtual void Update(float& deltaTime) = 0;
-		virtual void CaptureBufferToPNG() {};
+		virtual void CaptureHDRBufferToPNG() {};
 		virtual void CaptureBackBufferToPNG() {};
 	public:
 		HWND m_mainWnd;
@@ -55,6 +55,7 @@ namespace Renderer {
 		bool fire = false;
 		POINT m_fpsModeCursorPos;
 		POINT mCursorPosition;
+		bool bCaptureBackbuffer = false;
 
 	protected:
 		D3D12_COMMAND_LIST_TYPE m_commandType = D3D12_COMMAND_LIST_TYPE_DIRECT;

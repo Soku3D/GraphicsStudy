@@ -5,9 +5,9 @@ static const float deltaTime = 1.f / 300.f;
 [numthreads(32, 32, 1)]
 void main( int3 gID : SV_GroupID ,uint3 DTid : SV_DispatchThreadID )
 {
-    float a = 2.2f;
+    float gamma = 2.2f;
     float invA = 1 / 2.2f;
-    float3 color = pow(gOutput[DTid.xy].rgb, invA);
+    float3 color = pow(gOutput[DTid.xy].rgb, gamma);
     //color -= 3.f * deltaTime;
     gOutput[DTid.xy] = float4(color, 1.f);
   

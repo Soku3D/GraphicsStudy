@@ -3,6 +3,7 @@ RWTexture2D<float4> gOutput : register(u0);
 struct SimulationConstant
 {
     float delTime;
+    float time;
 };
 ConstantBuffer<SimulationConstant> gConstantBuffer : register(b0);
 

@@ -14,7 +14,7 @@ Renderer::D3D12SimulationApp::D3D12SimulationApp(const int& width, const int& he
 
 	m_appName = "SimulationApp";
 
-	m_backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	//m_backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 }
 
 bool Renderer::D3D12SimulationApp::Initialize()
@@ -96,7 +96,8 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 
 	D3D12App::Update(deltaTime);
 
-	mSimulationConstantBuffer.mStructure.time = (deltaTime < 1 / 300.f ? deltaTime : 1 / 300.f);
+	mSimulationConstantBuffer.mStructure.deltaTime = (deltaTime < 1 / 300.f ? deltaTime : 1 / 300.f);
+	mSimulationConstantBuffer.mStructure.time = (float)m_timer.GetElapsedTime();
 	mSimulationConstantBuffer.UpdateBuffer();
 
 	static int colorIndex = 0;
@@ -166,19 +167,23 @@ void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
 	SimulationPass(deltaTime);
 	SimulationRenderPass(deltaTime);
 	PostProcessing(deltaTime, "SimulationPostProcessing");
-	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
+		D3D12App::PostProcessing(deltaTime);
+		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	}
+	else
+		CopyResourceToSwapChain(deltaTime);
 }
 
 void Renderer::D3D12SimulationApp::GeneratePerlinNoise(float& deltaTime)
 {
 	PostProcessing(deltaTime, "PerlinNoise");
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
-		//D3D12App::PostProcessing(deltaTime);
+		D3D12App::PostProcessing(deltaTime);
 		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 	}
-	else {
+	else
 		CopyResourceToSwapChain(deltaTime);
-	}
 }
 
 void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
@@ -187,12 +192,23 @@ void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
 	SPHSimulationPass(deltaTime, "SphComputeForces");
 	SPHSimulationPass(deltaTime, "SphSimulationCompute");
 	SPHSimulationRenderPass(deltaTime);
+
 	//PostProcessing(deltaTime);
-	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	
+	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
+		D3D12App::PostProcessing(deltaTime);
+		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	}
+	else
+		CopyResourceToSwapChain(deltaTime);
+	
+	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 }
 
 void Renderer::D3D12SimulationApp::CFD(float& deltaTime)
 {
+	bCaptureBackbuffer = true;
+
 	CFDPass(deltaTime, "CFDSourcing");
 	CFDVorticityPass(deltaTime, "CFDComputeVorticity", 14, 6);
 	CFDVorticityPass(deltaTime, "CFDVorticityConfinement", 1, 16);
@@ -205,10 +221,17 @@ void Renderer::D3D12SimulationApp::CFD(float& deltaTime)
 	CFDAdvectionPass(deltaTime);
 
 	//RenderGUI(deltaTime);
-	CopyResource(m_commandList, CurrentBackBuffer(), stableFluids.GetDensityResource(),
-		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	//CopyDensityToSwapChain(deltaTime);
-	RenderFont(deltaTime);
+	
+	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
+		CopyResource(m_commandList, CurrentBackBuffer(), stableFluids.GetDensityResource(),
+			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	}
+
+	else
+		CopyDensityToSwapChain(deltaTime);
+
+	
+	//RenderFont(deltaTime);
 	
 }
 

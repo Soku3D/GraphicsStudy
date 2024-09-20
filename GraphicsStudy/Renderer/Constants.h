@@ -70,8 +70,8 @@ __declspec(align(256)) struct CubeMapConstantData {
 
 
 __declspec(align(256)) struct SimulationCSConstantData {
+	float deltaTime;
 	float time;
-	float dummy[3];
 };
 
 __declspec(align(256)) struct CFDConstantData {

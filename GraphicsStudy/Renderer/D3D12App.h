@@ -103,7 +103,7 @@ namespace Renderer {
 			D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATES resourceState = D3D12_RESOURCE_STATE_RENDER_TARGET, bool bUseClear = true);
 		void CreateResourceView(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_CPU_DESCRIPTOR_HANDLE& handle, 
 			ComPtr<ID3D12Device5>& deivce, const Renderer::DescriptorType& type);
-		void CaptureBufferToPNG() override;
+		void CaptureHDRBufferToPNG() override;
 		void CaptureBackBufferToPNG() override;
 		/*void CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce, ComPtr<ID3D12DescriptorHeap>& heap, const Renderer::DescriptorType& type, int Numdescriptors,
 			D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);*/

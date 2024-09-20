@@ -13,7 +13,7 @@ float2 GetGradient(float2 intPos, float t)
     float rand = frac(sin(dot(intPos, float2(12.9898, 78.233))) * 43758.5453);;
     
     float angle = 6.283185 * rand + 4.0 * t * rand;
-    return float2(sin(angle),  cos(angle) );
+    return float2(sin(angle),  cos(angle));
 }
 
 float Pseudo3dNoise(float3 pos)
@@ -45,9 +45,25 @@ void main(uint3 DTid : SV_DispatchThreadID)
     uint y = DTid.y;
 
     float2 uv = (float2(x, y) + 0.5f) / float2(width, height);
-    //float2 uv = float2(x, y) / float2(width - 1.f, height - 1.f);
-    float val = 0.5f + 0.5f * Pseudo3dNoise(float3(uv * 10, 1.f));
+    float val = 0.5f + 0.5f * Pseudo3dNoise(float3(uv * 10, gConstantBuffer.time));
     float3 color = float3(val, val, val);
     
     gTexture[DTid.xy] = float4(color, 1.f);
+    const int ITERATIONS = 10;
+    float noiseVal = 0.0;
+    float sum = 0.0;
+    float multiplier = 1.0;
+    for (int i = 0; i < ITERATIONS; i++)
+    {
+        float3 noisePos = float3(uv* 10.f, 0.2 * gConstantBuffer.time / multiplier);
+        noiseVal += multiplier * abs(Pseudo3dNoise(noisePos));
+        sum += multiplier;
+        multiplier *= 0.6;
+        uv = 2.0 * uv + 4.3;
+    }
+    noiseVal /= sum;
+    //color = 0.5 + 0.5 * cos(6.283185 * (3.0 * noiseVal + float3(0.15, 0.0, 0.0)));
+    
+    
+    //gTexture[DTid.xy] = float4(color, 1.f);
 }

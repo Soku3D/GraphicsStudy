@@ -771,7 +771,7 @@ void Renderer::D3D12RayTracingApp::RaytracingPass(float& deltaTime)
 	FlushCommandQueue();
 	PIXEndEvent(m_commandQueue.Get());
 
-	//CaptureBufferToPNG();
+	//CaptureHDRBufferToPNG();
 }
 void Renderer::D3D12RayTracingApp::RenderCubeMap(float& deltaTime)
 {

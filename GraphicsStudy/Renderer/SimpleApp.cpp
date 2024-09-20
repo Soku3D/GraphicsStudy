@@ -202,8 +202,6 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 
 		mouseDeltaX = raw.data.mouse.lLastX;
 		mouseDeltaY = raw.data.mouse.lLastY;
-
-
 		
 
 		if (raw.data.mouse.usButtonFlags == RI_MOUSE_RIGHT_BUTTON_DOWN) {
@@ -264,11 +262,11 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 	case WM_KEYUP:
 		m_inputHandler->m_currKeyStates[(int)wParam] = false;
 		if (wParam == 'C') {
-			if (m_appName == "SimulationApp") {
+			if (m_appName == "SimulationApp" && bCaptureBackbuffer) {
 				CaptureBackBufferToPNG();
 			}
 			else
-				CaptureBufferToPNG();
+				CaptureHDRBufferToPNG();
 		}
 		//m_inputHandler->UpdateKeyUp((int)wParam);
 

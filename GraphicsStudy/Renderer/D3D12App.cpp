@@ -1349,7 +1349,7 @@ void Renderer::D3D12App::CopyResourceToSwapChain(float& deltaTime)
 				DXGI_FORMAT_R16G16B16A16_FLOAT);
 		}
 
-		m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
+		//m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
 		m_commandList->OMSetRenderTargets(1, &CurrentBackBufferView(), false, nullptr);
 		m_commandList->RSSetScissorRects(1, &m_scissorRect);
 		m_commandList->RSSetViewports(1, &m_viewport);
@@ -1538,7 +1538,9 @@ void Renderer::D3D12App::CreateResourceView(ComPtr<ID3D12Resource>& buffer,
 	}
 
 }
-void Renderer::D3D12App::CaptureBufferToPNG() {
+
+// f16 unorm 변환 후 저장
+void Renderer::D3D12App::CaptureHDRBufferToPNG() {
 
 	m_commandAllocator->Reset();
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);

@@ -212,6 +212,7 @@ namespace Renderer {
 		GraphicsPSO renderBoundingBoxPassPso("BoundingBoxPass");
 
 		GraphicsPSO copyPso("Copy");
+		GraphicsPSO copyUnormPso("CopyUnorm");
 		GraphicsPSO copyDensityPso("CopyDensity");
 
 		ComputePSO simulationPostProcessingPso("SimulationPostProcessing");
@@ -392,7 +393,7 @@ namespace Renderer {
 		copyPso.SetPixelShader(g_pCopyPS, sizeof(g_pCopyPS));
 
 		copyDensityPso = copyPso;
-		copyPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
+		copyDensityPso.SetRenderTargetFormat(backbufferFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
 		//copyDensityPso.SetBlendState(addColorBlender);
 
 		simulationRenderPso = defaultPso;
