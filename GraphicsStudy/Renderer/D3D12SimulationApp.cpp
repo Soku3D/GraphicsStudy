@@ -10,7 +10,7 @@ Renderer::D3D12SimulationApp::D3D12SimulationApp(const int& width, const int& he
 {
 	bUseTextureApp = false;
 	bUseCubeMapApp = false;
-	bUseGUI = true;
+	bUseGUI = false;
 
 	m_appName = "SimulationApp";
 
@@ -155,17 +155,30 @@ void Renderer::D3D12SimulationApp::UpdateGUI(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::Render(float& deltaTime)
 {
+	GeneratePerlinNoise(deltaTime);
 	//ParticleSimulation(deltaTime);
 	//SPH(deltaTime);
-	CFD(deltaTime);
+	//CFD(deltaTime);
 }
 
 void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
 {
 	SimulationPass(deltaTime);
 	SimulationRenderPass(deltaTime);
-	PostProcessing(deltaTime);
+	PostProcessing(deltaTime, "SimulationPostProcessing");
 	CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+}
+
+void Renderer::D3D12SimulationApp::GeneratePerlinNoise(float& deltaTime)
+{
+	PostProcessing(deltaTime, "PerlinNoise");
+	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
+		//D3D12App::PostProcessing(deltaTime);
+		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	}
+	else {
+		CopyResourceToSwapChain(deltaTime);
+	}
 }
 
 void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
@@ -259,11 +272,11 @@ void Renderer::D3D12SimulationApp::SPHSimulationPass(float& deltaTime, const std
 	PIXEndEvent(m_commandQueue.Get());
 }
 
-void Renderer::D3D12SimulationApp::PostProcessing(float& deltaTime) {
+void Renderer::D3D12SimulationApp::PostProcessing(float& deltaTime, const std::string& psoName) {
 
 	//D3D12App::Render(deltaTime);
 
-	auto& pso = computePsoList["SimulationPostProcessing"];
+	auto& pso = computePsoList[psoName];
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));

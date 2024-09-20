@@ -21,11 +21,12 @@ namespace Renderer {
 		void UpdateGUI(float& deltaTime) override;
 		void Render(float& deltaTime) override;
 		void ParticleSimulation(float& deltaTime);
+		void GeneratePerlinNoise(float& deltaTime);
 		void SPH(float& deltaTime);
 		void CFD(float& deltaTime);
 		void SimulationPass(float& deltaTime);
 		void SPHSimulationPass(float& deltaTime, const std::string& psoName);
-		void PostProcessing(float& deltaTime);
+		void PostProcessing(float& deltaTime, const std::string& psoName);
 		void SimulationRenderPass(float& deltaTime);
 		void SPHSimulationRenderPass(float& deltaTime);
 		void RenderFont(float& deltaTime);

@@ -266,6 +266,7 @@
     <FxCompile Include="CFDComputeDiffuseCS.hlsl" />
     <FxCompile Include="CFDComputeVorticityCS.hlsl" />
     <FxCompile Include="CFDVorticityConfinementCS.hlsl" />
+    <FxCompile Include="PerlinNoiseCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />

@@ -3,6 +3,7 @@
 #include "TestVS.h"
 #include "TestPS.h"
 #include "PostprocessingCS.h"
+#include "PerlinNoiseCS.h"
 
 #include "CubeMapVS.h"
 #include "CubeMapPS.h"
@@ -159,7 +160,6 @@ namespace Renderer {
 		clampLinearSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		clampLinearSampler.ShaderRegister = 1;
 
-
 		samplers.push_back(wrapLinearSampler);
 		samplers.push_back(clampLinearSampler);
 
@@ -231,6 +231,7 @@ namespace Renderer {
 		ComputePSO CFDComputeVorticityPso("CFDComputeVorticity");
 		ComputePSO CFDVorticityConfinementPso("CFDVorticityConfinement");
 
+		ComputePSO perlinNoisePso("PerlinNoise");
 
 		defaultElement =
 		{
@@ -442,6 +443,9 @@ namespace Renderer {
 		CFDVorticityConfinementPso.SetComputeShader(g_pCFDVorticityConfinementCS, sizeof(g_pCFDVorticityConfinementCS));
 		CFDVorticityConfinementPso.SetRootSignature(&cfdVorticitySignature);
 
+		perlinNoisePso.SetComputeShader(g_pPerlinNoiseCS, sizeof(g_pPerlinNoiseCS));
+		perlinNoisePso.SetRootSignature(&simulationComputeSignature);
+
 		modePsoLists[defaultPso.GetName()] = defaultPso;
 		modePsoLists[wirePso.GetName()] = wirePso;
 		modePsoLists[msaaPso.GetName()] = msaaPso;
@@ -481,6 +485,9 @@ namespace Renderer {
 		computePsoList[CFDComputeDiffusePso.GetName()] = CFDComputeDiffusePso;
 		computePsoList[CFDVorticityConfinementPso.GetName()] = CFDVorticityConfinementPso;
 		computePsoList[CFDComputeVorticityPso.GetName()] = CFDComputeVorticityPso;
+		
+		computePsoList[perlinNoisePso.GetName()] = perlinNoisePso;
+
 	}
 
 	void Finalize(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
@@ -504,6 +511,7 @@ namespace Renderer {
 		cfdApplyPressureSignature.Finalize(device);
 		cfdComputeDiffuseSignature.Finalize(device);
 		cfdVorticitySignature.Finalize(device);
+
 
 		raytracingGlobalSignature.Finalize(device);
 
