@@ -24,6 +24,9 @@
     <img src="GraphicsStudy/Renderer/Results/SimulationApp/240914-2333.png" width="200" height="200">
     <img src="GraphicsStudy/Renderer/Results/SimulationApp/240918-1725.png" width="200" height="200">
     <img src="GraphicsStudy/Renderer/Results/SimulationApp/240920-959.png" width="200" height="200">
+    <img src="GraphicsStudy/Renderer/Results/SimulationApp/240920-2132.png" width="200" height="200">
+    <img src="GraphicsStudy/Renderer/Results/SimulationApp/240920-2130.png" width="200" height="200">
+
 
 ### Windows
 #### Installing Dependencies
