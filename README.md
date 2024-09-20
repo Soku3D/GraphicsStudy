@@ -19,11 +19,11 @@
 
 1. Simulation sample
     
-    <img src="GraphicsStudy/Renderer/Results/SimulationApp/240905-2056.png" height="200">
-    <img src="GraphicsStudy/Renderer/Results/SimulationApp/240914-2159.png" height="200">
-    <img src="GraphicsStudy/Renderer/Results/SimulationApp/240914-2333.png" height="200">
-    <img src="GraphicsStudy/Renderer/Results/SimulationApp/240918-1725.png" height="200">
-
+    <img src="GraphicsStudy/Renderer/Results/SimulationApp/240905-2056.png" width="200" height="200">
+    <img src="GraphicsStudy/Renderer/Results/SimulationApp/240914-2159.png" width="200" height="200">
+    <img src="GraphicsStudy/Renderer/Results/SimulationApp/240914-2333.png" width="200" height="200">
+    <img src="GraphicsStudy/Renderer/Results/SimulationApp/240918-1725.png" width="200" height="200">
+    <img src="GraphicsStudy/Renderer/Results/SimulationApp/240920-959.png" width="200" height="200">
 
 ### Windows
 #### Installing Dependencies
