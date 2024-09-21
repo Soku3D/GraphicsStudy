@@ -49,7 +49,7 @@ namespace Renderer {
 		CubeMapConstantData* m_pCubeMapConstantData;
 		void* m_pCubeMapCbufferBegin = nullptr;
 		ComPtr<ID3D12Resource> m_cubeMapConstantBuffer;
-
+		
 	protected:
 		bool bRenderMeshes = true;
 		bool bRenderFbx = true;

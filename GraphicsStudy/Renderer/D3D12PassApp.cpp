@@ -60,7 +60,7 @@ void Renderer::D3D12PassApp::InitScene()
 	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
 	characterMesh->SetBoundingBoxHalfLength(1.f);
 	mCharacter->SetStaticMeshComponent(characterMesh);
-
+	mCharacter->SetPosition(XMFLOAT3(0, 1.475f, 0));
 	//std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
 	//sphere->Initialize(GeometryGenerator::PbrSphere(0.5f, 100, 100, L"Metal048C_4K-PNG_Albedo.dds", 2.f, 2.f), m_device, m_commandList,
 	//	Vector3(0.f, 0.f, 0.f),
@@ -71,7 +71,7 @@ void Renderer::D3D12PassApp::InitScene()
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
 	std::vector<PbrMeshData> planeData = { GeometryGenerator::PbrBox(10, 1, 10, L"worn-painted-metal_Albedo.dds", 10, 1, 10) };
 	plane->Initialize(planeData, m_device, m_commandList,
-		Vector3(0.f, -1.5f, 0.f),
+		Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
 		true, true, true, true, true, true);
 	m_staticMeshes.push_back(plane);
@@ -151,7 +151,6 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	mCharacter->Update(deltaTime);
 
 
-
 	{
 		// 카메라 고정
 		/*m_passConstantData->ViewMat = m_camera->GetViewMatrix();
@@ -197,6 +196,9 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	m_pCubeMapConstantData->expose = gui_cubeMapExpose;
 	m_pCubeMapConstantData->lodLevel = gui_cubeMapLod;
 	memcpy(m_pCubeMapCbufferBegin, m_pCubeMapConstantData, sizeof(CubeMapConstantData));
+
+	mPostprocessingConstantBuffer.mStructure.bUseGamma = false;
+	mPostprocessingConstantBuffer.UpdateBuffer();
 }
 
 void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
@@ -415,7 +417,7 @@ void Renderer::D3D12PassApp::LightPass(float& deltaTime) {
 		m_commandList->SetGraphicsRootDescriptorTable(0, m_geometryPassSrvHeap->GetGPUDescriptorHandleForHeapStart());
 
 		int cubeMapOffset = m_cubeTextureMap[m_cubeMap->GetTexturePath()] - 2;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE cubeMapHandle(m_geometryPassSrvHeap->GetGPUDescriptorHandleForHeapStart(), geometryPassRtvNum + cubeMapOffset, m_csuHeapSize);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE cubeMapHandle(m_geometryPassSrvHeap->GetGPUDescriptorHandleForHeapStart(), geometryPassRtvNum + 1/*depth*/ + cubeMapOffset, m_csuHeapSize);
 		m_commandList->SetGraphicsRootDescriptorTable(1, cubeMapHandle);
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_ligthPassConstantBuffer->GetGPUVirtualAddress());
 		m_screenMesh->Render(deltaTime, m_commandList, false);

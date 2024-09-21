@@ -33,7 +33,7 @@ VSOutput main(VSInput input)
 {
     VSOutput output;
     float4 pos = mul(float4(input.position, 1.f), Model);
-    output.position = pos;
+    output.position = pos.xyz;
     
     float3 normal = mul(float4(input.normal, 0.f), invTranspose).xyz;
     float3 tangent = mul(float4(input.tangent, 0.f), Model).xyz;

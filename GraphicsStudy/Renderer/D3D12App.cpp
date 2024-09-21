@@ -328,6 +328,7 @@ void Renderer::D3D12App::OnResize()
 		gPass_rtvHeapHandle.Offset(1, m_rtvHeapSize);
 		gPass_srvHeapHandle.Offset(1, m_csuHeapSize);
 	}
+	CreateResourceView(m_hdrDepthStencilBuffer, m_depthSrvFormat, false, gPass_srvHeapHandle, m_device, DescriptorType::SRV);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE gPassMsaa_rtvHeapHandle(m_geometryPassMsaaRtvHeap->GetCPUDescriptorHandleForHeapStart());
 	for (UINT i = 0; i < geometryPassRtvNum; i++)
@@ -757,7 +758,7 @@ void Renderer::D3D12App::CreateConstantBuffer()
 	ThrowIfFailed(m_ligthPassConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pLPCDataBegin)));
 
 	Utility::CreateConstantBuffer(m_device, m_commandList, mCsBuffer);
-
+	Utility::CreateConstantBuffer(m_device, m_commandList, mPostprocessingConstantBuffer);
 }
 
 
@@ -933,7 +934,7 @@ void Renderer::D3D12App::CreateCubeMapTextures() {
 //		}
 //	}
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE dest_gPassHeapHandle(m_geometryPassSrvHeap->GetCPUDescriptorHandleForHeapStart(), 4, m_csuHeapSize);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dest_gPassHeapHandle(m_geometryPassSrvHeap->GetCPUDescriptorHandleForHeapStart(), 5, m_csuHeapSize);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dest_CubeHandle(m_cubeMapTextureHeap->GetCPUDescriptorHandleForHeapStart());
 	CD3DX12_CPU_DESCRIPTOR_HANDLE src_CubeHandle(m_cubeMapTextureHeapNSV->GetCPUDescriptorHandleForHeapStart());
 
@@ -1349,7 +1350,7 @@ void Renderer::D3D12App::CopyResourceToSwapChain(float& deltaTime)
 				DXGI_FORMAT_R16G16B16A16_FLOAT);
 		}
 
-		//m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
+		m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clearColor, 0, nullptr);
 		m_commandList->OMSetRenderTargets(1, &CurrentBackBufferView(), false, nullptr);
 		m_commandList->RSSetScissorRects(1, &m_scissorRect);
 		m_commandList->RSSetViewports(1, &m_viewport);
@@ -1782,6 +1783,7 @@ void Renderer::D3D12App::PostProcessing(float& deltaTime) {
 		m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
 		m_commandList->SetComputeRootDescriptorTable(0, m_hdrUavHeap->GetGPUDescriptorHandleForHeapStart());
+		m_commandList->SetComputeRootConstantBufferView(1, mPostprocessingConstantBuffer.GetGpuAddress());
 
 		//m_commandList->SetComputeRootConstantBufferView(1, mCsBuffer.GetGpuAddress());
 		m_commandList->Dispatch((UINT)ceil(m_screenWidth / 32.f), (UINT)ceil(m_screenHeight / 32.f), 1);

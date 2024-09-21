@@ -124,7 +124,7 @@ namespace Renderer {
 		DXGI_FORMAT m_hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		DXGI_FORMAT m_msaaFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		DXGI_FORMAT m_depthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-
+		DXGI_FORMAT m_depthSrvFormat = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 		ComPtr<IDXGISwapChain3> m_swapChain;
 		static const UINT m_swapChainCount = 2;
 		ComPtr<ID3D12Resource> m_renderTargets[m_swapChainCount];
@@ -289,5 +289,9 @@ namespace Renderer {
 		void UpdatePlayer(int index, const PlayerData& data);
 
 		class Core::Actor* mActor;
+
+	protected:
+		Core::ConstantBuffer<PostprocessingConstantData> mPostprocessingConstantBuffer;
+
 	};
 }

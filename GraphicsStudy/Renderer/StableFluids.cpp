@@ -51,7 +51,6 @@ void StableFluids::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mDensityRTVHeap.ReleaseAndGetAddressOf())));
 
-
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.Texture2D.MipSlice = 0;
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;

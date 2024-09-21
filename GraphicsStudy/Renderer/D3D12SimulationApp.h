@@ -21,12 +21,13 @@ namespace Renderer {
 		void UpdateGUI(float& deltaTime) override;
 		void Render(float& deltaTime) override;
 		void ParticleSimulation(float& deltaTime);
-		void GeneratePerlinNoise(float& deltaTime);
+		void RenderNoise(float& deltaTime);
+		void GeneratePerlinNoise();
 		void SPH(float& deltaTime);
 		void CFD(float& deltaTime);
 		void SimulationPass(float& deltaTime);
 		void SPHSimulationPass(float& deltaTime, const std::string& psoName);
-		void PostProcessing(float& deltaTime, const std::string& psoName);
+		void PostProcessing(float& deltaTime, const std::string& psoName, ID3D12Resource* hdrResource, ID3D12DescriptorHeap* resourceUavHeap, D3D12_RESOURCE_STATES resourceState, int heapIndex = 0);
 		void SimulationRenderPass(float& deltaTime);
 		void SPHSimulationRenderPass(float& deltaTime);
 		void RenderFont(float& deltaTime);
@@ -41,7 +42,10 @@ namespace Renderer {
 
 		void FireParticles(const int& fireCount);
 
-		void CopyDensityToSwapChain(float& deltaTime);
+		void CopyResourceToSwapChain(float& deltaTime, ID3D12DescriptorHeap* heap, D3D12_GPU_DESCRIPTOR_HANDLE handle);
+
+
+		//void CopyDensityToSwapChain(float& deltaTime);
 
 	protected:
 		Particles particle;
@@ -67,7 +71,7 @@ namespace Renderer {
 		const wchar_t* cfdVorticityEvent = L"CFD Vorticity Pass ";
 
 	private:
-		float mGuiVorticity = 0.5f;
+		float mGuiVorticity = 0.2f;
 		float mGuiViscosity = 0.f;
 	};
 }

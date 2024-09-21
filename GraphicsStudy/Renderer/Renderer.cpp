@@ -36,6 +36,7 @@
 #include "SimulationParticlesGS.h"
 #include "SimulationParticlesPS.h"
 #include "SimulationParticlesCS.h"
+#include "SimulationCulNoiseCS.h"
 #include "SimulationPostProcessingCS.h"
 
 #include "SphSimulationParticlesCS.h"
@@ -96,6 +97,7 @@ namespace Renderer {
 
 	RootSignature computeSignature;
 	RootSignature simulationComputeSignature;
+	RootSignature sphSimulationComputeSignature;
 	RootSignature simulationSignature;
 	RootSignature simulationPostProcessingSignature;
 
@@ -168,7 +170,7 @@ namespace Renderer {
 
 		// Init Signatures
 		defaultSignature.Initialize(1, 3, 1, &wrapLinearSampler);
-		computeSignature.InitializeUAV(1, 0, 0, nullptr);
+		computeSignature.InitializeUAV(1, 1, 0, nullptr);
 		//computeSignature.InitializeUAV(1, 0, 0, nullptr);
 		cubeMapSignature.Initialize(1, 2, 1, &wrapLinearSampler);
 		copySignature.Initialize(1, 0, 1, &wrapLinearSampler);
@@ -177,7 +179,8 @@ namespace Renderer {
 		lightPassSignature.InitializeDoubleSrvHeap(4, 4, 1, samplers);
 		NormalPassSignature.Initialize(2);
 		
-		simulationComputeSignature.InitializeUAV(1, 1, 0, nullptr);
+		simulationComputeSignature.Initialize(1, 1, 1, wrapSamplers);
+		sphSimulationComputeSignature.InitializeUAV(1, 1, 0, nullptr);
 		simulationSignature.Initialize(1, 0, 0, nullptr);
 		simulationPostProcessingSignature.InitializeUAV(1, 1, 0, nullptr);
 		
@@ -405,17 +408,17 @@ namespace Renderer {
 		simulationRenderPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
 		simulationRenderPso.SetBlendState(addColorBlender);
 
-		simulationComputePso.SetComputeShader(g_pSimulationParticlesCS, sizeof(g_pSimulationParticlesCS));
+		simulationComputePso.SetComputeShader(g_pSimulationCulNoiseCS, sizeof(g_pSimulationCulNoiseCS));
 		simulationComputePso.SetRootSignature(&simulationComputeSignature);
 
 		sphSimulationComputePso.SetComputeShader(g_pSphSimulationParticlesCS, sizeof(g_pSphSimulationParticlesCS));
-		sphSimulationComputePso.SetRootSignature(&simulationComputeSignature);
+		sphSimulationComputePso.SetRootSignature(&sphSimulationComputeSignature);
 
 		sphComputeRhoPso.SetComputeShader(g_pSphComputeRhoCS, sizeof(g_pSphComputeRhoCS));
-		sphComputeRhoPso.SetRootSignature(&simulationComputeSignature);
+		sphComputeRhoPso.SetRootSignature(&sphSimulationComputeSignature);
 		
 		sphComputeForcesPso.SetComputeShader(g_pSphComputeForcesCS, sizeof(g_pSphComputeForcesCS));
-		sphComputeForcesPso.SetRootSignature(&simulationComputeSignature);
+		sphComputeForcesPso.SetRootSignature(&sphSimulationComputeSignature);
 
 		simulationPostProcessingPso.SetRootSignature(&simulationPostProcessingSignature);
 		simulationPostProcessingPso.SetComputeShader(g_pSimulationPostProcessingCS, sizeof(g_pSimulationPostProcessingCS));
@@ -445,7 +448,7 @@ namespace Renderer {
 		CFDVorticityConfinementPso.SetRootSignature(&cfdVorticitySignature);
 
 		perlinNoisePso.SetComputeShader(g_pPerlinNoiseCS, sizeof(g_pPerlinNoiseCS));
-		perlinNoisePso.SetRootSignature(&simulationComputeSignature);
+		perlinNoisePso.SetRootSignature(&sphSimulationComputeSignature);
 
 		modePsoLists[defaultPso.GetName()] = defaultPso;
 		modePsoLists[wirePso.GetName()] = wirePso;
@@ -502,6 +505,7 @@ namespace Renderer {
 		NormalPassSignature.Finalize(device);
 		
 		simulationComputeSignature.Finalize(device);
+		sphSimulationComputeSignature.Finalize(device);
 		simulationSignature.Finalize(device);
 		simulationPostProcessingSignature.Finalize(device);
 		

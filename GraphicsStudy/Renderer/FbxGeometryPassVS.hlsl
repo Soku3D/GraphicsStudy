@@ -14,8 +14,8 @@ PSInput main(VSInput input)
         float height = g_displacement.SampleLevel(g_sampler, input.uv, 0).r;
         height = height * 2.0 - 1.0;
         
-        pos.xyz += float4(0.02f * normal * height, 0.f);
-        pos.xyz += float4(0.02f * normal * height, 0.f);
+        pos.xyz += float3(0.02f * normal * height);
+        pos.xyz += float3(0.02f * normal * height);
     }
     output.worldPoition = pos;
      

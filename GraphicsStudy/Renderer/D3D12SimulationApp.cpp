@@ -40,7 +40,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	Utility::CreateConstantBuffer(m_device, m_commandList, mCFDConstantBuffer);
 
 	particle.Initialize(100);
-	particle.BuildResources(m_device, m_commandList);
+	particle.BuildResources(m_device, m_commandList, m_hdrFormat, m_screenWidth, m_screenHeight);
 
 	sphParticle.InitializeSPH(SPH_SIMULATION_PARTICLE_SIZE);
 	sphParticle.BuildResources(m_device, m_commandList);
@@ -56,6 +56,8 @@ bool Renderer::D3D12SimulationApp::Initialize()
 
 	sphParticle.BuildDescriptors(m_device, m_commandList);
 	particle.BuildDescriptors(m_device, m_commandList);
+
+	GeneratePerlinNoise();
 
 	return true;
 }
@@ -146,6 +148,9 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 	mCFDConstantBuffer.mStructure.viscosity = mGuiViscosity;
 	mCFDConstantBuffer.mStructure.vorticity = mGuiVorticity;
 	mCFDConstantBuffer.UpdateBuffer();
+
+	mPostprocessingConstantBuffer.mStructure.bUseGamma = false;
+	mPostprocessingConstantBuffer.UpdateBuffer();
 }
 
 void Renderer::D3D12SimulationApp::UpdateGUI(float& deltaTime)
@@ -156,9 +161,9 @@ void Renderer::D3D12SimulationApp::UpdateGUI(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::Render(float& deltaTime)
 {
-	GeneratePerlinNoise(deltaTime);
-	//ParticleSimulation(deltaTime);
-	//SPH(deltaTime);
+	//RenderNoise(deltaTime);
+	ParticleSimulation(deltaTime);
+	//SPH(deltaTime); 
 	//CFD(deltaTime);
 }
 
@@ -166,24 +171,27 @@ void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
 {
 	SimulationPass(deltaTime);
 	SimulationRenderPass(deltaTime);
-	PostProcessing(deltaTime, "SimulationPostProcessing");
+	PostProcessing(deltaTime, "SimulationPostProcessing", HDRRenderTargetBuffer(), m_hdrUavHeap.Get(),D3D12_RESOURCE_STATE_RENDER_TARGET);
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
 		D3D12App::PostProcessing(deltaTime);
 		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 	}
 	else
-		CopyResourceToSwapChain(deltaTime);
+		D3D12App::CopyResourceToSwapChain(deltaTime);
 }
 
-void Renderer::D3D12SimulationApp::GeneratePerlinNoise(float& deltaTime)
+void Renderer::D3D12SimulationApp::RenderNoise(float& deltaTime)
 {
-	PostProcessing(deltaTime, "PerlinNoise");
-	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
-		D3D12App::PostProcessing(deltaTime);
-		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
-	}
-	else
-		CopyResourceToSwapChain(deltaTime);
+	//bCaptureBackbuffer = true;
+	CopyResource(m_commandList, HDRRenderTargetBuffer(), particle.GetRandomResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COMMON);
+	D3D12App::CopyResourceToSwapChain(deltaTime);
+	//D3D12SimulationApp::CopyResourceToSwapChain(deltaTime, particle.GetHeap(), particle.GetHandle(3));
+}
+
+void Renderer::D3D12SimulationApp::GeneratePerlinNoise()
+{
+	float deltaTime = 1 / 60.f;
+	PostProcessing(deltaTime, "PerlinNoise", particle.GetRandomResource(), particle.GetHeap(), D3D12_RESOURCE_STATE_COMMON, 2);
 }
 
 void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
@@ -194,14 +202,14 @@ void Renderer::D3D12SimulationApp::SPH(float& deltaTime)
 	SPHSimulationRenderPass(deltaTime);
 
 	//PostProcessing(deltaTime);
-	
+
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
 		D3D12App::PostProcessing(deltaTime);
 		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 	}
 	else
-		CopyResourceToSwapChain(deltaTime);
-	
+		D3D12App::CopyResourceToSwapChain(deltaTime);
+
 	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 }
 
@@ -217,22 +225,22 @@ void Renderer::D3D12SimulationApp::CFD(float& deltaTime)
 	CFDComputeDivergencePass(deltaTime);
 	CFDComputePressurePass(deltaTime);
 	CFDApplyPressurePass(deltaTime);
-	
+
 	CFDAdvectionPass(deltaTime);
 
 	//RenderGUI(deltaTime);
-	
+
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
 		CopyResource(m_commandList, CurrentBackBuffer(), stableFluids.GetDensityResource(),
 			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	}
 
 	else
-		CopyDensityToSwapChain(deltaTime);
+		CopyResourceToSwapChain(deltaTime, stableFluids.GetHeap(), stableFluids.GetHandle(5));
 
-	
+
 	//RenderFont(deltaTime);
-	
+
 }
 
 void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
@@ -245,12 +253,14 @@ void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
 
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 	ID3D12DescriptorHeap* pHeaps[] = {
-		particle.GetUavHeap()
+		particle.GetHeap()
 	};
 	//m_commandList->ClearUnorderedAccessViewUint(,)
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, particle.GetUavHandle());
-	m_commandList->SetComputeRootConstantBufferView(1, mSimulationConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootDescriptorTable(1, particle.GetHandle(3)); // random srv
+
+	m_commandList->SetComputeRootConstantBufferView(2, mSimulationConstantBuffer.GetGpuAddress());
 	UINT dispatchX = (particle.GetParticleCount() - 1 + SIMULATION_PARTICLE_SIZE) / SIMULATION_PARTICLE_SIZE;
 	m_commandList->Dispatch(dispatchX, 1, 1);
 	//m_commandList->ExecuteIndirect(,)
@@ -275,7 +285,7 @@ void Renderer::D3D12SimulationApp::SPHSimulationPass(float& deltaTime, const std
 
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 	ID3D12DescriptorHeap* pHeaps[] = {
-		sphParticle.GetUavHeap()
+		sphParticle.GetHeap()
 	};
 	//m_commandList->ClearUnorderedAccessViewUint(,)
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
@@ -295,7 +305,8 @@ void Renderer::D3D12SimulationApp::SPHSimulationPass(float& deltaTime, const std
 	PIXEndEvent(m_commandQueue.Get());
 }
 
-void Renderer::D3D12SimulationApp::PostProcessing(float& deltaTime, const std::string& psoName) {
+void Renderer::D3D12SimulationApp::PostProcessing(float& deltaTime, const std::string& psoName,
+	ID3D12Resource* hdrResource, ID3D12DescriptorHeap* resourceUavHeap, D3D12_RESOURCE_STATES resourceState, int heapIndex) {
 
 	//D3D12App::Render(deltaTime);
 
@@ -307,30 +318,35 @@ void Renderer::D3D12SimulationApp::PostProcessing(float& deltaTime, const std::s
 	{
 		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 0, 255), postprocessingEvent);
 
-		m_commandList->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(
-				HDRRenderTargetBuffer(),
-				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-			));
+		if (resourceState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS) {
+			m_commandList->ResourceBarrier(1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(
+					hdrResource,
+					resourceState,
+					D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+				));
+		}
 
 		m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 
 		// UAV Heap 
-		ID3D12DescriptorHeap* ppHeaps[] = { m_hdrUavHeap.Get() };
-		m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+		ID3D12DescriptorHeap* ppHeaps[] = { resourceUavHeap };
+		m_commandList->SetDescriptorHeaps(1, ppHeaps);
 
-		m_commandList->SetComputeRootDescriptorTable(0, m_hdrUavHeap->GetGPUDescriptorHandleForHeapStart());
+		UINT offset = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(resourceUavHeap->GetGPUDescriptorHandleForHeapStart(), heapIndex, offset);
+		m_commandList->SetComputeRootDescriptorTable(0, handle);
 		m_commandList->SetComputeRootConstantBufferView(1, mSimulationConstantBuffer.GetGpuAddress());
 		//m_commandList->SetComputeRootConstantBufferView(1, m_csBuffer->GetGPUVirtualAddress());
 		m_commandList->Dispatch((UINT)ceil(m_screenWidth / 32.f), (UINT)ceil(m_screenHeight / 32.f), 1);
 
-		m_commandList->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(
-				HDRRenderTargetBuffer(),
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-				D3D12_RESOURCE_STATE_RENDER_TARGET
-			));
+		if (resourceState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS) {
+			m_commandList->ResourceBarrier(1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(
+					hdrResource,
+					D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+					resourceState));
+		}
 
 		ThrowIfFailed(m_commandList->Close());
 
@@ -365,10 +381,10 @@ void Renderer::D3D12SimulationApp::SimulationRenderPass(float& deltaTime)
 	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
 
 	ID3D12DescriptorHeap* pHeaps[] = {
-		particle.GetSrvHeap()
+		particle.GetHeap()
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
-	m_commandList->SetGraphicsRootDescriptorTable(0, particle.GetSrvHandle());
+	m_commandList->SetGraphicsRootDescriptorTable(0, particle.GetHandle(0)); // particle uav
 	m_commandList->DrawInstanced(particle.GetParticleCount(), 1, 0, 0);
 
 	ThrowIfFailed(m_commandList->Close());
@@ -405,10 +421,10 @@ void Renderer::D3D12SimulationApp::SPHSimulationRenderPass(float& deltaTime)
 	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
 
 	ID3D12DescriptorHeap* pHeaps[] = {
-		sphParticle.GetSrvHeap()
+		sphParticle.GetHeap()
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
-	m_commandList->SetGraphicsRootDescriptorTable(0, sphParticle.GetSrvHandle());
+	m_commandList->SetGraphicsRootDescriptorTable(0, sphParticle.GetHandle(0));
 	const float blendColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	m_commandList->OMSetBlendFactor(blendColor);
 	m_commandList->DrawInstanced(sphParticle.GetParticleCount(), 1, 0, 0);
@@ -782,7 +798,8 @@ void Renderer::D3D12SimulationApp::FireParticles(const int& fireCount)
 	}
 }
 
-void Renderer::D3D12SimulationApp::CopyDensityToSwapChain(float& deltaTime) {
+// src srv handle
+void Renderer::D3D12SimulationApp::CopyResourceToSwapChain(float& deltaTime, ID3D12DescriptorHeap* heap, D3D12_GPU_DESCRIPTOR_HANDLE handle) {
 
 	auto& pso = utilityPsoLists["CopyDensity"];
 	{
@@ -807,9 +824,10 @@ void Renderer::D3D12SimulationApp::CopyDensityToSwapChain(float& deltaTime) {
 		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
 		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		ID3D12DescriptorHeap* pHeaps[] = { stableFluids.GetHeap() };
+		ID3D12DescriptorHeap* pHeaps[] = { heap };
 		m_commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(pHeaps)), pHeaps);
-		m_commandList->SetGraphicsRootDescriptorTable(0, stableFluids.GetHandle(5));
+		//m_commandList->SetGraphicsRootDescriptorTable(0, stableFluids.GetHandle(5));
+		m_commandList->SetGraphicsRootDescriptorTable(0, handle);
 
 		m_screenMesh->Render(deltaTime, m_commandList, false);
 

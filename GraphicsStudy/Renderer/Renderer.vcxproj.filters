@@ -267,6 +267,7 @@
     <FxCompile Include="CFDComputeVorticityCS.hlsl" />
     <FxCompile Include="CFDVorticityConfinementCS.hlsl" />
     <FxCompile Include="PerlinNoiseCS.hlsl" />
+    <FxCompile Include="SimulationCulNoiseCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />
@@ -280,5 +281,6 @@
     <None Include="Particle.hlsli" />
     <None Include="CFD.hlsli" />
     <None Include="Utility.hlsli" />
+    <None Include="Noise.hlsli" />
   </ItemGroup>
 </Project>
