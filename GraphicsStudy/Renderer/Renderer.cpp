@@ -160,9 +160,10 @@ namespace Renderer {
 		clampLinearSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		clampLinearSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		clampLinearSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		clampLinearSampler.ShaderRegister = 1;
+		clampLinearSampler.ShaderRegister = 2;
 
 		samplers.push_back(wrapLinearSampler);
+		samplers.push_back(wrapPointSampler);
 		samplers.push_back(clampLinearSampler);
 
 		wrapSamplers.push_back(wrapLinearSampler);
@@ -176,7 +177,7 @@ namespace Renderer {
 		copySignature.Initialize(1, 0, 1, &wrapLinearSampler);
 
 		geometryPassSignature.Initialize(6, 2, samplers);
-		lightPassSignature.InitializeDoubleSrvHeap(4, 4, 1, samplers);
+		lightPassSignature.InitializeDoubleSrvHeap(5, 4, 1, samplers);
 		NormalPassSignature.Initialize(2);
 		
 		simulationComputeSignature.Initialize(1, 1, 1, wrapSamplers);

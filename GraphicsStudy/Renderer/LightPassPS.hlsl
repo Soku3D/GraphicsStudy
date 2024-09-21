@@ -9,7 +9,10 @@ float4 main(PSInput input) : SV_TARGET
     float3 N = g_normal.Sample(g_clampLinearSampler, input.uv).xyz;
     float3 albedo = g_albedoColor.Sample(g_wrapLinearSampler, input.uv).rgb;
     float4 materialTex = g_material.Sample(g_wrapLinearSampler, input.uv).rgba;
-     
+    float depth = gDepth.Sample(g_wrapPointSampler, input.uv).r;
+    depth *= length(position - eyePosition) / 5.f;
+    return float4(depth, depth, depth, 1);
+    
     if (materialTex.a>=2.f)
     {
         return float4(albedo, 1.f);

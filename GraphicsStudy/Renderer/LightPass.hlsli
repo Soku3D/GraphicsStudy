@@ -2,17 +2,20 @@ Texture2D g_worldPosition : register(t0);
 Texture2D g_normal : register(t1);
 Texture2D g_albedoColor : register(t2);
 Texture2D g_material : register(t3); // rgb : ao, metalic, roughness
+Texture2D gDepth : register(t4); // rgb : ao, metalic, roughness
 
-Texture2D g_brdf : register(t4);
-TextureCube g_irradianceCube : register(t5);
-TextureCube g_albedoCube : register(t6);
-TextureCube g_specularCube : register(t7);
+Texture2D g_brdf : register(t5);
+TextureCube g_irradianceCube : register(t6);
+TextureCube g_albedoCube : register(t7);
+TextureCube g_specularCube : register(t8);
 
 SamplerState g_wrapLinearSampler : register(s0);
-SamplerState g_clampLinearSampler : register(s1);
+SamplerState g_wrapPointSampler : register(s1);
+SamplerState g_clampLinearSampler : register(s2);
 
 #define LIGHT_NUM 1
 #define PI 3.14159265359
+
 struct Light
 {
     float3 position;

@@ -5,6 +5,7 @@ namespace Renderer {
 }
 
 #define _SILENCE_CXX20_CISO646_REMOVED_WARNING
+#define LIGHT_COUNT 1
 
 #include <algorithm>
 
@@ -163,6 +164,7 @@ namespace Renderer {
 		std::vector<std::shared_ptr<Animation::FBX>> m_fbxList;
 
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
+		std::vector<std::shared_ptr<Core::StaticMesh>> m_lightMeshes;
 		std::vector<PbrMeshData> soldier;
 		Animation::AnimationData soldierAnimation;
 		

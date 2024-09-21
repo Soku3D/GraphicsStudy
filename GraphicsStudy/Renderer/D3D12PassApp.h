@@ -39,6 +39,7 @@ namespace Renderer {
 		void RenderGUI(float& deltaTime) override;
 
 		void RenderStaticMeshes(float& deltaTime);
+		void RenderLightMeshes(float& deltaTime);
 		void RenderCharacter(float& deltaTime);
 		void RenderPlayers(float& deltaTime);
 
@@ -51,6 +52,7 @@ namespace Renderer {
 		ComPtr<ID3D12Resource> m_cubeMapConstantBuffer;
 		
 	protected:
+		bool bRenderLights = true;
 		bool bRenderMeshes = true;
 		bool bRenderFbx = true;
 		bool bRenderFPS = true;

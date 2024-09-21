@@ -70,7 +70,7 @@ namespace Network {
 			std::string serializedData = oss.str();
 
 			// Steam 네트워크를 통해 직렬화된 데이터 전송
-			SteamNetworking()->SendP2PPacket(steamID, serializedData.c_str(), serializedData.size(), k_EP2PSendUnreliable);
+			SteamNetworking()->SendP2PPacket(steamID, serializedData.c_str(), (uint32)serializedData.size(), k_EP2PSendUnreliable);
 		}
 
 		template<typename DataType>
