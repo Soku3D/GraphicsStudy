@@ -72,8 +72,11 @@ namespace Renderer {
 		const wchar_t* rayGenerationShaderName = L"RayGen";
 		const wchar_t* closestHitShaderName = L"Hit";
 		std::vector<const wchar_t*> hitGroupNames;
+		std::vector<const wchar_t*> ShadowhitGroupNames;
 		std::vector<const wchar_t*> characterHitGroupNames;
-		const wchar_t* missShaderName = L"Miss";
+		std::vector<const wchar_t*> characterShadowHitGroupNames;
+
+		const wchar_t* missShaderNames[2] = { L"Miss", L"Miss_ShadwRay" };
 
 		/*RayGenConstantBufferData m_rayGenCB;*/
 		

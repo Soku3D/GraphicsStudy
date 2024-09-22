@@ -88,11 +88,11 @@ void Renderer::D3D12RayTracingApp::CreateStateObjects()
 	auto lib = raytracingPipeline.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
 	D3D12_SHADER_BYTECODE libdxil = CD3DX12_SHADER_BYTECODE((void*)g_pRaytracing, ARRAYSIZE(g_pRaytracing));
 	lib->SetDXILLibrary(&libdxil);
-	{
+	/*{
 		lib->DefineExport(rayGenerationShaderName);
 		lib->DefineExport(closestHitShaderName);
 		lib->DefineExport(missShaderName);
-	}
+	}*/
 
 	// Triangle hit group
 	for (size_t i = 0; i < hitGroupNames.size(); i++)
@@ -102,6 +102,13 @@ void Renderer::D3D12RayTracingApp::CreateStateObjects()
 		hitGroup->SetHitGroupExport(hitGroupNames[i]);
 		hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE_TRIANGLES);
 	}
+	for (size_t i = 0; i < ShadowhitGroupNames.size(); i++)
+	{
+		auto hitGroup = raytracingPipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
+		//hitGroup->SetClosestHitShaderImport(closestHitShaderName);
+		hitGroup->SetHitGroupExport(ShadowhitGroupNames[i]);
+		hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE_TRIANGLES);
+	}
 	for (size_t i = 0; i < characterHitGroupNames.size(); i++)
 	{
 		auto hitGroup = raytracingPipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
@@ -109,28 +116,34 @@ void Renderer::D3D12RayTracingApp::CreateStateObjects()
 		hitGroup->SetHitGroupExport(characterHitGroupNames[i]);
 		hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE_TRIANGLES);
 	}
-
+	for (size_t i = 0; i < characterShadowHitGroupNames.size(); i++)
+	{
+		auto hitGroup = raytracingPipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
+		//hitGroup->SetClosestHitShaderImport(closestHitShaderName);
+		hitGroup->SetHitGroupExport(characterShadowHitGroupNames[i]);
+		hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE_TRIANGLES);
+	}
 	// Shader config
 	auto shaderConfig = raytracingPipeline.CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
 	UINT payloadSize = sizeof(RayPayload);   // float4 color
 	UINT attributeSize = 2 * sizeof(float); // float2 barycentrics
 	shaderConfig->Config(payloadSize, attributeSize);
 
-	const WCHAR* shaderPayloadExports[] = {
+	/*const WCHAR* shaderPayloadExports[] = {
 			rayGenerationShaderName,
 			missShaderName
-	};
-	auto association = raytracingPipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
-	association->AddExports(shaderPayloadExports);
-	for (size_t i = 0; i < hitGroupNames.size(); i++)
-	{
-		association->AddExport(hitGroupNames[i]);
-	}
-	for (size_t i = 0; i < characterHitGroupNames.size(); i++)
-	{
-		association->AddExport(characterHitGroupNames[i]);
-	}
-	association->SetSubobjectToAssociate(*shaderConfig);
+	};*/
+	//auto association = raytracingPipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
+	////association->AddExports(shaderPayloadExports);
+	//for (size_t i = 0; i < hitGroupNames.size(); i++)
+	//{
+	//	association->AddExport(hitGroupNames[i]);
+	//}
+	//for (size_t i = 0; i < characterHitGroupNames.size(); i++)
+	//{
+	//	association->AddExport(characterHitGroupNames[i]);
+	//}
+	//association->SetSubobjectToAssociate(*shaderConfig);
 
 	//// Local root signature and shader association
 	auto localRootSignature = raytracingPipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
@@ -142,6 +155,10 @@ void Renderer::D3D12RayTracingApp::CreateStateObjects()
 	for (size_t i = 0; i < hitGroupNames.size(); i++)
 	{
 		rootSignatureAssociation->AddExport(hitGroupNames[i]);
+	}
+	for (size_t i = 0; i < ShadowhitGroupNames.size(); i++)
+	{
+		rootSignatureAssociation->AddExport(ShadowhitGroupNames[i]);
 	}
 	for (size_t i = 0; i < characterHitGroupNames.size(); i++)
 	{
@@ -285,36 +302,48 @@ void Renderer::D3D12RayTracingApp::CreateShaderTable()
 	UINT shaderIdentifierSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
 	void* rayGenShaderID;
-	void* missShaderIDs;
-	std::vector<void*> hitGroupShaderIDs(hitGroupNames.size());
-	std::vector<void*> characterHitGroupShaderIDs(characterHitGroupNames.size());
+	void* missShaderIDs[2];
+	std::vector<void*> hitGroupShaderIDs(hitGroupNames.size() * 2);
+	std::vector<void*> characterHitGroupShaderIDs(characterHitGroupNames.size() * 2);
 
 	rayGenShaderID = stateObjectProperties->GetShaderIdentifier(rayGenerationShaderName);
-	missShaderIDs = stateObjectProperties->GetShaderIdentifier(missShaderName);
-
-	for (size_t i = 0; i < hitGroupNames.size(); i++)
+	for (UINT i = 0; i < 2; i++)
 	{
-		hitGroupShaderIDs[i] = stateObjectProperties->GetShaderIdentifier(hitGroupNames[i]);
+		missShaderIDs[i] = stateObjectProperties->GetShaderIdentifier(missShaderNames[i]);
 	}
-	for (size_t i = 0; i < characterHitGroupNames.size(); i++)
+	int index = 0;
+	for (size_t i = 0; i < hitGroupNames.size() * 2; i+=2)
 	{
-		characterHitGroupShaderIDs[i] = stateObjectProperties->GetShaderIdentifier(characterHitGroupNames[i]);
+		hitGroupShaderIDs[i] = stateObjectProperties->GetShaderIdentifier(hitGroupNames[index]);
+		hitGroupShaderIDs[i+1] = stateObjectProperties->GetShaderIdentifier(ShadowhitGroupNames[index]);
+		index++;
+	}
+	index = 0;
+	for (size_t i = 0; i < characterHitGroupNames.size() * 2; i+=2)
+	{
+		characterHitGroupShaderIDs[i] = stateObjectProperties->GetShaderIdentifier(characterHitGroupNames[index]);
+		characterHitGroupShaderIDs[i+1] = stateObjectProperties->GetShaderIdentifier(characterShadowHitGroupNames[index]);
+		index++;
 	}
 
 	ShaderTable raygenShaderTable(m_device, 1, shaderIdentifierSize);
 	raygenShaderTable.push_back(ShaderRecord(rayGenShaderID, shaderIdentifierSize));
 	m_rgsTable = raygenShaderTable.GetResource();
 
-	ShaderTable missShaderTable(m_device, 1, shaderIdentifierSize);
-	missShaderTable.push_back(ShaderRecord(missShaderIDs, shaderIdentifierSize));
+	ShaderTable missShaderTable(m_device, 2, shaderIdentifierSize);
+	for (UINT i = 0; i < 2; i++)
+	{
+		missShaderTable.push_back(ShaderRecord(missShaderIDs[i], shaderIdentifierSize));
+	}
 	m_missTable = missShaderTable.GetResource();
 
-	UINT numShaderRecords = (UINT)m_staticMeshes.size();
+	UINT numShaderRecords = (UINT)((hitGroupNames.size() * 2) + (characterHitGroupNames.size() * 2));
 	UINT shaderRecordSize = 128;
 
 	hitShaderTable = new ShaderTable(m_device, numShaderRecords, shaderRecordSize);
 
-	for (size_t i = 0; i < hitGroupNames.size(); i++)
+	index = 0;
+	for (size_t i = 0; i < hitGroupNames.size()*2; i+=2)
 	{
 		//hitShaderTable.push_back(ShaderRecord(hitGroupShaderIDs[i], shaderIdentifierSize, &(m_textureHeap->GetGPUDescriptorHandleForHeapStart().ptr), sizeof(m_textureHeap->GetGPUDescriptorHandleForHeapStart().ptr)));
 		//hitShaderTable.push_back(ShaderRecord(hitGroupShaderIDs[i], 0, &(m_staticMeshes[i]->m_primitiveConstantData), 32));
@@ -322,28 +351,49 @@ void Renderer::D3D12RayTracingApp::CreateShaderTable()
 		hitShaderTable->m_mappedShaderRecoreds += 32;
 
 		// raytracing heap에 모든 텍스쳐가 view가 들어있다
-		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_raytracingHeaps[i]->GetGPUDescriptorHandleForHeapStart());
+		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_raytracingHeaps[index]->GetGPUDescriptorHandleForHeapStart());
 		//CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_staticMeshes[i]->GetIndexGpuHandle());
 		memcpy(hitShaderTable->m_mappedShaderRecoreds, &handle.ptr, sizeof(handle.ptr));
 		hitShaderTable->m_mappedShaderRecoreds += 8;
-		memcpy(hitShaderTable->m_mappedShaderRecoreds, &(m_staticMeshes[i]->m_primitiveConstantData), sizeof(PrimitiveConstantBuffer));
+		memcpy(hitShaderTable->m_mappedShaderRecoreds, &(m_staticMeshes[index]->m_primitiveConstantData), sizeof(PrimitiveConstantBuffer));
 		hitShaderTable->m_mappedShaderRecoreds += 88;
+
+		// shadow hitgruop 추가
+		memcpy(hitShaderTable->m_mappedShaderRecoreds, hitGroupShaderIDs[i+1], shaderIdentifierSize);
+		hitShaderTable->m_mappedShaderRecoreds += 32;
+
+		memcpy(hitShaderTable->m_mappedShaderRecoreds, &handle.ptr, sizeof(handle.ptr));
+		hitShaderTable->m_mappedShaderRecoreds += 8;
+		memcpy(hitShaderTable->m_mappedShaderRecoreds, &(m_staticMeshes[index]->m_primitiveConstantData), sizeof(PrimitiveConstantBuffer));
+		hitShaderTable->m_mappedShaderRecoreds += 88;
+		index++;
 	}
-	for (size_t i = 0; i < characterHitGroupNames.size(); i++)
+
+	index = 0;
+	for (size_t i = 0; i < characterHitGroupNames.size() * 2; i+=2)
 	{
-		//hitShaderTable.push_back(ShaderRecord(hitGroupShaderIDs[i], shaderIdentifierSize, &(m_textureHeap->GetGPUDescriptorHandleForHeapStart().ptr), sizeof(m_textureHeap->GetGPUDescriptorHandleForHeapStart().ptr)));
-		//hitShaderTable.push_back(ShaderRecord(hitGroupShaderIDs[i], 0, &(m_staticMeshes[i]->m_primitiveConstantData), 32));
 		memcpy(hitShaderTable->m_mappedShaderRecoreds, characterHitGroupShaderIDs[i], shaderIdentifierSize);
 		hitShaderTable->m_mappedShaderRecoreds += 32;
 
 		// raytracing heap에 모든 텍스쳐가 view가 들어있다
-		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(mChracterRaytracingHeaps[i]->GetGPUDescriptorHandleForHeapStart());
+		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(mChracterRaytracingHeaps[index]->GetGPUDescriptorHandleForHeapStart());
 		//CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_staticMeshes[i]->GetIndexGpuHandle());
 		memcpy(hitShaderTable->m_mappedShaderRecoreds, &handle.ptr, sizeof(handle.ptr));
 		hitShaderTable->m_mappedShaderRecoreds += 8;
 		PrimitiveConstantBuffer data = mCharacter->GetprimitiveConstantData();
 		memcpy(hitShaderTable->m_mappedShaderRecoreds, &data, sizeof(PrimitiveConstantBuffer));
 		hitShaderTable->m_mappedShaderRecoreds += 88;
+
+		// Shadow
+		memcpy(hitShaderTable->m_mappedShaderRecoreds, characterHitGroupShaderIDs[i+1], shaderIdentifierSize);
+		hitShaderTable->m_mappedShaderRecoreds += 32;
+
+		memcpy(hitShaderTable->m_mappedShaderRecoreds, &handle.ptr, sizeof(handle.ptr));
+		hitShaderTable->m_mappedShaderRecoreds += 8;
+		memcpy(hitShaderTable->m_mappedShaderRecoreds, &data, sizeof(PrimitiveConstantBuffer));
+		hitShaderTable->m_mappedShaderRecoreds += 88;
+
+		index++;
 	}
 }
 
@@ -419,6 +469,7 @@ void Renderer::D3D12RayTracingApp::CreateConstantBuffer()
 	memcpy(pSceneBegin, &m_sceneCBData, sizeof(RaytraingSceneConstantData));
 
 	Utility::CreateConstantBuffer(m_device, m_commandList, mCsBuffer);
+	Utility::CreateConstantBuffer(m_device, m_commandList, mPostprocessingConstantBuffer);
 }
 
 bool Renderer::D3D12RayTracingApp::InitDirectX()
@@ -451,10 +502,20 @@ void Renderer::D3D12RayTracingApp::InitRayTracingScene()
 		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
 	//characterMesh->Initialize(GeometryGenerator::RTSphere(0.4f, 100, 100, L"worn-painted-metal_Albedo.dds"), m_device, m_commandList, Vector3(0.5, 0.4f, 0.f));
 	characterMesh->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
-
+	const wchar_t* names[] = {
+		L"HitGroupCharacter0",
+		L"HitGroupCharacter_Shadow0",
+		L"HitGroupCharacter1",
+		L"HitGroupCharacter_Shadow1",
+		L"HitGroupCharacter2",
+		L"HitGroupCharacter_Shadow2",
+	};
+	int nameIndex = 0;
 	for (size_t i = 0; i < characterMesh->meshCount; i++)
 	{
-		characterHitGroupNames.push_back(L"HitGroupCharacter" + i);
+		std::wstringstream wss, wssShadow;
+		characterHitGroupNames.push_back(names[nameIndex++]);
+		characterShadowHitGroupNames.push_back(names[nameIndex++]);
 	}
 	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 0);
 	characterMesh->SetTexturePath(L"Soldier_head_Albedo.dds", 1);
@@ -468,17 +529,20 @@ void Renderer::D3D12RayTracingApp::InitRayTracingScene()
 	box->Initialize(GeometryGenerator::RTBox(0.4f, L"DiamondPlate008C_4K-PNG_Albedo.dds"), m_device, m_commandList, Vector3(-0.5, 0.4f, 0.5));
 	box->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupSphere1");
+	ShadowhitGroupNames.push_back(L"HitGroupSphere1_Shadow");
 
 	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
 	sphere->Initialize(GeometryGenerator::RTSphere(0.4f, 100, 100, L"worn-painted-metal_Albedo.dds"), m_device, m_commandList, Vector3(0.5, 0.4f, 0.f));
 	//sphere2->Initialize(GeometryGenerator::RTBox(0.4f, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.5, 0, 0.5));
 	sphere->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupSphere2");
+	ShadowhitGroupNames.push_back(L"HitGroupSphere2_Shadow");
 
 	std::shared_ptr<Core::StaticMesh> plane = std::make_shared<Core::StaticMesh>();
 	plane->Initialize(GeometryGenerator::RTBox(100.f, 1.f, 100.f), m_device, m_commandList, Vector3(0.0, -1.0f, 0.f));
 	plane->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupPlane");
+	ShadowhitGroupNames.push_back(L"HitGroupPlane_Shadow");
 
 	std::shared_ptr<Core::StaticMesh> cubeMap = std::make_shared<Core::StaticMesh>();
 	cubeMap->Initialize(GeometryGenerator::RTCubeMapBox(100.f), m_device, m_commandList);
@@ -486,6 +550,7 @@ void Renderer::D3D12RayTracingApp::InitRayTracingScene()
 	cubeMap->SetIsCubeMap(true);
 	cubeMap->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupCube");
+	ShadowhitGroupNames.push_back(L"HitGroupCube_Shadow");
 
 	m_staticMeshes.push_back(cubeMap);
 	m_staticMeshes.push_back(box);
@@ -676,18 +741,22 @@ void Renderer::D3D12RayTracingApp::Update(float& deltaTime)
 
 	// hit constant buffer 업데이트
 	hitShaderTable->ResetMap();
-	for (size_t i = 0; i < hitGroupNames.size(); i++)
+	int index = 0;
+	for (size_t i = 0; i < hitGroupNames.size()*2; i+=2)
 	{
 		hitShaderTable->m_mappedShaderRecoreds += 40;
-		memcpy(hitShaderTable->m_mappedShaderRecoreds, &(m_staticMeshes[i]->m_primitiveConstantData), sizeof(PrimitiveConstantBuffer));
+		memcpy(hitShaderTable->m_mappedShaderRecoreds, &(m_staticMeshes[index]->m_primitiveConstantData), sizeof(PrimitiveConstantBuffer));
 		hitShaderTable->m_mappedShaderRecoreds += 88;
+		hitShaderTable->m_mappedShaderRecoreds += 128;
+		index++;
 	}
-	for (size_t i = 0; i < characterHitGroupNames.size(); i++)
+	for (size_t i = 0; i < characterHitGroupNames.size() * 2; i += 2)
 	{
 		hitShaderTable->m_mappedShaderRecoreds += 40;
 		PrimitiveConstantBuffer data = mCharacter->GetprimitiveConstantData();
 		memcpy(hitShaderTable->m_mappedShaderRecoreds, &data, sizeof(PrimitiveConstantBuffer));
 		hitShaderTable->m_mappedShaderRecoreds += 88;
+		hitShaderTable->m_mappedShaderRecoreds += 128;
 	}
 }
 
@@ -744,11 +813,11 @@ void Renderer::D3D12RayTracingApp::RaytracingPass(float& deltaTime)
 
 	//TODO : size
 	dispactchRays.HitGroupTable.StartAddress = hitShaderTable->GetGPUVirtualAddress();
-	dispactchRays.HitGroupTable.SizeInBytes = 128 * (hitGroupNames.size() + characterHitGroupNames.size());
-	dispactchRays.HitGroupTable.StrideInBytes = 128;
+	dispactchRays.HitGroupTable.SizeInBytes = 128 * (hitGroupNames.size()*2 + characterHitGroupNames.size() * 2);
+	dispactchRays.HitGroupTable.StrideInBytes = 128 * 2;
 
 	dispactchRays.MissShaderTable.StartAddress = m_missTable->GetGPUVirtualAddress();
-	dispactchRays.MissShaderTable.SizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+	dispactchRays.MissShaderTable.SizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES * 2;
 	dispactchRays.MissShaderTable.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
 	dispactchRays.Width = width;

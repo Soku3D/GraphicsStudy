@@ -28,6 +28,12 @@ struct RayPayload
 	bool isHit;
 };
 
+struct ShadowRayPayload
+{
+	bool hit;
+};
+
+
 struct RaytracingVertex
 {
 	XMFLOAT3 position;

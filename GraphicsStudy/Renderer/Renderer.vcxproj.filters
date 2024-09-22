@@ -250,7 +250,6 @@
     <FxCompile Include="SimulationParticlesPS.hlsl" />
     <FxCompile Include="SimulationParticlesGS.hlsl" />
     <FxCompile Include="GeometryPassVS.hlsl" />
-    <FxCompile Include="Raytracing.hlsl" />
     <FxCompile Include="RenderBoundingBoxPassGS.hlsl" />
     <FxCompile Include="RenderBoundingBoxPassVS.hlsl" />
     <FxCompile Include="RenderBoundingBoxPassPS.hlsl" />
@@ -268,6 +267,7 @@
     <FxCompile Include="CFDVorticityConfinementCS.hlsl" />
     <FxCompile Include="PerlinNoiseCS.hlsl" />
     <FxCompile Include="SimulationCulNoiseCS.hlsl" />
+    <FxCompile Include="Raytracing.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />
