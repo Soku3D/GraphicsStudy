@@ -26,7 +26,8 @@ Renderer::D3D12RayTracingApp::D3D12RayTracingApp(const int& width, const int& he
 
 Renderer::D3D12RayTracingApp::~D3D12RayTracingApp()
 {
-	delete mCharacterMesh;
+	delete characterMesh;
+	//delete mCharacterMesh;
 	delete hitShaderTable;
 	std::cout << "~D3D12RayTracingApp" << std::endl;
 }

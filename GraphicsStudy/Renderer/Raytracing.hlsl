@@ -34,7 +34,7 @@ RayPayload TraceRadianceRay(in Ray ray, in UINT currentRayRecursionDepth)
     rayDesc.Direction = ray.direction;
     // Set TMin to a zero value to avoid aliasing artifacts along contact areas.
     // Note: make sure to enable face culling so as to avoid surface face fighting.
-    rayDesc.TMin = 0.1;
+    rayDesc.TMin = 0;
     rayDesc.TMax = 1000.f;
     RayPayload rayPayload = { float4(0, 0, 0, 0), currentRayRecursionDepth + 1, true };
     
