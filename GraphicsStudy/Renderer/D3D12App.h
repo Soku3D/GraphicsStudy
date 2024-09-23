@@ -255,6 +255,8 @@ namespace Renderer {
 		const wchar_t* copyResourceEvent = L"CopyResource Pass ";
 		const wchar_t* guiPassEvent = L"GUI Pass ";
 
+		const wchar_t* cubeMapPassEvent = L"CubeMap Pass ";
+
 	protected:
 		bool bUseTextureApp = true;
 		bool bUseCubeMapApp = true;

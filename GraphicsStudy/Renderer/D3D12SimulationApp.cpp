@@ -9,8 +9,9 @@ Renderer::D3D12SimulationApp::D3D12SimulationApp(const int& width, const int& he
 	:D3D12App(width, height)
 {
 	bUseTextureApp = false;
-	bUseCubeMapApp = false;
+	bUseCubeMapApp = true;
 	bUseGUI = false;
+	bRenderCubeMap = true;
 
 	m_appName = "SimulationApp";
 	
@@ -42,6 +43,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	Utility::CreateConstantBuffer(m_device, m_commandList, mSimulationConstantBuffer);
 	Utility::CreateConstantBuffer(m_device, m_commandList, mCFDConstantBuffer);
 	Utility::CreateConstantBuffer(m_device, m_commandList, mVolumeConstantBuffer);
+	Utility::CreateConstantBuffer(m_device, m_commandList, mCubeMapConstantBuffer);
 
 	particle.Initialize(100);
 	particle.BuildResources(m_device, m_commandList, m_hdrFormat, m_screenWidth, m_screenHeight);
@@ -128,8 +130,12 @@ bool Renderer::D3D12SimulationApp::InitDirectX()
 
 void Renderer::D3D12SimulationApp::InitSimulationScene() {
 	mVolumeMesh = std::make_shared<Core::StaticMesh>();
-	mVolumeMesh->Initialize(GeometryGenerator::PbrBox(1.5f), m_device, m_commandList);
+	mVolumeMesh->Initialize(GeometryGenerator::PbrBox(1.f), m_device, m_commandList);
 	mVolumeMesh->SetBoundingBoxHalfLength(1.f);
+
+	m_cubeMap = std::make_shared<Core::StaticMesh>();
+	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(500.f), m_device, m_commandList);
+	m_cubeMap->SetTexturePath(std::wstring(L"Outdoor") + L"EnvHDR.dds");
 }
 
 void Renderer::D3D12SimulationApp::OnResize()
@@ -203,6 +209,10 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 	mCFDConstantBuffer.mStructure.viscosity = mGuiViscosity;
 	mCFDConstantBuffer.mStructure.vorticity = mGuiVorticity;
 	mCFDConstantBuffer.UpdateBuffer();
+
+	mCubeMapConstantBuffer.mStructure.expose = 2.f;
+	mCubeMapConstantBuffer.mStructure.lodLevel = 0.f;
+	mCubeMapConstantBuffer.UpdateBuffer();
 
 	mPostprocessingConstantBuffer.mStructure.bUseGamma = false;
 	mPostprocessingConstantBuffer.UpdateBuffer();
@@ -802,6 +812,7 @@ void Renderer::D3D12SimulationApp::ComputeVolumeDensityPass(float& deltaTime)
 }
 
 void Renderer::D3D12SimulationApp::VolumeRendering(float& deltaTime) {
+	RenderCubeMap(deltaTime);
 	ComputeVolumeDensityPass(deltaTime);
 	RenderVolumMesh(deltaTime);
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
@@ -820,11 +831,7 @@ void Renderer::D3D12SimulationApp::RenderVolumMesh(float& deltaTime)
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 	{
 		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), volumeRenderEvent);
-		FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
-
-		m_commandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
-		m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-			1.f, 0, 0, nullptr);
+		
 
 		m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
 
@@ -847,6 +854,59 @@ void Renderer::D3D12SimulationApp::RenderVolumMesh(float& deltaTime)
 	FlushCommandList(m_commandList);
 	PIXEndEvent(m_commandQueue.Get());
 }
+
+void Renderer::D3D12SimulationApp::RenderCubeMap(float& deltaTime)
+{
+	auto& pso = cubePsoLists["HDRCubeMap"];
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), cubeMapPassEvent);
+
+	if (bRenderCubeMap)
+	{
+		FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
+
+		m_commandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
+		m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+			1.f, 0, 0, nullptr);
+		m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
+		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+		m_commandList->RSSetScissorRects(1, &m_scissorRect);
+		m_commandList->RSSetViewports(1, &m_viewport);
+
+		// View Proj Matrix Constant Buffer 
+		m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer->GetGPUVirtualAddress());
+
+		//CubeMap Expose & LodLevel
+		m_commandList->SetGraphicsRootConstantBufferView(2, mCubeMapConstantBuffer.GetGpuAddress());
+
+		// CubeMap Heap 
+		ID3D12DescriptorHeap* ppCubeHeaps[] = { m_cubeMapTextureHeap.Get() };
+		m_commandList->SetDescriptorHeaps(_countof(ppCubeHeaps), ppCubeHeaps);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_cubeMapTextureHeap->GetGPUDescriptorHandleForHeapStart());
+
+		if (m_cubeTextureMap.count(m_cubeMap->GetTexturePath()) > 0) {
+			handle.Offset(m_cubeTextureMap[m_cubeMap->GetTexturePath()], m_csuHeapSize);
+		}
+		else {
+			handle.Offset(m_cubeTextureMap[L"DefaultEnvHDR.dds"], m_csuHeapSize);
+		}
+		m_commandList->SetGraphicsRootDescriptorTable(0, handle);
+
+		m_cubeMap->Render(deltaTime, m_commandList, false);
+	}
+
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* plists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
+
+	FlushCommandQueue();
+	PIXEndEvent(m_commandQueue.Get());
+}
+
 
 void Renderer::D3D12SimulationApp::RenderGUI(float& deltaTime)
 {

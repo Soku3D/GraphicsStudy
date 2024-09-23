@@ -5,6 +5,7 @@ RWTexture3D<float> gVolumeDensity : register(u0);
 struct ConstantBufferData
 {
     float deltaTime;
+    float offset;
 };
 
 ConstantBuffer<ConstantBufferData> gConstantBuffer : register(b0);
@@ -38,6 +39,14 @@ void main(uint3 dtID : SV_DispatchThreadID)
     gVolumeDensity.GetDimensions(width, height, depth);
     
     float3 uvw = dtID / float3(width - 1, height - 1, depth - 1);
-
+    //float3 center = float3(0.5f, 0.5f, 0.5f);
+    //if (length(uvw - center) < 0.5f)
+    //{
+    //    
+    //}
+    //else
+    //{
+    //    gVolumeDensity[dtID] = 0.f;       
+    //}
     gVolumeDensity[dtID] = cloudDensity(uvw);
 }

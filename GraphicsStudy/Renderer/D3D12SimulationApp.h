@@ -41,6 +41,7 @@ namespace Renderer {
 		void ComputeVolumeDensityPass(float& deltaTime);
 		void VolumeRendering(float& deltaTime);
 		void RenderVolumMesh(float& deltaTime);
+		void RenderCubeMap(float& deltaTime);
 		void CFDComputeDivergencePass(float& deltaTime);
 		void RenderGUI(float& deltaTime) override;
 
@@ -58,6 +59,7 @@ namespace Renderer {
 		Core::ConstantBuffer<SimulationCSConstantData> mSimulationConstantBuffer;
 		Core::ConstantBuffer<CFDConstantData> mCFDConstantBuffer;
 		Core::ConstantBuffer<VolumeConstantData> mVolumeConstantBuffer;
+		Core::ConstantBuffer<CubeMapConstantData> mCubeMapConstantBuffer;
 
 		std::shared_ptr<Core::StaticMesh> mVolumeMesh;
 		ComPtr<ID3D12DescriptorHeap> mVolumeTextureHeap;

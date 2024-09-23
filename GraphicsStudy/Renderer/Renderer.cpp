@@ -7,6 +7,7 @@
 
 #include "CubeMapVS.h"
 #include "CubeMapPS.h"
+#include "CubeMapHdrPS.h"
 
 #include "CopyVS.h"
 #include "CopyPS.h"
@@ -136,6 +137,7 @@ namespace Renderer {
 
 	D3D12_BLEND_DESC defaultBlender;
 	D3D12_BLEND_DESC alphaBlender;
+	D3D12_BLEND_DESC alphaBlender2;
 	D3D12_BLEND_DESC simulationBlender;
 	D3D12_BLEND_DESC addColorBlender;
 
@@ -210,6 +212,7 @@ namespace Renderer {
 		GraphicsPSO wirePso("Wire");
 
 		GraphicsPSO cubeMapPso("DefaultCubeMap");
+		GraphicsPSO hdrcubeMapPso("HDRCubeMap");
 		GraphicsPSO msaaCubeMapPso("MsaaCubeMap");
 		GraphicsPSO wireCubeMapPso("WireCubeMap");
 
@@ -293,6 +296,15 @@ namespace Renderer {
 		alphaBlender.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
 		alphaBlender.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 		
+		alphaBlender2 = alphaBlender;
+		alphaBlender2.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_SRC_ALPHA;
+		alphaBlender2.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_DEST_ALPHA;
+		alphaBlender2.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+
+		/*alphaBlender2.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_SRC_ALPHA;
+		alphaBlender2.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_SRC_ALPHA;
+		alphaBlender2.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;*/
+
 		simulationBlender = alphaBlender;
 		simulationBlender.RenderTarget[0].SrcBlend= D3D12_BLEND_ONE;
 		simulationBlender.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
@@ -301,7 +313,7 @@ namespace Renderer {
 		addColorBlender = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		addColorBlender.RenderTarget[0].BlendEnable = TRUE;
 		addColorBlender.RenderTarget[0].SrcBlend = D3D12_BLEND_BLEND_FACTOR;
-		addColorBlender.RenderTarget[0].DestBlend = D3D12_BLEND_BLEND_FACTOR;
+		addColorBlender.RenderTarget[0].DestBlend = D3D12_BLEND_INV_BLEND_FACTOR;
 		addColorBlender.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
 		addColorBlender.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
 		addColorBlender.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
@@ -386,6 +398,7 @@ namespace Renderer {
 		renderVolumePassPso.SetInputLayout((UINT)pbrElement.size(), pbrElement.data());
 		renderVolumePassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 		renderVolumePassPso.SetRootSignature(&renderVolumeSignature);
+		renderVolumePassPso.SetBlendState(alphaBlender2);
 
 		postProcessingPso.SetRootSignature(&computeSignature);
 		postProcessingPso.SetComputeShader(g_pPostprocessingCS, sizeof(g_pPostprocessingCS));
@@ -402,8 +415,15 @@ namespace Renderer {
 		cubeMapPso.SetVertexShader(g_pCubeMapVS, sizeof(g_pCubeMapVS));
 		cubeMapPso.SetPixelShader(g_pCubeMapPS, sizeof(g_pCubeMapPS));
 		cubeMapPso.SetRasterizerState(cubeMapRasterizer);
-		//cubeMapPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 		cubeMapPso.SetRenderTargetFormats(2, cubeMapPassFormats, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+
+		hdrcubeMapPso = defaultPso;
+		hdrcubeMapPso.SetInputLayout((UINT)simpleElement.size(), simpleElement.data());
+		hdrcubeMapPso.SetRootSignature(&cubeMapSignature);
+		hdrcubeMapPso.SetVertexShader(g_pCubeMapVS, sizeof(g_pCubeMapVS));
+		hdrcubeMapPso.SetPixelShader(g_pCubeMapHdrPS, sizeof(g_pCubeMapHdrPS));
+		hdrcubeMapPso.SetRasterizerState(cubeMapRasterizer);
+		hdrcubeMapPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 
 		wireCubeMapPso = cubeMapPso;
 		wireCubeMapPso.SetRasterizerState(wireRasterizer);
@@ -498,6 +518,7 @@ namespace Renderer {
 		utilityPsoLists[copyDensityPso.GetName()] = copyDensityPso;
 
 		cubePsoLists[cubeMapPso.GetName()] = cubeMapPso;
+		cubePsoLists[hdrcubeMapPso.GetName()] = hdrcubeMapPso;
 		cubePsoLists[msaaCubeMapPso.GetName()] = msaaCubeMapPso;
 		cubePsoLists[wireCubeMapPso.GetName()] = wireCubeMapPso;
 

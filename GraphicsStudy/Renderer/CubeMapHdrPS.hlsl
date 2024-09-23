@@ -6,28 +6,15 @@ struct PSInput
     float3 worldPoition : POSITION;
     float4 svPosition : SV_POSITION;
 };
-struct PSOutput
-{
-    float4 albedo : SV_Target0;
-    float4 material : SV_Target1;
-};
 cbuffer CubeMapConstant : register(b1)
 {
     float expose;
     float lodLevel;
 };
 
-PSOutput main(PSInput input)
+float4 main(PSInput input) : SV_Target
 {
-    PSOutput output;
-    
     float4 cubeColor = g_cubeMap.SampleLevel(g_sampler, input.worldPoition, lodLevel);
-    
-    output.albedo = float4((expose * cubeColor.rgb), 1.f);
-    
-    // Light Pass 통과
-    output.material = float4(0, 0, 0, 2);
-    
-    return output;
-    //return float4(1.f, 0.f, 0.f, 1.f);
+    float3 color = pow(expose * cubeColor.rgb, 1 / 2.2f);
+    return float4(color, 1.f);
 }

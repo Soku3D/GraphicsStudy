@@ -271,6 +271,7 @@
     <FxCompile Include="RenderVolumeVS.hlsl" />
     <FxCompile Include="RenderVolumePS.hlsl" />
     <FxCompile Include="ComputeVolumeDensityCS.hlsl" />
+    <FxCompile Include="CubeMapHdrPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />

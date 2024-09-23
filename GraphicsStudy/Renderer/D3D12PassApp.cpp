@@ -150,7 +150,6 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		UpdatePlayer((int)i, onlineSystem->GetClientData(i));
 	}
 
-
 	m_inputHandler->ExicuteCommand(mCharacter.get(), deltaTime, bIsFPSMode);
 	//m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
 	mCharacter->Update(deltaTime);
@@ -534,6 +533,7 @@ void Renderer::D3D12PassApp::RenderBoundingBoxPass(float& deltaTime) {
 	}
 
 }
+
 void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 {
 	auto& pso = cubePsoLists[(currRenderMode + "CubeMap")];

@@ -13,6 +13,7 @@ struct PSInput
     float3 worldPoition : POSITION;
     float4 svPosition : SV_POSITION;
 };
+
 PSInput main(VSInput input)
 {
     PSInput output;

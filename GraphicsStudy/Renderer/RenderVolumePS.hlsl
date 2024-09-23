@@ -17,7 +17,7 @@ float BeerLambert(float absorptionCoefficient, float distanceTraveled)
 float HenyeyGreensteinPhase(in float3 L, in float3 V, in float aniso)
 {
     // V: eye - pos 
-    // L: ������ ���ϴ� ����
+    // L: toLight
     // https://www.shadertoy.com/view/7s3SRH
     
     float cosT = dot(L, -V);
@@ -64,10 +64,8 @@ float4 main(PSInput input) : SV_TARGET
     
     int numSteps = 128;
     float stepSize = 2.0 / float(numSteps);
-    
-    // float absorptionCoeff = 10.0;
+
     float3 volumeAlbedo = float3(1, 1, 1);
-    // float3 lightColor = float3(1, 1, 1) * 40.0;
     
     float4 color = float4(0, 0, 0, 1); 
     float3 posModel = input.worldPoition.xyz + dirModel * 1e-6;
@@ -76,25 +74,28 @@ float4 main(PSInput input) : SV_TARGET
     float densityAbsorption = 10.0;
     float3 lightColor = float3(1, 1, 1) * 40.0;
     
+    float3 center = float3(0.5f, 0.5f, 0.5f);
     [loop] 
     for (int i = 0; i < numSteps; i++)
     {
         float3 uvw = GetUVW(posModel); 
-
+        float l = length(uvw - center);
         
         float density = gVolumeDensity.SampleLevel(clampLinearSampler, uvw, 0).r;
         // float lighting = lightingTex.SampleLevel(linearClampSampler, uvw, 0).r;
         float lighting = 1.0; 
 
-        if (density.r > 1e-3)
+        if (density > 1e-3)
         {
             float prevAlpha = color.a;
-            color.a *= BeerLambert(10.f * density.r, stepSize);
+            color.a *= BeerLambert(10.f * density, stepSize);
             float absorptionFromMarch = prevAlpha - color.a;
             
+            float phase = HenyeyGreensteinPhase(lightDir, dirModel, 0.3f);
+            phase = 1.f;
             color.rgb += absorptionFromMarch * volumeAlbedo * lightColor
                          * density * lighting
-                         * HenyeyGreensteinPhase(lightDir, dirModel, 0.3f);
+                         * phase;
         }
         
         posModel += dirModel * stepSize;
@@ -108,7 +109,7 @@ float4 main(PSInput input) : SV_TARGET
     }
 
     color = saturate(color);
-    color.a = 1.0 - color.a;
     
+    color.a = 1.f - color.a;
     return color;
 }
