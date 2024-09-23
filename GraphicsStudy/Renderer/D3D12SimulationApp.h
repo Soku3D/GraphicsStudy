@@ -15,6 +15,7 @@ namespace Renderer {
 		bool Initialize() override;
 		bool InitGUI() override;
 		bool InitDirectX() override;
+		void InitSimulationScene();
 		void OnResize() override;
 
 		void Update(float& deltaTime) override;
@@ -37,6 +38,9 @@ namespace Renderer {
 		void CFDDiffusePass(float& deltaTime);
 		void CFDVorticityPass(float& deltaTime, const std::string& psoName, int uavIndex, int srvIndex);
 		void CFDApplyPressurePass(float& deltaTime);
+		void ComputeVolumeDensityPass(float& deltaTime);
+		void VolumeRendering(float& deltaTime);
+		void RenderVolumMesh(float& deltaTime);
 		void CFDComputeDivergencePass(float& deltaTime);
 		void RenderGUI(float& deltaTime) override;
 
@@ -53,6 +57,15 @@ namespace Renderer {
 		StableFluids stableFluids;
 		Core::ConstantBuffer<SimulationCSConstantData> mSimulationConstantBuffer;
 		Core::ConstantBuffer<CFDConstantData> mCFDConstantBuffer;
+		Core::ConstantBuffer<VolumeConstantData> mVolumeConstantBuffer;
+
+		std::shared_ptr<Core::StaticMesh> mVolumeMesh;
+		ComPtr<ID3D12DescriptorHeap> mVolumeTextureHeap;
+		ComPtr<ID3D12Resource> mVolumeTexture;
+		DXGI_FORMAT mVolumeFormat = DXGI_FORMAT_R16_FLOAT;
+		UINT volumeWidth = 128;
+		UINT volumeHeight = 128;
+		UINT volumeDepth = 128;
 
 		std::vector<XMFLOAT3> colorLists;
 
@@ -69,6 +82,9 @@ namespace Renderer {
 		const wchar_t* cfdApplyPressureEvent = L"CFD ApplyPressure Pass ";
 		const wchar_t* cfdDiffuseEvent = L"CFD Diffuse Pass ";
 		const wchar_t* cfdVorticityEvent = L"CFD Vorticity Pass ";
+
+		const wchar_t* volumeRenderEvent = L"Volume Render Pass ";
+
 
 	private:
 		float mGuiVorticity = 0.2f;

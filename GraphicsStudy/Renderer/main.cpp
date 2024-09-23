@@ -13,7 +13,7 @@ int main() {
         D3D12RayTracingApp = 4
     };
 
-    auto currentApp = 4;
+    auto currentApp = 2;
 
     try
     {

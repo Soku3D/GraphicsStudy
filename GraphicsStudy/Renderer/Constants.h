@@ -87,3 +87,7 @@ __declspec(align(256)) struct CFDConstantData {
 __declspec(align(256)) struct PostprocessingConstantData {
 	float bUseGamma;
 };
+
+__declspec(align(256)) struct VolumeConstantData {
+	float deltaTime;
+};

@@ -52,6 +52,9 @@ namespace Renderer {
 	extern RootSignature cfdComputePressureSignature;
 	extern RootSignature cfdAdvectionSignature;
 
+	extern RootSignature computeVolumeDensitySignature;
+	extern RootSignature renderVolumeSignature;
+
 	extern RootSignature raytracingGlobalSignature;
 
 	extern std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;

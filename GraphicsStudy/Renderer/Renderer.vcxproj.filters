@@ -268,6 +268,9 @@
     <FxCompile Include="PerlinNoiseCS.hlsl" />
     <FxCompile Include="SimulationCulNoiseCS.hlsl" />
     <FxCompile Include="Raytracing.hlsl" />
+    <FxCompile Include="RenderVolumeVS.hlsl" />
+    <FxCompile Include="RenderVolumePS.hlsl" />
+    <FxCompile Include="ComputeVolumeDensityCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />
@@ -282,5 +285,6 @@
     <None Include="CFD.hlsli" />
     <None Include="Utility.hlsli" />
     <None Include="Noise.hlsli" />
+    <None Include="Volume.hlsli" />
   </ItemGroup>
 </Project>

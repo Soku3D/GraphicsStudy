@@ -52,6 +52,11 @@
 #include "CFDComputeVorticityCS.h"
 #include "CFDVorticityConfinementCS.h"
 
+#include "ComputeVolumeDensityCS.h"
+#include "RenderVolumeVS.h"
+#include "RenderVolumePS.h"
+
+
 namespace Renderer {
 	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -108,6 +113,9 @@ namespace Renderer {
 	RootSignature cfdApplyPressureSignature;
 	RootSignature cfdComputeDiffuseSignature;
 	RootSignature cfdVorticitySignature;
+	
+	RootSignature computeVolumeDensitySignature;
+	RootSignature renderVolumeSignature;
 
 	RootSignature raytracingGlobalSignature;
 
@@ -193,6 +201,9 @@ namespace Renderer {
 		cfdComputeDiffuseSignature.Initialize(2, 2, 1, wrapSamplers);
 		cfdVorticitySignature.Initialize(1, 1, 1, wrapSamplers);
 
+		computeVolumeDensitySignature.InitializeUAV(1, 1, 0, nullptr);
+		renderVolumeSignature.Initialize(1, 2, samplers);
+
 		raytracingGlobalSignature.InitializeRaytracing(1, 4, 1, 1, &wrapLinearSampler);
 
 		GraphicsPSO msaaPso("Msaa");
@@ -237,6 +248,9 @@ namespace Renderer {
 		ComputePSO CFDVorticityConfinementPso("CFDVorticityConfinement");
 
 		ComputePSO perlinNoisePso("PerlinNoise");
+
+		ComputePSO computeVolumeDensityPso("ComputeVolumeDensity");
+		GraphicsPSO renderVolumePassPso("RenderVolumePass");
 
 		defaultElement =
 		{
@@ -365,6 +379,14 @@ namespace Renderer {
 		renderBoundingBoxPassPso.SetRootSignature(&NormalPassSignature);
 		renderBoundingBoxPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
 
+		renderVolumePassPso = defaultPso;
+		renderVolumePassPso.SetVertexShader(g_pRenderVolumeVS, sizeof(g_pRenderVolumeVS));
+		renderVolumePassPso.SetPixelShader(g_pRenderVolumePS, sizeof(g_pRenderVolumePS));
+		renderVolumePassPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		renderVolumePassPso.SetInputLayout((UINT)pbrElement.size(), pbrElement.data());
+		renderVolumePassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+		renderVolumePassPso.SetRootSignature(&renderVolumeSignature);
+
 		postProcessingPso.SetRootSignature(&computeSignature);
 		postProcessingPso.SetComputeShader(g_pPostprocessingCS, sizeof(g_pPostprocessingCS));
 
@@ -451,6 +473,9 @@ namespace Renderer {
 		perlinNoisePso.SetComputeShader(g_pPerlinNoiseCS, sizeof(g_pPerlinNoiseCS));
 		perlinNoisePso.SetRootSignature(&sphSimulationComputeSignature);
 
+		computeVolumeDensityPso.SetComputeShader(g_pComputeVolumeDensityCS, sizeof(g_pComputeVolumeDensityCS));
+		computeVolumeDensityPso.SetRootSignature(&computeVolumeDensitySignature);
+
 		modePsoLists[defaultPso.GetName()] = defaultPso;
 		modePsoLists[wirePso.GetName()] = wirePso;
 		modePsoLists[msaaPso.GetName()] = msaaPso;
@@ -466,6 +491,8 @@ namespace Renderer {
 		passPsoLists[renderNormalPassPso.GetName()] = renderNormalPassPso;
 		passPsoLists[simulationRenderPso.GetName()] = simulationRenderPso;
 		passPsoLists[renderBoundingBoxPassPso.GetName()] = renderBoundingBoxPassPso;
+		
+		passPsoLists[renderVolumePassPso.GetName()] = renderVolumePassPso;
 
 		utilityPsoLists[copyPso.GetName()] = copyPso;
 		utilityPsoLists[copyDensityPso.GetName()] = copyDensityPso;
@@ -492,6 +519,7 @@ namespace Renderer {
 		computePsoList[CFDComputeVorticityPso.GetName()] = CFDComputeVorticityPso;
 		
 		computePsoList[perlinNoisePso.GetName()] = perlinNoisePso;
+		computePsoList[computeVolumeDensityPso.GetName()] = computeVolumeDensityPso;
 
 	}
 
@@ -510,6 +538,9 @@ namespace Renderer {
 		simulationSignature.Finalize(device);
 		simulationPostProcessingSignature.Finalize(device);
 		
+		computeVolumeDensitySignature.Finalize(device);
+		renderVolumeSignature.Finalize(device);
+
 		cfdSourcingSignature.Finalize(device);
 		cfdAdvectionSignature.Finalize(device);
 		cfdComputeDivergenceSignature.Finalize(device);

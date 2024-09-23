@@ -358,6 +358,7 @@ void Renderer::D3D12App::Update(float& deltaTime)
 	m_passConstantData->ViewMat = m_passConstantData->ViewMat.Transpose();
 	m_passConstantData->ProjMat = m_passConstantData->ProjMat.Transpose();
 
+	m_passConstantData->eyePosition = m_camera->GetPosition();
 	m_ligthPassConstantData->eyePos = m_camera->GetPosition();
 	m_ligthPassConstantData->lod = 0.f;
 

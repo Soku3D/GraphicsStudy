@@ -13,7 +13,7 @@ Renderer::D3D12SimulationApp::D3D12SimulationApp(const int& width, const int& he
 	bUseGUI = false;
 
 	m_appName = "SimulationApp";
-
+	
 	//m_backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 }
 
@@ -21,6 +21,9 @@ bool Renderer::D3D12SimulationApp::Initialize()
 {
 	if (!D3D12App::Initialize())
 		return false;
+
+	DirectX::SimpleMath::Vector3 pos(0, 0, -3);
+	m_camera->SetPositionAndDirection(pos, XMFLOAT3(0,0,1));
 
 	colorLists =
 	{
@@ -38,6 +41,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 
 	Utility::CreateConstantBuffer(m_device, m_commandList, mSimulationConstantBuffer);
 	Utility::CreateConstantBuffer(m_device, m_commandList, mCFDConstantBuffer);
+	Utility::CreateConstantBuffer(m_device, m_commandList, mVolumeConstantBuffer);
 
 	particle.Initialize(100);
 	particle.BuildResources(m_device, m_commandList, m_hdrFormat, m_screenWidth, m_screenHeight);
@@ -47,8 +51,53 @@ bool Renderer::D3D12SimulationApp::Initialize()
 
 	stableFluids.Initialize();
 
+	InitSimulationScene();
+
+	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	heapDesc.NumDescriptors = 2;
+	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mVolumeTextureHeap.ReleaseAndGetAddressOf())));
+
+	D3D12_RESOURCE_DESC rDesc = {};
+	rDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+	rDesc.Format = mVolumeFormat;
+	rDesc.MipLevels = 1;
+	rDesc.Width = volumeWidth;
+	rDesc.Height = volumeHeight;
+	rDesc.DepthOrArraySize = volumeDepth;
+	rDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	rDesc.SampleDesc.Count = 1;
+	rDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
+	ThrowIfFailed(m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&rDesc,
+		D3D12_RESOURCE_STATE_COMMON,
+		nullptr,
+		IID_PPV_ARGS(mVolumeTexture.ReleaseAndGetAddressOf())));
+
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
+	ZeroMemory(&uavDesc, sizeof(uavDesc));
+	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
+	uavDesc.Format = mVolumeFormat;
+	uavDesc.Texture3D.MipSlice = 1;
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+	srvDesc.Format = mVolumeFormat;
+
+	srvDesc.Texture3D.MipLevels = 1;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(mVolumeTextureHeap->GetCPUDescriptorHandleForHeapStart());
+	m_device->CreateUnorderedAccessView(mVolumeTexture.Get(), nullptr , nullptr, handle);
+	handle.Offset(1, m_csuHeapSize);
+	m_device->CreateShaderResourceView(mVolumeTexture.Get(), nullptr, handle);
+
 	m_commandList->Close();
-	ID3D12CommandList* pCmdLists[] = {
+	ID3D12CommandList * pCmdLists[] = {
 		m_commandList.Get()
 	};
 	m_commandQueue->ExecuteCommandLists(1, pCmdLists);
@@ -75,6 +124,12 @@ bool Renderer::D3D12SimulationApp::InitDirectX()
 		return false;
 
 	return true;
+}
+
+void Renderer::D3D12SimulationApp::InitSimulationScene() {
+	mVolumeMesh = std::make_shared<Core::StaticMesh>();
+	mVolumeMesh->Initialize(GeometryGenerator::PbrBox(1.5f), m_device, m_commandList);
+	mVolumeMesh->SetBoundingBoxHalfLength(1.f);
 }
 
 void Renderer::D3D12SimulationApp::OnResize()
@@ -162,16 +217,17 @@ void Renderer::D3D12SimulationApp::UpdateGUI(float& deltaTime)
 void Renderer::D3D12SimulationApp::Render(float& deltaTime)
 {
 	//RenderNoise(deltaTime);
-	ParticleSimulation(deltaTime);
+	//ParticleSimulation(deltaTime);
 	//SPH(deltaTime); 
 	//CFD(deltaTime);
+	VolumeRendering(deltaTime);
 }
 
 void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
 {
 	SimulationPass(deltaTime);
 	SimulationRenderPass(deltaTime);
-	PostProcessing(deltaTime, "SimulationPostProcessing", HDRRenderTargetBuffer(), m_hdrUavHeap.Get(),D3D12_RESOURCE_STATE_RENDER_TARGET);
+	PostProcessing(deltaTime, "SimulationPostProcessing", HDRRenderTargetBuffer(), m_hdrUavHeap.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
 		D3D12App::PostProcessing(deltaTime);
 		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
@@ -714,6 +770,81 @@ void Renderer::D3D12SimulationApp::CFDApplyPressurePass(float& deltaTime)
 	m_commandQueue->ExecuteCommandLists(1, pCmdLists);
 	FlushCommandQueue();
 
+	PIXEndEvent(m_commandQueue.Get());
+}
+
+void Renderer::D3D12SimulationApp::ComputeVolumeDensityPass(float& deltaTime)
+{
+	auto& pso = computePsoList["ComputeVolumeDensity"];
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), cfdApplyPressureEvent);
+
+	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
+	ID3D12DescriptorHeap* pHeaps[] = {
+		mVolumeTextureHeap.Get()
+	};
+	m_commandList->SetDescriptorHeaps(1, pHeaps);
+	m_commandList->SetComputeRootDescriptorTable(0, mVolumeTextureHeap->GetGPUDescriptorHandleForHeapStart()); // density UAV
+	m_commandList->SetComputeRootConstantBufferView(1, mVolumeConstantBuffer.GetGpuAddress());
+	m_commandList->Dispatch((UINT)std::ceil(volumeWidth / 16.f), (UINT)std::ceil(volumeHeight / 16.f), (UINT)std::ceil(volumeDepth / 4.f));
+
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* pCmdLists[] = {
+		m_commandList.Get()
+	};
+	m_commandQueue->ExecuteCommandLists(1, pCmdLists);
+	FlushCommandQueue();
+
+	PIXEndEvent(m_commandQueue.Get());
+}
+
+void Renderer::D3D12SimulationApp::VolumeRendering(float& deltaTime) {
+	ComputeVolumeDensityPass(deltaTime);
+	RenderVolumMesh(deltaTime);
+	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
+		D3D12App::PostProcessing(deltaTime);
+		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	}
+	else
+		D3D12App::CopyResourceToSwapChain(deltaTime);
+}
+
+void Renderer::D3D12SimulationApp::RenderVolumMesh(float& deltaTime)
+{
+	auto& pso = passPsoLists["RenderVolumePass"];
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+	{
+		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), volumeRenderEvent);
+		FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
+
+		m_commandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
+		m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+			1.f, 0, 0, nullptr);
+
+		m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
+
+		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_commandList->RSSetScissorRects(1, &m_scissorRect);
+		m_commandList->RSSetViewports(1, &m_viewport);
+		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+
+		// Texture SRV Heap 
+		ID3D12DescriptorHeap* ppSrvHeaps[] = { mVolumeTextureHeap.Get() };
+		m_commandList->SetDescriptorHeaps(_countof(ppSrvHeaps), ppSrvHeaps);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(mVolumeTextureHeap->GetGPUDescriptorHandleForHeapStart(), 1, m_csuHeapSize);
+		m_commandList->SetGraphicsRootDescriptorTable(0, handle);
+
+		// View Proj Matrix Constant Buffer 
+		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
+		mVolumeMesh->Render(deltaTime, m_commandList, true);
+
+	}
+	FlushCommandList(m_commandList);
 	PIXEndEvent(m_commandQueue.Get());
 }
 
