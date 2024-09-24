@@ -229,8 +229,8 @@ void Renderer::D3D12SimulationApp::Render(float& deltaTime)
 	//RenderNoise(deltaTime);
 	//ParticleSimulation(deltaTime);
 	//SPH(deltaTime); 
-	//CFD(deltaTime);
-	VolumeRendering(deltaTime);
+	CFD(deltaTime);
+	//VolumeRendering(deltaTime);
 }
 
 void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
