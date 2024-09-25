@@ -468,9 +468,11 @@ void Renderer::D3D12RayTracingApp::CreateConstantBuffer()
 	D3D12_RANGE range(0, 0);
 	ThrowIfFailed(m_sceneCB->Map(0, &range, reinterpret_cast<void**>(&pSceneBegin)));
 	memcpy(pSceneBegin, &m_sceneCBData, sizeof(RaytraingSceneConstantData));
-
-	Utility::CreateConstantBuffer(m_device, m_commandList, mCsBuffer);
-	Utility::CreateConstantBuffer(m_device, m_commandList, mPostprocessingConstantBuffer);
+	
+	mCsBuffer.Initialize(m_device, m_commandList);
+	mPostprocessingConstantBuffer.Initialize(m_device, m_commandList);
+	/*Utility::CreateConstantBuffer(m_device, m_commandList, mCsBuffer);
+	Utility::CreateConstantBuffer(m_device, m_commandList, mPostprocessingConstantBuffer);*/
 }
 
 bool Renderer::D3D12RayTracingApp::InitDirectX()

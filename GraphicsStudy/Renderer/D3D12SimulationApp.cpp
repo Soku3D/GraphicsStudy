@@ -40,10 +40,14 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	m_commandAllocator->Reset();
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
-	Utility::CreateConstantBuffer(m_device, m_commandList, mSimulationConstantBuffer);
-	Utility::CreateConstantBuffer(m_device, m_commandList, mCFDConstantBuffer);
-	Utility::CreateConstantBuffer(m_device, m_commandList, mVolumeConstantBuffer);
-	Utility::CreateConstantBuffer(m_device, m_commandList, mCubeMapConstantBuffer);
+	mSimulationConstantBuffer.Initialize(m_device, m_commandList);
+	mCFDConstantBuffer.Initialize(m_device, m_commandList);
+	mVolumeConstantBuffer.Initialize(m_device, m_commandList);
+	mCubeMapConstantBuffer.Initialize(m_device, m_commandList);
+	//Utility::CreateConstantBuffer(m_device, m_commandList, mSimulationConstantBuffer);
+	//Utility::CreateConstantBuffer(m_device, m_commandList, mCFDConstantBuffer);
+	//Utility::CreateConstantBuffer(m_device, m_commandList, mVolumeConstantBuffer);
+	//Utility::CreateConstantBuffer(m_device, m_commandList, mCubeMapConstantBuffer);
 
 	particle.Initialize(100);
 	particle.BuildResources(m_device, m_commandList, m_hdrFormat, m_screenWidth, m_screenHeight);
@@ -54,49 +58,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	stableFluids.Initialize();
 
 	InitSimulationScene();
-
-	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	heapDesc.NumDescriptors = 2;
-	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-
-	ThrowIfFailed(m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mVolumeTextureHeap.ReleaseAndGetAddressOf())));
-
-	D3D12_RESOURCE_DESC rDesc = {};
-	rDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
-	rDesc.Format = mVolumeFormat;
-	rDesc.MipLevels = 1;
-	rDesc.Width = volumeWidth;
-	rDesc.Height = volumeHeight;
-	rDesc.DepthOrArraySize = volumeDepth;
-	rDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	rDesc.SampleDesc.Count = 1;
-	rDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-
-	ThrowIfFailed(m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
-		&rDesc,
-		D3D12_RESOURCE_STATE_COMMON,
-		nullptr,
-		IID_PPV_ARGS(mVolumeTexture.ReleaseAndGetAddressOf())));
-
-	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
-	ZeroMemory(&uavDesc, sizeof(uavDesc));
-	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
-	uavDesc.Format = mVolumeFormat;
-	uavDesc.Texture3D.MipSlice = 1;
-
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
-	srvDesc.Format = mVolumeFormat;
-
-	srvDesc.Texture3D.MipLevels = 1;
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(mVolumeTextureHeap->GetCPUDescriptorHandleForHeapStart());
-	m_device->CreateUnorderedAccessView(mVolumeTexture.Get(), nullptr , nullptr, handle);
-	handle.Offset(1, m_csuHeapSize);
-	m_device->CreateShaderResourceView(mVolumeTexture.Get(), nullptr, handle);
+	mCloud.Initiailize(128, 128, 128, DXGI_FORMAT_R16_FLOAT, m_device, m_commandList);
 
 	m_commandList->Close();
 	ID3D12CommandList * pCmdLists[] = {
@@ -129,10 +91,7 @@ bool Renderer::D3D12SimulationApp::InitDirectX()
 }
 
 void Renderer::D3D12SimulationApp::InitSimulationScene() {
-	mVolumeMesh = std::make_shared<Core::StaticMesh>();
-	mVolumeMesh->Initialize(GeometryGenerator::PbrBox(1.f), m_device, m_commandList);
-	mVolumeMesh->SetBoundingBoxHalfLength(1.f);
-
+	
 	m_cubeMap = std::make_shared<Core::StaticMesh>();
 	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(500.f), m_device, m_commandList);
 	m_cubeMap->SetTexturePath(std::wstring(L"Outdoor") + L"EnvHDR.dds");
@@ -229,8 +188,8 @@ void Renderer::D3D12SimulationApp::Render(float& deltaTime)
 	//RenderNoise(deltaTime);
 	//ParticleSimulation(deltaTime);
 	//SPH(deltaTime); 
-	CFD(deltaTime);
-	//VolumeRendering(deltaTime);
+	//CFD(deltaTime);
+	VolumeRendering(deltaTime);
 }
 
 void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
@@ -793,12 +752,12 @@ void Renderer::D3D12SimulationApp::ComputeVolumeDensityPass(float& deltaTime)
 
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 	ID3D12DescriptorHeap* pHeaps[] = {
-		mVolumeTextureHeap.Get()
+		mCloud.GetTextureHeap()
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
-	m_commandList->SetComputeRootDescriptorTable(0, mVolumeTextureHeap->GetGPUDescriptorHandleForHeapStart()); // density UAV
+	m_commandList->SetComputeRootDescriptorTable(0, mCloud.GetUavHandle()); // density UAV
 	m_commandList->SetComputeRootConstantBufferView(1, mVolumeConstantBuffer.GetGpuAddress());
-	m_commandList->Dispatch((UINT)std::ceil(volumeWidth / 16.f), (UINT)std::ceil(volumeHeight / 16.f), (UINT)std::ceil(volumeDepth / 4.f));
+	m_commandList->Dispatch((UINT)std::ceil(mCloud.GetWidth() / 16.f), (UINT)std::ceil(mCloud.GetHeight() / 16.f), (UINT)std::ceil(mCloud.GetDepth() / 4.f));
 
 	ThrowIfFailed(m_commandList->Close());
 
@@ -841,14 +800,45 @@ void Renderer::D3D12SimulationApp::RenderVolumMesh(float& deltaTime)
 		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
 
 		// Texture SRV Heap 
-		ID3D12DescriptorHeap* ppSrvHeaps[] = { mVolumeTextureHeap.Get() };
+		ID3D12DescriptorHeap* ppSrvHeaps[] = { mCloud.GetTextureHeap() };
 		m_commandList->SetDescriptorHeaps(_countof(ppSrvHeaps), ppSrvHeaps);
-		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(mVolumeTextureHeap->GetGPUDescriptorHandleForHeapStart(), 1, m_csuHeapSize);
-		m_commandList->SetGraphicsRootDescriptorTable(0, handle);
+		m_commandList->SetGraphicsRootDescriptorTable(0, mCloud.GetSrvHandle());
 
 		// View Proj Matrix Constant Buffer 
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
-		mVolumeMesh->Render(deltaTime, m_commandList, true);
+		mCloud.Render(deltaTime, m_commandList, true);
+
+	}
+	FlushCommandList(m_commandList);
+	PIXEndEvent(m_commandQueue.Get());
+}
+
+
+void Renderer::D3D12SimulationApp::RenderVolumMesh(float& deltaTime)
+{
+	auto& pso = passPsoLists["RenderVolumePass"];
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+	{
+		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), volumeRenderEvent);
+
+
+		m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
+
+		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_commandList->RSSetScissorRects(1, &m_scissorRect);
+		m_commandList->RSSetViewports(1, &m_viewport);
+		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+
+		// Texture SRV Heap 
+		ID3D12DescriptorHeap* ppSrvHeaps[] = { mCloud.GetTextureHeap() };
+		m_commandList->SetDescriptorHeaps(_countof(ppSrvHeaps), ppSrvHeaps);
+		m_commandList->SetGraphicsRootDescriptorTable(0, mCloud.GetSrvHandle());
+
+		// View Proj Matrix Constant Buffer 
+		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
+		mCloud.Render(deltaTime, m_commandList, true);
 
 	}
 	FlushCommandList(m_commandList);

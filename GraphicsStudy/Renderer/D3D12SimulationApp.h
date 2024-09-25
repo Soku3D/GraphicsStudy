@@ -61,13 +61,15 @@ namespace Renderer {
 		Core::ConstantBuffer<VolumeConstantData> mVolumeConstantBuffer;
 		Core::ConstantBuffer<CubeMapConstantData> mCubeMapConstantBuffer;
 
-		std::shared_ptr<Core::StaticMesh> mVolumeMesh;
+	/*	std::shared_ptr<Core::StaticMesh> mVolumeMesh;
 		ComPtr<ID3D12DescriptorHeap> mVolumeTextureHeap;
 		ComPtr<ID3D12Resource> mVolumeTexture;
 		DXGI_FORMAT mVolumeFormat = DXGI_FORMAT_R16_FLOAT;
 		UINT volumeWidth = 128;
 		UINT volumeHeight = 128;
-		UINT volumeDepth = 128;
+		UINT volumeDepth = 128;*/
+
+		Core::Texture3D mCloud;
 
 		std::vector<XMFLOAT3> colorLists;
 

@@ -758,8 +758,11 @@ void Renderer::D3D12App::CreateConstantBuffer()
 
 	ThrowIfFailed(m_ligthPassConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pLPCDataBegin)));
 
-	Utility::CreateConstantBuffer(m_device, m_commandList, mCsBuffer);
-	Utility::CreateConstantBuffer(m_device, m_commandList, mPostprocessingConstantBuffer);
+	mCsBuffer.Initialize(m_device, m_commandList);
+	mPostprocessingConstantBuffer.Initialize(m_device, m_commandList);
+
+	//Utility::CreateConstantBuffer(m_device, m_commandList, mCsBuffer);
+	//Utility::CreateConstantBuffer(m_device, m_commandList, mPostprocessingConstantBuffer);
 }
 
 
