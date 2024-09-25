@@ -58,6 +58,8 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	stableFluids.Initialize();
 
 	InitSimulationScene();
+	mCloud.InitVolumeMesh(2.f, 1.f, 1.f, m_device, m_commandList);
+
 	mCloud.Initiailize(128, 64, 64, DXGI_FORMAT_R16_FLOAT, m_device, m_commandList);
 
 	m_commandList->Close();
@@ -773,10 +775,10 @@ void Renderer::D3D12SimulationApp::ComputeVolumeDensityPass(float& deltaTime)
 }
 
 void Renderer::D3D12SimulationApp::VolumeRendering(float& deltaTime) {
-	//RenderCubeMap(deltaTime);
-	//ComputeVolumeDensityPass(deltaTime);
-	//RenderVolumMesh(deltaTime);
+	RenderCubeMap(deltaTime);
+	ComputeVolumeDensityPass(deltaTime);
 	RenderBoundingBox(deltaTime);
+	RenderVolumMesh(deltaTime);
 
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
 		D3D12App::PostProcessing(deltaTime);
@@ -794,7 +796,6 @@ void Renderer::D3D12SimulationApp::RenderVolumMesh(float& deltaTime)
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 	{
 		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), volumeRenderEvent);
-
 
 		m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
 

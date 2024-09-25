@@ -60,6 +60,10 @@ namespace Core {
 
 		void Initiailize(UINT width, UINT height, UINT depth, DXGI_FORMAT format, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commmandList);
 
+		void InitVolumeMesh(const float& halfLength, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
+
+		void InitVolumeMesh(const float& x, const float& y, const float& z, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
+
 		void Update(float& deltaTime);
 
 		ID3D12DescriptorHeap* GetTextureHeap() const { return mVolumeTextureHeap.Get(); }
