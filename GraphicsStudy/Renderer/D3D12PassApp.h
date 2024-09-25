@@ -84,8 +84,7 @@ namespace Renderer {
 		const wchar_t* geomeytyPassEvent = L"Geometry Pass ";
 		const wchar_t* fbxGeomeytyPassEvent = L"FBX Geometry Pass ";
 		const wchar_t* lightPassEvent = L"Light Pass ";
-		const wchar_t* drawNormalPassEvent = L"DrawNormal Pass ";
-		const wchar_t* renderBoundingBoxPassEvent = L"RenderBoundingBox Pass ";
+		
 
 	protected:
 		

@@ -3,7 +3,10 @@
 
 float3 GetUVW(float3 posModel)
 {
-    return (posModel.xyz + 1.0) * 0.5;
+    float x = (posModel.x + 2.f) * 0.25f;
+    float y = (posModel.y + 1.f) * 0.5f;
+    float z = (posModel.z + 1.f) * 0.5f;
+    return float3(x, y, z);
 }
 
 // https://wallisc.github.io/rendering/2020/05/02/Volumetric-Rendering-Part-2.html
@@ -92,7 +95,7 @@ float4 main(PSInput input) : SV_TARGET
             float absorptionFromMarch = prevAlpha - color.a;
             
             float phase = HenyeyGreensteinPhase(lightDir, dirModel, 0.3f);
-            phase = 1.f;
+            //phase = 1.f;
             color.rgb += absorptionFromMarch * volumeAlbedo * lightColor
                          * density * lighting
                          * phase;
@@ -100,7 +103,7 @@ float4 main(PSInput input) : SV_TARGET
         
         posModel += dirModel * stepSize;
         
-        if (abs(posModel.x) > 1 || abs(posModel.y) > 1 || abs(posModel.z) > 1)
+        if (abs(posModel.x) > 2 || abs(posModel.y) > 1 || abs(posModel.z) > 1)
             break;
         
         if (color.a < 1e-3)

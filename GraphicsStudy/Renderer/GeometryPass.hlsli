@@ -33,9 +33,13 @@ cbuffer cbPerObject : register(b0)
     bool useHeightMap;
     bool useMetalnessMap;
     bool useNormalMap;
-    bool useRoughnessMap;
     
+    bool useRoughnessMap;
     bool useTesslation;
+    float boundingBoxHalfLengthX;
+    float boundingBoxHalfLengthY;
+
+    float boundingBoxHalfLengthZ;
 }
 
 cbuffer cbPass : register(b1)

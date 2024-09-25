@@ -41,8 +41,10 @@ __declspec(align(256)) struct ObjectConstantData {
 	
 	float bUseRoughnessMap = false;
 	float bUseTesslation = false;
-	float boundingBoxHalfLength = 0.f;
-	float dummy;
+	float boundingBoxHalfLengthX = 0.f;
+	float boundingBoxHalfLengthY = 0.f;
+
+	float boundingBoxHalfLengthZ = 0.f;
 
 };
 

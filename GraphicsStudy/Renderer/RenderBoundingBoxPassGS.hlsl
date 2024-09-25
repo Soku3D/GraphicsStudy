@@ -9,17 +9,19 @@ void main(
 )
 {
 	PSInput element;
-    float halfLength = boundingBoxHalfLength;
-    if (halfLength > 0.f)
+    float x = boundingBoxHalfLengthX;
+    float y = boundingBoxHalfLengthY;
+    float z = boundingBoxHalfLengthZ;
+    if (x > 0.f && y > 0.f && z > 0.f)
     {
-        float4 p0 = float4(-halfLength, -halfLength, -halfLength, 1);
-        float4 p1 = float4(-halfLength, -halfLength, halfLength, 1);
-        float4 p2 = float4(halfLength, -halfLength, halfLength, 1);
-        float4 p3 = float4(halfLength, -halfLength, -halfLength, 1);
-        float4 p4 = float4(-halfLength, halfLength, -halfLength, 1);
-        float4 p5 = float4(-halfLength, halfLength, halfLength, 1);
-        float4 p6 = float4(halfLength, halfLength, halfLength, 1);
-        float4 p7 = float4(halfLength, halfLength, -halfLength, 1);
+        float4 p0 = float4(-x, -y, -z, 1);
+        float4 p1 = float4(-x, -y, z, 1);
+        float4 p2 = float4(x, -y, z, 1);
+        float4 p3 = float4(x, -y, -z, 1);
+        float4 p4 = float4(-x, y, -z, 1);
+        float4 p5 = float4(-x, y, z, 1);
+        float4 p6 = float4(x, y, z, 1);
+        float4 p7 = float4(x, y, -z, 1);
   
         p0 = ApplyMVPMatrix(p0);
         p1 = ApplyMVPMatrix(p1);

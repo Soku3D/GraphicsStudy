@@ -11,15 +11,18 @@ cbuffer cbPerObject : register(b0)
     matrix Model;
     matrix invTranspose;
     Material material;
-    bool bUseAoMap;
-    bool bUseHeightMap;
-    bool bUseMetalnessMap;
-    bool bUseNormalMap;
-	
-    bool bUseRoughnessMap;
-    bool bUseTesslation;
-    float boundingBoxHalfLength;
-    bool dummy;
+    
+    bool useAoMap;
+    bool useHeightMap;
+    bool useMetalnessMap;
+    bool useNormalMap;
+    
+    bool useRoughnessMap;
+    bool useTesslation;
+    float boundingBoxHalfLengthX;
+    float boundingBoxHalfLengthY;
+
+    float boundingBoxHalfLengthZ;
 }
 
 cbuffer cbPass : register(b1)

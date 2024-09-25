@@ -4,8 +4,8 @@
 void Core::Texture3D::Initiailize(UINT width, UINT height, UINT depth, DXGI_FORMAT format, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
 {
 	mVolumeMesh = std::make_shared<Core::StaticMesh>();
-	mVolumeMesh->Initialize(GeometryGenerator::PbrBox(1.f), device, commandList);
-	mVolumeMesh->SetBoundingBoxHalfLength(1.f);
+	mVolumeMesh->Initialize(GeometryGenerator::PbrBox(2.f,1.f,1.f,L""), device, commandList);
+	mVolumeMesh->SetBoundingBoxHalfLength(2.f,1.f,1.f);
 
 	volumeWidth = width;
 	volumeHeight = height;
@@ -58,7 +58,18 @@ void Core::Texture3D::Initiailize(UINT width, UINT height, UINT depth, DXGI_FORM
 	device->CreateShaderResourceView(mVolumeTexture.Get(), nullptr, handle);
 }
 
+void Core::Texture3D::Update(float& deltaTime)
+{
+	mVolumeMesh->Update(deltaTime);
+}
+
 void Core::Texture3D::Render(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commmandList, bool bUseConstantBuffer)
 {
 	mVolumeMesh->Render(deltaTime, commmandList, bUseConstantBuffer);
 }
+
+void Core::Texture3D::RenderBoundingBox(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commmandList)
+{
+	mVolumeMesh->RenderBoundingBox(deltaTime, commmandList);
+}
+

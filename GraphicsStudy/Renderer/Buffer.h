@@ -60,6 +60,8 @@ namespace Core {
 
 		void Initiailize(UINT width, UINT height, UINT depth, DXGI_FORMAT format, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commmandList);
 
+		void Update(float& deltaTime);
+
 		ID3D12DescriptorHeap* GetTextureHeap() const { return mVolumeTextureHeap.Get(); }
 		D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandle() const { return CD3DX12_GPU_DESCRIPTOR_HANDLE(mVolumeTextureHeap->GetGPUDescriptorHandleForHeapStart(), 1, offset); }
 		D3D12_GPU_DESCRIPTOR_HANDLE GetUavHandle() const { return mVolumeTextureHeap->GetGPUDescriptorHandleForHeapStart(); }
@@ -68,6 +70,8 @@ namespace Core {
 		UINT GetDepth() const { return volumeDepth; }
 
 		void Render(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commmandList, bool bUseConstantBuffer);
+
+		void RenderBoundingBox(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commmandList);
 
 	private:
 		std::shared_ptr<Core::StaticMesh> mVolumeMesh;

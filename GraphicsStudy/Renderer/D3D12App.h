@@ -255,6 +255,9 @@ namespace Renderer {
 		const wchar_t* copyResourceEvent = L"CopyResource Pass ";
 		const wchar_t* guiPassEvent = L"GUI Pass ";
 
+		const wchar_t* drawNormalPassEvent = L"DrawNormal Pass ";
+		const wchar_t* renderBoundingBoxPassEvent = L"RenderBoundingBox Pass ";
+
 		const wchar_t* cubeMapPassEvent = L"CubeMap Pass ";
 
 	protected:

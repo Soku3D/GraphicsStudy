@@ -40,7 +40,8 @@ namespace Core {
 		std::wstring GetTexturePath(int index = 0) const { return mTexturePath[index]; }
 		void SetIsCubeMap(bool isCubeMap) { bIsCubeMap = isCubeMap; }
 		void SetTexturePath(std::wstring path, int index = 0) { mTexturePath[index] = path; }
-		void SetBoundingBoxHalfLength(const float& halfLength) { m_objectConstantData->boundingBoxHalfLength = halfLength; }
+		void SetBoundingBoxHalfLength(const float& halfLength);
+		void SetBoundingBoxHalfLength(const float& halfLengthX, const float& halfLengthY, const float& halfLengthZ);
 		void UpdateWorldRow(const DirectX::SimpleMath::Matrix& worldRow);
 		void UpdateMaterial(const Material& material);
 		Material& GetMaterial() const;

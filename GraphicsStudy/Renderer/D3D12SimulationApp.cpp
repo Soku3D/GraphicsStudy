@@ -14,7 +14,7 @@ Renderer::D3D12SimulationApp::D3D12SimulationApp(const int& width, const int& he
 	bRenderCubeMap = true;
 
 	m_appName = "SimulationApp";
-	
+
 	//m_backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 }
 
@@ -24,7 +24,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 		return false;
 
 	DirectX::SimpleMath::Vector3 pos(0, 0, -3);
-	m_camera->SetPositionAndDirection(pos, XMFLOAT3(0,0,1));
+	m_camera->SetPositionAndDirection(pos, XMFLOAT3(0, 0, 1));
 
 	colorLists =
 	{
@@ -58,10 +58,10 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	stableFluids.Initialize();
 
 	InitSimulationScene();
-	mCloud.Initiailize(128, 128, 128, DXGI_FORMAT_R16_FLOAT, m_device, m_commandList);
+	mCloud.Initiailize(128, 64, 64, DXGI_FORMAT_R16_FLOAT, m_device, m_commandList);
 
 	m_commandList->Close();
-	ID3D12CommandList * pCmdLists[] = {
+	ID3D12CommandList* pCmdLists[] = {
 		m_commandList.Get()
 	};
 	m_commandQueue->ExecuteCommandLists(1, pCmdLists);
@@ -91,7 +91,7 @@ bool Renderer::D3D12SimulationApp::InitDirectX()
 }
 
 void Renderer::D3D12SimulationApp::InitSimulationScene() {
-	
+
 	m_cubeMap = std::make_shared<Core::StaticMesh>();
 	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(500.f), m_device, m_commandList);
 	m_cubeMap->SetTexturePath(std::wstring(L"Outdoor") + L"EnvHDR.dds");
@@ -175,6 +175,8 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 
 	mPostprocessingConstantBuffer.mStructure.bUseGamma = false;
 	mPostprocessingConstantBuffer.UpdateBuffer();
+
+	mCloud.Update(deltaTime);
 }
 
 void Renderer::D3D12SimulationApp::UpdateGUI(float& deltaTime)
@@ -771,9 +773,11 @@ void Renderer::D3D12SimulationApp::ComputeVolumeDensityPass(float& deltaTime)
 }
 
 void Renderer::D3D12SimulationApp::VolumeRendering(float& deltaTime) {
-	RenderCubeMap(deltaTime);
-	ComputeVolumeDensityPass(deltaTime);
-	RenderVolumMesh(deltaTime);
+	//RenderCubeMap(deltaTime);
+	//ComputeVolumeDensityPass(deltaTime);
+	//RenderVolumMesh(deltaTime);
+	RenderBoundingBox(deltaTime);
+
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
 		D3D12App::PostProcessing(deltaTime);
 		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
@@ -790,7 +794,7 @@ void Renderer::D3D12SimulationApp::RenderVolumMesh(float& deltaTime)
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 	{
 		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), volumeRenderEvent);
-		
+
 
 		m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
 
@@ -814,34 +818,33 @@ void Renderer::D3D12SimulationApp::RenderVolumMesh(float& deltaTime)
 }
 
 
-void Renderer::D3D12SimulationApp::RenderVolumMesh(float& deltaTime)
+void Renderer::D3D12SimulationApp::RenderBoundingBox(float& deltaTime)
 {
-	auto& pso = passPsoLists["RenderVolumePass"];
+	auto& pso = passPsoLists["BoundingBoxPass"];
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
-	{
-		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), volumeRenderEvent);
+
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), renderBoundingBoxPassEvent);
 
 
-		m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
+	m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
 
-		m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_commandList->RSSetScissorRects(1, &m_scissorRect);
-		m_commandList->RSSetViewports(1, &m_viewport);
-		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+	m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+	m_commandList->RSSetScissorRects(1, &m_scissorRect);
+	m_commandList->RSSetViewports(1, &m_viewport);
 
-		// Texture SRV Heap 
-		ID3D12DescriptorHeap* ppSrvHeaps[] = { mCloud.GetTextureHeap() };
-		m_commandList->SetDescriptorHeaps(_countof(ppSrvHeaps), ppSrvHeaps);
-		m_commandList->SetGraphicsRootDescriptorTable(0, mCloud.GetSrvHandle());
+	m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer->GetGPUVirtualAddress());
 
-		// View Proj Matrix Constant Buffer 
-		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
-		mCloud.Render(deltaTime, m_commandList, true);
+	mCloud.RenderBoundingBox(deltaTime,m_commandList);
 
-	}
-	FlushCommandList(m_commandList);
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* plists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
+
+	FlushCommandQueue();
 	PIXEndEvent(m_commandQueue.Get());
 }
 

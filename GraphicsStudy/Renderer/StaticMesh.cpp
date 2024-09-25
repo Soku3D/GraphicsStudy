@@ -56,6 +56,18 @@ void Core::StaticMesh::Update(const float& deltaTime)
 	memcpy(m_pCbvDataBegin, m_objectConstantData, sizeof(ObjectConstantData));
 }
 
+void Core::StaticMesh::SetBoundingBoxHalfLength(const float& halfLength)
+{
+	SetBoundingBoxHalfLength(halfLength, halfLength, halfLength);
+}
+
+void Core::StaticMesh::SetBoundingBoxHalfLength(const float& halfLengthX, const float& halfLengthY, const float& halfLengthZ)
+{
+	m_objectConstantData->boundingBoxHalfLengthX = halfLengthX;
+	m_objectConstantData->boundingBoxHalfLengthY = halfLengthY;
+	m_objectConstantData->boundingBoxHalfLengthZ = halfLengthZ;
+}
+
 void Core::StaticMesh::UpdateWorldRow(const DirectX::SimpleMath::Matrix& worldRow)
 {
 	using DirectX::SimpleMath::Matrix;

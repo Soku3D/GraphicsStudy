@@ -41,6 +41,7 @@ namespace Renderer {
 		void ComputeVolumeDensityPass(float& deltaTime);
 		void VolumeRendering(float& deltaTime);
 		void RenderVolumMesh(float& deltaTime);
+		void RenderBoundingBox(float& deltaTime);
 		void RenderCubeMap(float& deltaTime);
 		void CFDComputeDivergencePass(float& deltaTime);
 		void RenderGUI(float& deltaTime) override;
