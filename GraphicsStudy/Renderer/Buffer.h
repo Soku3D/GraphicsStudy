@@ -67,6 +67,8 @@ namespace Core {
 		void Update(float& deltaTime);
 
 		ID3D12DescriptorHeap* GetTextureHeap() const { return mVolumeTextureHeap.Get(); }
+		ID3D12Resource* GetResource() const { return mVolumeTexture.Get(); }
+
 		D3D12_GPU_DESCRIPTOR_HANDLE GetSrvGPUHandle() const { return CD3DX12_GPU_DESCRIPTOR_HANDLE(mVolumeTextureHeap->GetGPUDescriptorHandleForHeapStart(), 1, offset); }
 		D3D12_GPU_DESCRIPTOR_HANDLE GetUavGPUHandle() const { return mVolumeTextureHeap->GetGPUDescriptorHandleForHeapStart(); }
 

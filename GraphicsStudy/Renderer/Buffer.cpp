@@ -59,6 +59,12 @@ void Core::Texture3D::Initiailize(UINT width, UINT height, UINT depth, DXGI_FORM
 
 	device->CopyDescriptorsSimple(2, mVolumeTextureHeap->GetCPUDescriptorHandleForHeapStart(),
 		mVolumeTextureHeapNSV->GetCPUDescriptorHandleForHeapStart(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			mVolumeTexture.Get(),
+			D3D12_RESOURCE_STATE_COMMON,
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 }
 
 void Core::Texture3D::InitVolumeMesh(const float& halfLength, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)

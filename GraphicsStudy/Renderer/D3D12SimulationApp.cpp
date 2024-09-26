@@ -193,8 +193,8 @@ void Renderer::D3D12SimulationApp::Render(float& deltaTime)
 	//ParticleSimulation(deltaTime);
 	//SPH(deltaTime); 
 	//CFD(deltaTime);
-	VolumeRendering(deltaTime);
-	//SmokeSimulationPass(deltaTime);
+	//VolumeRendering(deltaTime);
+	SmokeSimulationPass(deltaTime);
 }
 
 void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
@@ -834,7 +834,7 @@ void Renderer::D3D12SimulationApp::SmokeSourcingDensityPass(float& deltaTime)
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, mSmoke->GetHandle(0));
 	m_commandList->SetComputeRootConstantBufferView(1, mCFDConstantBuffer.GetGpuAddress());
-	m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
+	mSmoke->Dispatch(m_commandList);
 
 	ThrowIfFailed(m_commandList->Close());
 
@@ -849,8 +849,8 @@ void Renderer::D3D12SimulationApp::SmokeSourcingDensityPass(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::SmokeAdvectionPass(float& deltaTime)
 {
-	CopyResource(m_commandList, stableFluids.GetDensityTempResource(), stableFluids.GetDensityResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	CopyResource(m_commandList, stableFluids.GetVelocityTempResource(), stableFluids.GetVelocityResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	CopyResource(m_commandList, mSmoke->GetDensityTempResource(), mSmoke->GetDensityResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	CopyResource(m_commandList, mSmoke->GetVelocityTempResource(), mSmoke->GetVelocityResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 	auto& pso = computePsoList["SmokeAdvection"];
 
