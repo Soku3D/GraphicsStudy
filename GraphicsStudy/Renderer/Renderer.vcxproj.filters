@@ -105,6 +105,9 @@
     <ClCompile Include="StableFluids.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Volume.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3D12App.h">
@@ -224,6 +227,9 @@
     <ClInclude Include="StableFluids.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Volume.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="TestVS.hlsl" />
@@ -272,6 +278,14 @@
     <FxCompile Include="RenderVolumePS.hlsl" />
     <FxCompile Include="ComputeVolumeDensityCS.hlsl" />
     <FxCompile Include="CubeMapHdrPS.hlsl" />
+    <FxCompile Include="SmokeSourcingDensityCS.hlsl" />
+    <FxCompile Include="SmokeAdvectionCS.hlsl" />
+    <FxCompile Include="SmokeComputePressureCS.hlsl" />
+    <FxCompile Include="SmokeComputeDivergenceCS.hlsl" />
+    <FxCompile Include="SmokeApplyPressureCS.hlsl" />
+    <FxCompile Include="SmokeComputeDiffuseCS.hlsl" />
+    <FxCompile Include="SmokeComputeVorticityCS.hlsl" />
+    <FxCompile Include="SmokeVorticityConfinementCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />

@@ -53,6 +53,15 @@
 #include "CFDComputeVorticityCS.h"
 #include "CFDVorticityConfinementCS.h"
 
+#include "SmokeSourcingDensityCS.h"
+#include "SmokeAdvectionCS.h"
+#include "SmokeComputePressureCS.h"
+#include "SmokeComputeDivergenceCS.h"
+#include "SmokeApplyPressureCS.h"
+#include "SmokeComputeDiffuseCS.h"
+#include "SmokeComputeVorticityCS.h"
+#include "SmokeVorticityConfinementCS.h"
+
 #include "ComputeVolumeDensityCS.h"
 #include "RenderVolumeVS.h"
 #include "RenderVolumePS.h"
@@ -249,6 +258,16 @@ namespace Renderer {
 		ComputePSO CFDComputeDiffusePso("CFDComputeDiffuse");
 		ComputePSO CFDComputeVorticityPso("CFDComputeVorticity");
 		ComputePSO CFDVorticityConfinementPso("CFDVorticityConfinement");
+
+		ComputePSO smokeSourcingDensityPso("SmokeSourcingDensity");
+		ComputePSO smokeComputePressurePso("SmokeComputePressure");
+		ComputePSO smokeComputeDivergencePso("SmokeComputeDivergence");
+		ComputePSO smokeAdvectionPso("SmokeAdvection");
+		ComputePSO smokeApplyPressurePso("SmokeApplyPressure");
+		ComputePSO smokeComputeDiffusePso("SmokeComputeDiffuse");
+		ComputePSO smokeComputeVorticityPso("SmokeComputeVorticity");
+		ComputePSO smokeVorticityConfinementPso("SmokeVorticityConfinement");
+
 
 		ComputePSO perlinNoisePso("PerlinNoise");
 
@@ -490,6 +509,30 @@ namespace Renderer {
 		CFDVorticityConfinementPso.SetComputeShader(g_pCFDVorticityConfinementCS, sizeof(g_pCFDVorticityConfinementCS));
 		CFDVorticityConfinementPso.SetRootSignature(&cfdVorticitySignature);
 
+		smokeSourcingDensityPso.SetComputeShader(g_pSmokeSourcingDensityCS, sizeof(g_pSmokeSourcingDensityCS));
+		smokeSourcingDensityPso.SetRootSignature(&cfdSourcingSignature);
+
+		smokeComputePressurePso.SetComputeShader(g_pSmokeComputePressureCS, sizeof(g_pSmokeComputePressureCS));
+		smokeComputePressurePso.SetRootSignature(&cfdComputePressureSignature);
+
+		smokeComputeDivergencePso.SetComputeShader(g_pSmokeComputeDivergenceCS, sizeof(g_pSmokeComputeDivergenceCS));
+		smokeComputeDivergencePso.SetRootSignature(&cfdComputeDivergenceSignature);
+
+		smokeAdvectionPso.SetComputeShader(g_pSmokeAdvectionCS, sizeof(g_pSmokeAdvectionCS));
+		smokeAdvectionPso.SetRootSignature(&cfdAdvectionSignature);
+
+		smokeApplyPressurePso.SetComputeShader(g_pSmokeApplyPressureCS, sizeof(g_pSmokeApplyPressureCS));
+		smokeApplyPressurePso.SetRootSignature(&cfdAdvectionSignature);
+
+		smokeComputeDiffusePso.SetComputeShader(g_pSmokeComputeDiffuseCS, sizeof(g_pSmokeComputeDiffuseCS));
+		smokeComputeDiffusePso.SetRootSignature(&cfdComputeDiffuseSignature);
+
+		smokeComputeVorticityPso.SetComputeShader(g_pSmokeComputeVorticityCS, sizeof(g_pSmokeComputeVorticityCS));
+		smokeComputeVorticityPso.SetRootSignature(&cfdVorticitySignature);
+
+		smokeVorticityConfinementPso.SetComputeShader(g_pSmokeVorticityConfinementCS, sizeof(g_pSmokeVorticityConfinementCS));
+		smokeVorticityConfinementPso.SetRootSignature(&cfdVorticitySignature);
+
 		perlinNoisePso.SetComputeShader(g_pPerlinNoiseCS, sizeof(g_pPerlinNoiseCS));
 		perlinNoisePso.SetRootSignature(&sphSimulationComputeSignature);
 
@@ -539,6 +582,15 @@ namespace Renderer {
 		computePsoList[CFDVorticityConfinementPso.GetName()] = CFDVorticityConfinementPso;
 		computePsoList[CFDComputeVorticityPso.GetName()] = CFDComputeVorticityPso;
 		
+		computePsoList[smokeSourcingDensityPso.GetName()] = smokeSourcingDensityPso;
+		computePsoList[smokeAdvectionPso.GetName()] = smokeAdvectionPso;
+		computePsoList[smokeComputePressurePso.GetName()] = smokeComputePressurePso;
+		computePsoList[smokeComputeDivergencePso.GetName()] = smokeComputeDivergencePso;
+		computePsoList[smokeApplyPressurePso.GetName()] = smokeApplyPressurePso;
+		computePsoList[smokeComputeDiffusePso.GetName()] = smokeComputeDiffusePso;
+		computePsoList[smokeVorticityConfinementPso.GetName()] = smokeVorticityConfinementPso;
+		computePsoList[smokeComputeVorticityPso.GetName()] = smokeComputeVorticityPso;
+
 		computePsoList[perlinNoisePso.GetName()] = perlinNoisePso;
 		computePsoList[computeVolumeDensityPso.GetName()] = computeVolumeDensityPso;
 

@@ -3,7 +3,7 @@
 
 void Core::Texture3D::Initiailize(UINT width, UINT height, UINT depth, DXGI_FORMAT format, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
 {
-	
+
 	volumeWidth = width;
 	volumeHeight = height;
 	volumeDepth = depth;
@@ -15,6 +15,9 @@ void Core::Texture3D::Initiailize(UINT width, UINT height, UINT depth, DXGI_FORM
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 
 	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mVolumeTextureHeap.ReleaseAndGetAddressOf())));
+
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mVolumeTextureHeapNSV.ReleaseAndGetAddressOf())));
 
 	D3D12_RESOURCE_DESC rDesc = {};
 	rDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
@@ -49,10 +52,13 @@ void Core::Texture3D::Initiailize(UINT width, UINT height, UINT depth, DXGI_FORM
 	offset = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	srvDesc.Texture3D.MipLevels = 1;
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(mVolumeTextureHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(mVolumeTextureHeapNSV->GetCPUDescriptorHandleForHeapStart());
 	device->CreateUnorderedAccessView(mVolumeTexture.Get(), nullptr, nullptr, handle);
 	handle.Offset(1, offset);
 	device->CreateShaderResourceView(mVolumeTexture.Get(), nullptr, handle);
+
+	device->CopyDescriptorsSimple(2, mVolumeTextureHeap->GetCPUDescriptorHandleForHeapStart(),
+		mVolumeTextureHeapNSV->GetCPUDescriptorHandleForHeapStart(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
 void Core::Texture3D::InitVolumeMesh(const float& halfLength, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
@@ -63,21 +69,26 @@ void Core::Texture3D::InitVolumeMesh(const float& halfLength, Microsoft::WRL::Co
 void Core::Texture3D::InitVolumeMesh(const float& x, const float& y, const float& z, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
 {
 	mVolumeMesh = std::make_shared<Core::StaticMesh>();
-	mVolumeMesh->Initialize(GeometryGenerator::PbrBox(x,y,z, L""), device, commandList);
+	mVolumeMesh->Initialize(GeometryGenerator::PbrBox(x, y, z, L""), device, commandList);
 	mVolumeMesh->SetBoundingBoxHalfLength(x, y, z);
 }
 void Core::Texture3D::Update(float& deltaTime)
 {
-	mVolumeMesh->Update(deltaTime);
+	if (mVolumeMesh != nullptr)
+		mVolumeMesh->Update(deltaTime);
 }
 
 void Core::Texture3D::Render(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commmandList, bool bUseConstantBuffer)
 {
-	mVolumeMesh->Render(deltaTime, commmandList, bUseConstantBuffer);
+	if (mVolumeMesh != nullptr) {
+		mVolumeMesh->Render(deltaTime, commmandList, bUseConstantBuffer);
+	}
 }
 
 void Core::Texture3D::RenderBoundingBox(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commmandList)
 {
-	mVolumeMesh->RenderBoundingBox(deltaTime, commmandList);
+	if (mVolumeMesh != nullptr) {
+		mVolumeMesh->RenderBoundingBox(deltaTime, commmandList);
+	}
 }
 

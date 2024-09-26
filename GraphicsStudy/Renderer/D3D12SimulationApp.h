@@ -4,13 +4,17 @@
 #include "Renderer.h"
 #include "Particle.h"
 #include "StableFluids.h"
+#include "Volume.h"
+
 
 namespace Renderer {
 
 	class D3D12SimulationApp :public D3D12App {
 	public:
 		D3D12SimulationApp(const int& width, const int& height);
-		virtual ~D3D12SimulationApp() {}
+		virtual ~D3D12SimulationApp() {
+			delete mSmoke;
+		}
 
 		bool Initialize() override;
 		bool InitGUI() override;
@@ -21,11 +25,15 @@ namespace Renderer {
 		void Update(float& deltaTime) override;
 		void UpdateGUI(float& deltaTime) override;
 		void Render(float& deltaTime) override;
+
 		void ParticleSimulation(float& deltaTime);
 		void RenderNoise(float& deltaTime);
 		void GeneratePerlinNoise();
 		void SPH(float& deltaTime);
 		void CFD(float& deltaTime);
+		void VolumeRendering(float& deltaTime);
+		void SmokeSimulationPass(float& deltaTime);
+
 		void SimulationPass(float& deltaTime);
 		void SPHSimulationPass(float& deltaTime, const std::string& psoName);
 		void PostProcessing(float& deltaTime, const std::string& psoName, ID3D12Resource* hdrResource, ID3D12DescriptorHeap* resourceUavHeap, D3D12_RESOURCE_STATES resourceState, int heapIndex = 0);
@@ -38,12 +46,21 @@ namespace Renderer {
 		void CFDDiffusePass(float& deltaTime);
 		void CFDVorticityPass(float& deltaTime, const std::string& psoName, int uavIndex, int srvIndex);
 		void CFDApplyPressurePass(float& deltaTime);
+		void CFDComputeDivergencePass(float& deltaTime);
+
 		void ComputeVolumeDensityPass(float& deltaTime);
-		void VolumeRendering(float& deltaTime);
+		
+		void SmokeSourcingDensityPass(float& deltaTime);
+		void SmokeAdvectionPass(float& deltaTime);
+		void SmokeComputeDivergencePass(float& deltaTime);
+		void SmokeComputePressurePass(float& deltaTime);
+		void SmokeDiffusePass(float& deltaTime);
+		void SmokeVorticityPass(float& deltaTime, const std::string& psoName, int uavIndex, int srvIndex);
+		void SmokeApplyPressurePass(float& deltaTime);
+
 		void RenderVolumMesh(float& deltaTime);
 		void RenderBoundingBox(float& deltaTime);
 		void RenderCubeMap(float& deltaTime);
-		void CFDComputeDivergencePass(float& deltaTime);
 		void RenderGUI(float& deltaTime) override;
 
 		void FireParticles(const int& fireCount);
@@ -62,15 +79,11 @@ namespace Renderer {
 		Core::ConstantBuffer<VolumeConstantData> mVolumeConstantBuffer;
 		Core::ConstantBuffer<CubeMapConstantData> mCubeMapConstantBuffer;
 
-	/*	std::shared_ptr<Core::StaticMesh> mVolumeMesh;
-		ComPtr<ID3D12DescriptorHeap> mVolumeTextureHeap;
-		ComPtr<ID3D12Resource> mVolumeTexture;
-		DXGI_FORMAT mVolumeFormat = DXGI_FORMAT_R16_FLOAT;
-		UINT volumeWidth = 128;
-		UINT volumeHeight = 128;
-		UINT volumeDepth = 128;*/
-
 		Core::Texture3D mCloud;
+		Volume* mSmoke;
+
+		bool bRenderCloud = false;
+		bool bRenderSmoke = false;
 
 		std::vector<XMFLOAT3> colorLists;
 

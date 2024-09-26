@@ -67,8 +67,12 @@ namespace Core {
 		void Update(float& deltaTime);
 
 		ID3D12DescriptorHeap* GetTextureHeap() const { return mVolumeTextureHeap.Get(); }
-		D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandle() const { return CD3DX12_GPU_DESCRIPTOR_HANDLE(mVolumeTextureHeap->GetGPUDescriptorHandleForHeapStart(), 1, offset); }
-		D3D12_GPU_DESCRIPTOR_HANDLE GetUavHandle() const { return mVolumeTextureHeap->GetGPUDescriptorHandleForHeapStart(); }
+		D3D12_GPU_DESCRIPTOR_HANDLE GetSrvGPUHandle() const { return CD3DX12_GPU_DESCRIPTOR_HANDLE(mVolumeTextureHeap->GetGPUDescriptorHandleForHeapStart(), 1, offset); }
+		D3D12_GPU_DESCRIPTOR_HANDLE GetUavGPUHandle() const { return mVolumeTextureHeap->GetGPUDescriptorHandleForHeapStart(); }
+
+		D3D12_CPU_DESCRIPTOR_HANDLE GetNSVUavCPUHandle() const { return mVolumeTextureHeapNSV->GetCPUDescriptorHandleForHeapStart(); }
+		D3D12_CPU_DESCRIPTOR_HANDLE GetNSVSrvCPUHandle() const { return CD3DX12_CPU_DESCRIPTOR_HANDLE(mVolumeTextureHeapNSV->GetCPUDescriptorHandleForHeapStart(), 1, offset); }
+
 		UINT GetWidth() const { return volumeWidth; }
 		UINT GetHeight() const { return volumeHeight; }
 		UINT GetDepth() const { return volumeDepth; }
@@ -80,6 +84,7 @@ namespace Core {
 	private:
 		std::shared_ptr<Core::StaticMesh> mVolumeMesh;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mVolumeTextureHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mVolumeTextureHeapNSV;
 		Microsoft::WRL::ComPtr<ID3D12Resource> mVolumeTexture;
 		DXGI_FORMAT mVolumeFormat;
 		UINT volumeWidth;
