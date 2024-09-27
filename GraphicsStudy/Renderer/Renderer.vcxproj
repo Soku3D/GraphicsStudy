@@ -715,6 +715,7 @@
     <None Include="RaytracingShaderHelper.hlsli" />
     <None Include="RenderBoundingBoxPass.hlsli" />
     <None Include="SimulationParticles.hlsli" />
+    <None Include="Smoke.hlsli" />
     <None Include="Utility.hlsli" />
     <None Include="Volume.hlsli" />
   </ItemGroup>

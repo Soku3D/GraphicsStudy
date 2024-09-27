@@ -145,6 +145,7 @@ int Renderer::SimpleApp::Run()
 {
 	MSG msg = {};
 	m_timer.Start();
+
 	while (msg.message != WM_QUIT) {
 		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
 			TranslateMessage(&msg);

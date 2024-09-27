@@ -81,10 +81,13 @@ __declspec(align(256)) struct CFDConstantData {
 	float deltaTime;
 	DirectX::SimpleMath::Vector3 velocity;
 	float radius;
+
 	float viscosity;
 	float vorticity;
 	uint32_t i;
 	uint32_t j;
+
+	float time;
 };
 __declspec(align(256)) struct PostprocessingConstantData {
 	float bUseGamma;

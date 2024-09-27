@@ -80,11 +80,11 @@ void Renderer::RootSignature::InitializeUavSrv(UINT uavCount, UINT srvCount, UIN
 	m_samplerArray = sampler;
 	//m_samplerArray = sampler;
 	if (m_samplerArray.empty()) {
-		m_rootSignatureDesc.Init_1_1(paramenters.size(), paramenters.data(), 0, nullptr, rootSignatureFlags);
+		m_rootSignatureDesc.Init_1_1((UINT)paramenters.size(), paramenters.data(), 0, nullptr, rootSignatureFlags);
 	}
 	else
 	{
-		m_rootSignatureDesc.Init_1_1(paramenters.size(), paramenters.data(), (UINT)m_samplerArray.size(),
+		m_rootSignatureDesc.Init_1_1((UINT)paramenters.size(), paramenters.data(), (UINT)m_samplerArray.size(),
 			m_samplerArray.data(), rootSignatureFlags);
 	}
 }

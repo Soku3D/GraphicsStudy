@@ -301,5 +301,6 @@
     <None Include="Utility.hlsli" />
     <None Include="Noise.hlsli" />
     <None Include="Volume.hlsli" />
+    <None Include="Smoke.hlsli" />
   </ItemGroup>
 </Project>

@@ -100,6 +100,8 @@ void Renderer::D3D12SimulationApp::InitSimulationScene() {
 
 void Renderer::D3D12SimulationApp::OnResize()
 {
+	//m_timer.Stop();
+
 	D3D12App::OnResize();
 
 	if (m_device == nullptr)
@@ -111,6 +113,8 @@ void Renderer::D3D12SimulationApp::OnResize()
 	stableFluids.BuildResources(m_device, m_commandList, m_screenWidth, m_screenHeight, m_hdrFormat);
 
 	FlushCommandList(m_commandList);
+
+	//m_timer.Start();
 }
 
 void Renderer::D3D12SimulationApp::Update(float& deltaTime)
@@ -168,6 +172,9 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 	mCFDConstantBuffer.mStructure.radius = 50.f;
 	mCFDConstantBuffer.mStructure.viscosity = mGuiViscosity;
 	mCFDConstantBuffer.mStructure.vorticity = mGuiVorticity;
+
+	mCFDConstantBuffer.mStructure.time = (float)m_timer.GetElapsedTime();
+
 	mCFDConstantBuffer.UpdateBuffer();
 
 	mCubeMapConstantBuffer.mStructure.expose = 2.f;
@@ -277,7 +284,7 @@ void Renderer::D3D12SimulationApp::SmokeSimulationPass(float& deltaTime) {
 
 	bRenderSmoke = true;
 
-	RenderCubeMap(deltaTime);
+	//RenderCubeMap(deltaTime);
 
 	// Sourcing Smoke Density
 	SmokeSourcingDensityPass(deltaTime);
@@ -289,13 +296,14 @@ void Renderer::D3D12SimulationApp::SmokeSimulationPass(float& deltaTime) {
 
 	RenderBoundingBox(deltaTime);
 	RenderVolumMesh(deltaTime);
-
+	
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
 		D3D12App::PostProcessing(deltaTime);
 		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 	}
 	else
 		D3D12App::CopyResourceToSwapChain(deltaTime);
+	RenderFont(deltaTime);
 }
 
 
@@ -534,7 +542,9 @@ void Renderer::D3D12SimulationApp::RenderFont(float& deltaTime)
 
 	int fps = (int)(1.f / deltaTime);
 	std::wstringstream wss;
-	wss << L"FPS : " << fps;
+	wss << L"FPS : " << fps << '\n'
+		<< L"time : " << (int)m_timer.GetElapsedTime();
+
 	D3D12App::RenderFonts(wss.str(), m_hdrResourceDescriptors, m_spriteBatchHDR, m_fontHDR, m_commandList);
 
 	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
@@ -1104,6 +1114,11 @@ void Renderer::D3D12SimulationApp::RenderBoundingBox(float& deltaTime)
 
 	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), renderBoundingBoxPassEvent);
 
+	FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
+
+	m_commandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
+	m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+		1.f, 0, 0, nullptr);
 
 	m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
 
