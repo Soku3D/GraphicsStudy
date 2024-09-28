@@ -88,6 +88,7 @@ __declspec(align(256)) struct CFDConstantData {
 	uint32_t j;
 
 	float time;
+	float sourceStrength;
 };
 __declspec(align(256)) struct PostprocessingConstantData {
 	float bUseGamma;

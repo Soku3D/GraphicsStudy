@@ -228,7 +228,7 @@ namespace Renderer {
 
 		smokeSourcingSignature.InitializeUAV(3, 1, samplers);
 		smokeAdvectionSignature.Initialize(2, 2, 1, samplers);
-		smokeComputeDivergenceSignature.Initialize(1, 3, 1, samplers);
+		smokeComputeDivergenceSignature.Initialize(2, 3, 1, samplers);
 		smokeComputePressureSignature.Initialize(3, 1, 1, samplers);
 		smokeApplyPressureSignature.Initialize(2, 1, 1, samplers);
 		smokeComputeDiffuseSignature.Initialize(2, 2, 1, samplers);

@@ -26,7 +26,9 @@ public:
 		else
 			return CD3DX12_GPU_DESCRIPTOR_HANDLE(mCPHeap2->GetGPUDescriptorHandleForHeapStart(), index, offset);
 	}
+	D3D12_GPU_DESCRIPTOR_HANDLE GetDivergenceHandle(int index) const {	return CD3DX12_GPU_DESCRIPTOR_HANDLE(mDivergenceHeap->GetGPUDescriptorHandleForHeapStart(), index, offset);	}
 	ID3D12DescriptorHeap* GetHeap() const { return mHeap.Get(); }
+	ID3D12DescriptorHeap* GetDivergenceHeap() const { return mDivergenceHeap.Get(); }
 	ID3D12DescriptorHeap* GetCPHeap(int index) const { 
 		if (index == 0)
 			return mCPHeap1.Get();
@@ -55,4 +57,6 @@ private:
 	//Compute Pressure Heap
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mCPHeap1; // pressure uav, pressureTemp srv, divergence srv
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mCPHeap2; // pressureTemp uav, pressure srv, divergence srv
+	// divergence uav, pressure uav, PressureTemp uav, velocity srv boundaryCondition srv
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mDivergenceHeap; 
 };

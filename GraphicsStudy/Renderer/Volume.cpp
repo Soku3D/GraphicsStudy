@@ -54,6 +54,9 @@ void Volume::CopyDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mCPHeap1.ReleaseAndGetAddressOf())));
 	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mCPHeap2.ReleaseAndGetAddressOf())));
 
+	heapDesc.NumDescriptors = 5;
+	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mDivergenceHeap.ReleaseAndGetAddressOf())));
+
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(mHeap->GetCPUDescriptorHandleForHeapStart());
 
 	device->CopyDescriptorsSimple(1, handle, mDensity.GetNSVUavCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV); // 0 density UAV
@@ -92,7 +95,6 @@ void Volume::CopyDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	device->CopyDescriptorsSimple(1, handle, mVorticity.GetNSVUavCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV); // 16 vorticity UAV
 	handle.Offset(1, offset);
 	device->CopyDescriptorsSimple(1, handle, mVorticity.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	handle.Offset(1, offset);
 
 	handle = mCPHeap1->GetCPUDescriptorHandleForHeapStart();
 	device->CopyDescriptorsSimple(1, handle, mPressure.GetNSVUavCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -111,5 +113,18 @@ void Volume::CopyDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	device->CopyDescriptorsSimple(1, handle, mDivergence.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	handle.Offset(1, offset);
 	device->CopyDescriptorsSimple(1, handle, mBoundaryCondition.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	handle = mDivergenceHeap->GetCPUDescriptorHandleForHeapStart();
+	device->CopyDescriptorsSimple(1, handle, mDivergence.GetNSVUavCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	handle.Offset(1, offset);
+	device->CopyDescriptorsSimple(1, handle, mPressure.GetNSVUavCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	handle.Offset(1, offset);
+	device->CopyDescriptorsSimple(1, handle, mPressureTemp.GetNSVUavCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	handle.Offset(1, offset);
+	device->CopyDescriptorsSimple(1, handle, mVelocity.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	handle.Offset(1, offset);
+	device->CopyDescriptorsSimple(1, handle, mBoundaryCondition.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+
 
 }

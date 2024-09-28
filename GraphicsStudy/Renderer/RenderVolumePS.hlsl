@@ -66,7 +66,7 @@ float4 main(PSInput input) : SV_TARGET
     float3 dirModel = normalize(input.worldPoition.xyz - eyeModel);
     
     int numSteps = 128;
-    float stepSize = 3.0 / float(numSteps);
+    float stepSize = 2.0 / float(numSteps);
 
     float3 volumeAlbedo = float3(1, 1, 1);
     

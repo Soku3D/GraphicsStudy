@@ -15,7 +15,7 @@ Renderer::D3D12SimulationApp::D3D12SimulationApp(const int& width, const int& he
 
 	m_appName = "SimulationApp";
 	
-	//m_backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	m_backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 }
 
 bool Renderer::D3D12SimulationApp::Initialize()
@@ -174,6 +174,7 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 	mCFDConstantBuffer.mStructure.vorticity = mGuiVorticity;
 
 	mCFDConstantBuffer.mStructure.time = (float)m_timer.GetElapsedTime();
+	mCFDConstantBuffer.mStructure.sourceStrength = mGuiSourceStrength;
 
 	mCFDConstantBuffer.UpdateBuffer();
 
@@ -190,8 +191,9 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::UpdateGUI(float& deltaTime)
 {
-	ImGui::SliderFloat("Vorticity value", &mGuiVorticity, 0.f, 1.f);
-	ImGui::SliderFloat("Viscosity value", &mGuiViscosity, 0.f, 10.f);
+	//ImGui::SliderFloat("Vorticity value", &mGuiVorticity, 0.f, 1.f);
+	//ImGui::SliderFloat("Viscosity value", &mGuiViscosity, 0.f, 10.f);
+	ImGui::SliderFloat("Source Strength", &mGuiSourceStrength, 0.1f, 3.f);
 }
 
 void Renderer::D3D12SimulationApp::Render(float& deltaTime)
@@ -286,14 +288,14 @@ void Renderer::D3D12SimulationApp::SmokeSimulationPass(float& deltaTime) {
 
 	//RenderCubeMap(deltaTime);
 
-	//// Sourcing Smoke Density
+	// Sourcing Smoke Density
 	SmokeSourcingDensityPass(deltaTime);
 
 	// Compute Divergence of Velocity
-	//SmokeComputeDivergencePass(deltaTime);
+	SmokeComputeDivergencePass(deltaTime);
 
-	//SmokeComputePressurePass(deltaTime);
-	//SmokeApplyPressurePass(deltaTime);
+	SmokeComputePressurePass(deltaTime);
+	SmokeApplyPressurePass(deltaTime);
 
 	SmokeAdvectionPass(deltaTime);
 
@@ -903,11 +905,11 @@ void Renderer::D3D12SimulationApp::SmokeComputeDivergencePass(float& deltaTime)
 
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 	ID3D12DescriptorHeap* pHeaps[] = {
-		mSmoke->GetHeap()
+		mSmoke->GetDivergenceHeap()
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
-	m_commandList->SetComputeRootDescriptorTable(0, mSmoke->GetHandle(2)); // divergence uav
-	m_commandList->SetComputeRootDescriptorTable(1, mSmoke->GetHandle(7)); // velocity srv
+	m_commandList->SetComputeRootDescriptorTable(0, mSmoke->GetDivergenceHandle(0)); // divergence pressure pressureTemp uav
+	m_commandList->SetComputeRootDescriptorTable(1, mSmoke->GetDivergenceHandle(3)); // velocity srv
 	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
 	mSmoke->Dispatch(m_commandList);
 
@@ -1204,7 +1206,7 @@ void Renderer::D3D12SimulationApp::RenderCubeMap(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::RenderGUI(float& deltaTime)
 {
-	/*ImGui_ImplDX12_NewFrame();
+	ImGui_ImplDX12_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 	ImGui::Begin("GUI");
@@ -1247,8 +1249,8 @@ void Renderer::D3D12SimulationApp::RenderGUI(float& deltaTime)
 	m_frameIndex = (m_frameIndex + 1) % m_swapChainCount;
 
 	FlushCommandQueue();
-	PIXEndEvent(m_commandQueue.Get());*/
-	D3D12App::RenderGUI(deltaTime);
+	PIXEndEvent(m_commandQueue.Get());
+	//D3D12App::RenderGUI(deltaTime);
 }
 
 void Renderer::D3D12SimulationApp::FireParticles(const int& fireCount)
