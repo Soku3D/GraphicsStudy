@@ -9,6 +9,8 @@ Texture3D<float4> g_velocityTemp : register(t1);
 
 SamplerState gWarpLinearSampler : register(s0);
 SamplerState gWarpPointSampler : register(s1);
+SamplerState gClampLinearSampler : register(s2);
+SamplerState gClampPointSampler : register(s3);
 
 ConstantBuffer<SimulationConstant> gConstantBuffer : register(b0);
 
@@ -28,11 +30,13 @@ void main(uint3 DTid : SV_DispatchThreadID)
     g_density.GetDimensions(w, h, d);
     
     float3 velocity = float3(0.4f, 0, 0);
+   
     //float3 backPos = DTid.xyz;
     float3 uvw = GetUVW(DTid.xyz, w, h, d);
+    velocity = g_velocityTemp.SampleLevel(gWarpPointSampler, uvw, 0.f).xyz;
     float3 backPos = uvw - velocity * gConstantBuffer.deltaTime;
     
-    g_density[DTid.xyz] += g_densityTemp.SampleLevel(gWarpPointSampler, backPos, 0.f);
-    //g_density[DTid.xyz] = g_densityTemp[DTid.xyz];
+    g_density[DTid.xyz] += g_densityTemp.SampleLevel(gClampLinearSampler, backPos, 0.f);
+    g_velocity[DTid.xyz] += g_velocityTemp.SampleLevel(gClampLinearSampler, backPos, 0.f);
 
 }

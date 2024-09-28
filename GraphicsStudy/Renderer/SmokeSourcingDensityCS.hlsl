@@ -18,10 +18,10 @@ void main( uint3 DTid : SV_DispatchThreadID )
     float3 sourcingPos = float3(10, (h - 1) / 2, (d - 1) / 2);
     float l = length(DTid.xyz - sourcingPos);
     //if (DTid.x == 10 && l < gConstantBuffer.radius)
-    if (DTid.x == 10 && l < gConstantBuffer.radius)
+    if (DTid.x == 10 && l < gConstantBuffer.radius && gConstantBuffer.time < 2.f)
     {
-        g_density[DTid.xyz] += (1.f - smoothstep(0, gConstantBuffer.radius, l));
-        //g_density[DTid.xyz] += 1.f;
+        float scale = max(0.f, 1.f - smoothstep(0, gConstantBuffer.radius, l));
+        g_density[DTid.xyz] += scale;
+        g_velocity[DTid.xyz].x += scale;
     }
-
 }

@@ -255,6 +255,8 @@ void Renderer::D3D12SimulationApp::CFD(float& deltaTime)
 	bCaptureBackbuffer = true;
 
 	CFDPass(deltaTime, "CFDSourcing");
+	CFDAdvectionPass(deltaTime);
+
 	CFDVorticityPass(deltaTime, "CFDComputeVorticity", 14, 6);
 	CFDVorticityPass(deltaTime, "CFDVorticityConfinement", 1, 16);
 	CFDDiffusePass(deltaTime);
@@ -263,7 +265,7 @@ void Renderer::D3D12SimulationApp::CFD(float& deltaTime)
 	CFDComputePressurePass(deltaTime);
 	CFDApplyPressurePass(deltaTime);
 
-	CFDAdvectionPass(deltaTime);
+	//CFDAdvectionPass(deltaTime);
 
 	//RenderGUI(deltaTime);
 
@@ -540,7 +542,7 @@ void Renderer::D3D12SimulationApp::RenderFont(float& deltaTime)
 	m_commandList->RSSetViewports(1, &m_viewport);
 	m_commandList->RSSetScissorRects(1, &m_scissorRect);
 
-	int fps = (int)(1.f / deltaTime);
+	int fps = (int)m_timer.GetFrameRate();
 	std::wstringstream wss;
 	wss << L"FPS : " << fps << '\n'
 		<< L"time : " << (int)m_timer.GetElapsedTime();

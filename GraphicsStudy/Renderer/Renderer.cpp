@@ -136,6 +136,7 @@ namespace Renderer {
 	D3D12_STATIC_SAMPLER_DESC wrapLinearSampler;
 	D3D12_STATIC_SAMPLER_DESC wrapPointSampler;
 	D3D12_STATIC_SAMPLER_DESC clampLinearSampler;
+	D3D12_STATIC_SAMPLER_DESC clampPointSampler;
 	D3D12_STATIC_SAMPLER_DESC testSampler;
 
 	std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;
@@ -181,9 +182,14 @@ namespace Renderer {
 		clampLinearSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		clampLinearSampler.ShaderRegister = 2;
 
+		clampPointSampler = clampLinearSampler;
+		clampPointSampler.ShaderRegister = 3;
+		clampPointSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+
 		samplers.push_back(wrapLinearSampler);
 		samplers.push_back(wrapPointSampler);
 		samplers.push_back(clampLinearSampler);
+		samplers.push_back(clampPointSampler);
 
 		wrapSamplers.push_back(wrapLinearSampler);
 		wrapSamplers.push_back(wrapPointSampler);
@@ -205,12 +211,12 @@ namespace Renderer {
 		simulationPostProcessingSignature.InitializeUAV(1, 1, 0, nullptr);
 		
 		cfdSourcingSignature.InitializeUAV(2, 1, 1, &wrapLinearSampler);
-		cfdAdvectionSignature.Initialize(2, 2, 1, wrapSamplers);
-		cfdComputeDivergenceSignature.Initialize(1, 3, 1, wrapSamplers);
-		cfdComputePressureSignature.Initialize(2, 1, 1, wrapSamplers);
-		cfdApplyPressureSignature.Initialize(1, 1, 1, wrapSamplers);
-		cfdComputeDiffuseSignature.Initialize(2, 2, 1, wrapSamplers);
-		cfdVorticitySignature.Initialize(1, 1, 1, wrapSamplers);
+		cfdAdvectionSignature.Initialize(2, 2, 1, samplers);
+		cfdComputeDivergenceSignature.Initialize(1, 3, 1, samplers);
+		cfdComputePressureSignature.Initialize(2, 1, 1, samplers);
+		cfdApplyPressureSignature.Initialize(1, 1, 1, samplers);
+		cfdComputeDiffuseSignature.Initialize(2, 2, 1, samplers);
+		cfdVorticitySignature.Initialize(1, 1, 1, samplers);
 
 		computeVolumeDensitySignature.InitializeUAV(1, 1, 0, nullptr);
 		renderVolumeSignature.Initialize(1, 2, samplers);

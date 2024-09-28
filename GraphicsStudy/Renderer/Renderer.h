@@ -64,6 +64,8 @@ namespace Renderer {
 	extern D3D12_STATIC_SAMPLER_DESC wrapLinearSampler;
 	extern D3D12_STATIC_SAMPLER_DESC wrapPointSampler;
 	extern D3D12_STATIC_SAMPLER_DESC clampLinearSampler;
+	extern D3D12_STATIC_SAMPLER_DESC clampPointSampler;
+
 	extern D3D12_STATIC_SAMPLER_DESC testSampler;
 
 	extern std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;

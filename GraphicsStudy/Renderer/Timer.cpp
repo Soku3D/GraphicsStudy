@@ -18,6 +18,7 @@ Utils::Timer::Timer():
 	__int64 currTime;
 	QueryPerformanceCounter((LARGE_INTEGER*)&currTime);
 	m_baseTime = currTime;
+	m_stopTime = currTime;
 }
 Utils::Timer::~Timer()
 {
@@ -57,4 +58,17 @@ void Utils::Timer::Tick()
 		//std::cout << m_deltaTime << ' ';
 		m_prevTime = m_currTime;
 	}
+}
+
+void Utils::Timer::Reset()
+{
+	__int64 currTime;
+	QueryPerformanceCounter((LARGE_INTEGER*)&currTime);
+
+	m_currTime = currTime;
+	m_baseTime = currTime;
+	m_prevTime = currTime;
+
+	m_stopTime = 0;
+	m_pausedTime = 0;
 }

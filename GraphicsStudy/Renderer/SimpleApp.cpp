@@ -153,6 +153,7 @@ int Renderer::SimpleApp::Run()
 		}
 		else {
 			m_timer.Tick();
+			
 			float delTime = min((float)m_timer.GetDeltaTime(), 1 / 60.f);
 			Update(delTime);
 			Render(delTime);
