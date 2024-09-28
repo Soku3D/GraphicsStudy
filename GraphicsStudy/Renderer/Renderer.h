@@ -52,6 +52,14 @@ namespace Renderer {
 	extern RootSignature cfdComputePressureSignature;
 	extern RootSignature cfdAdvectionSignature;
 
+	extern RootSignature smokeSourcingSignature;
+	extern RootSignature smokeComputeDivergenceSignature;
+	extern RootSignature smokeComputePressureSignature;
+	extern RootSignature smokeAdvectionSignature;
+	extern RootSignature smokeApplyPressureSignature;
+	extern RootSignature smokeComputeDiffuseSignature;
+	extern RootSignature smokeVorticitySignature;
+
 	extern RootSignature computeVolumeDensitySignature;
 	extern RootSignature renderVolumeSignature;
 

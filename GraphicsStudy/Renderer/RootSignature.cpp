@@ -88,6 +88,7 @@ void Renderer::RootSignature::InitializeUavSrv(UINT uavCount, UINT srvCount, UIN
 			m_samplerArray.data(), rootSignatureFlags);
 	}
 }
+
 void Renderer::RootSignature::InitializeUAV(UINT uavCount, UINT cbCount, int numSamplers, D3D12_STATIC_SAMPLER_DESC* sampler) {
 	
 	rangeTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, uavCount, 0);
@@ -110,6 +111,32 @@ void Renderer::RootSignature::InitializeUAV(UINT uavCount, UINT cbCount, int num
 	else
 	{
 		m_rootSignatureDesc.Init_1_1(cbCount + 1, paramenters.data(), 1, m_sampler, rootSignatureFlags);
+	}
+}
+
+void Renderer::RootSignature::InitializeUAV(UINT uavCount, UINT cbCount, std::vector<D3D12_STATIC_SAMPLER_DESC>& sampler)
+{
+	rangeTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, uavCount, 0);
+	paramenters.resize(cbCount + 1);
+
+	paramenters[0].InitAsDescriptorTable(1, &rangeTable);
+
+	for (UINT i = 1; i <= cbCount; i++)
+	{
+		paramenters[i].InitAsConstantBufferView(i - 1);
+	}
+
+	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+	m_samplerArray = sampler;
+	if (m_samplerArray.empty()) {
+		m_rootSignatureDesc.Init_1_1((UINT)paramenters.size(), paramenters.data(), 0, nullptr, rootSignatureFlags);
+	}
+	else
+	{
+		m_rootSignatureDesc.Init_1_1((UINT)paramenters.size(), paramenters.data(), (UINT)m_samplerArray.size(),
+			m_samplerArray.data(), rootSignatureFlags);
 	}
 }
 

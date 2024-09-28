@@ -9,6 +9,8 @@ Texture2D velocityTemp : register(t1);
 
 SamplerState gWarpLinearSampler : register(s0);
 SamplerState gWarpPointSampler : register(s1);
+SamplerState gClampLinearSampler : register(s2);
+SamplerState gClampPointSampler : register(s3);
 
 ConstantBuffer<SimulationConstant> gConstantBuffer : register(b0);
 
@@ -22,10 +24,10 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float y = (DTid.y + 0.5f) / height;
     float2 currUVPosition = float2(x, y);
     
-    float2 vel = velocityTemp.SampleLevel(gWarpPointSampler, currUVPosition, 0.f).xy;
+    float2 vel = velocityTemp.SampleLevel(gClampPointSampler, currUVPosition, 0.f).xy;
     
     float2 position = currUVPosition - vel * gConstantBuffer.deltaTime;
-    density[DTid.xy] = densityTemp.SampleLevel(gWarpLinearSampler, position, 0.f);
-    velocity[DTid.xy] = velocityTemp.SampleLevel(gWarpLinearSampler, position, 0.f);
+    density[DTid.xy] = densityTemp.SampleLevel(gClampLinearSampler, position, 0.f);
+    velocity[DTid.xy] = velocityTemp.SampleLevel(gClampLinearSampler, position, 0.f);
 }
 

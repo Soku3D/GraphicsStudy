@@ -95,6 +95,7 @@ namespace Renderer {
 		const wchar_t* copyDensityToSwapChainEvent = L" copyDensityToSwapChain ";
 
 		const wchar_t* cfdSourcingEvent = L"CFD Simulation Pass ";
+		const wchar_t* cfdComputeDivergenceEvent = L"CFD ComputeDivergence Pass ";
 		const wchar_t* cfdAdvectionEvent = L"CFD Advection Pass ";
 		const wchar_t* cfdComputePressureEvent = L"CFD ComputePressure Pass ";
 		const wchar_t* cfdApplyPressureEvent = L"CFD ApplyPressure Pass ";
@@ -105,7 +106,7 @@ namespace Renderer {
 
 
 	private:
-		float mGuiVorticity = 0.2f;
+		float mGuiVorticity = 0.f;
 		float mGuiViscosity = 0.f;
 	};
 }

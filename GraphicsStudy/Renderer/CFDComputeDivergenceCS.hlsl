@@ -25,10 +25,17 @@ void main(uint3 DTid : SV_DispatchThreadID)
     dx = 2.f;
     dy = 2.f;
     
-    uint2 left = uint2(((x == 0) ? (width - 1) : (x - 1)), y);
-    uint2 right = uint2(((x == width - 1) ? (0) : (x + 1)), y);
-    uint2 top = uint2(x, ((y == 0) ? (height - 1) : (y - 1)));
-    uint2 bottom = uint2(x, ((y == height - 1) ? (0) : (y + 1)));
+    //uint2 left = uint2(((x == 0) ? (width - 1) : (x - 1)), y);
+    //uint2 right = uint2(((x == width - 1) ? (0) : (x + 1)), y);
+    //uint2 top = uint2(x, ((y == 0) ? (height - 1) : (y - 1)));
+    //uint2 bottom = uint2(x, ((y == height - 1) ? (0) : (y + 1)));
+    
+        
+    uint2 left = uint2(((x == 0) ? 0 : (x - 1)), y);
+    uint2 right = uint2(((x == width - 1) ? width - 1 : (x + 1)), y);
+    uint2 top = uint2(x, ((y == 0) ? 0 : (y - 1)));
+    uint2 bottom = uint2(x, ((y == height - 1) ? height - 1 : (y + 1)));
+    
     
     float vl = velocity[left].x; 
     float vr = velocity[right].x;

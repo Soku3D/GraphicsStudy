@@ -106,6 +106,7 @@ bool Renderer::D3D12App::Initialize()
 	}
 	CreateFontFromFile(L"Fonts/default.spritefont", m_font, m_spriteBatch, m_resourceDescriptors, false, m_geometryPassFormat, m_depthStencilFormat);
 	CreateFontFromFile(L"Fonts/default.spritefont", m_fontHDR, m_spriteBatchHDR, m_hdrResourceDescriptors, false, m_hdrFormat, m_depthStencilFormat);
+	CreateFontFromFile(L"Fonts/default.spritefont", m_fontBakcbuffer, m_spriteBatchBakcbuffer, m_bakcbufferResourceDescriptors, false, m_backbufferFormat, m_depthStencilFormat);
 	CreateFontFromFile(L"Fonts/default.spritefont", m_msaaFont, m_msaaSpriteBatch, m_msaaResourceDescriptors, true, m_hdrFormat, m_depthStencilFormat);
 
 	ThrowIfFailed(m_commandList->Close());

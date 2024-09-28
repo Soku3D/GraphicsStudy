@@ -40,7 +40,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
     {
         float3 v = float3(0.01f, 0.f, 0.f);
         float scale = smootherstep(1.0 - dist / radius);
-        density[DTid.xy] += float4(gConstantBuffer.color * scale, 1.f);
-        velocity[DTid.xy] += float4(v * scale, 0.f);
+        //density[DTid.xy] += float4(gConstantBuffer.color * scale, 1.f);
+        //velocity[DTid.xy] += float4(v * scale, 0.f);
     }
 }

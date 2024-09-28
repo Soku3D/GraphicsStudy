@@ -195,14 +195,17 @@ namespace Renderer {
 		
 		std::shared_ptr<DirectX::DescriptorHeap> m_resourceDescriptors;
 		std::shared_ptr<DirectX::DescriptorHeap> m_hdrResourceDescriptors;
+		std::shared_ptr<DirectX::DescriptorHeap> m_bakcbufferResourceDescriptors;
 		std::shared_ptr<DirectX::DescriptorHeap> m_msaaResourceDescriptors;
 
 		std::shared_ptr<DirectX::SpriteFont> m_font;
 		std::shared_ptr<DirectX::SpriteFont> m_fontHDR;
+		std::shared_ptr<DirectX::SpriteFont> m_fontBakcbuffer;
 		std::shared_ptr<DirectX::SpriteFont> m_msaaFont;
 
 		std::shared_ptr<DirectX::SpriteBatch> m_spriteBatch;
 		std::shared_ptr<DirectX::SpriteBatch> m_spriteBatchHDR;
+		std::shared_ptr<DirectX::SpriteBatch> m_spriteBatchBakcbuffer;
 		std::shared_ptr<DirectX::SpriteBatch> m_msaaSpriteBatch;
 
 		DirectX::SimpleMath::Vector2 m_fontPos;

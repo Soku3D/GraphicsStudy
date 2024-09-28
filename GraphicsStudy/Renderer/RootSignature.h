@@ -13,6 +13,7 @@ namespace Renderer {
 		void InitializeUavSrv(UINT uavCount, UINT srvCount, UINT cbCount, std::vector<D3D12_STATIC_SAMPLER_DESC>& sampler);
 		//void InitializeSrv(UINT uavCount, UINT srvCount, UINT cbCount, int numSamplers, D3D12_STATIC_SAMPLER_DESC* sampler);
 		void InitializeUAV(UINT uavCount, UINT cbCount, int numSamplers = 0, D3D12_STATIC_SAMPLER_DESC* sampler = nullptr);
+		void InitializeUAV(UINT uavCount, UINT cbCount, std::vector<D3D12_STATIC_SAMPLER_DESC>& sampler);
 		void Initialize(UINT srvCount, UINT cbCount, int numSamplers = 0, D3D12_STATIC_SAMPLER_DESC* sampler = nullptr);
 		void Initialize(UINT srvCount, UINT cbCount, std::vector<D3D12_STATIC_SAMPLER_DESC>& sampler);
 		void Initialize(UINT cbCount);

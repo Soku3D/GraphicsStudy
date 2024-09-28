@@ -13,3 +13,10 @@ struct SimulationConstant
     
     float time;
 };
+
+SamplerState gWarpLinearSampler : register(s0);
+SamplerState gWarpPointSampler : register(s1);
+SamplerState gClampLinearSampler : register(s2);
+SamplerState gClampPointSampler : register(s3);
+
+ConstantBuffer<SimulationConstant> gConstantBuffer : register(b0);

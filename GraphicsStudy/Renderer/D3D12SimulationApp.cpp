@@ -95,7 +95,7 @@ void Renderer::D3D12SimulationApp::InitSimulationScene() {
 
 	m_cubeMap = std::make_shared<Core::StaticMesh>();
 	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(500.f), m_device, m_commandList);
-	m_cubeMap->SetTexturePath(std::wstring(L"Outdoor") + L"EnvHDR.dds");
+	m_cubeMap->SetTexturePath(std::wstring(L"PureSky") + L"EnvHDR.dds");
 }
 
 void Renderer::D3D12SimulationApp::OnResize()
@@ -255,7 +255,6 @@ void Renderer::D3D12SimulationApp::CFD(float& deltaTime)
 	bCaptureBackbuffer = true;
 
 	CFDPass(deltaTime, "CFDSourcing");
-	CFDAdvectionPass(deltaTime);
 
 	CFDVorticityPass(deltaTime, "CFDComputeVorticity", 14, 6);
 	CFDVorticityPass(deltaTime, "CFDVorticityConfinement", 1, 16);
@@ -265,8 +264,7 @@ void Renderer::D3D12SimulationApp::CFD(float& deltaTime)
 	CFDComputePressurePass(deltaTime);
 	CFDApplyPressurePass(deltaTime);
 
-	//CFDAdvectionPass(deltaTime);
-
+	CFDAdvectionPass(deltaTime);
 	//RenderGUI(deltaTime);
 
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
@@ -288,11 +286,14 @@ void Renderer::D3D12SimulationApp::SmokeSimulationPass(float& deltaTime) {
 
 	//RenderCubeMap(deltaTime);
 
-	// Sourcing Smoke Density
+	//// Sourcing Smoke Density
 	SmokeSourcingDensityPass(deltaTime);
 
 	// Compute Divergence of Velocity
 	//SmokeComputeDivergencePass(deltaTime);
+
+	//SmokeComputePressurePass(deltaTime);
+	//SmokeApplyPressurePass(deltaTime);
 
 	SmokeAdvectionPass(deltaTime);
 
@@ -305,7 +306,7 @@ void Renderer::D3D12SimulationApp::SmokeSimulationPass(float& deltaTime) {
 	}
 	else
 		D3D12App::CopyResourceToSwapChain(deltaTime);
-	RenderFont(deltaTime);
+	//RenderFont(deltaTime);
 }
 
 
@@ -547,7 +548,7 @@ void Renderer::D3D12SimulationApp::RenderFont(float& deltaTime)
 	wss << L"FPS : " << fps << '\n'
 		<< L"time : " << (int)m_timer.GetElapsedTime();
 
-	D3D12App::RenderFonts(wss.str(), m_hdrResourceDescriptors, m_spriteBatchHDR, m_fontHDR, m_commandList);
+	D3D12App::RenderFonts(wss.str(), m_bakcbufferResourceDescriptors, m_spriteBatchBakcbuffer, m_fontBakcbuffer, m_commandList);
 
 	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
@@ -632,7 +633,7 @@ void Renderer::D3D12SimulationApp::CFDComputeDivergencePass(float& deltaTime)
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
-	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), cfdAdvectionEvent);
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), cfdComputeDivergenceEvent);
 
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 	ID3D12DescriptorHeap* pHeaps[] = {
@@ -686,6 +687,7 @@ void Renderer::D3D12SimulationApp::CFDComputePressurePass(float& deltaTime)
 		m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
 		m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
 	}
+	
 
 	ThrowIfFailed(m_commandList->Close());
 
@@ -875,8 +877,8 @@ void Renderer::D3D12SimulationApp::SmokeAdvectionPass(float& deltaTime)
 		mSmoke->GetHeap()
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
-	m_commandList->SetComputeRootDescriptorTable(0, mSmoke->GetHandle(0));
-	m_commandList->SetComputeRootDescriptorTable(1, mSmoke->GetHandle(10));
+	m_commandList->SetComputeRootDescriptorTable(0, mSmoke->GetHandle(0)); // density velocity uav
+	m_commandList->SetComputeRootDescriptorTable(1, mSmoke->GetHandle(12)); // density velocity Temp srv
 	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
 	mSmoke->Dispatch(m_commandList);
 
@@ -897,17 +899,17 @@ void Renderer::D3D12SimulationApp::SmokeComputeDivergencePass(float& deltaTime)
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
-	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), cfdAdvectionEvent);
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), cfdComputeDivergenceEvent);
 
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 	ID3D12DescriptorHeap* pHeaps[] = {
-		stableFluids.GetHeap()
+		mSmoke->GetHeap()
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
-	m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetHandle(2));
-	m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetHandle(6));
+	m_commandList->SetComputeRootDescriptorTable(0, mSmoke->GetHandle(2)); // divergence uav
+	m_commandList->SetComputeRootDescriptorTable(1, mSmoke->GetHandle(7)); // velocity srv
 	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
-	m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
+	mSmoke->Dispatch(m_commandList);
 
 	ThrowIfFailed(m_commandList->Close());
 
@@ -934,23 +936,53 @@ void Renderer::D3D12SimulationApp::SmokeComputePressurePass(float& deltaTime)
 	{
 		if (i % 2 == 0) {
 			ID3D12DescriptorHeap* pHeaps[] = {
-				stableFluids.GetPHeap()
+				mSmoke->GetCPHeap(0)
 			};
 			m_commandList->SetDescriptorHeaps(1, pHeaps);
-			m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetPHandle(0));
-			m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetPHandle(1));
+			m_commandList->SetComputeRootDescriptorTable(0, mSmoke->GetCPHandle(0, 0));
+			m_commandList->SetComputeRootDescriptorTable(1, mSmoke->GetCPHandle(0, 1));
 		}
 		else {
 			ID3D12DescriptorHeap* pHeaps[] = {
-				stableFluids.GetPTHeap()
+				mSmoke->GetCPHeap(1)
 			};
 			m_commandList->SetDescriptorHeaps(1, pHeaps);
-			m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetPTHandle(0));
-			m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetPTHandle(1));
+			m_commandList->SetComputeRootDescriptorTable(0, mSmoke->GetCPHandle(1, 0));
+			m_commandList->SetComputeRootDescriptorTable(1, mSmoke->GetCPHandle(1, 1));
 		}
 		m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
-		m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
+		mSmoke->Dispatch(m_commandList);
 	}
+
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* pCmdLists[] = {
+		m_commandList.Get()
+	};
+	m_commandQueue->ExecuteCommandLists(1, pCmdLists);
+	FlushCommandQueue();
+
+	PIXEndEvent(m_commandQueue.Get());
+}
+
+
+void Renderer::D3D12SimulationApp::SmokeApplyPressurePass(float& deltaTime)
+{
+	auto& pso = computePsoList["SmokeApplyPressure"];
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), cfdApplyPressureEvent);
+
+	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
+	ID3D12DescriptorHeap* pHeaps[] = {
+		mSmoke->GetHeap()
+	};
+	m_commandList->SetDescriptorHeaps(1, pHeaps);
+	m_commandList->SetComputeRootDescriptorTable(0, mSmoke->GetHandle(1)); // Velocity UAV
+	m_commandList->SetComputeRootDescriptorTable(1, mSmoke->GetHandle(10)); // Pressure SRV
+	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+	mSmoke->Dispatch(m_commandList);
 
 	ThrowIfFailed(m_commandList->Close());
 
@@ -1037,34 +1069,6 @@ void Renderer::D3D12SimulationApp::SmokeVorticityPass(float& deltaTime, const st
 
 }
 
-void Renderer::D3D12SimulationApp::SmokeApplyPressurePass(float& deltaTime)
-{
-	auto& pso = computePsoList["SmokeApplyPressure"];
-
-	ThrowIfFailed(m_commandAllocator->Reset());
-	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
-	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), cfdApplyPressureEvent);
-
-	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
-	ID3D12DescriptorHeap* pHeaps[] = {
-		stableFluids.GetHeap()
-	};
-	m_commandList->SetDescriptorHeaps(1, pHeaps);
-	m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetHandle(1)); // Velocity UAV
-	m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetHandle(9)); // Pressure SRV
-	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
-	m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
-
-	ThrowIfFailed(m_commandList->Close());
-
-	ID3D12CommandList* pCmdLists[] = {
-		m_commandList.Get()
-	};
-	m_commandQueue->ExecuteCommandLists(1, pCmdLists);
-	FlushCommandQueue();
-
-	PIXEndEvent(m_commandQueue.Get());
-}
 
 void Renderer::D3D12SimulationApp::RenderVolumMesh(float& deltaTime)
 {
@@ -1098,7 +1102,7 @@ void Renderer::D3D12SimulationApp::RenderVolumMesh(float& deltaTime)
 			// Texture SRV Heap 
 			ID3D12DescriptorHeap* ppSrvHeaps[] = { mSmoke->GetHeap() };
 			m_commandList->SetDescriptorHeaps(_countof(ppSrvHeaps), ppSrvHeaps);
-			m_commandList->SetGraphicsRootDescriptorTable(0, mSmoke->GetHandle(5)); // density Srv
+			m_commandList->SetGraphicsRootDescriptorTable(0, mSmoke->GetHandle(6)); // density Srv
 			mSmoke->Render(deltaTime, m_commandList, true);
 		}
 	}

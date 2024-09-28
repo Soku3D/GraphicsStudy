@@ -123,6 +123,14 @@ namespace Renderer {
 	RootSignature cfdApplyPressureSignature;
 	RootSignature cfdComputeDiffuseSignature;
 	RootSignature cfdVorticitySignature;
+
+	RootSignature smokeSourcingSignature;
+	RootSignature smokeComputeDivergenceSignature;
+	RootSignature smokeComputePressureSignature;
+	RootSignature smokeAdvectionSignature;
+	RootSignature smokeApplyPressureSignature;
+	RootSignature smokeComputeDiffuseSignature;
+	RootSignature smokeVorticitySignature;
 	
 	RootSignature computeVolumeDensitySignature;
 	RootSignature renderVolumeSignature;
@@ -210,13 +218,21 @@ namespace Renderer {
 		simulationSignature.Initialize(1, 0, 0, nullptr);
 		simulationPostProcessingSignature.InitializeUAV(1, 1, 0, nullptr);
 		
-		cfdSourcingSignature.InitializeUAV(2, 1, 1, &wrapLinearSampler);
+		cfdSourcingSignature.InitializeUAV(2, 1, samplers);
 		cfdAdvectionSignature.Initialize(2, 2, 1, samplers);
 		cfdComputeDivergenceSignature.Initialize(1, 3, 1, samplers);
 		cfdComputePressureSignature.Initialize(2, 1, 1, samplers);
 		cfdApplyPressureSignature.Initialize(1, 1, 1, samplers);
 		cfdComputeDiffuseSignature.Initialize(2, 2, 1, samplers);
 		cfdVorticitySignature.Initialize(1, 1, 1, samplers);
+
+		smokeSourcingSignature.InitializeUAV(3, 1, samplers);
+		smokeAdvectionSignature.Initialize(2, 2, 1, samplers);
+		smokeComputeDivergenceSignature.Initialize(1, 3, 1, samplers);
+		smokeComputePressureSignature.Initialize(3, 1, 1, samplers);
+		smokeApplyPressureSignature.Initialize(2, 1, 1, samplers);
+		smokeComputeDiffuseSignature.Initialize(2, 2, 1, samplers);
+		smokeVorticitySignature.Initialize(1, 1, 1, samplers);
 
 		computeVolumeDensitySignature.InitializeUAV(1, 1, 0, nullptr);
 		renderVolumeSignature.Initialize(1, 2, samplers);
@@ -516,28 +532,28 @@ namespace Renderer {
 		CFDVorticityConfinementPso.SetRootSignature(&cfdVorticitySignature);
 
 		smokeSourcingDensityPso.SetComputeShader(g_pSmokeSourcingDensityCS, sizeof(g_pSmokeSourcingDensityCS));
-		smokeSourcingDensityPso.SetRootSignature(&cfdSourcingSignature);
+		smokeSourcingDensityPso.SetRootSignature(&smokeSourcingSignature);
 
 		smokeComputePressurePso.SetComputeShader(g_pSmokeComputePressureCS, sizeof(g_pSmokeComputePressureCS));
-		smokeComputePressurePso.SetRootSignature(&cfdComputePressureSignature);
+		smokeComputePressurePso.SetRootSignature(&smokeComputePressureSignature);
 
 		smokeComputeDivergencePso.SetComputeShader(g_pSmokeComputeDivergenceCS, sizeof(g_pSmokeComputeDivergenceCS));
-		smokeComputeDivergencePso.SetRootSignature(&cfdComputeDivergenceSignature);
+		smokeComputeDivergencePso.SetRootSignature(&smokeComputeDivergenceSignature);
 
 		smokeAdvectionPso.SetComputeShader(g_pSmokeAdvectionCS, sizeof(g_pSmokeAdvectionCS));
-		smokeAdvectionPso.SetRootSignature(&cfdAdvectionSignature);
+		smokeAdvectionPso.SetRootSignature(&smokeAdvectionSignature);
 
 		smokeApplyPressurePso.SetComputeShader(g_pSmokeApplyPressureCS, sizeof(g_pSmokeApplyPressureCS));
-		smokeApplyPressurePso.SetRootSignature(&cfdAdvectionSignature);
+		smokeApplyPressurePso.SetRootSignature(&smokeAdvectionSignature);
 
 		smokeComputeDiffusePso.SetComputeShader(g_pSmokeComputeDiffuseCS, sizeof(g_pSmokeComputeDiffuseCS));
-		smokeComputeDiffusePso.SetRootSignature(&cfdComputeDiffuseSignature);
+		smokeComputeDiffusePso.SetRootSignature(&smokeComputeDiffuseSignature);
 
 		smokeComputeVorticityPso.SetComputeShader(g_pSmokeComputeVorticityCS, sizeof(g_pSmokeComputeVorticityCS));
-		smokeComputeVorticityPso.SetRootSignature(&cfdVorticitySignature);
+		smokeComputeVorticityPso.SetRootSignature(&smokeVorticitySignature);
 
 		smokeVorticityConfinementPso.SetComputeShader(g_pSmokeVorticityConfinementCS, sizeof(g_pSmokeVorticityConfinementCS));
-		smokeVorticityConfinementPso.SetRootSignature(&cfdVorticitySignature);
+		smokeVorticityConfinementPso.SetRootSignature(&smokeVorticitySignature);
 
 		perlinNoisePso.SetComputeShader(g_pPerlinNoiseCS, sizeof(g_pPerlinNoiseCS));
 		perlinNoisePso.SetRootSignature(&sphSimulationComputeSignature);
@@ -627,7 +643,14 @@ namespace Renderer {
 		cfdApplyPressureSignature.Finalize(device);
 		cfdComputeDiffuseSignature.Finalize(device);
 		cfdVorticitySignature.Finalize(device);
-
+		
+		smokeSourcingSignature.Finalize(device);
+		smokeAdvectionSignature.Finalize(device);
+		smokeComputeDivergenceSignature.Finalize(device);
+		smokeComputePressureSignature.Finalize(device);
+		smokeApplyPressureSignature.Finalize(device);
+		smokeComputeDiffuseSignature.Finalize(device);
+		smokeVorticitySignature.Finalize(device);
 
 		raytracingGlobalSignature.Finalize(device);
 

@@ -4,8 +4,8 @@
 float3 GetUVW(float3 posModel)
 {
     float x = (posModel.x + 2.f) * 0.25f;
-    float y = (posModel.y + 1.f) * 0.5f;
-    float z = (posModel.z + 1.f) * 0.5f;
+    float y = (posModel.y - 1.f) * -0.5f;
+    float z = (posModel.z - 1.f) * -0.5f;
     return float3(x, y, z);
 }
 
@@ -66,7 +66,7 @@ float4 main(PSInput input) : SV_TARGET
     float3 dirModel = normalize(input.worldPoition.xyz - eyeModel);
     
     int numSteps = 128;
-    float stepSize = 2.0 / float(numSteps);
+    float stepSize = 3.0 / float(numSteps);
 
     float3 volumeAlbedo = float3(1, 1, 1);
     

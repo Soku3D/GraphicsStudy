@@ -20,7 +20,19 @@ public:
 	void CopyDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device);
 
 	D3D12_GPU_DESCRIPTOR_HANDLE GetHandle(int index) const { return CD3DX12_GPU_DESCRIPTOR_HANDLE(mHeap->GetGPUDescriptorHandleForHeapStart(), index, offset); }
-	ID3D12DescriptorHeap* GetHeap() const { return mHeap.Get();}
+	D3D12_GPU_DESCRIPTOR_HANDLE GetCPHandle(int i, int index) const {
+		if (i == 0)
+			return CD3DX12_GPU_DESCRIPTOR_HANDLE(mCPHeap1->GetGPUDescriptorHandleForHeapStart(), index, offset);
+		else
+			return CD3DX12_GPU_DESCRIPTOR_HANDLE(mCPHeap2->GetGPUDescriptorHandleForHeapStart(), index, offset);
+	}
+	ID3D12DescriptorHeap* GetHeap() const { return mHeap.Get(); }
+	ID3D12DescriptorHeap* GetCPHeap(int index) const { 
+		if (index == 0)
+			return mCPHeap1.Get();
+		else
+			return mCPHeap2.Get();
+	}
 
 	ID3D12Resource* GetDensityTempResource() const { return mDensityTemp.GetResource(); }
 	ID3D12Resource* GetDensityResource() const { return mDensity.GetResource(); }
@@ -35,8 +47,12 @@ private:
 	Core::Texture3D mPressureTemp;
 	Core::Texture3D mDivergence;
 	Core::Texture3D mVorticity;
+	Core::Texture3D mBoundaryCondition;
 
 	UINT offset;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mHeap;
 
+	//Compute Pressure Heap
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mCPHeap1; // pressure uav, pressureTemp srv, divergence srv
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mCPHeap2; // pressureTemp uav, pressure srv, divergence srv
 };
