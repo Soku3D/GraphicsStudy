@@ -186,7 +186,8 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	}
 
 	DirectX::SimpleMath::Matrix mat = DirectX::XMMatrixTranslation(gui_lightPos.x, gui_lightPos.y, gui_lightPos.z);
-	m_lightMeshes[0]->UpdateWorldRow(mat);
+	if(m_lightMeshes.size()>0)
+		m_lightMeshes[0]->UpdateWorldRow(mat);
 
 	for (auto& mesh : m_staticMeshes) {
 		mesh->Update(deltaTime);

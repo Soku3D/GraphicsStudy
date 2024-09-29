@@ -1,14 +1,15 @@
 #pragma once
 
-#include "D3D12App.h"
+#include "D3D12PassApp.h"
 #include "Renderer.h"
 
-#include "nvsdk_ngx.h"
-#include "nvsdk_ngx_helpers.h"
+#include <sl.h>
+#include <sl_dlss.h>
+#include <sl_consts.h>
 
 namespace Renderer {
 
-	class D3D12DLSSApp :public D3D12App {
+	class D3D12DLSSApp :public D3D12PassApp {
 	public:
 		D3D12DLSSApp(const int& width, const int& height);
 		virtual ~D3D12DLSSApp() {
@@ -17,20 +18,17 @@ namespace Renderer {
 		bool Initialize() override;
 		bool InitGUI() override;
 		bool InitDirectX() override;
+		void InitScene() override;
 		void OnResize() override;
 
 		void InitializeDLSS();
-		bool CreateDLSSFeature(ID3D12Resource* inputResource, ID3D12Resource* outputResource, NVSDK_NGX_Handle** pHandle);
-		void ApplyDLSS(NVSDK_NGX_Handle* handle, ID3D12GraphicsCommandList* commandList, ID3D12Resource* input, ID3D12Resource* output);
-		void CleanupDLSS();
+		void ApplyAntiAliasing();
 		void Update(float& deltaTime) override;
 		void UpdateGUI(float& deltaTime) override;
 		void Render(float& deltaTime) override;
 		void RenderGUI(float& deltaTime) override;
 
-	private:
-		NVSDK_NGX_Handle* dlssHandle = nullptr;           // DLSS 핸들
-		NVSDK_NGX_Parameter* dlssParameters = nullptr;
+
 	};
 	
 }

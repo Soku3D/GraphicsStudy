@@ -3,6 +3,7 @@
 #include "D3D12ComputeShaderApp.h"
 #include "D3D12PhysxSimulationApp.h"
 #include "D3D12RayTracingApp.h"
+#include "D3D12DLSSApp.h"
 
 int main() {
 
@@ -10,10 +11,11 @@ int main() {
         D3D12PassApp = 1,
         D3D12SimulationApp = 2,
         D3D12PhysxSimulationApp = 3,
-        D3D12RayTracingApp = 4
+        D3D12RayTracingApp = 4,
+        D3D12DLSSApp = 5
     };
 
-    auto currentApp = 2;
+    auto currentApp = 5;
 
     try
     {
@@ -31,6 +33,9 @@ int main() {
             break;
         case AppType::D3D12RayTracingApp:
             m_app = new Renderer::D3D12RayTracingApp(1280, 720);
+            break;
+        case AppType::D3D12DLSSApp:
+            m_app = new Renderer::D3D12DLSSApp(1280, 720);
             break;
         }
 
