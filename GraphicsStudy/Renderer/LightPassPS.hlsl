@@ -11,9 +11,12 @@ float4 main(PSInput input) : SV_TARGET
     float4 materialTex = g_material.Sample(g_wrapLinearSampler, input.uv).rgba;
     float depth = gDepth.Sample(g_wrapPointSampler, input.uv).r;
     depth *= length(position - eyePosition) / 5.f;
-    return float4(depth, depth, depth, 1);
+    //return float4(depth, depth, depth, 1);
+    float3 zero = float3(0, 0, 0);
     
-    if (materialTex.a>=2.f)
+    return float4(-N.z, 0, 0, 1);
+    
+    if (materialTex.a >= 2.f)
     {
         return float4(albedo, 1.f);
     }

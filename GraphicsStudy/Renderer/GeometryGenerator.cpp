@@ -337,6 +337,28 @@ BasicMeshData GeometryGenerator::Sphere(const float& radius, const int& x, const
 	return data;
 }
 
+PbrMeshData GeometryGenerator::PbrTriangle(const float& length, const std::wstring& texturePath)
+{
+	PbrMeshData data;
+
+	
+	float x = (float)sqrt(3);
+	float l = length;
+	std::vector<Renderer::PbrVertex> vertices = {
+		{Vector3(-l, -l / x, 0.0f), Vector3(0.f,0.f,-1.f), Vector2(0.f, 1.f),Vector3::Zero},
+		{Vector3(0.f, l * 2.f / x , 0.0f), Vector3(0.f,0.f,-1.f), Vector2(0.f, 0.f),Vector3::Zero},
+		{Vector3(l, -l / x, 0.0f), Vector3(0.f,0.f,-1.f), Vector2(1.f, 0.f),Vector3::Zero},
+	};
+	std::vector<uint32_t> indices = {
+		0, 1, 2
+	};
+	ComputeTangent(vertices[0], vertices[1], vertices[2]);
+
+	data.Initialize(vertices, indices, texturePath);
+	data.m_name = "SimpleTriangle";
+	return data;
+}
+
 PbrMeshData GeometryGenerator::PbrRectangle(const float& length, const std::wstring& texturePath)
 {
 	return PbrMeshData();

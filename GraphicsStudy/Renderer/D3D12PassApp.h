@@ -21,7 +21,7 @@ namespace Renderer {
 		}
 
 		bool Initialize() override;
-		void InitConstantBuffers();
+		virtual void InitConstantBuffers();
 		bool InitGUI() override;
 		bool InitDirectX() override;
 		void OnResize() override;

@@ -73,6 +73,7 @@ public:
 		return { meshData, modelLoader->m_animeData };
 	}
 
+	static PbrMeshData PbrTriangle(const float& length, const std::wstring& texturePath = L"");
 	static PbrMeshData PbrRectangle(const float& length, const std::wstring& texturePath = L"");
 	static PbrMeshData PbrBox(const float& length, const std::wstring& texturePath = L"");
 	static PbrMeshData PbrBox(const float& x, const float& y, const float& z, const std::wstring& texturePath

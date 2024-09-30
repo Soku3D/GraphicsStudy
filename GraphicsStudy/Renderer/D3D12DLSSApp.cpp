@@ -1,5 +1,5 @@
 #include "D3D12DLSSApp.h"
-
+static constexpr int APP_ID = 231313132;
 Renderer::D3D12DLSSApp::D3D12DLSSApp(const int& width, const int& height)
 	:D3D12PassApp(width, height)
 {
@@ -9,8 +9,8 @@ Renderer::D3D12DLSSApp::D3D12DLSSApp(const int& width, const int& height)
 	bRenderFbx = false;
 	bRenderNormal = false;
 
-	m_camera->SetPositionAndDirection(DirectX::SimpleMath::Vector3(7.27f, 7.35f, -3.66f),
-		DirectX::SimpleMath::Vector3(-0.55f, -0.62f, 0.55f));
+	m_camera->SetPositionAndDirection(DirectX::SimpleMath::Vector3(0.f, 0.f, -3.f),
+		DirectX::SimpleMath::Vector3(0.f, 0.f, 1.f));
 
 	m_appName = "DLSSApp";
 }
@@ -20,7 +20,9 @@ bool Renderer::D3D12DLSSApp::Initialize()
 	if (!D3D12PassApp::Initialize())
 		return false;
 
-	InitializeDLSS();
+	if (!InitializeDLSS()) {
+		return false;
+	}
 
 	return true;
 }
@@ -43,9 +45,15 @@ bool Renderer::D3D12DLSSApp::InitDirectX()
 
 void Renderer::D3D12DLSSApp::InitScene()
 {
-	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
+	/*std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
 	sphere->Initialize(GeometryGenerator::PbrSphere(0.8f, 100, 100, L"Bricks075A_4K-PNG0_Color.png"),
 		m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, 0.f, 0.f), Material(), true); 
+
+	m_staticMeshes.push_back(sphere);*/
+
+	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
+	sphere->Initialize(GeometryGenerator::PbrTriangle(1.f, L"Bricks075A_4K-PNG0_Color.png"),
+		m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, 0.f, 0.f), Material(), true);
 
 	m_staticMeshes.push_back(sphere);
 
@@ -62,73 +70,217 @@ void Renderer::D3D12DLSSApp::OnResize()
 	D3D12PassApp::OnResize();
 }
 
-void Renderer::D3D12DLSSApp::InitializeDLSS()
+bool Renderer::D3D12DLSSApp::InitializeDLSS()
 {
-	sl::Preferences pref{};
-	pref.showConsole = true; // for debugging, set to false in production
-	//const wchar_t* pluginPaths[] = { L"C:/Users/son/Streamline/source/plugins/" };
-	//pref.pathsToPlugins = pluginPaths; // change this if Streamline plugins are not located next to the executable
-	pref.numPathsToPlugins = 0; // change this if Streamline plugins are not located next to the executable
-	
-	//sl::Preferences preferences = {};
-	//preferences.renderAPI = sl::RenderAPI::eD3D12;  // DirectX 12 사용
-
-	//// 로그 옵션 및 경로 설정 (옵션)
-	//preferences.showConsole = true;
-	//preferences.logLevel = sl::LogLevel::eDefault;
-	//preferences.pathToLogsAndData = L""; // 로그 경로 설정
-
-	//// 로드할 기능들 설정 - DLSS 기능을 로드합니다
+	sl::Preferences prefs = {};
+	prefs.applicationId = APP_ID;
+	prefs.renderAPI = sl::RenderAPI::eD3D12;
+	prefs.logLevel = sl::LogLevel::eDefault;
+	prefs.numFeaturesToLoad = 1;
+	prefs.showConsole = true;
 	sl::Feature featuresToLoad[] = { sl::kFeatureDLSS };
-	pref.featuresToLoad = featuresToLoad;
-	pref.numFeaturesToLoad = sizeof(featuresToLoad) / sizeof(featuresToLoad[0]);
-
-	////// 플러그인 경로 설정 (예시)
-	////const wchar_t* pluginPaths[] = { L"plugins" };
-	////preferences.pathsToPlugins = pluginPaths;
-	////preferences.numPathsToPlugins = sizeof(pluginPaths) / sizeof(pluginPaths[0]);
-
-	//// Streamline 초기화
-	sl::Result result = slInit(pref);
+	prefs.featuresToLoad = featuresToLoad;
+	const wchar_t* pluginPaths[] = {
+		L"C:/Users/son/Streamline_Sample/_bin/"  // 실제 플러그인 경로로 변경
+	};
+	prefs.pathsToPlugins = pluginPaths;
+	prefs.numPathsToPlugins = sizeof(pluginPaths) / sizeof(pluginPaths[0]);
+	sl::Result result = slInit(prefs);
 	if (result != sl::Result::eOk) {
-		printf("Streamline 초기화 실패: %d\n", result);
-		return;
+		std::cerr << "Streamline 초기화 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return false;
 	}
+	if (SL_FAILED(result, slSetD3DDevice(m_device.Get())))
+	{
+		std::cerr << "Streamline 장치 초기화 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return false;
+	}
+
+	return true;
 }
 
 void Renderer::D3D12DLSSApp::ApplyAntiAliasing()
 {
-	// 필요한 입력 구조체를 설정합니다
-	sl::Resource colorResource = {};
-	colorResource.native = CurrentBackBuffer();
-	colorResource.type = sl::ResourceType::eTex2d;
-	colorResource.width = CurrentBackBuffer()->GetDesc().Width;
-	colorResource.height = CurrentBackBuffer()->GetDesc().Height;
-
-	// 입력 구조체 배열을 생성합니다
-	const sl::BaseStructure* inputs[] = {
-		&colorResource
-	};
-	sl::FrameToken* currentToken = nullptr; // 프레임 토큰 포인터
-	sl::Result result = slGetNewFrameToken(currentToken); // 고유한 프레임 토큰 얻기
-
-	if (result == sl::Result::eOk) {
-		//std::cout << "slGetNewFrameToken() 성공\n";
+	sl::DLSSOptimalSettings dlssSettings;
+	sl::DLSSOptions dlssOptions;
+	// These are populated based on user selection in the UI
+	dlssOptions.dlaaPreset = sl::DLSSPreset::ePresetA;
+	dlssOptions.qualityPreset = sl::DLSSPreset::ePresetD;
+	dlssOptions.balancedPreset = sl::DLSSPreset::ePresetD;
+	dlssOptions.performancePreset = sl::DLSSPreset::ePresetD;
+	dlssOptions.ultraPerformancePreset = sl::DLSSPreset::ePresetA;
+	// These are populated based on user selection in the UI
+	dlssOptions.mode = sl::DLSSMode::eDLAA; // e.g. sl::eDLSSModeBalanced;
+	dlssOptions.outputWidth = m_screenWidth;    // e.g 1920;
+	dlssOptions.outputHeight = m_screenHeight; // e.g. 1080;
+	dlssOptions.sharpness = dlssSettings.optimalSharpness; // optimal sharpness
+	dlssOptions.colorBuffersHDR = sl::Boolean::eTrue; // assuming HDR pipeline
+	dlssOptions.useAutoExposure = sl::Boolean::eFalse; // autoexposure is not to be used if a proper exposure texture is available
+	dlssOptions.alphaUpscalingEnabled = sl::Boolean::eFalse; // experimental alpha upscaling, enable to upscale alpha channel of color texture
+	// Now let's check what should our rendering resolution be
+	if (SL_FAILED(result, slDLSSGetOptimalSettings(dlssOptions, dlssSettings)))
+	{
+		std::cerr << "slDLSSGetOptimalSettings 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return;
 	}
-	else {
-		std::cout << "slGetNewFrameToken() 실패\n";
+	// Setup rendering based on the provided values in the sl::DLSSSettings structure
+	m_viewport.Width = dlssSettings.renderWidthMax;
+	m_viewport.Height = dlssSettings.renderHeightMax;
 
+	sl::Resource colorIn = { sl::ResourceType::eTex2d, HDRRenderTargetBuffer()};
+	sl::Resource colorOut = { sl::ResourceType::eTex2d,  HDRRenderTargetBuffer2() };
+	sl::Resource depth = { sl::ResourceType::eTex2d, m_hdrDepthStencilBuffer.Get() };
+	sl::Resource mvec = { sl::ResourceType::eTex2d, m_hdrMotionVector.Get() };
+	sl::Resource exposure = { sl::ResourceType::eTex2d, m_hdrExposure.Get()};
+
+	colorIn.state = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	colorOut.state = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	depth.state = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+	mvec.state = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	exposure.state = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+	sl::ResourceTag colorInTag = sl::ResourceTag{ &colorIn, sl::kBufferTypeScalingInputColor, sl::ResourceLifecycle::eOnlyValidNow };
+	sl::ResourceTag colorOutTag = sl::ResourceTag{ &colorOut, sl::kBufferTypeScalingOutputColor, sl::ResourceLifecycle::eOnlyValidNow };
+	sl::ResourceTag depthTag = sl::ResourceTag{ &depth, sl::kBufferTypeDepth, sl::ResourceLifecycle::eValidUntilPresent };
+	sl::ResourceTag mvecTag = sl::ResourceTag{ &mvec, sl::kBufferTypeMotionVectors, sl::ResourceLifecycle::eOnlyValidNow };
+	sl::ResourceTag exposureTag = sl::ResourceTag{ &exposure, sl::kBufferTypeExposure, sl::ResourceLifecycle::eOnlyValidNow};
+	sl::ResourceTag inputs[] = { colorInTag, colorOutTag, depthTag, mvecTag, exposureTag };
+	if (SL_FAILED(result, slSetTag(mViewport, inputs, _countof(inputs), m_commandList.Get())))
+	{
+		std::cerr << "slSetTag 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return;
 	}
-	// 안티에일리어싱 기능을 적용합니다
-	result = slEvaluateFeature(sl::kFeatureDLSS, *currentToken, inputs, _countof(inputs), m_commandList.Get());
-	if (result != sl::Result::eOk) {
-		printf("DLSS 적용 실패\n");
+	// Set preferred Render Presets per Perf Quality Mode. These are typically set one time
+	// and established while evaluating DLSS SR Image Quality for your Application.
+	// It will be set to DSSPreset::eDefault if unspecified.
+	// Please Refer to section 3.12 of the DLSS Programming Guide for details.
+	
+	if (SL_FAILED(result, slDLSSSetOptions(mViewport, dlssOptions)))
+	{
+		std::cerr << "slDLSSSetOptions 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return;
 	}
+
+	if (SL_FAILED(result, slGetNewFrameToken(mCurrentFrame)))
+	{
+		std::cerr << "slGetNewFrameToken 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return;
+	}
+
+	sl::Constants consts = {};
+	// Set motion vector scaling based on your setup
+	consts.mvecScale = { 1.0f / m_screenWidth,1.0f / m_screenHeight }; // Values in eMotionVectors are in pixel space
+	//Set all other constants here
+	if (SL_FAILED(result, slSetConstants(consts, *mCurrentFrame, mViewport))) // constants are changing per frame so frame index is required
+	{
+		std::cerr << "slSetConstants 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return;
+	}
+
+	sl::ViewportHandle view(mViewport);
+	const sl::BaseStructure* viewportInputs[] = { &view };
+	
+	if (SL_FAILED(result, slEvaluateFeature(sl::kFeatureDLSS, *mCurrentFrame, viewportInputs, _countof(viewportInputs), m_commandList.Get())))
+	{
+		std::cerr << "slEvaluateFeature 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return;
+	}
+	
+
 }
 
 void Renderer::D3D12DLSSApp::Update(float& deltaTime)
 {
-	D3D12PassApp::Update(deltaTime);
+	while (true) {
+		if (addPlayerCount > 0) {
+			addPlayerCount--;
+			AddPlayer();
+		}
+		else
+			break;
+	}
+
+	if (createSession) {
+		createSession = false;
+		onlineSystem->CreateLobby(4);
+	}
+	if (findSession) {
+		findSession = false;
+		onlineSystem->FindLobby();
+	}
+	PlayerData data;
+	data.position = mCharacter->GetPosition();
+	data.yTheta = mCharacter->GetYTheta();
+
+	onlineSystem->UpdateData(data);
+	onlineSystem->Update();
+	for (int i = 0; i < (int)mPlayers.size(); ++i)
+	{
+		UpdatePlayer((int)i, onlineSystem->GetClientData(i));
+	}
+
+	//m_inputHandler->ExicuteCommand(mCharacter.get(), deltaTime, bIsFPSMode);
+	//mCharacter->Update(deltaTime);
+	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
+	m_camera->Update(deltaTime);
+
+	{
+		// 카메라 고정
+		m_passConstantData->ViewMat = m_camera->GetViewMatrix();
+		m_passConstantData->ProjMat = m_camera->GetProjMatrix();
+		m_passConstantData->eyePosition = m_camera->GetPosition();
+
+		// 카메라 캐릭터 고정
+		/*m_passConstantData->ViewMat = mCharacter->GetViewMatrix();
+		m_passConstantData->ProjMat = mCharacter->GetProjMatrix();
+		m_passConstantData->eyePosition = mCharacter->GetCameraPosition();*/
+
+		m_passConstantData->ViewMat = m_passConstantData->ViewMat.Transpose();
+		m_passConstantData->ProjMat = m_passConstantData->ProjMat.Transpose();
+		memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
+	}
+
+	// LightPass ConstantBuffer
+	{
+		m_ligthPassConstantData->eyePos = m_passConstantData->eyePosition;
+		m_ligthPassConstantData->lod = gui_lod;
+		m_ligthPassConstantData->light[0].position = gui_lightPos;
+
+		m_ligthPassConstantData->ao = gui_ao;
+		m_ligthPassConstantData->metallic = gui_metallic;
+		m_ligthPassConstantData->roughness = gui_roughness;
+		m_ligthPassConstantData->expose = gui_cubeMapExpose;
+
+		memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
+	}
+
+	DirectX::SimpleMath::Matrix mat = DirectX::XMMatrixTranslation(gui_lightPos.x, gui_lightPos.y, gui_lightPos.z);
+	if (m_lightMeshes.size() > 0)
+		m_lightMeshes[0]->UpdateWorldRow(mat);
+
+	for (auto& mesh : m_staticMeshes) {
+		mesh->Update(deltaTime);
+	}
+
+	for (auto& mesh : m_lightMeshes) {
+		mesh->Update(deltaTime);
+	}
+
+	for (auto& fbx : m_fbxList) {
+		fbx->Update(deltaTime);
+	}
+
+	// ComputeShader(PostProcessing)
+	mCsBuffer.mStructure.time = ((deltaTime) < (1 / 60.f) ? deltaTime : (1 / 60.f));
+	mCsBuffer.UpdateBuffer();
+
+	// CubeMap ConstantBuffer
+	m_pCubeMapConstantData->expose = gui_cubeMapExpose;
+	m_pCubeMapConstantData->lodLevel = gui_cubeMapLod;
+	memcpy(m_pCubeMapCbufferBegin, m_pCubeMapConstantData, sizeof(CubeMapConstantData));
+
+	mPostprocessingConstantBuffer.mStructure.bUseGamma = false;
+	mPostprocessingConstantBuffer.UpdateBuffer();
 }
 
 void Renderer::D3D12DLSSApp::UpdateGUI(float& deltaTime)
@@ -138,8 +290,22 @@ void Renderer::D3D12DLSSApp::UpdateGUI(float& deltaTime)
 
 void Renderer::D3D12DLSSApp::Render(float& deltaTime)
 {
-	D3D12PassApp::Render(deltaTime);
+	GeometryPass(deltaTime);
+	FbxGeometryPass(deltaTime);
+	//RenderCubeMap(deltaTime);
+	LightPass(deltaTime);
+	RenderNormalPass(deltaTime);
+	RenderBoundingBoxPass(deltaTime);
+	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+
+	PostProcessing(deltaTime);
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 	ApplyAntiAliasing();
+	FlushCommandList(m_commandList);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE hadnle(m_hdrSrvHeap->GetGPUDescriptorHandleForHeapStart(), 1, m_csuHeapSize);
+	CopyResourceToSwapChain(deltaTime, m_hdrSrvHeap.Get(), hadnle);
+
 }
 
 void Renderer::D3D12DLSSApp::RenderGUI(float& deltaTime)

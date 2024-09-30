@@ -21,14 +21,16 @@ namespace Renderer {
 		void InitScene() override;
 		void OnResize() override;
 
-		void InitializeDLSS();
+		bool InitializeDLSS();
 		void ApplyAntiAliasing();
 		void Update(float& deltaTime) override;
 		void UpdateGUI(float& deltaTime) override;
 		void Render(float& deltaTime) override;
 		void RenderGUI(float& deltaTime) override;
 
-
+	private:
+		sl::FrameToken* mCurrentFrame;
+		sl::ViewportHandle mViewport = { 0 };
 	};
 	
 }

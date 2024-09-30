@@ -131,6 +131,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		else
 			break;
 	}
+
 	if (createSession) {
 		createSession = false;
 		onlineSystem->CreateLobby(4);
@@ -151,15 +152,15 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	}
 
 	m_inputHandler->ExicuteCommand(mCharacter.get(), deltaTime, bIsFPSMode);
-	//m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
 	mCharacter->Update(deltaTime);
-
+	/*m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
+	m_camera->Update(deltaTime);*/
 
 	{
 		// 카메라 고정
 		/*m_passConstantData->ViewMat = m_camera->GetViewMatrix();
 		m_passConstantData->ProjMat = m_camera->GetProjMatrix();
-		m_passConstantData->eyePosition = m_camera->GetCameraPosition();*/
+		m_passConstantData->eyePosition = m_camera->GetPosition();*/
 
 		// 카메라 캐릭터 고정
 		m_passConstantData->ViewMat = mCharacter->GetViewMatrix();

@@ -77,6 +77,8 @@ namespace Renderer {
 		ID3D12Resource* CurrentBackBuffer() const;
 		ID3D12Resource* MsaaRenderTargetBuffer() const;
 		ID3D12Resource* HDRRenderTargetBuffer() const;
+
+		ID3D12Resource* HDRRenderTargetBuffer2() const;
 		
 		D3D12_CPU_DESCRIPTOR_HANDLE MsaaDepthStencilView() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE HDRDepthStencilView() const;
@@ -98,6 +100,8 @@ namespace Renderer {
 
 
 		void CopyResourceToSwapChain(float& deltaTime);
+
+		void CopyResourceToSwapChain(float& deltaTime, ID3D12DescriptorHeap* heap, D3D12_GPU_DESCRIPTOR_HANDLE handle);
 
 		void CreateDepthBuffer(ComPtr<ID3D12Resource>& buffer, D3D12_CPU_DESCRIPTOR_HANDLE& handle, bool bUseMsaa);
 		void CreateResourceBuffer(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_RESOURCE_FLAGS flag, 
@@ -126,6 +130,9 @@ namespace Renderer {
 		DXGI_FORMAT m_msaaFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		DXGI_FORMAT m_depthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		DXGI_FORMAT m_depthSrvFormat = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+		DXGI_FORMAT m_motionVectorFormat = DXGI_FORMAT_R16G16_FLOAT;
+		DXGI_FORMAT m_exposureFormat = DXGI_FORMAT_R32_FLOAT;
+
 		ComPtr<IDXGISwapChain3> m_swapChain;
 		static const UINT m_swapChainCount = 2;
 		ComPtr<ID3D12Resource> m_renderTargets[m_swapChainCount];
@@ -216,6 +223,9 @@ namespace Renderer {
 		ComPtr<ID3D12Resource> m_msaaRenderTarget;
 
 		ComPtr<ID3D12Resource> m_hdrRenderTarget;
+		ComPtr<ID3D12Resource> m_hdrRenderTargetOutput;
+		ComPtr<ID3D12Resource> m_hdrMotionVector;
+		ComPtr<ID3D12Resource> m_hdrExposure;
 		ComPtr<ID3D12Resource> m_hdrDepthStencilBuffer;
 
 		ComPtr<ID3D12DescriptorHeap> m_msaaRtvHeap;
