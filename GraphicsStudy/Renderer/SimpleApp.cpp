@@ -15,7 +15,7 @@ Renderer::SimpleApp::SimpleApp(const int& width, const int& height) :
 	m_inputHandler = std::make_unique<InputHandler>();
 	mCharacter = std::make_unique<Core::Character>();
 
-	m_camera->SetAspectRation(width / (float)height);
+	m_camera->SetAspectRatio(width / (float)height);
 	mCharacter->SetCameraAspectRatio(width / (float)height);
 }
 
@@ -185,7 +185,7 @@ LRESULT Renderer::SimpleApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 		m_screenHeight = HIWORD(lParam);
 		if (m_camera != nullptr)
 		{
-			m_camera->SetAspectRation(m_screenWidth / (float)m_screenHeight);
+			m_camera->SetAspectRatio(m_screenWidth / (float)m_screenHeight);
 			mCharacter->SetCameraAspectRatio(m_screenWidth / (float)m_screenHeight);
 		}
 		OnResize();

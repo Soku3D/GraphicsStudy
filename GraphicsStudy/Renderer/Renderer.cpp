@@ -66,11 +66,14 @@
 #include "RenderVolumeVS.h"
 #include "RenderVolumePS.h"
 
+#include "RenderMotionVectorVS.h"
+#include "RenderMotionVectorPS.h"
 
 namespace Renderer {
 	//DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	DXGI_FORMAT backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_FORMAT hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	DXGI_FORMAT motionVectorFormat = DXGI_FORMAT_R16G16_FLOAT;
 	DXGI_FORMAT geometryPassFormats[geometryPassNum] =
 	{
 		DXGI_FORMAT_R32G32B32A32_FLOAT,
@@ -136,6 +139,8 @@ namespace Renderer {
 	RootSignature renderVolumeSignature;
 
 	RootSignature raytracingGlobalSignature;
+
+	RootSignature renderMotionVectorSignature;
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElement;
@@ -239,6 +244,8 @@ namespace Renderer {
 
 		raytracingGlobalSignature.InitializeRaytracing(1, 4, 1, 1, &wrapLinearSampler);
 
+		renderMotionVectorSignature.Initialize(2);
+
 		GraphicsPSO msaaPso("Msaa");
 		GraphicsPSO wirePso("Wire");
 
@@ -263,6 +270,8 @@ namespace Renderer {
 		GraphicsPSO copyPso("Copy");
 		GraphicsPSO copyUnormPso("CopyUnorm");
 		GraphicsPSO copyDensityPso("CopyDensity");
+
+		GraphicsPSO renderMotionVectorPassPso("RenderMotionVectorPass");
 
 		ComputePSO simulationPostProcessingPso("SimulationPostProcessing");
 		ComputePSO simulationComputePso("SimulationCompute");
@@ -441,6 +450,14 @@ namespace Renderer {
 		renderVolumePassPso.SetRootSignature(&renderVolumeSignature);
 		renderVolumePassPso.SetBlendState(alphaBlender2);
 
+		renderMotionVectorPassPso = defaultPso;
+		renderMotionVectorPassPso.SetVertexShader(g_pRenderMotionVectorVS, sizeof(g_pRenderMotionVectorVS));
+		renderMotionVectorPassPso.SetPixelShader(g_pRenderMotionVectorPS, sizeof(g_pRenderMotionVectorPS));
+		renderMotionVectorPassPso.SetRenderTargetFormat(motionVectorFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
+		renderMotionVectorPassPso.SetRootSignature(&renderMotionVectorSignature);
+		renderMotionVectorPassPso.SetInputLayout((UINT)pbrElement.size(), pbrElement.data());
+		renderMotionVectorPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+
 		postProcessingPso.SetRootSignature(&computeSignature);
 		postProcessingPso.SetComputeShader(g_pPostprocessingCS, sizeof(g_pPostprocessingCS));
 
@@ -579,6 +596,8 @@ namespace Renderer {
 		
 		passPsoLists[renderVolumePassPso.GetName()] = renderVolumePassPso;
 
+		passPsoLists[renderMotionVectorPassPso.GetName()] = renderMotionVectorPassPso;
+
 		utilityPsoLists[copyPso.GetName()] = copyPso;
 		utilityPsoLists[copyDensityPso.GetName()] = copyDensityPso;
 
@@ -653,6 +672,8 @@ namespace Renderer {
 		smokeVorticitySignature.Finalize(device);
 
 		raytracingGlobalSignature.Finalize(device);
+
+		renderMotionVectorSignature.Finalize(device);
 
 		for (auto& pso : modePsoLists) {
 			pso.second.Finalize(device);

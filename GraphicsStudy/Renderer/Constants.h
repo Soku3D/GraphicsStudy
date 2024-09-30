@@ -29,6 +29,16 @@ __declspec(align(256)) struct GlobalVertexConstantData
 	float dummy;
 };
 
+__declspec(align(256)) struct GlobalConstantDataDLSS
+{
+	DirectX::SimpleMath::Matrix ViewMat = DirectX::SimpleMath::Matrix();
+	DirectX::SimpleMath::Matrix ProjMat = DirectX::SimpleMath::Matrix();
+	DirectX::SimpleMath::Matrix prevViewMat = DirectX::SimpleMath::Matrix();
+	DirectX::SimpleMath::Matrix prevProjMat = DirectX::SimpleMath::Matrix();
+	DirectX::SimpleMath::Vector3 eyePosition;
+	float dummy;
+};
+
 __declspec(align(256)) struct ObjectConstantData {
 	DirectX::SimpleMath::Matrix Model = DirectX::SimpleMath::Matrix();
 	DirectX::SimpleMath::Matrix invTranspose = DirectX::SimpleMath::Matrix();

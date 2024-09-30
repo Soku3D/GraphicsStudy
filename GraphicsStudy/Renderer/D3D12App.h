@@ -235,6 +235,8 @@ namespace Renderer {
 		ComPtr<ID3D12DescriptorHeap> m_hdrUavHeapNSV;
 		ComPtr<ID3D12DescriptorHeap> m_hdrSrvHeap;
 
+		ComPtr<ID3D12DescriptorHeap> mMotionVectorHeap;
+
 	protected:
 		std::string currRenderMode = "Default";
 		bool msaaMode = false;

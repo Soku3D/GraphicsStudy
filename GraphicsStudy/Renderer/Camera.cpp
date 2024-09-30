@@ -57,7 +57,7 @@ namespace Core {
 		mForwardDirection = Vector3::Transform(mForwardDirection, DirectX::XMMatrixRotationY(m_yTheta));
 		mForwardDirection.Normalize();
 	}
-	void Camera::SetAspectRation(float aspectRatio)
+	void Camera::SetAspectRatio(float aspectRatio)
 	{
 		m_aspectRatio = aspectRatio;
 	}

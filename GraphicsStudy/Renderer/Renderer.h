@@ -23,6 +23,7 @@ namespace Renderer {
 	extern DXGI_FORMAT cubeMapPassFormats[2];
 	extern DXGI_FORMAT backbufferFormat;
 	extern DXGI_FORMAT hdrFormat;
+	extern DXGI_FORMAT motionVectorFormat;
 
 	extern std::map<std::string, ComputePSO > computePsoList;
 	extern std::vector<std::string> computePsoListNames;

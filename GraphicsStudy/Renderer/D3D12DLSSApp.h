@@ -2,6 +2,8 @@
 
 #include "D3D12PassApp.h"
 #include "Renderer.h"
+#include "Buffer.h"
+#include "Constants.h"
 
 #include <sl.h>
 #include <sl_dlss.h>
@@ -26,11 +28,20 @@ namespace Renderer {
 		void Update(float& deltaTime) override;
 		void UpdateGUI(float& deltaTime) override;
 		void Render(float& deltaTime) override;
+		void RenderMotionVectorPass(float& deltaTime);
+
 		void RenderGUI(float& deltaTime) override;
 
 	private:
 		sl::FrameToken* mCurrentFrame;
 		sl::ViewportHandle mViewport = { 0 };
+		Core::ConstantBuffer< GlobalConstantDataDLSS> mDlssConstantBuffer;
+
+		DirectX::SimpleMath::Matrix prevView;
+		DirectX::SimpleMath::Matrix prevProj;
+
+		const wchar_t* renderMotionVectorPassEvent = L"Render MotionVector Pass ";
+
 	};
-	
+
 }

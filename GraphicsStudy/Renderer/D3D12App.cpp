@@ -324,6 +324,8 @@ void Renderer::D3D12App::OnResize()
 	CreateResourceView(m_hdrRenderTargetOutput, m_hdrFormat, false, CD3DX12_CPU_DESCRIPTOR_HANDLE(m_hdrUavHeapNSV->GetCPUDescriptorHandleForHeapStart(), 1, m_csuHeapSize), m_device, DescriptorType::UAV);
 	CreateResourceView(m_hdrRenderTargetOutput, m_hdrFormat, false, CD3DX12_CPU_DESCRIPTOR_HANDLE(m_hdrSrvHeap->GetCPUDescriptorHandleForHeapStart(), 1, m_csuHeapSize), m_device, DescriptorType::SRV);
 
+	CreateResourceView(m_hdrMotionVector, m_motionVectorFormat, true, mMotionVectorHeap->GetCPUDescriptorHandleForHeapStart(), m_device, DescriptorType::RTV);
+
 	m_device->CopyDescriptorsSimple(1, m_hdrUavHeap->GetCPUDescriptorHandleForHeapStart(), m_hdrUavHeapNSV->GetCPUDescriptorHandleForHeapStart(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE gPass_rtvHeapHandle(m_geometryPassRtvHeap->GetCPUDescriptorHandleForHeapStart());
@@ -661,6 +663,8 @@ void Renderer::D3D12App::CreateDescriptorHeaps() {
 	Utility::CreateDescriptorHeap(m_device, m_geometryPassRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
 	Utility::CreateDescriptorHeap(m_device, m_geometryPassSrvHeap, DescriptorType::SRV, geometryPassRtvNum + 20, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	Utility::CreateDescriptorHeap(m_device, m_geometryPassMsaaRtvHeap, DescriptorType::RTV, geometryPassRtvNum);
+
+	Utility::CreateDescriptorHeap(m_device, mMotionVectorHeap, DescriptorType::RTV, 1);
 }
 
 void Renderer::D3D12App::FlushCommandList(ComPtr<ID3D12GraphicsCommandList>& commandList) {

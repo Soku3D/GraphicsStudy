@@ -1,5 +1,18 @@
 #include "D3D12DLSSApp.h"
 static constexpr int APP_ID = 231313132;
+
+static sl::float4x4 Get4X4(DirectX::SimpleMath::Matrix& mat) {
+	sl::float4x4 ret;
+	for (size_t i = 0; i < 4; i++)
+	{
+		ret[i].x = mat.m[i][0];
+		ret[i].y = mat.m[i][1];
+		ret[i].z = mat.m[i][2];
+		ret[i].w = mat.m[i][3];
+	}
+	return ret;
+}
+
 Renderer::D3D12DLSSApp::D3D12DLSSApp(const int& width, const int& height)
 	:D3D12PassApp(width, height)
 {
@@ -9,7 +22,7 @@ Renderer::D3D12DLSSApp::D3D12DLSSApp(const int& width, const int& height)
 	bRenderFbx = false;
 	bRenderNormal = false;
 
-	m_camera->SetPositionAndDirection(DirectX::SimpleMath::Vector3(0.f, 0.f, -3.f),
+	m_camera->SetPositionAndDirection(DirectX::SimpleMath::Vector3(0.f, 0.f, 0.f),
 		DirectX::SimpleMath::Vector3(0.f, 0.f, 1.f));
 
 	m_appName = "DLSSApp";
@@ -23,6 +36,8 @@ bool Renderer::D3D12DLSSApp::Initialize()
 	if (!InitializeDLSS()) {
 		return false;
 	}
+
+	mDlssConstantBuffer.Initialize(m_device, m_commandList);
 
 	return true;
 }
@@ -47,13 +62,13 @@ void Renderer::D3D12DLSSApp::InitScene()
 {
 	/*std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
 	sphere->Initialize(GeometryGenerator::PbrSphere(0.8f, 100, 100, L"Bricks075A_4K-PNG0_Color.png"),
-		m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, 0.f, 0.f), Material(), true); 
+		m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, 0.f, 0.f), Material(), true);
 
 	m_staticMeshes.push_back(sphere);*/
 
 	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
 	sphere->Initialize(GeometryGenerator::PbrTriangle(1.f, L"Bricks075A_4K-PNG0_Color.png"),
-		m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, 0.f, 0.f), Material(), true);
+		m_device, m_commandList, DirectX::SimpleMath::Vector3(0.f, 0.f, 1.f), Material(), true);
 
 	m_staticMeshes.push_back(sphere);
 
@@ -95,7 +110,7 @@ bool Renderer::D3D12DLSSApp::InitializeDLSS()
 		std::cerr << "Streamline 장치 초기화 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
 		return false;
 	}
-
+	//slSetFeatureLoaded(sl::kFeatureDLSS_G, false);
 	return true;
 }
 
@@ -113,7 +128,6 @@ void Renderer::D3D12DLSSApp::ApplyAntiAliasing()
 	dlssOptions.mode = sl::DLSSMode::eDLAA; // e.g. sl::eDLSSModeBalanced;
 	dlssOptions.outputWidth = m_screenWidth;    // e.g 1920;
 	dlssOptions.outputHeight = m_screenHeight; // e.g. 1080;
-	dlssOptions.sharpness = dlssSettings.optimalSharpness; // optimal sharpness
 	dlssOptions.colorBuffersHDR = sl::Boolean::eTrue; // assuming HDR pipeline
 	dlssOptions.useAutoExposure = sl::Boolean::eFalse; // autoexposure is not to be used if a proper exposure texture is available
 	dlssOptions.alphaUpscalingEnabled = sl::Boolean::eFalse; // experimental alpha upscaling, enable to upscale alpha channel of color texture
@@ -123,28 +137,29 @@ void Renderer::D3D12DLSSApp::ApplyAntiAliasing()
 		std::cerr << "slDLSSGetOptimalSettings 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
 		return;
 	}
+	dlssOptions.sharpness = dlssSettings.optimalSharpness; // optimal sharpness
+
 	// Setup rendering based on the provided values in the sl::DLSSSettings structure
 	m_viewport.Width = dlssSettings.renderWidthMax;
 	m_viewport.Height = dlssSettings.renderHeightMax;
 
-	sl::Resource colorIn = { sl::ResourceType::eTex2d, HDRRenderTargetBuffer()};
-	sl::Resource colorOut = { sl::ResourceType::eTex2d,  HDRRenderTargetBuffer2() };
-	sl::Resource depth = { sl::ResourceType::eTex2d, m_hdrDepthStencilBuffer.Get() };
-	sl::Resource mvec = { sl::ResourceType::eTex2d, m_hdrMotionVector.Get() };
-	sl::Resource exposure = { sl::ResourceType::eTex2d, m_hdrExposure.Get()};
+	sl::Resource colorIn = { sl::ResourceType::eTex2d, HDRRenderTargetBuffer(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET) };
+	sl::Resource colorOut = { sl::ResourceType::eTex2d,  HDRRenderTargetBuffer2(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET) };
+	sl::Resource depth = { sl::ResourceType::eTex2d, m_hdrDepthStencilBuffer.Get(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_DEPTH_WRITE) };
+	sl::Resource mvec = { sl::ResourceType::eTex2d, m_hdrMotionVector.Get(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET) };
+	sl::Resource exposure = { sl::ResourceType::eTex2d, m_hdrExposure.Get(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET) };
 
-	colorIn.state = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	colorOut.state = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	depth.state = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-	mvec.state = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	exposure.state = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+	sl::Extent renderExtent{ 0, 0, HDRRenderTargetBuffer()->GetDesc().Width, HDRRenderTargetBuffer()->GetDesc().Height };
+	sl::Extent fullExtent{ 0, 0, HDRRenderTargetBuffer2()->GetDesc().Width, HDRRenderTargetBuffer2()->GetDesc().Height };
 
 	sl::ResourceTag colorInTag = sl::ResourceTag{ &colorIn, sl::kBufferTypeScalingInputColor, sl::ResourceLifecycle::eOnlyValidNow };
 	sl::ResourceTag colorOutTag = sl::ResourceTag{ &colorOut, sl::kBufferTypeScalingOutputColor, sl::ResourceLifecycle::eOnlyValidNow };
 	sl::ResourceTag depthTag = sl::ResourceTag{ &depth, sl::kBufferTypeDepth, sl::ResourceLifecycle::eValidUntilPresent };
 	sl::ResourceTag mvecTag = sl::ResourceTag{ &mvec, sl::kBufferTypeMotionVectors, sl::ResourceLifecycle::eOnlyValidNow };
-	sl::ResourceTag exposureTag = sl::ResourceTag{ &exposure, sl::kBufferTypeExposure, sl::ResourceLifecycle::eOnlyValidNow};
-	sl::ResourceTag inputs[] = { colorInTag, colorOutTag, depthTag, mvecTag, exposureTag };
+	sl::ResourceTag exposureTag = sl::ResourceTag{ &exposure, sl::kBufferTypeExposure, sl::ResourceLifecycle::eOnlyValidNow };
+	sl::ResourceTag inputs[] = { colorInTag, colorOutTag, depthTag, mvecTag };
+
 	if (SL_FAILED(result, slSetTag(mViewport, inputs, _countof(inputs), m_commandList.Get())))
 	{
 		std::cerr << "slSetTag 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
@@ -154,7 +169,7 @@ void Renderer::D3D12DLSSApp::ApplyAntiAliasing()
 	// and established while evaluating DLSS SR Image Quality for your Application.
 	// It will be set to DSSPreset::eDefault if unspecified.
 	// Please Refer to section 3.12 of the DLSS Programming Guide for details.
-	
+
 	if (SL_FAILED(result, slDLSSSetOptions(mViewport, dlssOptions)))
 	{
 		std::cerr << "slDLSSSetOptions 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
@@ -169,7 +184,55 @@ void Renderer::D3D12DLSSApp::ApplyAntiAliasing()
 
 	sl::Constants consts = {};
 	// Set motion vector scaling based on your setup
-	consts.mvecScale = { 1.0f / m_screenWidth,1.0f / m_screenHeight }; // Values in eMotionVectors are in pixel space
+	float aspectRatio = 1280.0f / 720.0f;
+	float fov = XMConvertToRadians(70.0f);
+	float nearPlane = 0.1f;
+	float farPlane = 100.0f;
+
+	// 카메라 변환 매트릭스 계산
+	float f = 1.0f / tanf(fov / 2.0f);
+	DirectX::SimpleMath::Matrix matrix = XMMATRIX(
+		f / aspectRatio, 0.0f, 0.0f, 0.0f,
+		0.0f, f, 0.0f, 0.0f,
+		0.0f, 0.0f, (farPlane + nearPlane) / (nearPlane - farPlane), (2 * farPlane * nearPlane) / (nearPlane - farPlane),
+		0.0f, 0.0f, -1.0f, 0.0f
+	);
+	DirectX::SimpleMath::Matrix mat = m_camera->GetProjMatrix();
+	consts.cameraViewToClip = Get4X4(mat);
+	mat = mat.Invert();
+	consts.clipToCameraView = Get4X4(mat);
+
+	// 기타 변환 매트릭스들
+	consts.clipToLensClip[0] = sl::float4(1, 0, 0, 0);
+	consts.clipToLensClip[1] = sl::float4(0, 1, 0, 0);
+	consts.clipToLensClip[2] = sl::float4(0, 0, 1, 0);
+	consts.clipToLensClip[3] = sl::float4(0, 0, 0, 1);
+	consts.clipToPrevClip = consts.clipToLensClip;
+	consts.prevClipToClip = consts.clipToLensClip;
+
+	// 카메라 관련 설정값
+	consts.jitterOffset = sl::float2(0.25f, 0.25f);
+	consts.mvecScale = sl::float2(1.0f, 1.0f);
+	consts.cameraPinholeOffset = sl::float2(0.0f, 0.0f);
+	consts.cameraPos = sl::float3(0.0f, 0.0f, 0.0f);
+	consts.cameraUp = sl::float3(0.0f, 1.0f, 0.0f);
+	consts.cameraRight = sl::float3(1.0f, 0.0f, 0.0f);
+	consts.cameraFwd = sl::float3(0.0f, 0.0f, 1.0f);
+
+	consts.cameraNear = m_camera->GetNeaPlane();
+	consts.cameraFar = m_camera->GetFarPlane();
+	consts.cameraFOV = m_camera->GetFov();
+	consts.cameraAspectRatio = m_camera->GetAspectRatio();
+	consts.motionVectorsInvalidValue = -1.0f;
+
+	// 부울 값들
+	consts.depthInverted = sl::Boolean::eFalse;
+	consts.cameraMotionIncluded = sl::Boolean::eTrue;
+	consts.motionVectors3D = sl::Boolean::eFalse;
+	consts.reset = sl::Boolean::eTrue;
+	consts.orthographicProjection = sl::Boolean::eTrue;
+	consts.motionVectorsDilated = sl::Boolean::eTrue;
+	consts.motionVectorsJittered = sl::Boolean::eFalse;
 	//Set all other constants here
 	if (SL_FAILED(result, slSetConstants(consts, *mCurrentFrame, mViewport))) // constants are changing per frame so frame index is required
 	{
@@ -179,13 +242,13 @@ void Renderer::D3D12DLSSApp::ApplyAntiAliasing()
 
 	sl::ViewportHandle view(mViewport);
 	const sl::BaseStructure* viewportInputs[] = { &view };
-	
+
 	if (SL_FAILED(result, slEvaluateFeature(sl::kFeatureDLSS, *mCurrentFrame, viewportInputs, _countof(viewportInputs), m_commandList.Get())))
 	{
 		std::cerr << "slEvaluateFeature 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
 		return;
 	}
-	
+
 
 }
 
@@ -281,6 +344,16 @@ void Renderer::D3D12DLSSApp::Update(float& deltaTime)
 
 	mPostprocessingConstantBuffer.mStructure.bUseGamma = false;
 	mPostprocessingConstantBuffer.UpdateBuffer();
+
+	mDlssConstantBuffer.mStructure.ViewMat = m_passConstantData->ViewMat;
+	mDlssConstantBuffer.mStructure.ProjMat = m_passConstantData->ProjMat;
+	mDlssConstantBuffer.mStructure.prevViewMat = prevView;
+	mDlssConstantBuffer.mStructure.prevProjMat = prevProj;
+	mDlssConstantBuffer.mStructure.eyePosition = m_camera->GetPosition();
+	mDlssConstantBuffer.UpdateBuffer();
+
+	prevView = mDlssConstantBuffer.mStructure.ViewMat;
+	prevProj = mDlssConstantBuffer.mStructure.ProjMat;
 }
 
 void Renderer::D3D12DLSSApp::UpdateGUI(float& deltaTime)
@@ -299,13 +372,62 @@ void Renderer::D3D12DLSSApp::Render(float& deltaTime)
 	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 
 	PostProcessing(deltaTime);
+
+	RenderMotionVectorPass(deltaTime);
+
+
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 	ApplyAntiAliasing();
+	
 	FlushCommandList(m_commandList);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE hadnle(m_hdrSrvHeap->GetGPUDescriptorHandleForHeapStart(), 1, m_csuHeapSize);
+	
+	CopyResource(m_commandList, HDRRenderTargetBuffer(), HDRRenderTargetBuffer2(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE hadnle(m_hdrSrvHeap->GetGPUDescriptorHandleForHeapStart(), 0, m_csuHeapSize);
 	CopyResourceToSwapChain(deltaTime, m_hdrSrvHeap.Get(), hadnle);
 
+}
+
+void Renderer::D3D12DLSSApp::RenderMotionVectorPass(float& deltaTime)
+{
+	auto& pso = passPsoLists["RenderMotionVectorPass"];
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), renderMotionVectorPassEvent);
+	FLOAT clearColor[2] = { 0.f, 0.f };
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(mMotionVectorHeap->GetCPUDescriptorHandleForHeapStart());
+	m_commandList->ClearRenderTargetView(handle, clearColor, 0, nullptr);
+
+	m_commandList->OMSetRenderTargets(1, &handle, false, nullptr);
+
+	m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_commandList->RSSetScissorRects(1, &m_scissorRect);
+	m_commandList->RSSetViewports(1, &m_viewport);
+	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+
+	// View Proj Matrix Constant Buffer 
+	m_commandList->SetGraphicsRootConstantBufferView(0, mDlssConstantBuffer.GetGpuAddress());
+
+
+	if (bRenderMeshes)
+	{
+		for (int i = 0; i < m_staticMeshes.size(); ++i) {
+			for (int j = 0; j < (int)m_staticMeshes[i]->meshCount; j++)
+			{
+				m_staticMeshes[i]->Render(deltaTime, m_commandList, true, (int)j);
+			}
+		}
+	}
+
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* plists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
+
+	FlushCommandQueue();
+	PIXEndEvent(m_commandQueue.Get());
 }
 
 void Renderer::D3D12DLSSApp::RenderGUI(float& deltaTime)

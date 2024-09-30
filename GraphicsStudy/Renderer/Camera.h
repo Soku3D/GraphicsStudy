@@ -30,7 +30,7 @@ namespace Core {
 
 	public:
 		void SetPositionAndDirection(const DirectX::SimpleMath::Vector3& position, const DirectX::SimpleMath::Vector3& direction);
-		void SetAspectRation(float aspectRatio);
+		void SetAspectRatio(float aspectRatio);
 		void SetQuaternion(int deltaX, int deltaY);
 		void SetSpeed(float velocity);
 		void SetRotation(int deltaX, int deltaY);
@@ -42,6 +42,11 @@ namespace Core {
 
 		DirectX::SimpleMath::Vector3 GetForwardDirection() const;
 		DirectX::SimpleMath::Vector3 GetUpDirection() const;
+		float GetFov()  const { return m_fov; };
+		float GetFarPlane()  const { return m_farZ; };
+		float GetNeaPlane()  const { return m_nearZ; };
+		float GetAspectRatio() const { return m_aspectRatio; };
+
 
 	public:
 		virtual void RotateDirection() override;

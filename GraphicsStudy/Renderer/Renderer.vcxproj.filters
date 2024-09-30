@@ -292,6 +292,8 @@
     <FxCompile Include="SmokeComputeDiffuseCS.hlsl" />
     <FxCompile Include="SmokeComputeVorticityCS.hlsl" />
     <FxCompile Include="SmokeVorticityConfinementCS.hlsl" />
+    <FxCompile Include="RenderMotionVectorPS.hlsl" />
+    <FxCompile Include="RenderMotionVectorVS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />
@@ -308,5 +310,6 @@
     <None Include="Noise.hlsli" />
     <None Include="Volume.hlsli" />
     <None Include="Smoke.hlsli" />
+    <None Include="MotionVector.hlsli" />
   </ItemGroup>
 </Project>
