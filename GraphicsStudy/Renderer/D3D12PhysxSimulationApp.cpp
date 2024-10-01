@@ -36,6 +36,7 @@ Renderer::D3D12PhysxSimulationApp::D3D12PhysxSimulationApp(const int& width, con
 	bRenderMeshes = true;
 	bRenderFbx = false;
 	bRenderNormal = false;
+	bUseDLAA = true;
 
 	m_camera->SetPositionAndDirection(DirectX::SimpleMath::Vector3(7.27f, 7.35f, -3.66f),
 		DirectX::SimpleMath::Vector3(-0.55f, -0.62f, 0.55f));
@@ -273,7 +274,7 @@ void Renderer::D3D12PhysxSimulationApp::InitScene()
 	soldier = std::get<0>(soldierData);
 
 	mCharacter->InitStaticMesh(soldier, m_device, m_commandList);
-	mCharacter->SetPosition(XMFLOAT3(0, 1.475f, 0));
+	mCharacter->SetPosition(XMFLOAT3(0, 0.45f, 0));
 	mCharacter->SetTexturePath(L"Soldier_Body_Albedo.dds", 0);
 	mCharacter->SetTexturePath(L"Soldier_head_Albedo.dds", 1);
 	mCharacter->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);

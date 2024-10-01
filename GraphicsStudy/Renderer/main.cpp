@@ -15,7 +15,7 @@ int main() {
         D3D12DLSSApp = 5
     };
 
-    auto currentApp = 4;
+    auto currentApp = 3;
 
     try
     {

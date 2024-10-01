@@ -331,5 +331,9 @@ namespace Renderer {
 
 		const wchar_t* renderMotionVectorPassEvent = L"Render MotionVector Pass ";
 
+	protected:
+		float guiDLAAJitterOffset = 0.2f;
+
+
 	};
 }

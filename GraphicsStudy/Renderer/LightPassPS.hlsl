@@ -14,7 +14,7 @@ float4 main(PSInput input) : SV_TARGET
     //return float4(depth, depth, depth, 1);
     float3 zero = float3(0, 0, 0);
     
-    return float4(-N.z, 0, 0, 1);
+    //return float4(-N.z, 0, 0, 1);
     
     if (materialTex.a >= 2.f)
     {

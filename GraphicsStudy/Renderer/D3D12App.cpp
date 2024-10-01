@@ -67,7 +67,7 @@ Renderer::D3D12App::~D3D12App()
 {
 
 	std::cout << "~D3D12App" << std::endl;
-
+	slShutdown();
 	delete onlineSystem;
 
 	if (m_device != nullptr)
@@ -1547,7 +1547,7 @@ void Renderer::D3D12App::CreateResourceBuffer(ComPtr<ID3D12Resource>& buffer, DX
 
 	if (bUseClear)
 	{
-		FLOAT color[4] = { 0.f, 0.f, 0.f, 0.f };
+		
 		D3D12_CLEAR_VALUE optClearRtv;
 		optClearRtv.Format = format;
 		optClearRtv.Color[0] = 0.f;
@@ -1561,6 +1561,7 @@ void Renderer::D3D12App::CreateResourceBuffer(ComPtr<ID3D12Resource>& buffer, DX
 			resourceState,
 			&optClearRtv,
 			IID_PPV_ARGS(buffer.ReleaseAndGetAddressOf())));
+		
 	}
 	else
 	{
@@ -1945,11 +1946,6 @@ bool Renderer::D3D12App::InitializeDLSS()
 		return false;
 	}
 	//slSetFeatureLoaded(sl::kFeatureDLSS_G, false);
-
-	colorIn = { sl::ResourceType::eTex2d, HDRRenderTargetBuffer(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET) };
-	colorOut = { sl::ResourceType::eTex2d,  HDRRenderTargetBuffer2(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET) };
-	depth = { sl::ResourceType::eTex2d, m_hdrDepthStencilBuffer.Get(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_DEPTH_WRITE) };
-	mvec = { sl::ResourceType::eTex2d, m_hdrMotionVector.Get(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET) };
 	//exposure = { sl::ResourceType::eTex2d, m_hdrExposure.Get(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET) };
 
 	return true;
@@ -1957,14 +1953,17 @@ bool Renderer::D3D12App::InitializeDLSS()
 
 void Renderer::D3D12App::ApplyAntiAliasing()
 {
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
+
 	sl::DLSSOptimalSettings dlssSettings;
 	sl::DLSSOptions dlssOptions;
 	// These are populated based on user selection in the UI
-	dlssOptions.dlaaPreset = sl::DLSSPreset::ePresetA;
-	dlssOptions.qualityPreset = sl::DLSSPreset::ePresetD;
-	dlssOptions.balancedPreset = sl::DLSSPreset::ePresetD;
-	dlssOptions.performancePreset = sl::DLSSPreset::ePresetD;
-	dlssOptions.ultraPerformancePreset = sl::DLSSPreset::ePresetA;
+	dlssOptions.dlaaPreset = sl::DLSSPreset::eDefault;
+	dlssOptions.qualityPreset = sl::DLSSPreset::eDefault;
+	dlssOptions.balancedPreset = sl::DLSSPreset::eDefault;
+	dlssOptions.performancePreset = sl::DLSSPreset::eDefault;
+	dlssOptions.ultraPerformancePreset = sl::DLSSPreset::eDefault;
 	// These are populated based on user selection in the UI
 	dlssOptions.mode = sl::DLSSMode::eDLAA; // e.g. sl::eDLSSModeBalanced;
 	dlssOptions.outputWidth = m_screenWidth;    // e.g 1920;
@@ -1984,6 +1983,10 @@ void Renderer::D3D12App::ApplyAntiAliasing()
 	m_viewport.Width = (FLOAT)dlssSettings.renderWidthMax;
 	m_viewport.Height = (FLOAT)dlssSettings.renderHeightMax;
 
+	colorIn = { sl::ResourceType::eTex2d, HDRRenderTargetBuffer(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET) };
+	colorOut = { sl::ResourceType::eTex2d,  HDRRenderTargetBuffer2(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET) };
+	depth = { sl::ResourceType::eTex2d, m_hdrDepthStencilBuffer.Get(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_DEPTH_WRITE) };
+	mvec = { sl::ResourceType::eTex2d, m_hdrMotionVector.Get(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET) };
 
 	sl::Extent renderExtent{ 0, 0, (uint32_t)HDRRenderTargetBuffer()->GetDesc().Width, (uint32_t)HDRRenderTargetBuffer()->GetDesc().Height };
 	sl::Extent fullExtent{ 0, 0, (uint32_t)HDRRenderTargetBuffer2()->GetDesc().Width, (uint32_t)HDRRenderTargetBuffer2()->GetDesc().Height };
@@ -1992,9 +1995,9 @@ void Renderer::D3D12App::ApplyAntiAliasing()
 	sl::ResourceTag colorOutTag = sl::ResourceTag{ &colorOut, sl::kBufferTypeScalingOutputColor, sl::ResourceLifecycle::eOnlyValidNow , &fullExtent };
 	sl::ResourceTag depthTag = sl::ResourceTag{ &depth, sl::kBufferTypeDepth, sl::ResourceLifecycle::eValidUntilPresent ,&renderExtent };
 	sl::ResourceTag mvecTag = sl::ResourceTag{ &mvec, sl::kBufferTypeMotionVectors, sl::ResourceLifecycle::eOnlyValidNow ,&renderExtent };
-	sl::ResourceTag exposureTag = sl::ResourceTag{ &exposure, sl::kBufferTypeExposure, sl::ResourceLifecycle::eOnlyValidNow ,&renderExtent };
+	//sl::ResourceTag exposureTag = sl::ResourceTag{ &exposure, sl::kBufferTypeExposure, sl::ResourceLifecycle::eOnlyValidNow ,&renderExtent };
 	sl::ResourceTag inputs[] = { colorInTag, colorOutTag, depthTag, mvecTag };
-
+	
 	if (SL_FAILED(result, slSetTag(mViewport, inputs, _countof(inputs), m_commandList.Get())))
 	{
 		std::cerr << "slSetTag 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
@@ -2017,7 +2020,7 @@ void Renderer::D3D12App::ApplyAntiAliasing()
 
 	DirectX::SimpleMath::Matrix mat = m_camera->GetProjMatrix().Transpose();
 	consts.clipToCameraView = Get4X4(mat);
-	mat = mat.Invert();
+	mat = m_camera->GetProjMatrix().Invert().Transpose();
 	consts.cameraViewToClip = Get4X4(mat);
 
 	// 기타 변환 매트릭스들
@@ -2029,7 +2032,7 @@ void Renderer::D3D12App::ApplyAntiAliasing()
 	consts.prevClipToClip = consts.clipToLensClip;
 
 	// 카메라 관련 설정값
-	consts.jitterOffset = sl::float2(0.2f, 0.2f);
+	consts.jitterOffset = sl::float2(guiDLAAJitterOffset, guiDLAAJitterOffset);
 	consts.mvecScale = sl::float2(1.0f, 1.0f);
 	consts.cameraPinholeOffset = sl::float2(0.0f, 0.0f);
 	consts.cameraPos = GetFloat3(m_camera->GetPosition());
@@ -2066,4 +2069,6 @@ void Renderer::D3D12App::ApplyAntiAliasing()
 		std::cerr << "slEvaluateFeature 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
 		return;
 	}
+
+	FlushCommandList(m_commandList);
 }

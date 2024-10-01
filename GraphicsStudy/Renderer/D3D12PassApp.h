@@ -54,7 +54,10 @@ namespace Renderer {
 		bool bRenderFbx = true;
 		bool bRenderFPS = true;
 		bool bRenderNormal = true;
+		bool bUseDLAA = false;
 		bool bRenderBoundingBox = false;
+
+		bool guiUseDLAA = true;
 
 		float gui_cubeMapLod = 0.f;
 		float gui_cubeMapExpose = 2.0f;

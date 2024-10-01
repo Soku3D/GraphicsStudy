@@ -4,7 +4,7 @@
 Renderer::D3D12DLSSApp::D3D12DLSSApp(const int& width, const int& height)
 	:D3D12PassApp(width, height)
 {
-	bUseGUI = false;
+	bUseGUI = true;
 	bRenderCubeMap = true;
 	bRenderMeshes = true;
 	bRenderFbx = false;
@@ -50,7 +50,7 @@ void Renderer::D3D12DLSSApp::InitScene()
 {
 	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
 	sphere->Initialize(GeometryGenerator::PbrSphere(0.4f, 100, 100, L"Bricks075A_4K-PNG0_Color.png"),
-		m_device, m_commandList, DirectX::SimpleMath::Vector3(0.2f, 0.f, 0.5f), Material(), true);
+		m_device, m_commandList, DirectX::SimpleMath::Vector3(0.2f, 0.f, 2.5f), Material(), true);
 
 	m_staticMeshes.push_back(sphere);
 
@@ -180,7 +180,7 @@ void Renderer::D3D12DLSSApp::Update(float& deltaTime)
 
 void Renderer::D3D12DLSSApp::UpdateGUI(float& deltaTime)
 {
-	D3D12PassApp::UpdateGUI(deltaTime);
+	ImGui::Checkbox("USE DLAA", &guiUseDLAA);
 }
 
 void Renderer::D3D12DLSSApp::Render(float& deltaTime)
@@ -196,15 +196,12 @@ void Renderer::D3D12DLSSApp::Render(float& deltaTime)
 	PostProcessing(deltaTime);
 
 	RenderMotionVectorPass(deltaTime);
-
-
-	ThrowIfFailed(m_commandAllocator->Reset());
-	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
 	ApplyAntiAliasing();
-	
-	FlushCommandList(m_commandList);
-	
-	CopyResource(m_commandList, HDRRenderTargetBuffer(), HDRRenderTargetBuffer2(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+	if (guiUseDLAA) {
+		
+		CopyResource(m_commandList, HDRRenderTargetBuffer(), HDRRenderTargetBuffer2(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+	}
+
 	CD3DX12_GPU_DESCRIPTOR_HANDLE hadnle(m_hdrSrvHeap->GetGPUDescriptorHandleForHeapStart(), 0, m_csuHeapSize);
 	CopyResourceToSwapChain(deltaTime, m_hdrSrvHeap.Get(), hadnle);
 
@@ -218,7 +215,7 @@ void Renderer::D3D12DLSSApp::RenderMotionVectorPass(float& deltaTime)
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 
 	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), renderMotionVectorPassEvent);
-	FLOAT clearColor[2] = { 0.f, 0.f };
+	FLOAT clearColor[4] = { 0.f, 0.f, 0.f, 0.f };
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(mMotionVectorHeap->GetCPUDescriptorHandleForHeapStart());
 	m_commandList->ClearRenderTargetView(handle, clearColor, 0, nullptr);
 

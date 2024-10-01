@@ -24,6 +24,8 @@ namespace Renderer {
 
 		void RenderGUI(float& deltaTime) override;
 
+	private:
+		bool guiUseDLAA = true;
 	
 
 	};

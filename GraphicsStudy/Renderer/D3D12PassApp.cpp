@@ -13,6 +13,7 @@ Renderer::D3D12PassApp::D3D12PassApp(const int& width, const int& height)
 	bRenderMeshes = true;
 	bRenderFbx = false;
 	bRenderNormal = false;
+	bUseDLAA = false;
 	m_appName = "PassApp";
 }
 
@@ -20,6 +21,13 @@ bool Renderer::D3D12PassApp::Initialize()
 {
 	if (!D3D12App::Initialize())
 		return false;
+
+	if (bUseDLAA) {
+		if (!InitializeDLSS()) {
+			return false;
+		}
+	}
+	
 
 	gui_lightPos = DirectX::SimpleMath::Vector3(0.f, 1.f, 0.f);
 	InitConstantBuffers();
@@ -145,14 +153,14 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 	{
 		// 카메라 고정
-		m_passConstantBuffer.mStructure.ViewMat = m_camera->GetViewMatrix();
+	/*	m_passConstantBuffer.mStructure.ViewMat = m_camera->GetViewMatrix();
 		m_passConstantBuffer.mStructure.ProjMat = m_camera->GetProjMatrix();
-		m_passConstantBuffer.mStructure.eyePosition = m_camera->GetPosition();
+		m_passConstantBuffer.mStructure.eyePosition = m_camera->GetPosition();*/
 
 		// 카메라 캐릭터 고정
-		/*m_passConstantBuffer.mStructure.ViewMat = mCharacter->GetViewMatrix();
+		m_passConstantBuffer.mStructure.ViewMat = mCharacter->GetViewMatrix();
 		m_passConstantBuffer.mStructure.ProjMat = mCharacter->GetProjMatrix();
-		m_passConstantBuffer.eyePosition = mCharacter->GetCameraPosition();*/
+		m_passConstantBuffer.mStructure.eyePosition = mCharacter->GetCameraPosition();
 
 		m_passConstantBuffer.mStructure.ViewMat = m_passConstantBuffer.mStructure.ViewMat.Transpose();
 		m_passConstantBuffer.mStructure.ProjMat = m_passConstantBuffer.mStructure.ProjMat.Transpose();
@@ -243,6 +251,9 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 	ImGui::Checkbox("Render FBX", &bRenderFbx);
 	ImGui::SameLine();
 	ImGui::Checkbox("Render Mesh", &bRenderMeshes);
+	ImGui::SameLine();
+	ImGui::Checkbox("Uuse DLAA", &guiUseDLAA);
+	ImGui::SliderFloat("Jitter Offset", &guiDLAAJitterOffset, 0.f, 10.f);
 }
 
 void Renderer::D3D12PassApp::Render(float& deltaTime)
@@ -256,6 +267,16 @@ void Renderer::D3D12PassApp::Render(float& deltaTime)
 	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 
 	PostProcessing(deltaTime);
+
+	if (bUseDLAA) {
+		ApplyAntiAliasing();
+		if (guiUseDLAA) {
+
+			CopyResource(m_commandList, HDRRenderTargetBuffer(), HDRRenderTargetBuffer2(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+		}
+	}
+	
+
 	CopyResourceToSwapChain(deltaTime);
 }
 
