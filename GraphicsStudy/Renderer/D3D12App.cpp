@@ -325,6 +325,9 @@ void Renderer::D3D12App::OnResize()
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
 		IID_PPV_ARGS(&imageBuffer));
+	
+	CD3DX12_RANGE range(0, 0);
+	imageBuffer->Map(0, &range, reinterpret_cast<void**>(&pCaptureImageData));
 
 	copyBufferSize = m_screenWidth * m_screenHeight * 4 * sizeof(uint8_t);
 	m_device->CreateCommittedResource(
@@ -1660,9 +1663,9 @@ void Renderer::D3D12App::CaptureHDRBufferToPNG() {
 	FlushCommandQueue();
 
 	D3D12_RANGE range(0, 0);
-	void* pData;
-	UINT width = (UINT)HDRRenderTargetBuffer()->GetDesc().Width;
-	UINT height = HDRRenderTargetBuffer()->GetDesc().Height;
+
+	UINT width = m_screenWidth;
+	UINT height = m_screenHeight;
 	UINT channels = 4;
 
 	UINT imageSize = width * height * channels;
@@ -1670,9 +1673,7 @@ void Renderer::D3D12App::CaptureHDRBufferToPNG() {
 	imageUnorm.resize(imageSize);
 	UINT dataSize = width * height * channels * sizeof(uint16_t);
 
-	imageBuffer->Map(0, &range, reinterpret_cast<void**>(&pData));
-	memcpy(imagef16.data(), pData, dataSize);
-	imageBuffer->Unmap(0, nullptr);
+	memcpy(imagef16.data(), pCaptureImageData, dataSize);
 
 	float gamma = 2.2f;
 	float invGamma = 1.f / gamma;
@@ -1751,9 +1752,8 @@ void Renderer::D3D12App::CaptureBackBufferToPNG() {
 	FlushCommandQueue();
 
 	D3D12_RANGE range(0, 0);
-	void* pData;
-	UINT width = (UINT)HDRRenderTargetBuffer()->GetDesc().Width;
-	UINT height = HDRRenderTargetBuffer()->GetDesc().Height;
+	UINT width = m_screenWidth;
+	UINT height = m_screenHeight;
 	UINT channels = 4;
 
 	UINT imageSize = width * height * channels;
@@ -1761,9 +1761,7 @@ void Renderer::D3D12App::CaptureBackBufferToPNG() {
 	imageUnorm.resize(imageSize);
 	UINT dataSize = width * height * channels * sizeof(uint16_t);
 
-	imageBuffer->Map(0, &range, reinterpret_cast<void**>(&pData));
-	memcpy(imagef16.data(), pData, dataSize);
-	imageBuffer->Unmap(0, nullptr);
+	memcpy(imagef16.data(), pCaptureImageData, dataSize);
 
 	float gamma = 2.2f;
 	float invGamma = 1.f / gamma;

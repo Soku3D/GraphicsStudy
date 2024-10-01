@@ -28,7 +28,6 @@ void main( uint3 DTid : SV_DispatchThreadID )
     //if (DTid.x == 10 && l < gConstantBuffer.radius)
     if (l < 1.f)
     {
-        float scale = max(0.f, 1.f - smoothstep(0, gConstantBuffer.radius, l)) * 1.f;
         gVelocity[DTid.xyz] = float4(32 * gConstantBuffer.sourceStrength, 0, 0, 0) / 64.0 * float(w);
         gDensity[DTid.xyz] = max(smootherstep(1.0 - l), gDensity[DTid.xyz]);
     }
@@ -48,7 +47,8 @@ void main( uint3 DTid : SV_DispatchThreadID )
     
     if (l < 1.0)
     {
+        gDensity[DTid.xyz] = 0.0;
         gVelocity[DTid.xyz] = float4(0, 0, 0, 0); 
-        gBoundaryCondition[DTid.xyz] = -2; // 
+        gBoundaryCondition[DTid.xyz] = -2;  
     }
 }

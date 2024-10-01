@@ -26,6 +26,12 @@ public:
 		else
 			return CD3DX12_GPU_DESCRIPTOR_HANDLE(mCPHeap2->GetGPUDescriptorHandleForHeapStart(), index, offset);
 	}
+	D3D12_GPU_DESCRIPTOR_HANDLE GetVorticityHandle(int i, int index) const {
+		if (i == 0)
+			return CD3DX12_GPU_DESCRIPTOR_HANDLE(mComputeVorticityHeap->GetGPUDescriptorHandleForHeapStart(), index, offset);
+		else
+			return CD3DX12_GPU_DESCRIPTOR_HANDLE(mVorticityConfinementHeap->GetGPUDescriptorHandleForHeapStart(), index, offset);
+	}
 	D3D12_GPU_DESCRIPTOR_HANDLE GetDivergenceHandle(int index) const {	return CD3DX12_GPU_DESCRIPTOR_HANDLE(mDivergenceHeap->GetGPUDescriptorHandleForHeapStart(), index, offset);	}
 	ID3D12DescriptorHeap* GetHeap() const { return mHeap.Get(); }
 	ID3D12DescriptorHeap* GetDivergenceHeap() const { return mDivergenceHeap.Get(); }
@@ -35,11 +41,17 @@ public:
 		else
 			return mCPHeap2.Get();
 	}
-
+	ID3D12DescriptorHeap* GetVorticityHeap(int index) const {
+		if (index == 0)
+			return mComputeVorticityHeap.Get();
+		else
+			return mVorticityConfinementHeap.Get();
+	}
 	ID3D12Resource* GetDensityTempResource() const { return mDensityTemp.GetResource(); }
 	ID3D12Resource* GetDensityResource() const { return mDensity.GetResource(); }
 	ID3D12Resource* GetVelocityTempResource() const { return mVelocityTemp.GetResource(); }
 	ID3D12Resource* GetVelocityResource() const { return mVelocity.GetResource(); }
+
 private:
 	Core::Texture3D mDensity;
 	Core::Texture3D mDensityTemp;
@@ -58,5 +70,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mCPHeap1; // pressure uav, pressureTemp srv, divergence srv
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mCPHeap2; // pressureTemp uav, pressure srv, divergence srv
 	// divergence uav, pressure uav, PressureTemp uav, velocity srv boundaryCondition srv
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mDivergenceHeap; 
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mDivergenceHeap;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mComputeVorticityHeap;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mVorticityConfinementHeap;
 };

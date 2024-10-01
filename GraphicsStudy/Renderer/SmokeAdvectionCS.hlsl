@@ -28,6 +28,8 @@ void main(uint3 DTid : SV_DispatchThreadID)
     //velocity = float3(1, 0, 0);
     float3 backPos = uvw - velocity * gConstantBuffer.deltaTime;
     
+    //g_density[DTid.xyz] = g_densityTemp.SampleLevel(gClampLinearSampler, backPos, 0.f) * 0.99f;
+    //g_velocity[DTid.xyz] = g_velocityTemp.SampleLevel(gClampLinearSampler, backPos, 0.f) * 0.99f;
     g_density[DTid.xyz] = g_densityTemp.SampleLevel(gClampLinearSampler, backPos, 0.f);
     g_velocity[DTid.xyz] = g_velocityTemp.SampleLevel(gClampLinearSampler, backPos, 0.f);
     

@@ -133,8 +133,9 @@ namespace Renderer {
 	RootSignature smokeAdvectionSignature;
 	RootSignature smokeApplyPressureSignature;
 	RootSignature smokeComputeDiffuseSignature;
-	RootSignature smokeVorticitySignature;
-	
+	RootSignature smokeComputeVorticitySignature;
+	RootSignature smokeVorticityConfinementSignature;
+
 	RootSignature computeVolumeDensitySignature;
 	RootSignature renderVolumeSignature;
 
@@ -237,7 +238,8 @@ namespace Renderer {
 		smokeComputePressureSignature.Initialize(3, 1, 1, samplers);
 		smokeApplyPressureSignature.Initialize(2, 1, 1, samplers);
 		smokeComputeDiffuseSignature.Initialize(2, 2, 1, samplers);
-		smokeVorticitySignature.Initialize(1, 1, 1, samplers);
+		smokeComputeVorticitySignature.Initialize(2, 1, 1, samplers);
+		smokeVorticityConfinementSignature.Initialize(3, 1, 1, samplers);
 
 		computeVolumeDensitySignature.InitializeUAV(1, 1, 0, nullptr);
 		renderVolumeSignature.Initialize(1, 2, samplers);
@@ -567,10 +569,10 @@ namespace Renderer {
 		smokeComputeDiffusePso.SetRootSignature(&smokeComputeDiffuseSignature);
 
 		smokeComputeVorticityPso.SetComputeShader(g_pSmokeComputeVorticityCS, sizeof(g_pSmokeComputeVorticityCS));
-		smokeComputeVorticityPso.SetRootSignature(&smokeVorticitySignature);
+		smokeComputeVorticityPso.SetRootSignature(&smokeComputeVorticitySignature);
 
 		smokeVorticityConfinementPso.SetComputeShader(g_pSmokeVorticityConfinementCS, sizeof(g_pSmokeVorticityConfinementCS));
-		smokeVorticityConfinementPso.SetRootSignature(&smokeVorticitySignature);
+		smokeVorticityConfinementPso.SetRootSignature(&smokeVorticityConfinementSignature);
 
 		perlinNoisePso.SetComputeShader(g_pPerlinNoiseCS, sizeof(g_pPerlinNoiseCS));
 		perlinNoisePso.SetRootSignature(&sphSimulationComputeSignature);
@@ -669,7 +671,8 @@ namespace Renderer {
 		smokeComputePressureSignature.Finalize(device);
 		smokeApplyPressureSignature.Finalize(device);
 		smokeComputeDiffuseSignature.Finalize(device);
-		smokeVorticitySignature.Finalize(device);
+		smokeComputeVorticitySignature.Finalize(device);
+		smokeVorticityConfinementSignature.Finalize(device);
 
 		raytracingGlobalSignature.Finalize(device);
 

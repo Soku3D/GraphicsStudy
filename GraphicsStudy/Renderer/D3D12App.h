@@ -113,6 +113,7 @@ namespace Renderer {
 		void CreateResourceView(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_CPU_DESCRIPTOR_HANDLE& handle,
 			ComPtr<ID3D12Device5>& deivce, const Renderer::DescriptorType& type);
 		void CaptureHDRBufferToPNG() override;
+		void* pCaptureImageData;
 		void CaptureBackBufferToPNG() override;
 		/*void CreateDescriptorHeap(ComPtr<ID3D12Device>& deivce, ComPtr<ID3D12DescriptorHeap>& heap, const Renderer::DescriptorType& type, int Numdescriptors,
 			D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);*/

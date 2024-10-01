@@ -12,9 +12,7 @@ namespace Renderer {
 	class D3D12SimulationApp :public D3D12App {
 	public:
 		D3D12SimulationApp(const int& width, const int& height);
-		virtual ~D3D12SimulationApp() {
-			delete mSmoke;
-		}
+		virtual ~D3D12SimulationApp();
 
 		bool Initialize() override;
 		bool InitGUI() override;
@@ -55,7 +53,7 @@ namespace Renderer {
 		void SmokeComputeDivergencePass(float& deltaTime);
 		void SmokeComputePressurePass(float& deltaTime);
 		void SmokeDiffusePass(float& deltaTime);
-		void SmokeVorticityPass(float& deltaTime, const std::string& psoName, int uavIndex, int srvIndex);
+		void SmokeVorticityPass(float& deltaTime, const std::string& psoName, int index);
 		void SmokeApplyPressurePass(float& deltaTime);
 
 		void RenderVolumMesh(float& deltaTime);

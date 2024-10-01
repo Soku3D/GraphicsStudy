@@ -14,8 +14,13 @@ Renderer::D3D12SimulationApp::D3D12SimulationApp(const int& width, const int& he
 	bRenderCubeMap = true;
 
 	m_appName = "SimulationApp";
-	
+
 	m_backbufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+}
+
+Renderer::D3D12SimulationApp::~D3D12SimulationApp()
+{
+	delete mSmoke;
 }
 
 bool Renderer::D3D12SimulationApp::Initialize()
@@ -59,7 +64,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	mCloud.Initiailize(128, 64, 64, DXGI_FORMAT_R16_FLOAT, m_device, m_commandList);
 
 	mSmoke = new Volume();
-	mSmoke->Initialize(256, 128, 128, m_device, m_commandList);
+	mSmoke->Initialize(128, 64, 64, m_device, m_commandList);
 
 	m_commandList->Close();
 	ID3D12CommandList* pCmdLists[] = {
@@ -167,8 +172,8 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 		mCFDConstantBuffer.mStructure.j = -1;
 	}
 	mCFDConstantBuffer.mStructure.color = colorLists[colorIndex];
-	mCFDConstantBuffer.mStructure.deltaTime = (deltaTime < 1 / 60.f ? deltaTime : 1 / 60.f);
-	//mCFDConstantBuffer.mStructure.deltaTime = 1 / 60.f;
+	//mCFDConstantBuffer.mStructure.deltaTime = (deltaTime < 1 / 60.f ? deltaTime : 1 / 60.f);
+	mCFDConstantBuffer.mStructure.deltaTime = 1 / 60.f;
 	mCFDConstantBuffer.mStructure.radius = 50.f;
 	mCFDConstantBuffer.mStructure.viscosity = mGuiViscosity;
 	mCFDConstantBuffer.mStructure.vorticity = mGuiVorticity;
@@ -191,7 +196,7 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::UpdateGUI(float& deltaTime)
 {
-	//ImGui::SliderFloat("Vorticity value", &mGuiVorticity, 0.f, 1.f);
+	ImGui::SliderFloat("Vorticity value", &mGuiVorticity, 0.f, 100.f);
 	//ImGui::SliderFloat("Viscosity value", &mGuiViscosity, 0.f, 10.f);
 	ImGui::SliderFloat("Source Strength", &mGuiSourceStrength, 0.1f, 3.f);
 }
@@ -287,9 +292,13 @@ void Renderer::D3D12SimulationApp::SmokeSimulationPass(float& deltaTime) {
 	bRenderSmoke = true;
 
 	//RenderCubeMap(deltaTime);
+	
 
 	// Sourcing Smoke Density
 	SmokeSourcingDensityPass(deltaTime);
+
+	SmokeVorticityPass(deltaTime, "SmokeComputeVorticity", 0);
+	SmokeVorticityPass(deltaTime, "SmokeVorticityConfinement", 1);
 
 	// Compute Divergence of Velocity
 	SmokeComputeDivergencePass(deltaTime);
@@ -301,14 +310,14 @@ void Renderer::D3D12SimulationApp::SmokeSimulationPass(float& deltaTime) {
 
 	RenderBoundingBox(deltaTime);
 	RenderVolumMesh(deltaTime);
-	
+
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
 		D3D12App::PostProcessing(deltaTime);
 		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 	}
 	else
 		D3D12App::CopyResourceToSwapChain(deltaTime);
-	//RenderFont(deltaTime);
+	RenderFont(deltaTime);
 }
 
 
@@ -689,7 +698,7 @@ void Renderer::D3D12SimulationApp::CFDComputePressurePass(float& deltaTime)
 		m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 		m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
 	}
-	
+
 
 	ThrowIfFailed(m_commandList->Close());
 
@@ -837,6 +846,9 @@ void Renderer::D3D12SimulationApp::ComputeVolumeDensityPass(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::SmokeSourcingDensityPass(float& deltaTime)
 {
+	CopyResource(m_commandList, mSmoke->GetDensityTempResource(), mSmoke->GetDensityResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	CopyResource(m_commandList, mSmoke->GetVelocityTempResource(), mSmoke->GetVelocityResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
 	auto& pso = computePsoList["SmokeSourcingDensity"];
 
 	ThrowIfFailed(m_commandAllocator->Reset());
@@ -934,7 +946,7 @@ void Renderer::D3D12SimulationApp::SmokeComputePressurePass(float& deltaTime)
 
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 
-	for (int i = 0; i <= 100; i++)
+	for (int i = 0; i < 20; i++)
 	{
 		if (i % 2 == 0) {
 			ID3D12DescriptorHeap* pHeaps[] = {
@@ -1040,10 +1052,9 @@ void Renderer::D3D12SimulationApp::SmokeDiffusePass(float& deltaTime)
 	PIXEndEvent(m_commandQueue.Get());
 }
 
-void Renderer::D3D12SimulationApp::SmokeVorticityPass(float& deltaTime, const std::string& psoName, int uavIndex, int srvIndex)
+void Renderer::D3D12SimulationApp::SmokeVorticityPass(float& deltaTime, const std::string& psoName, int index)
 {
 	auto& pso = computePsoList[psoName];
-
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
@@ -1051,11 +1062,11 @@ void Renderer::D3D12SimulationApp::SmokeVorticityPass(float& deltaTime, const st
 
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 	ID3D12DescriptorHeap* pHeaps[] = {
-		stableFluids.GetHeap()
+		mSmoke->GetVorticityHeap(index)
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
-	m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetHandle(uavIndex));
-	m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetHandle(srvIndex));
+	m_commandList->SetComputeRootDescriptorTable(0, mSmoke->GetVorticityHandle(index, 0));
+	m_commandList->SetComputeRootDescriptorTable(1, mSmoke->GetVorticityHandle(index, 1));
 	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 	m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
 
@@ -1068,7 +1079,6 @@ void Renderer::D3D12SimulationApp::SmokeVorticityPass(float& deltaTime, const st
 	FlushCommandQueue();
 
 	PIXEndEvent(m_commandQueue.Get());
-
 }
 
 
@@ -1088,11 +1098,9 @@ void Renderer::D3D12SimulationApp::RenderVolumMesh(float& deltaTime)
 		m_commandList->RSSetViewports(1, &m_viewport);
 		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
 
-	
-
 		// View Proj Matrix Constant Buffer 
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer.GetGPUVirtualAddress());
-		
+
 		if (bRenderCloud) {
 			// Texture SRV Heap 
 			ID3D12DescriptorHeap* ppSrvHeaps[] = { mCloud.GetTextureHeap() };

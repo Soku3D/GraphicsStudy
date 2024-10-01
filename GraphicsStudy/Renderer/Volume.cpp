@@ -34,8 +34,8 @@ void Volume::Initialize(const int& width, const int& height, const int& depth, M
 	mDivergence.Initiailize(width, height, depth, DXGI_FORMAT_R16_FLOAT, device, commandList);
 	mPressure.Initiailize(width, height, depth, DXGI_FORMAT_R16_FLOAT, device, commandList);
 	mPressureTemp.Initiailize(width, height, depth, DXGI_FORMAT_R16_FLOAT, device, commandList);
-	mVorticity.Initiailize(width, height, depth, DXGI_FORMAT_R16_FLOAT, device, commandList);
-	mBoundaryCondition.Initiailize(width, height, depth, DXGI_FORMAT_R8_SINT, device, commandList);
+	mVorticity.Initiailize(width, height, depth, DXGI_FORMAT_R16G16B16A16_FLOAT, device, commandList);
+	mBoundaryCondition.Initiailize(width, height, depth, DXGI_FORMAT_R32_SINT, device, commandList);
 
 	CopyDescriptors(device);
 
@@ -56,7 +56,12 @@ void Volume::CopyDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 
 	heapDesc.NumDescriptors = 5;
 	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mDivergenceHeap.ReleaseAndGetAddressOf())));
-
+	
+	heapDesc.NumDescriptors = 3;
+	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mComputeVorticityHeap.ReleaseAndGetAddressOf())));
+	heapDesc.NumDescriptors = 4;
+	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mVorticityConfinementHeap.ReleaseAndGetAddressOf())));
+	
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(mHeap->GetCPUDescriptorHandleForHeapStart());
 
 	device->CopyDescriptorsSimple(1, handle, mDensity.GetNSVUavCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV); // 0 density UAV
@@ -125,6 +130,21 @@ void Volume::CopyDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	handle.Offset(1, offset);
 	device->CopyDescriptorsSimple(1, handle, mBoundaryCondition.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
+	handle = mComputeVorticityHeap->GetCPUDescriptorHandleForHeapStart();
+	device->CopyDescriptorsSimple(1, handle, mVorticity.GetNSVUavCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	handle.Offset(1, offset);
+	device->CopyDescriptorsSimple(1, handle, mVelocity.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	handle.Offset(1, offset);
+	device->CopyDescriptorsSimple(1, handle, mBoundaryCondition.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	
+	handle = mVorticityConfinementHeap->GetCPUDescriptorHandleForHeapStart();
+	device->CopyDescriptorsSimple(1, handle, mVelocity.GetNSVUavCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	handle.Offset(1, offset);
+	device->CopyDescriptorsSimple(1, handle, mDensity.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	handle.Offset(1, offset);
+	device->CopyDescriptorsSimple(1, handle, mVorticity.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	handle.Offset(1, offset);
+	device->CopyDescriptorsSimple(1, handle, mBoundaryCondition.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 
 }

@@ -53,7 +53,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
     
         float3 divergencePressure = float3((p[1] - p[0]) / dx, (p[3] - p[2]) / dy, (p[5] - p[4]) / dz);
     
-        gVelocity[DTid].xyz -= divergencePressure;
+        gVelocity[DTid] -= float4(divergencePressure, 0.f);
     }
     
 
