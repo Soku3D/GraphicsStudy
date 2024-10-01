@@ -31,8 +31,8 @@
 
     <img src="GraphicsStudy/Renderer/Results/DLSSApp/241001-022.png" width="180" height="180">
     <img src="GraphicsStudy/Renderer/Results/DLSSApp/241001-025.png" width="180" height="180">
-    <img src="GraphicsStudy/Renderer/Results/PhysxSimulationApp/before.png" width="180" height="180">
-    <img src="GraphicsStudy/Renderer/Results/PhysxSimulationApp/after.png" width="180" height="180">
+    <img src="GraphicsStudy/Renderer/Results/PhysxSimulationApp/before.png" height="180">
+    <img src="GraphicsStudy/Renderer/Results/PhysxSimulationApp/after.png" height="180">
 
 
 ### Windows
