@@ -10,6 +10,11 @@ Core::Actor::Actor() :
 	mStandardDirection = mViewDirection;
 }
 
+Core::Actor::~Actor()
+{
+	mStaticMesh.reset();
+}
+
 void Core::Actor::Update(float deltaTime)
 {
 }
@@ -38,12 +43,18 @@ void Core::Actor::RenderNormal(const float& deltaTime, Microsoft::WRL::ComPtr<ID
 	}
 }
 
-
-
-
-void Core::Actor::SetStaticMeshComponent(StaticMesh* staticMesh)
+void Core::Actor::SetTexturePath(const std::wstring& path, int idx)
 {
-	mStaticMesh = staticMesh;
+	if (mStaticMesh != nullptr && mStaticMesh->meshCount > idx) {
+		mStaticMesh->SetTexturePath(path, idx);
+	}
+}
+
+void Core::Actor::SetMeshBoundingBox(const float& length)
+{
+	if (mStaticMesh != nullptr) {
+		mStaticMesh->SetBoundingBoxHalfLength(length);
+	}
 }
 
 std::wstring Core::Actor::GetTexturePath(int index) const

@@ -34,6 +34,7 @@ namespace Core {
 		void SetQuaternion(int deltaX, int deltaY);
 		void SetSpeed(float velocity);
 		void SetRotation(int deltaX, int deltaY);
+		void SetFov(const float& degree);
 
 	public:
 		DirectX::SimpleMath::Matrix GetViewMatrix() const;
@@ -42,6 +43,7 @@ namespace Core {
 
 		DirectX::SimpleMath::Vector3 GetForwardDirection() const;
 		DirectX::SimpleMath::Vector3 GetUpDirection() const;
+		DirectX::SimpleMath::Vector3 GetRightDirection() const;
 		float GetFov()  const { return m_fov; };
 		float GetFarPlane()  const { return m_farZ; };
 		float GetNeaPlane()  const { return m_nearZ; };

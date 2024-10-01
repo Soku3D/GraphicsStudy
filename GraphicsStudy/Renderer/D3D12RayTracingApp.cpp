@@ -1,5 +1,6 @@
 #include "D3D12RaytracingApp.h"
 #include "Raytracing.hlsl.h"
+#include "SimpleRaytracing.hlsl.h"
 
 
 using namespace std;
@@ -18,16 +19,14 @@ Renderer::D3D12RayTracingApp::D3D12RayTracingApp(const int& width, const int& he
 	bUseDefaultSceneApp = false;
 	bUseGUI = false;
 	m_appName = "RaytracingApp";
-	/*m_camera->SetPositionAndDirection(DirectX::SimpleMath::Vector3(0, 0, 0),
-		DirectX::SimpleMath::Vector3(0, 0, 1));*/
-		//m_camera->SetPositionAndDirection(DirectX::SimpleMath::Vector3(0, 0, 0),
-		//	DirectX::SimpleMath::Vector3(0, 0, 1));
+	m_camera->SetPositionAndDirection(DirectX::SimpleMath::Vector3(0, 0, 0.f),
+		DirectX::SimpleMath::Vector3(0, 0, 1));
+	m_camera->SetFov(60.f);
 }
 
 Renderer::D3D12RayTracingApp::~D3D12RayTracingApp()
 {
 	delete characterMesh;
-	//delete mCharacterMesh;
 	delete hitShaderTable;
 	std::cout << "~D3D12RayTracingApp" << std::endl;
 }
@@ -87,7 +86,7 @@ void Renderer::D3D12RayTracingApp::CreateStateObjects()
 {
 	CD3DX12_STATE_OBJECT_DESC raytracingPipeline{ D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE };
 	auto lib = raytracingPipeline.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
-	D3D12_SHADER_BYTECODE libdxil = CD3DX12_SHADER_BYTECODE((void*)g_pRaytracing, ARRAYSIZE(g_pRaytracing));
+	D3D12_SHADER_BYTECODE libdxil = CD3DX12_SHADER_BYTECODE((void*)g_pSimpleRaytracing, ARRAYSIZE(g_pSimpleRaytracing));
 	lib->SetDXILLibrary(&libdxil);
 	/*{
 		lib->DefineExport(rayGenerationShaderName);
@@ -469,8 +468,9 @@ void Renderer::D3D12RayTracingApp::CreateConstantBuffer()
 	ThrowIfFailed(m_sceneCB->Map(0, &range, reinterpret_cast<void**>(&pSceneBegin)));
 	memcpy(pSceneBegin, &m_sceneCBData, sizeof(RaytraingSceneConstantData));
 	
-	mCsBuffer.Initialize(m_device, m_commandList);
-	mPostprocessingConstantBuffer.Initialize(m_device, m_commandList);
+	D3D12App::CreateConstantBuffer();
+	//mCsBuffer.Initialize(m_device, m_commandList);
+	//mPostprocessingConstantBuffer.Initialize(m_device, m_commandList);
 	/*Utility::CreateConstantBuffer(m_device, m_commandList, mCsBuffer);
 	Utility::CreateConstantBuffer(m_device, m_commandList, mPostprocessingConstantBuffer);*/
 }
@@ -494,84 +494,80 @@ void Renderer::D3D12RayTracingApp::InitRayTracingScene()
 {
 	using DirectX::SimpleMath::Vector3;
 
-	characterMesh = new Core::StaticMesh();
-	DirectX::SimpleMath::Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
-	std::tuple<std::vector<RaytracingMeshData>, Animation::AnimationData> soldierData;
-	soldierData = GeometryGenerator::ReadFromFile<RaytracingVertex, uint32_t>("swat.fbx", false, true, tr);
-	//auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
-	characterMesh->Initialize(std::get<0>(soldierData), m_device, m_commandList,
-		Vector3(0.f, 0.f, 0.f),
-		Material(1.f, 1.f, 1.f, 0.5f),
-		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
-	//characterMesh->Initialize(GeometryGenerator::RTSphere(0.4f, 100, 100, L"worn-painted-metal_Albedo.dds"), m_device, m_commandList, Vector3(0.5, 0.4f, 0.f));
-	characterMesh->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
-	const wchar_t* names[] = {
-		L"HitGroupCharacter0",
-		L"HitGroupCharacter_Shadow0",
-		L"HitGroupCharacter1",
-		L"HitGroupCharacter_Shadow1",
-		L"HitGroupCharacter2",
-		L"HitGroupCharacter_Shadow2",
-	};
-	int nameIndex = 0;
-	for (size_t i = 0; i < characterMesh->meshCount; i++)
-	{
-		std::wstringstream wss, wssShadow;
-		characterHitGroupNames.push_back(names[nameIndex++]);
-		characterShadowHitGroupNames.push_back(names[nameIndex++]);
-	}
-	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 0);
-	characterMesh->SetTexturePath(L"Soldier_head_Albedo.dds", 1);
-	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
-	
-	mCharacter->SetStaticMeshComponent(characterMesh);
-	mCharacter->SetPosition(XMFLOAT3(0.f, 0.45f, 0.f));
+	//characterMesh = new Core::StaticMesh();
+	//DirectX::SimpleMath::Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
+	//std::tuple<std::vector<RaytracingMeshData>, Animation::AnimationData> soldierData;
+	//soldierData = GeometryGenerator::ReadFromFile<RaytracingVertex, uint32_t>("swat.fbx", false, true, tr);
+	////auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
+	//characterMesh->Initialize(std::get<0>(soldierData), m_device, m_commandList,
+	//	Vector3(0.f, 0.f, 0.f),
+	//	Material(1.f, 1.f, 1.f, 0.5f),
+	//	false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
+	////characterMesh->Initialize(GeometryGenerator::RTSphere(0.4f, 100, 100, L"worn-painted-metal_Albedo.dds"), m_device, m_commandList, Vector3(0.5, 0.4f, 0.f));
+	//characterMesh->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
+	//const wchar_t* names[] = {
+	//	L"HitGroupCharacter0",
+	//	L"HitGroupCharacter_Shadow0",
+	//	L"HitGroupCharacter1",
+	//	L"HitGroupCharacter_Shadow1",
+	//	L"HitGroupCharacter2",
+	//	L"HitGroupCharacter_Shadow2",
+	//};
+	//int nameIndex = 0;
+	//for (size_t i = 0; i < characterMesh->meshCount; i++)
+	//{
+	//	std::wstringstream wss, wssShadow;
+	//	characterHitGroupNames.push_back(names[nameIndex++]);
+	//	characterShadowHitGroupNames.push_back(names[nameIndex++]);
+	//}
+	//characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 0);
+	//characterMesh->SetTexturePath(L"Soldier_head_Albedo.dds", 1);
+	//characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
+	//
+	//mCharacter->SetStaticMeshComponent(characterMesh);
+	//mCharacter->SetPosition(XMFLOAT3(0.f, 0.45f, 0.f));
 
-	std::shared_ptr<Core::StaticMesh> box = std::make_shared<Core::StaticMesh>();
-	//sphere1->Initialize(GeometryGenerator::RTSphere(0.45f, 100, 100), m_device, m_commandList, Vector3(-0.5, 0, 0));
-	box->Initialize(GeometryGenerator::RTBox(0.4f, L"DiamondPlate008C_4K-PNG_Albedo.dds"), m_device, m_commandList, Vector3(-0.5, 0.4f, 0.5));
-	box->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
-	hitGroupNames.push_back(L"HitGroupSphere1");
-	ShadowhitGroupNames.push_back(L"HitGroupSphere1_Shadow");
+	//std::shared_ptr<Core::StaticMesh> box = std::make_shared<Core::StaticMesh>();
+	////sphere1->Initialize(GeometryGenerator::RTSphere(0.45f, 100, 100), m_device, m_commandList, Vector3(-0.5, 0, 0));
+	//box->Initialize(GeometryGenerator::RTBox(0.4f, L"DiamondPlate008C_4K-PNG_Albedo.dds"), m_device, m_commandList, Vector3(-0.5, 0.4f, 0.5));
+	//box->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
+	//hitGroupNames.push_back(L"HitGroupSphere1");
+	//ShadowhitGroupNames.push_back(L"HitGroupSphere1_Shadow");
 
-	std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
-	sphere->Initialize(GeometryGenerator::RTSphere(0.4f, 100, 100, L"worn-painted-metal_Albedo.dds"), m_device, m_commandList, Vector3(0.5, 0.4f, 0.f));
-	//sphere2->Initialize(GeometryGenerator::RTBox(0.4f, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.5, 0, 0.5));
-	sphere->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
-	hitGroupNames.push_back(L"HitGroupSphere2");
-	ShadowhitGroupNames.push_back(L"HitGroupSphere2_Shadow");
+	//std::shared_ptr<Core::StaticMesh> sphere = std::make_shared<Core::StaticMesh>();
+	//sphere->Initialize(GeometryGenerator::RTSphere(0.4f, 100, 100, L"worn-painted-metal_Albedo.dds"), m_device, m_commandList, Vector3(0.5, 0.4f, 0.f));
+	////sphere2->Initialize(GeometryGenerator::RTBox(0.4f, L"worn-painted-metal_albedo.png"), m_device, m_commandList, Vector3(0.5, 0, 0.5));
+	//sphere->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
+	//hitGroupNames.push_back(L"HitGroupSphere2");
+	//ShadowhitGroupNames.push_back(L"HitGroupSphere2_Shadow");
 
-	std::shared_ptr<Core::StaticMesh> plane = std::make_shared<Core::StaticMesh>();
-	plane->Initialize(GeometryGenerator::RTBox(100.f, 1.f, 100.f), m_device, m_commandList, Vector3(0.0, -1.0f, 0.f));
-	plane->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
-	hitGroupNames.push_back(L"HitGroupPlane");
-	ShadowhitGroupNames.push_back(L"HitGroupPlane_Shadow");
+	//std::shared_ptr<Core::StaticMesh> plane = std::make_shared<Core::StaticMesh>();
+	//plane->Initialize(GeometryGenerator::RTBox(100.f, 1.f, 100.f), m_device, m_commandList, Vector3(0.0, -1.0f, 0.f));
+	//plane->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
+	//hitGroupNames.push_back(L"HitGroupPlane");
+	//ShadowhitGroupNames.push_back(L"HitGroupPlane_Shadow");
 
-	std::shared_ptr<Core::StaticMesh> cubeMap = std::make_shared<Core::StaticMesh>();
+	/*std::shared_ptr<Core::StaticMesh> cubeMap = std::make_shared<Core::StaticMesh>();
 	cubeMap->Initialize(GeometryGenerator::RTCubeMapBox(100.f), m_device, m_commandList);
 	cubeMap->SetTexturePath(cubeMapTextureName);
 	cubeMap->SetIsCubeMap(true);
 	cubeMap->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
 	hitGroupNames.push_back(L"HitGroupCube");
-	ShadowhitGroupNames.push_back(L"HitGroupCube_Shadow");
+	ShadowhitGroupNames.push_back(L"HitGroupCube_Shadow");*/
 
-	m_staticMeshes.push_back(cubeMap);
-	m_staticMeshes.push_back(box);
-	m_staticMeshes.push_back(sphere);
-	m_staticMeshes.push_back(plane);
+	//m_staticMeshes.push_back(cubeMap);
+	//m_staticMeshes.push_back(box);
+	//m_staticMeshes.push_back(sphere);
+	//m_staticMeshes.push_back(plane);
 
-	//for (size_t i = 0; i < soldier.size(); i++)
-	//{
-	//	std::shared_ptr<Core::StaticMesh> character = std::make_shared<Core::StaticMesh>();
-	//	character->Initialize(soldier[i], m_device, m_commandList,
-	//		Vector3(0.f, 0.45f, 0.f),
-	//		Material(1.f, 1.f, 1.f, 1.f),
-	//		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
-	//	character->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
-	//	character->SetTexturePath(pathList[i]);
-	//	hitGroupNames.push_back(L"HitGroupCharacter"+ i);
-	//	m_staticMeshes.push_back(character);
-	//}
+	float y = 0.1f / sqrt(3.0);
+	float x = y * m_camera->GetAspectRatio();
+	std::shared_ptr<Core::StaticMesh> triangle = std::make_shared<Core::StaticMesh>();
+	triangle->Initialize(GeometryGenerator::RTRectangle(x, y, L"worn-painted-metal_Albedo.dds"), m_device, m_commandList, Vector3(0.f, 0.f, 0.1f));
+	triangle->BuildAccelerationStructures<RaytracingVertex, uint32_t>(m_device, m_dxrCommandList);
+	hitGroupNames.push_back(L"HitTriangle");
+	ShadowhitGroupNames.push_back(L"HitTriangle_Shadow");
+	m_staticMeshes.push_back(triangle);
 }
 
 // TLAS 생성
@@ -681,14 +677,18 @@ void Renderer::D3D12RayTracingApp::Update(float& deltaTime)
 	using DirectX::SimpleMath::Vector4;
 	using DirectX::SimpleMath::Matrix;
 
-	//m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
+	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
+	m_camera->Update(deltaTime);
+/*
 	m_inputHandler->ExicuteCommand(mCharacter.get(), deltaTime, bIsFPSMode);
-	mCharacter->Update(deltaTime);
-	//m_sceneCBData.cameraPosition = m_camera->GetPosition();
-	m_sceneCBData.cameraPosition = mCharacter->GetCameraPosition();
+	mCharacter->Update(deltaTime);*/
+	m_sceneCBData.cameraPosition = m_camera->GetPosition();
+	//m_sceneCBData.cameraPosition = mCharacter->GetCameraPosition();
 
-	Matrix view = mCharacter->GetViewMatrix();
-	Matrix projection = mCharacter->GetProjMatrix() * DirectX::XMMatrixTranslation(0, 0, m_camera->d);
+	//Matrix view = mCharacter->GetViewMatrix();
+	//Matrix projection = mCharacter->GetProjMatrix() * DirectX::XMMatrixTranslation(0, 0, m_camera->d);
+	Matrix view = m_camera->GetViewMatrix();
+	Matrix projection = m_camera->GetProjMatrix();
 
 	projection = projection.Invert();
 	projection = projection.Transpose();
@@ -709,31 +709,31 @@ void Renderer::D3D12RayTracingApp::Update(float& deltaTime)
 	memcpy(pSceneBegin, &m_sceneCBData, sizeof(SceneConstantBuffer));
 	
 
-	float delAngle = (3.14f / 3.f) * deltaTime;
-	static float angle = 0.f;
-	angle += delAngle;
-	Matrix rotate = DirectX::XMMatrixRotationY(angle);
-	m_staticMeshes[2]->UpdateWorldRow(rotate);
+	//float delAngle = (3.14f / 3.f) * deltaTime;
+	//static float angle = 0.f;
+	//angle += delAngle;
+	//Matrix rotate = DirectX::XMMatrixRotationY(angle);
+	//m_staticMeshes[2]->UpdateWorldRow(rotate);
 
-	for (auto& mesh : m_staticMeshes) {
-		mesh->Update(deltaTime);
-	}
+	//for (auto& mesh : m_staticMeshes) {
+	//	mesh->Update(deltaTime);
+	//}
 
-	// instantce Model 행렬은 Transpose 후 적용
-	rotate = rotate.Transpose();
-	DirectX::SimpleMath::Matrix Model = mCharacter->GetTransformMatrix();
-	//Model = Model.Transpose();
-	for (int i = 0; i < 3; i++)
-	{
-		for (int j = 0; j < 4; j++)
-		{
-			m_instances[2].Transform[i][j] = rotate.m[i][j];
-			for (size_t k = 0; k < mCharacter->GetMeshCount(); k++)
-			{
-				m_instances[k+characterInstanceId].Transform[i][j] = Model.m[i][j];
-			}
-		}
-	}
+	//// instantce Model 행렬은 Transpose 후 적용
+	//rotate = rotate.Transpose();
+	//DirectX::SimpleMath::Matrix Model = mCharacter->GetTransformMatrix();
+	////Model = Model.Transpose();
+	//for (int i = 0; i < 3; i++)
+	//{
+	//	for (int j = 0; j < 4; j++)
+	//	{
+	//		m_instances[2].Transform[i][j] = rotate.m[i][j];
+	//		for (size_t k = 0; k < mCharacter->GetMeshCount(); k++)
+	//		{
+	//			m_instances[k+characterInstanceId].Transform[i][j] = Model.m[i][j];
+	//		}
+	//	}
+	//}
 	UINT64 datasize = (UINT64)(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * m_instances.size());
 	m_instanceDescs->Map(0, nullptr, reinterpret_cast<void**>(&pInstancesMappedData));
 	memcpy(pInstancesMappedData, m_instances.data(), datasize);

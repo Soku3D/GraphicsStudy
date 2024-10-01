@@ -17,7 +17,7 @@ namespace Renderer {
 	public:
 		D3D12PassApp(const int& width, const int& height);
 		virtual ~D3D12PassApp() {
-			delete characterMesh;
+			std::cout << "~D3D12PassApp" << std::endl;
 		}
 
 		bool Initialize() override;
@@ -46,10 +46,7 @@ namespace Renderer {
 		//virtual void PostProcessing(float& deltaTime);
 
 	protected:
-		Core::StaticMesh* characterMesh;
-		CubeMapConstantData* m_pCubeMapConstantData;
-		void* m_pCubeMapCbufferBegin = nullptr;
-		ComPtr<ID3D12Resource> m_cubeMapConstantBuffer;
+		Core::ConstantBuffer<CubeMapConstantData> mCubeMapConstantData;
 		
 	protected:
 		bool bRenderLights = true;

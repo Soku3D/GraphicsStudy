@@ -85,6 +85,11 @@ namespace Core {
 		}
 	}
 
+	void Camera::SetFov(const float& degree)
+	{
+		m_fov = DirectX::XMConvertToRadians(degree);
+	}
+
 	void Camera::RotateDirection() {
 		using DirectX::SimpleMath::Vector3;
 	/*	if (mViewDirection.Dot(Vector3(0.f, 1.f, 0.f)) < 0.99f && mViewDirection.Dot(Vector3(0.f, -1.f, 0.f)) > -0.99f) {
@@ -152,5 +157,9 @@ namespace Core {
 	DirectX::SimpleMath::Vector3 Camera::GetUpDirection() const
 	{
 		return mUpDirection;
+	}
+	DirectX::SimpleMath::Vector3 Camera::GetRightDirection() const
+	{
+		return mRightDirection;
 	}
 }

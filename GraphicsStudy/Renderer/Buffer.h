@@ -13,6 +13,7 @@ namespace Core {
 	{
 	public:
 		ConstantBuffer();
+		~ConstantBuffer();
 		
 		void Initialize(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 		ID3D12Resource** GetAddressOf() { return mSimuationConstantBuffer.ReleaseAndGetAddressOf(); }
@@ -22,7 +23,7 @@ namespace Core {
 		{
 			memcpy(pSimulationConstant, &mStructure, sizeof(ConstantStructure));
 		}
-		D3D12_GPU_VIRTUAL_ADDRESS GetGpuAddress() { return mSimuationConstantBuffer->GetGPUVirtualAddress(); }
+		D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress() { return mSimuationConstantBuffer->GetGPUVirtualAddress(); }
 		ConstantStructure mStructure;
 	private:
 		UINT bufferSize;
@@ -38,6 +39,12 @@ namespace Core {
 	}
 
 	template<typename ConstantStructure>
+	inline ConstantBuffer<ConstantStructure>::~ConstantBuffer()
+	{
+		pSimulationConstant = nullptr;
+	}
+
+	template<typename ConstantStructure>
 	inline void ConstantBuffer<ConstantStructure>::Initialize(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
 	{
 		ThrowIfFailed(
@@ -47,7 +54,7 @@ namespace Core {
 				&CD3DX12_RESOURCE_DESC::Buffer(sizeof(ConstantStructure)),
 				D3D12_RESOURCE_STATE_GENERIC_READ,
 				nullptr,
-				IID_PPV_ARGS(mSimuationConstantBuffer.GetAddressOf())));
+				IID_PPV_ARGS(mSimuationConstantBuffer.ReleaseAndGetAddressOf())));
 
 		CD3DX12_RANGE range(0, 0);
 		ThrowIfFailed(mSimuationConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&pSimulationConstant)));

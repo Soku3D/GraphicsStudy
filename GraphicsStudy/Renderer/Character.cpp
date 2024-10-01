@@ -12,6 +12,12 @@ Core::Character::Character()
 	m_delCosine = cos(m_delTheta / 2.f);
 }
 
+Core::Character::~Character()
+{
+	std::cout << "~Character\n";
+	delete mCamera;
+}
+
 size_t Core::Character::GetMeshCount() const
 {
 	if (mStaticMesh != nullptr) {

@@ -294,6 +294,7 @@
     <FxCompile Include="SmokeVorticityConfinementCS.hlsl" />
     <FxCompile Include="RenderMotionVectorPS.hlsl" />
     <FxCompile Include="RenderMotionVectorVS.hlsl" />
+    <FxCompile Include="SimpleRaytracing.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />

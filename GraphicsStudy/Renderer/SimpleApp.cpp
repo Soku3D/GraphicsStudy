@@ -11,7 +11,7 @@ Renderer::SimpleApp::SimpleApp(const int& width, const int& height) :
 {
 	assert(m_pApp == nullptr);
 	m_pApp = this;
-	m_camera = std::make_shared<Core::Camera>();
+	m_camera = std::make_unique<Core::Camera>();
 	m_inputHandler = std::make_unique<InputHandler>();
 	mCharacter = std::make_unique<Core::Character>();
 
@@ -28,8 +28,8 @@ Renderer::SimpleApp::~SimpleApp()
 	
 	m_mainWnd = NULL;
 	m_pApp = nullptr;
-	m_camera.reset();
-	mCharacter.reset();
+	//m_camera.reset();
+	//mCharacter.reset();
 }
 
 bool Renderer::SimpleApp::Initialize()

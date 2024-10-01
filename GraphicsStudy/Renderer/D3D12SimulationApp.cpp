@@ -347,7 +347,7 @@ void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
 	m_commandList->SetComputeRootDescriptorTable(0, particle.GetUavHandle());
 	m_commandList->SetComputeRootDescriptorTable(1, particle.GetHandle(3)); // random srv
 
-	m_commandList->SetComputeRootConstantBufferView(2, mSimulationConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootConstantBufferView(2, mSimulationConstantBuffer.GetGPUVirtualAddress());
 	UINT dispatchX = (particle.GetParticleCount() - 1 + SIMULATION_PARTICLE_SIZE) / SIMULATION_PARTICLE_SIZE;
 	m_commandList->Dispatch(dispatchX, 1, 1);
 	//m_commandList->ExecuteIndirect(,)
@@ -377,7 +377,7 @@ void Renderer::D3D12SimulationApp::SPHSimulationPass(float& deltaTime, const std
 	//m_commandList->ClearUnorderedAccessViewUint(,)
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, sphParticle.GetUavHandle());
-	m_commandList->SetComputeRootConstantBufferView(1, mSimulationConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootConstantBufferView(1, mSimulationConstantBuffer.GetGPUVirtualAddress());
 	UINT dispatchX = (sphParticle.GetParticleCount() - 1 + SIMULATION_PARTICLE_SIZE) / SIMULATION_PARTICLE_SIZE;
 	m_commandList->Dispatch(dispatchX, 1, 1);
 	//m_commandList->ExecuteIndirect(,)
@@ -423,7 +423,7 @@ void Renderer::D3D12SimulationApp::PostProcessing(float& deltaTime, const std::s
 		UINT offset = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(resourceUavHeap->GetGPUDescriptorHandleForHeapStart(), heapIndex, offset);
 		m_commandList->SetComputeRootDescriptorTable(0, handle);
-		m_commandList->SetComputeRootConstantBufferView(1, mSimulationConstantBuffer.GetGpuAddress());
+		m_commandList->SetComputeRootConstantBufferView(1, mSimulationConstantBuffer.GetGPUVirtualAddress());
 		//m_commandList->SetComputeRootConstantBufferView(1, m_csBuffer->GetGPUVirtualAddress());
 		m_commandList->Dispatch((UINT)ceil(m_screenWidth / 32.f), (UINT)ceil(m_screenHeight / 32.f), 1);
 
@@ -583,7 +583,7 @@ void Renderer::D3D12SimulationApp::CFDPass(float& deltaTime, const std::string& 
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetHandle(0));
-	m_commandList->SetComputeRootConstantBufferView(1, mCFDConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootConstantBufferView(1, mCFDConstantBuffer.GetGPUVirtualAddress());
 	m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
 
 	ThrowIfFailed(m_commandList->Close());
@@ -615,7 +615,7 @@ void Renderer::D3D12SimulationApp::CFDAdvectionPass(float& deltaTime)
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetHandle(0));
 	m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetHandle(10));
-	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 	m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
 
 	ThrowIfFailed(m_commandList->Close());
@@ -644,7 +644,7 @@ void Renderer::D3D12SimulationApp::CFDComputeDivergencePass(float& deltaTime)
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetHandle(2));
 	m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetHandle(6));
-	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 	m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
 
 	ThrowIfFailed(m_commandList->Close());
@@ -686,7 +686,7 @@ void Renderer::D3D12SimulationApp::CFDComputePressurePass(float& deltaTime)
 			m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetPTHandle(0));
 			m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetPTHandle(1));
 		}
-		m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+		m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 		m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
 	}
 	
@@ -719,7 +719,7 @@ void Renderer::D3D12SimulationApp::CFDDiffusePass(float& deltaTime)
 				stableFluids.GetHeap()
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
-	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 	for (int i = 0; i < 10; i++)
 	{
 		if (i % 2 != 0)
@@ -733,7 +733,7 @@ void Renderer::D3D12SimulationApp::CFDDiffusePass(float& deltaTime)
 			m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetHandle(5));
 		}
 
-		m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+		m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 		m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
 	}
 
@@ -763,7 +763,7 @@ void Renderer::D3D12SimulationApp::CFDVorticityPass(float& deltaTime, const std:
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetHandle(uavIndex));
 	m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetHandle(srvIndex));
-	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 	m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
 
 	ThrowIfFailed(m_commandList->Close());
@@ -793,7 +793,7 @@ void Renderer::D3D12SimulationApp::CFDApplyPressurePass(float& deltaTime)
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetHandle(1)); // Velocity UAV
 	m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetHandle(9)); // Pressure SRV
-	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 	m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
 
 	ThrowIfFailed(m_commandList->Close());
@@ -821,7 +821,7 @@ void Renderer::D3D12SimulationApp::ComputeVolumeDensityPass(float& deltaTime)
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, mCloud.GetUavGPUHandle()); // density UAV
-	m_commandList->SetComputeRootConstantBufferView(1, mVolumeConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootConstantBufferView(1, mVolumeConstantBuffer.GetGPUVirtualAddress());
 	m_commandList->Dispatch((UINT)std::ceil(mCloud.GetWidth() / 16.f), (UINT)std::ceil(mCloud.GetHeight() / 16.f), (UINT)std::ceil(mCloud.GetDepth() / 4.f));
 
 	ThrowIfFailed(m_commandList->Close());
@@ -849,7 +849,7 @@ void Renderer::D3D12SimulationApp::SmokeSourcingDensityPass(float& deltaTime)
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, mSmoke->GetHandle(0));
-	m_commandList->SetComputeRootConstantBufferView(1, mCFDConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootConstantBufferView(1, mCFDConstantBuffer.GetGPUVirtualAddress());
 	mSmoke->Dispatch(m_commandList);
 
 	ThrowIfFailed(m_commandList->Close());
@@ -881,7 +881,7 @@ void Renderer::D3D12SimulationApp::SmokeAdvectionPass(float& deltaTime)
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, mSmoke->GetHandle(0)); // density velocity uav
 	m_commandList->SetComputeRootDescriptorTable(1, mSmoke->GetHandle(12)); // density velocity Temp srv
-	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 	mSmoke->Dispatch(m_commandList);
 
 	ThrowIfFailed(m_commandList->Close());
@@ -910,7 +910,7 @@ void Renderer::D3D12SimulationApp::SmokeComputeDivergencePass(float& deltaTime)
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, mSmoke->GetDivergenceHandle(0)); // divergence pressure pressureTemp uav
 	m_commandList->SetComputeRootDescriptorTable(1, mSmoke->GetDivergenceHandle(3)); // velocity srv
-	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 	mSmoke->Dispatch(m_commandList);
 
 	ThrowIfFailed(m_commandList->Close());
@@ -952,7 +952,7 @@ void Renderer::D3D12SimulationApp::SmokeComputePressurePass(float& deltaTime)
 			m_commandList->SetComputeRootDescriptorTable(0, mSmoke->GetCPHandle(1, 0));
 			m_commandList->SetComputeRootDescriptorTable(1, mSmoke->GetCPHandle(1, 1));
 		}
-		m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+		m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 		mSmoke->Dispatch(m_commandList);
 	}
 
@@ -983,7 +983,7 @@ void Renderer::D3D12SimulationApp::SmokeApplyPressurePass(float& deltaTime)
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, mSmoke->GetHandle(1)); // Velocity UAV
 	m_commandList->SetComputeRootDescriptorTable(1, mSmoke->GetHandle(10)); // Pressure SRV
-	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 	mSmoke->Dispatch(m_commandList);
 
 	ThrowIfFailed(m_commandList->Close());
@@ -1011,7 +1011,7 @@ void Renderer::D3D12SimulationApp::SmokeDiffusePass(float& deltaTime)
 				stableFluids.GetHeap()
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
-	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 	for (int i = 0; i < 10; i++)
 	{
 		if (i % 2 != 0)
@@ -1025,7 +1025,7 @@ void Renderer::D3D12SimulationApp::SmokeDiffusePass(float& deltaTime)
 			m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetHandle(5));
 		}
 
-		m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+		m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 		m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
 	}
 
@@ -1056,7 +1056,7 @@ void Renderer::D3D12SimulationApp::SmokeVorticityPass(float& deltaTime, const st
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
 	m_commandList->SetComputeRootDescriptorTable(0, stableFluids.GetHandle(uavIndex));
 	m_commandList->SetComputeRootDescriptorTable(1, stableFluids.GetHandle(srvIndex));
-	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGpuAddress());
+	m_commandList->SetComputeRootConstantBufferView(2, mCFDConstantBuffer.GetGPUVirtualAddress());
 	m_commandList->Dispatch((UINT)std::ceil(m_screenWidth / 32.f), (UINT)std::ceil(m_screenHeight / 32.f), 1);
 
 	ThrowIfFailed(m_commandList->Close());
@@ -1091,7 +1091,7 @@ void Renderer::D3D12SimulationApp::RenderVolumMesh(float& deltaTime)
 	
 
 		// View Proj Matrix Constant Buffer 
-		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
+		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer.GetGPUVirtualAddress());
 		
 		if (bRenderCloud) {
 			// Texture SRV Heap 
@@ -1135,7 +1135,7 @@ void Renderer::D3D12SimulationApp::RenderBoundingBox(float& deltaTime)
 	m_commandList->RSSetScissorRects(1, &m_scissorRect);
 	m_commandList->RSSetViewports(1, &m_viewport);
 
-	m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer->GetGPUVirtualAddress());
+	m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer.GetGPUVirtualAddress());
 
 	if (bRenderCloud)
 		mCloud.RenderBoundingBox(deltaTime, m_commandList);
@@ -1173,10 +1173,10 @@ void Renderer::D3D12SimulationApp::RenderCubeMap(float& deltaTime)
 		m_commandList->RSSetViewports(1, &m_viewport);
 
 		// View Proj Matrix Constant Buffer 
-		m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer->GetGPUVirtualAddress());
+		m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer.GetGPUVirtualAddress());
 
 		//CubeMap Expose & LodLevel
-		m_commandList->SetGraphicsRootConstantBufferView(2, mCubeMapConstantBuffer.GetGpuAddress());
+		m_commandList->SetGraphicsRootConstantBufferView(2, mCubeMapConstantBuffer.GetGPUVirtualAddress());
 
 		// CubeMap Heap 
 		ID3D12DescriptorHeap* ppCubeHeaps[] = { m_cubeMapTextureHeap.Get() };

@@ -722,14 +722,89 @@ PbrMeshData GeometryGenerator::PbrUseTesslationSphere(const float& radius, const
 
 RaytracingMeshData GeometryGenerator::RTTriangle(const float& length, const std::wstring& texturePath)
 {
-	return RaytracingMeshData();
+	RaytracingMeshData data;
+
+	float x = (float)sqrt(3);
+	float l = length;
+
+	Vector3 n = Vector3(0, 0, 1);
+	Vector3 uv0 = Vector3(0, 1, 0);
+	Vector3 uv1 = Vector3(0, 0, 0);
+	Vector3 uv2 = Vector3(1, 0, 0);
+	Vector3 uv3 = Vector3(1, 1, 0);
+
+	std::vector<RaytracingVertex> vertices = {
+		{Vector3(-l*x*0.5f, -l * 0.5f, 0.0f),n, uv0, uv0 },
+		{Vector3(0.f, l , 0.0f),n, uv1, uv1},
+		{Vector3(l * x * 0.5f, -l * 0.5f, 0.0f),n, uv2, uv2},
+	};
+	std::vector<uint32_t> indices = {
+		0, 1, 2
+	};
+	ComputeTangent(vertices[0], vertices[1], vertices[2]);
+
+	data.Initialize(vertices, indices, texturePath);
+
+	return data;
 }
 
 RaytracingMeshData GeometryGenerator::RTRectangle(const float& length, const std::wstring& texturePath)
 {
-	return RaytracingMeshData();
+	RaytracingMeshData data;
+
+	float l = length;
+
+	Vector3 n = Vector3(0, 0, 1);
+	Vector3 uv0 = Vector3(0, 1, 0);
+	Vector3 uv1 = Vector3(0, 0, 0);
+	Vector3 uv2 = Vector3(1, 0, 0);
+	Vector3 uv3 = Vector3(1, 1, 0);
+
+	std::vector<RaytracingVertex> vertices = {
+		{Vector3(-l, -l, 0.0f), n, uv0, uv0 },
+		{Vector3(-l, l, 0.0f), n, uv1, uv0 },
+		{Vector3(l, l, 0.0f), n, uv2, uv0 },
+		{Vector3(l, -l, 0.0f), n, uv3, uv0 },
+	};
+	std::vector<uint32_t> indices = {
+		0, 1, 2, 0 ,2, 3
+	};
+	ComputeTangent(vertices[0], vertices[1], vertices[2]);
+	ComputeTangent(vertices[0], vertices[2], vertices[3]);
+
+	data.Initialize(vertices, indices, texturePath);
+
+	return data;
 }
 
+RaytracingMeshData GeometryGenerator::RTRectangle(const float& x, const float& y, const std::wstring& texturePath)
+{
+	RaytracingMeshData data;
+
+
+
+	Vector3 n = Vector3(0, 0, 1);
+	Vector3 uv0 = Vector3(0, 1, 0);
+	Vector3 uv1 = Vector3(0, 0, 0);
+	Vector3 uv2 = Vector3(1, 0, 0);
+	Vector3 uv3 = Vector3(1, 1, 0);
+
+	std::vector<RaytracingVertex> vertices = {
+		{Vector3(-x, -y, 0.0f), n, uv0, uv0 },
+		{Vector3(-x, y, 0.0f), n, uv1, uv0 },
+		{Vector3(x, y, 0.0f), n, uv2, uv0 },
+		{Vector3(x, -y, 0.0f), n, uv3, uv0 },
+	};
+	std::vector<uint32_t> indices = {
+		0, 1, 2, 0 ,2, 3
+	};
+	ComputeTangent(vertices[0], vertices[1], vertices[2]);
+	ComputeTangent(vertices[0], vertices[2], vertices[3]);
+
+	data.Initialize(vertices, indices, texturePath);
+
+	return data;
+}
 RaytracingMeshData GeometryGenerator::RTBox(const float& length, const std::wstring& texturePath)
 {
 	return RTBox(length, length, length, texturePath);

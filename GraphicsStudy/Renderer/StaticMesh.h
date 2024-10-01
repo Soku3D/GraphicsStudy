@@ -10,11 +10,7 @@ namespace Core {
 	public:
 
 		StaticMesh();
-		~StaticMesh() {
-			m_objectConstantData = nullptr;
-			m_objectConstantBuffer.Reset();
-			m_pCbvDataBegin = nullptr;
-		};
+		virtual ~StaticMesh();
 
 		std::vector<Animation::AnimationClip::Key> m_keys;
 		std::string m_name;

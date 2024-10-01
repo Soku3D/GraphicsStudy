@@ -6,9 +6,7 @@ namespace Core {
 	class Character : public Actor {
 	public:
 		Character();
-		virtual ~Character() {
-			//delete mCamera;
-		}
+		virtual ~Character();
 
 	public:
 		void Update(float deltaTime) override;

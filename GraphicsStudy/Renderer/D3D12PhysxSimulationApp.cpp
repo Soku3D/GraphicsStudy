@@ -267,20 +267,17 @@ void Renderer::D3D12PhysxSimulationApp::InitScene()
 	m_screenMesh = std::make_shared<Core::StaticMesh>();
 	m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
 
-	characterMesh = new Core::StaticMesh();
 	DirectX::SimpleMath::Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
-	auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
-	characterMesh->Initialize(soldier, m_device, m_commandList,
-		Vector3(0.f, 0.f, 0.f),
-		Material(1.f, 1.f, 1.f, 1.f),
-		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
-	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 0);
-	characterMesh->SetTexturePath(L"Soldier_Body_head.dds", 1);
-	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
-	characterMesh->SetBoundingBoxHalfLength(1.f);
-	mCharacter->SetStaticMeshComponent(characterMesh);
-	mCharacter->SetPosition(XMFLOAT3(1.3f, 0.45f, -2.f));
-	mCharacter->SetVelocity(3.f);
+	std::tuple<std::vector<PbrMeshData>, Animation::AnimationData> soldierData;
+	soldierData = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
+	soldier = std::get<0>(soldierData);
+
+	mCharacter->InitStaticMesh(soldier, m_device, m_commandList);
+	mCharacter->SetPosition(XMFLOAT3(0, 1.475f, 0));
+	mCharacter->SetTexturePath(L"Soldier_Body_Albedo.dds", 0);
+	mCharacter->SetTexturePath(L"Soldier_head_Albedo.dds", 1);
+	mCharacter->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
+	mCharacter->SetMeshBoundingBox(1.f);
 }
 
 void Renderer::D3D12PhysxSimulationApp::CreateDynamicBox(const DirectX::SimpleMath::Vector3& position, const DirectX::SimpleMath::Vector3& velocityDir, float velocity, float halfExtend)

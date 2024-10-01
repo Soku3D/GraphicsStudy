@@ -24,6 +24,10 @@ namespace Renderer {
 #include "SteamOnlineSystem.h"
 #include "GameState.h"
 
+#include <sl.h>
+#include <sl_dlss.h>
+#include <sl_consts.h>
+
 using Microsoft::WRL::ComPtr;
 
 namespace Renderer {
@@ -45,7 +49,7 @@ namespace Renderer {
 		bool InitGUI() override;
 		bool InitDirectX() override;
 		void OnResize() override;
-		
+
 		void Update(float& deltaTime) override;
 		void UpdateGUI(float& deltaTime) override;
 		void Render(float& deltaTime) override;
@@ -79,14 +83,14 @@ namespace Renderer {
 		ID3D12Resource* HDRRenderTargetBuffer() const;
 
 		ID3D12Resource* HDRRenderTargetBuffer2() const;
-		
+
 		D3D12_CPU_DESCRIPTOR_HANDLE MsaaDepthStencilView() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE HDRDepthStencilView() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE HDRUnorderedAccesslView() const;
 
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE MsaaRenderTargetView() const;
-		
+
 		D3D12_CPU_DESCRIPTOR_HANDLE HDRRendertargetView() const;
 
 		void ResolveSubresource(ComPtr<ID3D12GraphicsCommandList>& commandList, ID3D12Resource* dest, ID3D12Resource* src,
@@ -104,9 +108,9 @@ namespace Renderer {
 		void CopyResourceToSwapChain(float& deltaTime, ID3D12DescriptorHeap* heap, D3D12_GPU_DESCRIPTOR_HANDLE handle);
 
 		void CreateDepthBuffer(ComPtr<ID3D12Resource>& buffer, D3D12_CPU_DESCRIPTOR_HANDLE& handle, bool bUseMsaa);
-		void CreateResourceBuffer(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_RESOURCE_FLAGS flag, 
+		void CreateResourceBuffer(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_RESOURCE_FLAGS flag,
 			D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATES resourceState = D3D12_RESOURCE_STATE_RENDER_TARGET, bool bUseClear = true);
-		void CreateResourceView(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_CPU_DESCRIPTOR_HANDLE& handle, 
+		void CreateResourceView(ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_CPU_DESCRIPTOR_HANDLE& handle,
 			ComPtr<ID3D12Device5>& deivce, const Renderer::DescriptorType& type);
 		void CaptureHDRBufferToPNG() override;
 		void CaptureBackBufferToPNG() override;
@@ -114,12 +118,16 @@ namespace Renderer {
 			D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);*/
 		virtual void PostProcessing(float& deltaTime);
 
+		bool InitializeDLSS();
+
+		void ApplyAntiAliasing();
+
 	protected:
 		bool bUseWarpAdapter;
 		D3D_FEATURE_LEVEL m_minimumFeatureLevel;
 		ComPtr<IDXGIFactory4> m_dxgiFactory;
 		ComPtr<IDXGIAdapter1> m_warpAdapter;
-		
+
 		ComPtr<ID3D12Device5> m_device;
 
 		UINT m_numQualityLevels = 0;
@@ -159,14 +167,8 @@ namespace Renderer {
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;
 
-		GlobalVertexConstantData* m_passConstantData;
-		ComPtr<ID3D12Resource> m_passConstantBuffer;
-		UINT8* m_pCbvDataBegin = nullptr;
-		
-
-		LightPassConstantData* m_ligthPassConstantData;
-		ComPtr<ID3D12Resource> m_ligthPassConstantBuffer;
-		UINT8* m_pLPCDataBegin = nullptr;
+		Core::ConstantBuffer<GlobalVertexConstantData> m_passConstantBuffer;
+		Core::ConstantBuffer<LightPassConstantData> m_ligthPassConstantBuffer;
 
 		std::vector<std::shared_ptr<Animation::FBX>> m_fbxList;
 
@@ -174,7 +176,7 @@ namespace Renderer {
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_lightMeshes;
 		std::vector<PbrMeshData> soldier;
 		Animation::AnimationData soldierAnimation;
-		
+
 		std::shared_ptr<Core::StaticMesh> m_cubeMap;
 		std::shared_ptr<Core::StaticMesh> m_screenMesh;
 
@@ -188,7 +190,7 @@ namespace Renderer {
 		std::vector<ComPtr<ID3D12Resource>> m_uploadResources;
 		std::vector<ComPtr<ID3D12Resource>> m_cubeMaptextureResources;
 		std::vector<ComPtr<ID3D12Resource>> m_cubeMaptextureUpload;
-		
+
 		std::vector<ComPtr<ID3D12Resource>> m_exrUploadResources;
 		std::vector<ComPtr<ID3D12Resource>> m_exrResources;
 		ComPtr<ID3D12DescriptorHeap> m_exrSrvHeap;
@@ -199,7 +201,7 @@ namespace Renderer {
 	protected:
 		// GUI용 
 		ComPtr<ID3D12DescriptorHeap> m_guiFontHeap;
-		
+
 		std::shared_ptr<DirectX::DescriptorHeap> m_resourceDescriptors;
 		std::shared_ptr<DirectX::DescriptorHeap> m_hdrResourceDescriptors;
 		std::shared_ptr<DirectX::DescriptorHeap> m_bakcbufferResourceDescriptors;
@@ -240,7 +242,7 @@ namespace Renderer {
 	protected:
 		std::string currRenderMode = "Default";
 		bool msaaMode = false;
-		
+
 	protected:
 		// GeometryPass
 		static const UINT geometryPassRtvNum = 4;
@@ -303,17 +305,31 @@ namespace Renderer {
 		bool findSession = false;
 
 		//std::shared_ptr<Core::StaticMesh> mCharacter;
-		
+
 	public:
 		std::vector<std::shared_ptr<Core::StaticMesh>> mPlayers;
 		int addPlayerCount = 0;
 		void AddPlayer();
 		void UpdatePlayer(int index, const PlayerData& data);
 
-		class Core::Actor* mActor;
-
 	protected:
 		Core::ConstantBuffer<PostprocessingConstantData> mPostprocessingConstantBuffer;
+
+	protected:
+		sl::FrameToken* mCurrentFrame;
+		sl::ViewportHandle mViewport = { 0 };
+		Core::ConstantBuffer< GlobalConstantDataDLSS> mDlssConstantBuffer;
+
+		sl::Resource colorIn;
+		sl::Resource colorOut;
+		sl::Resource depth;
+		sl::Resource mvec;
+		sl::Resource exposure;
+
+		DirectX::SimpleMath::Matrix prevView;
+		DirectX::SimpleMath::Matrix prevProj;
+
+		const wchar_t* renderMotionVectorPassEvent = L"Render MotionVector Pass ";
 
 	};
 }

@@ -33,10 +33,12 @@ namespace Renderer {
 		virtual void Update(float& deltaTime) = 0;
 		virtual void CaptureHDRBufferToPNG() {};
 		virtual void CaptureBackBufferToPNG() {};
+
 	public:
 		HWND m_mainWnd;
 		static SimpleApp* m_pApp;
 		Utils::Timer m_timer;
+
 	public:
 		UINT m_screenWidth;
 		float m_prevGuiWidth = 0.f;
@@ -44,7 +46,7 @@ namespace Renderer {
 
 		UINT m_screenHeight;
 		
-		std::shared_ptr<Core::Camera> m_camera;
+		std::unique_ptr<Core::Camera> m_camera;
 		std::unique_ptr<InputHandler> m_inputHandler;
 		std::unique_ptr<Core::Character> mCharacter;
 		

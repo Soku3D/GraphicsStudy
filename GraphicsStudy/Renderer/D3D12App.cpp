@@ -21,6 +21,30 @@
 using namespace Core;
 using namespace Network;
 
+static constexpr int APP_ID = 231313132;
+
+static sl::float4x4 Get4X4(DirectX::SimpleMath::Matrix& mat) {
+	sl::float4x4 ret;
+	for (uint32_t i = 0; i < 4; i++)
+	{
+		ret[i].x = mat.m[i][0];
+		ret[i].y = mat.m[i][1];
+		ret[i].z = mat.m[i][2];
+		ret[i].w = mat.m[i][3];
+	}
+	return ret;
+}
+
+static sl::float3 GetFloat3(DirectX::SimpleMath::Vector3& vec) {
+	sl::float3 ret;
+	ret.x = vec.x;
+	ret.y = vec.y;
+	ret.z = vec.z;
+
+	return ret;
+}
+
+
 Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	:SimpleApp(width, height),
 	bUseWarpAdapter(false),
@@ -29,9 +53,6 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 	m_scissorRect(D3D12_RECT())
 {
 	onlineSystem = new SteamOnlineSystem(this);
-
-	m_passConstantData = new GlobalVertexConstantData();
-	m_ligthPassConstantData = new LightPassConstantData();
 
 	textureBasePath = L"Textures/";
 	cubeMapTextureBasePath = L"Textures/CubeMaps/";
@@ -44,7 +65,10 @@ Renderer::D3D12App::D3D12App(const int& width, const int& height)
 
 Renderer::D3D12App::~D3D12App()
 {
+
 	std::cout << "~D3D12App" << std::endl;
+
+	delete onlineSystem;
 
 	if (m_device != nullptr)
 		FlushCommandQueue();
@@ -202,6 +226,7 @@ bool Renderer::D3D12App::InitDirectX()
 	m_numQualityLevels = msaaData.NumQualityLevels;
 	msaaQuality = m_numQualityLevels;
 	m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
+
 
 	CreateCommandObjects();
 	CreateDescriptorHeaps();
@@ -363,18 +388,19 @@ void Renderer::D3D12App::Update(float& deltaTime)
 {
 	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
 
-	m_passConstantData->ViewMat = m_camera->GetViewMatrix();
-	m_passConstantData->ProjMat = m_camera->GetProjMatrix();
+	m_passConstantBuffer.mStructure.ViewMat = m_camera->GetViewMatrix();
+	m_passConstantBuffer.mStructure.ProjMat = m_camera->GetProjMatrix();
 
-	m_passConstantData->ViewMat = m_passConstantData->ViewMat.Transpose();
-	m_passConstantData->ProjMat = m_passConstantData->ProjMat.Transpose();
+	m_passConstantBuffer.mStructure.ViewMat = m_passConstantBuffer.mStructure.ViewMat.Transpose();
+	m_passConstantBuffer.mStructure.ProjMat = m_passConstantBuffer.mStructure.ProjMat.Transpose();
 
-	m_passConstantData->eyePosition = m_camera->GetPosition();
-	m_ligthPassConstantData->eyePos = m_camera->GetPosition();
-	m_ligthPassConstantData->lod = 0.f;
+	m_passConstantBuffer.mStructure.eyePosition = m_camera->GetPosition();
+	m_passConstantBuffer.UpdateBuffer();
 
-	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
-	memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
+	m_ligthPassConstantBuffer.mStructure.eyePos = m_camera->GetPosition();
+	m_ligthPassConstantBuffer.mStructure.lod = 0.f;
+	m_ligthPassConstantBuffer.UpdateBuffer();
+
 
 	mCsBuffer.mStructure.time = ((deltaTime) < (1 / 60.f) ? deltaTime : (1 / 60.f));
 	mCsBuffer.UpdateBuffer();
@@ -510,8 +536,8 @@ void Renderer::D3D12App::RenderMeshes(float& deltaTime) {
 		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
 
 		// View Proj Matrix Constant Buffer 
-		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
-		m_commandList->SetGraphicsRootConstantBufferView(3, m_ligthPassConstantBuffer->GetGPUVirtualAddress());
+		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer.GetGPUVirtualAddress());
+		m_commandList->SetGraphicsRootConstantBufferView(3, m_ligthPassConstantBuffer.GetGPUVirtualAddress());
 
 		// Texture SRV Heap 
 		ID3D12DescriptorHeap* ppSrvHeaps[] = { m_textureHeap.Get() };
@@ -584,7 +610,7 @@ void Renderer::D3D12App::RenderCubeMap(float& deltaTime)
 			m_commandList->RSSetViewports(1, &m_viewport);
 
 			// View Proj Matrix Constant Buffer 
-			m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer->GetGPUVirtualAddress());
+			m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer.GetGPUVirtualAddress());
 
 			// CubeMap Heap 
 			ID3D12DescriptorHeap* ppCubeHeaps[] = { m_cubeMapTextureHeap.Get() };
@@ -755,22 +781,8 @@ void Renderer::D3D12App::RenderFonts(
 
 void Renderer::D3D12App::CreateConstantBuffer()
 {
-	std::vector<GlobalVertexConstantData> constantData = {
-		*m_passConstantData
-	};
-	Utility::CreateUploadBuffer(constantData, m_passConstantBuffer, m_device);
-
-	CD3DX12_RANGE range(0, 0);
-	ThrowIfFailed(m_passConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pCbvDataBegin)));
-	memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
-
-	std::vector<LightPassConstantData> psConstantData = {
-		*m_ligthPassConstantData
-	};
-	Utility::CreateUploadBuffer(psConstantData, m_ligthPassConstantBuffer, m_device);
-
-	ThrowIfFailed(m_ligthPassConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&m_pLPCDataBegin)));
-
+	m_passConstantBuffer.Initialize(m_device, m_commandList);
+	m_ligthPassConstantBuffer.Initialize(m_device, m_commandList);
 	mCsBuffer.Initialize(m_device, m_commandList);
 	mPostprocessingConstantBuffer.Initialize(m_device, m_commandList);
 
@@ -1686,7 +1698,20 @@ void Renderer::D3D12App::CaptureHDRBufferToPNG() {
 	else {
 		ss << t->tm_mday;
 	}
-	ss << '-' << t->tm_hour << t->tm_min << ".png";
+	ss << '-';
+	if (t->tm_hour < 9) {
+		ss << '0' << t->tm_hour;
+	}
+	else {
+		ss << t->tm_hour;
+	}
+	if (t->tm_min < 9) {
+		ss << '0' << t->tm_hour;
+	}
+	else {
+		ss << t->tm_min;
+	}
+	ss << ".png";
 	stbi_write_png(ss.str().c_str(), width, height, 4, imageUnorm.data(), width * channels);
 	imageUnorm.clear();
 	imagef16.clear();
@@ -1764,7 +1789,20 @@ void Renderer::D3D12App::CaptureBackBufferToPNG() {
 	else {
 		ss << t->tm_mday;
 	}
-	ss << '-' << t->tm_hour << t->tm_min << ".png";
+	ss << '-';
+	if (t->tm_hour < 9) {
+		ss << '0' << t->tm_hour;
+	}
+	else {
+		ss << t->tm_hour;
+	}
+	if (t->tm_min < 9) {
+		ss << '0' << t->tm_hour;
+	}
+	else {
+		ss << t->tm_min;
+	}
+	ss << ".png";
 	stbi_write_png(ss.str().c_str(), width, height, 4, imageUnorm.data(), width * channels);
 	imageUnorm.clear();
 	imagef16.clear();
@@ -1856,9 +1894,9 @@ void Renderer::D3D12App::PostProcessing(float& deltaTime) {
 		m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
 		m_commandList->SetComputeRootDescriptorTable(0, m_hdrUavHeap->GetGPUDescriptorHandleForHeapStart());
-		m_commandList->SetComputeRootConstantBufferView(1, mPostprocessingConstantBuffer.GetGpuAddress());
+		m_commandList->SetComputeRootConstantBufferView(1, mPostprocessingConstantBuffer.GetGPUVirtualAddress());
 
-		//m_commandList->SetComputeRootConstantBufferView(1, mCsBuffer.GetGpuAddress());
+		//m_commandList->SetComputeRootConstantBufferView(1, mCsBuffer.GetGPUVirtualAddress());
 		m_commandList->Dispatch((UINT)ceil(m_screenWidth / 32.f), (UINT)ceil(m_screenHeight / 32.f), 1);
 
 		m_commandList->ResourceBarrier(1,
@@ -1878,4 +1916,154 @@ void Renderer::D3D12App::PostProcessing(float& deltaTime) {
 
 	}
 
+}
+
+
+bool Renderer::D3D12App::InitializeDLSS()
+{
+	sl::Preferences prefs = {};
+	prefs.applicationId = 1;
+	prefs.renderAPI = sl::RenderAPI::eD3D12;
+	prefs.logLevel = sl::LogLevel::eDefault;
+	prefs.numFeaturesToLoad = 1;
+	prefs.showConsole = true;
+	sl::Feature featuresToLoad[] = { sl::kFeatureDLSS };
+	prefs.featuresToLoad = featuresToLoad;
+	const wchar_t* pluginPaths[] = {
+		L"C:/Users/son/Streamline_Sample/_bin/"  // 실제 플러그인 경로로 변경
+	};
+	prefs.pathsToPlugins = pluginPaths;
+	prefs.numPathsToPlugins = sizeof(pluginPaths) / sizeof(pluginPaths[0]);
+	sl::Result result = slInit(prefs);
+	if (result != sl::Result::eOk) {
+		std::cerr << "Streamline 초기화 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return false;
+	}
+	if (SL_FAILED(result, slSetD3DDevice(m_device.Get())))
+	{
+		std::cerr << "Streamline 장치 초기화 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return false;
+	}
+	//slSetFeatureLoaded(sl::kFeatureDLSS_G, false);
+
+	colorIn = { sl::ResourceType::eTex2d, HDRRenderTargetBuffer(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET) };
+	colorOut = { sl::ResourceType::eTex2d,  HDRRenderTargetBuffer2(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET) };
+	depth = { sl::ResourceType::eTex2d, m_hdrDepthStencilBuffer.Get(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_DEPTH_WRITE) };
+	mvec = { sl::ResourceType::eTex2d, m_hdrMotionVector.Get(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET) };
+	//exposure = { sl::ResourceType::eTex2d, m_hdrExposure.Get(), nullptr, nullptr, static_cast<uint32_t>(D3D12_RESOURCE_STATE_RENDER_TARGET) };
+
+	return true;
+}
+
+void Renderer::D3D12App::ApplyAntiAliasing()
+{
+	sl::DLSSOptimalSettings dlssSettings;
+	sl::DLSSOptions dlssOptions;
+	// These are populated based on user selection in the UI
+	dlssOptions.dlaaPreset = sl::DLSSPreset::ePresetA;
+	dlssOptions.qualityPreset = sl::DLSSPreset::ePresetD;
+	dlssOptions.balancedPreset = sl::DLSSPreset::ePresetD;
+	dlssOptions.performancePreset = sl::DLSSPreset::ePresetD;
+	dlssOptions.ultraPerformancePreset = sl::DLSSPreset::ePresetA;
+	// These are populated based on user selection in the UI
+	dlssOptions.mode = sl::DLSSMode::eDLAA; // e.g. sl::eDLSSModeBalanced;
+	dlssOptions.outputWidth = m_screenWidth;    // e.g 1920;
+	dlssOptions.outputHeight = m_screenHeight; // e.g. 1080;
+	dlssOptions.colorBuffersHDR = sl::Boolean::eTrue; // assuming HDR pipeline
+	dlssOptions.useAutoExposure = sl::Boolean::eFalse; // autoexposure is not to be used if a proper exposure texture is available
+	dlssOptions.alphaUpscalingEnabled = sl::Boolean::eFalse; // experimental alpha upscaling, enable to upscale alpha channel of color texture
+	// Now let's check what should our rendering resolution be
+	if (SL_FAILED(result, slDLSSGetOptimalSettings(dlssOptions, dlssSettings)))
+	{
+		std::cerr << "slDLSSGetOptimalSettings 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return;
+	}
+	dlssOptions.sharpness = dlssSettings.optimalSharpness; // optimal sharpness
+
+	// Setup rendering based on the provided values in the sl::DLSSSettings structure
+	m_viewport.Width = (FLOAT)dlssSettings.renderWidthMax;
+	m_viewport.Height = (FLOAT)dlssSettings.renderHeightMax;
+
+
+	sl::Extent renderExtent{ 0, 0, (uint32_t)HDRRenderTargetBuffer()->GetDesc().Width, (uint32_t)HDRRenderTargetBuffer()->GetDesc().Height };
+	sl::Extent fullExtent{ 0, 0, (uint32_t)HDRRenderTargetBuffer2()->GetDesc().Width, (uint32_t)HDRRenderTargetBuffer2()->GetDesc().Height };
+
+	sl::ResourceTag colorInTag = sl::ResourceTag{ &colorIn, sl::kBufferTypeScalingInputColor, sl::ResourceLifecycle::eOnlyValidNow ,&renderExtent };
+	sl::ResourceTag colorOutTag = sl::ResourceTag{ &colorOut, sl::kBufferTypeScalingOutputColor, sl::ResourceLifecycle::eOnlyValidNow , &fullExtent };
+	sl::ResourceTag depthTag = sl::ResourceTag{ &depth, sl::kBufferTypeDepth, sl::ResourceLifecycle::eValidUntilPresent ,&renderExtent };
+	sl::ResourceTag mvecTag = sl::ResourceTag{ &mvec, sl::kBufferTypeMotionVectors, sl::ResourceLifecycle::eOnlyValidNow ,&renderExtent };
+	sl::ResourceTag exposureTag = sl::ResourceTag{ &exposure, sl::kBufferTypeExposure, sl::ResourceLifecycle::eOnlyValidNow ,&renderExtent };
+	sl::ResourceTag inputs[] = { colorInTag, colorOutTag, depthTag, mvecTag };
+
+	if (SL_FAILED(result, slSetTag(mViewport, inputs, _countof(inputs), m_commandList.Get())))
+	{
+		std::cerr << "slSetTag 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return;
+	}
+
+	if (SL_FAILED(result, slDLSSSetOptions(mViewport, dlssOptions)))
+	{
+		std::cerr << "slDLSSSetOptions 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return;
+	}
+
+	if (SL_FAILED(result, slGetNewFrameToken(mCurrentFrame)))
+	{
+		std::cerr << "slGetNewFrameToken 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return;
+	}
+
+	sl::Constants consts = {};
+
+	DirectX::SimpleMath::Matrix mat = m_camera->GetProjMatrix().Transpose();
+	consts.clipToCameraView = Get4X4(mat);
+	mat = mat.Invert();
+	consts.cameraViewToClip = Get4X4(mat);
+
+	// 기타 변환 매트릭스들
+	consts.clipToLensClip[0] = sl::float4(1, 0, 0, 0);
+	consts.clipToLensClip[1] = sl::float4(0, 1, 0, 0);
+	consts.clipToLensClip[2] = sl::float4(0, 0, 1, 0);
+	consts.clipToLensClip[3] = sl::float4(0, 0, 0, 1);
+	consts.clipToPrevClip = consts.clipToLensClip;
+	consts.prevClipToClip = consts.clipToLensClip;
+
+	// 카메라 관련 설정값
+	consts.jitterOffset = sl::float2(0.2f, 0.2f);
+	consts.mvecScale = sl::float2(1.0f, 1.0f);
+	consts.cameraPinholeOffset = sl::float2(0.0f, 0.0f);
+	consts.cameraPos = GetFloat3(m_camera->GetPosition());
+	consts.cameraUp = GetFloat3(m_camera->GetUpDirection());
+	consts.cameraRight = GetFloat3(m_camera->GetRightDirection());
+	consts.cameraFwd = GetFloat3(m_camera->GetForwardDirection());
+
+	consts.cameraNear = m_camera->GetNeaPlane();
+	consts.cameraFar = m_camera->GetFarPlane();
+	consts.cameraFOV = m_camera->GetFov();
+	consts.cameraAspectRatio = m_camera->GetAspectRatio();
+	consts.motionVectorsInvalidValue = -1.0f;
+
+	// 부울 값들
+	consts.depthInverted = sl::Boolean::eFalse;
+	consts.cameraMotionIncluded = sl::Boolean::eTrue;
+	consts.motionVectors3D = sl::Boolean::eFalse;
+	consts.reset = sl::Boolean::eTrue;
+	consts.orthographicProjection = sl::Boolean::eTrue;
+	consts.motionVectorsDilated = sl::Boolean::eTrue;
+	consts.motionVectorsJittered = sl::Boolean::eTrue;
+	//Set all other constants here
+	if (SL_FAILED(result, slSetConstants(consts, *mCurrentFrame, mViewport))) // constants are changing per frame so frame index is required
+	{
+		std::cerr << "slSetConstants 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return;
+	}
+
+	sl::ViewportHandle view(mViewport);
+	const sl::BaseStructure* viewportInputs[] = { &view };
+
+	if (SL_FAILED(result, slEvaluateFeature(sl::kFeatureDLSS, *mCurrentFrame, viewportInputs, _countof(viewportInputs), m_commandList.Get())))
+	{
+		std::cerr << "slEvaluateFeature 실패! 결과 코드: " << static_cast<int>(result) << std::endl;
+		return;
+	}
 }

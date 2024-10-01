@@ -6,6 +6,13 @@ Core::StaticMesh::StaticMesh() :
 {
 }
 
+Core::StaticMesh::~StaticMesh()
+{
+	m_objectConstantData = nullptr;
+	m_objectConstantBuffer.Reset();
+	m_pCbvDataBegin = nullptr;
+};
+
 void Core::StaticMesh::Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseModelMat, int i)
 {
 	commandList->IASetVertexBuffers(0, 1, &mVertexBufferView[i]);

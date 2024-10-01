@@ -8,7 +8,7 @@ using namespace Network;
 Renderer::D3D12PassApp::D3D12PassApp(const int& width, const int& height)
 	:D3D12App(width, height)
 {
-	bUseGUI = true;
+	bUseGUI = false;
 	bRenderCubeMap = true;
 	bRenderMeshes = true;
 	bRenderFbx = false;
@@ -29,13 +29,7 @@ bool Renderer::D3D12PassApp::Initialize()
 
 void Renderer::D3D12PassApp::InitConstantBuffers()
 {
-	//Utility::CreateConstantBuffer(m_device, m_commandList, mCsBuffer);
-	mCsBuffer.Initialize(m_device, m_commandList);
-	m_pCubeMapConstantData = new CubeMapConstantData();
-	m_pCubeMapConstantData->expose = gui_cubeMapExpose;
-	m_pCubeMapConstantData->lodLevel = gui_cubeMapLod;
-	Utility::CreateConstantBuffer(m_device, m_commandList, sizeof(CubeMapConstantData), m_cubeMapConstantBuffer, &m_pCubeMapCbufferBegin);
-	memcpy(m_pCubeMapCbufferBegin, m_pCubeMapConstantData, sizeof(CubeMapConstantData));
+	mCubeMapConstantData.Initialize(m_device, m_commandList);
 }
 
 void Renderer::D3D12PassApp::InitScene()
@@ -44,24 +38,17 @@ void Renderer::D3D12PassApp::InitScene()
 	using DirectX::SimpleMath::Matrix;
 	using namespace Core;
 
-	characterMesh = new Core::StaticMesh();
 	Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
 	std::tuple<std::vector<PbrMeshData>, Animation::AnimationData> soldierData;
 	soldierData = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
 	soldier = std::get<0>(soldierData);
-	//auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
-	characterMesh->Initialize(soldier, m_device, m_commandList,
-		Vector3(0.f, 0.f, 0.f),
-		Material(1.f, 1.f, 1.f, 0.5f),
-		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
 
-	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 0);
-	characterMesh->SetTexturePath(L"Soldier_head_Albedo.dds", 1);
-	characterMesh->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
-	characterMesh->SetBoundingBoxHalfLength(1.f);
-	mCharacter->SetStaticMeshComponent(characterMesh);
+	mCharacter->InitStaticMesh(soldier, m_device,m_commandList);
 	mCharacter->SetPosition(XMFLOAT3(0, 1.475f, 0));
-	
+	mCharacter->SetTexturePath(L"Soldier_Body_Albedo.dds", 0);
+	mCharacter->SetTexturePath(L"Soldier_head_Albedo.dds", 1);
+	mCharacter->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
+	mCharacter->SetMeshBoundingBox(1.f);
 
 	for (size_t i = 0; i < LIGHT_COUNT; i++)
 	{
@@ -158,32 +145,31 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 	{
 		// 카메라 고정
-		/*m_passConstantData->ViewMat = m_camera->GetViewMatrix();
-		m_passConstantData->ProjMat = m_camera->GetProjMatrix();
-		m_passConstantData->eyePosition = m_camera->GetPosition();*/
+		m_passConstantBuffer.mStructure.ViewMat = m_camera->GetViewMatrix();
+		m_passConstantBuffer.mStructure.ProjMat = m_camera->GetProjMatrix();
+		m_passConstantBuffer.mStructure.eyePosition = m_camera->GetPosition();
 
 		// 카메라 캐릭터 고정
-		m_passConstantData->ViewMat = mCharacter->GetViewMatrix();
-		m_passConstantData->ProjMat = mCharacter->GetProjMatrix();
-		m_passConstantData->eyePosition = mCharacter->GetCameraPosition();
+		/*m_passConstantBuffer.mStructure.ViewMat = mCharacter->GetViewMatrix();
+		m_passConstantBuffer.mStructure.ProjMat = mCharacter->GetProjMatrix();
+		m_passConstantBuffer.eyePosition = mCharacter->GetCameraPosition();*/
 
-		m_passConstantData->ViewMat = m_passConstantData->ViewMat.Transpose();
-		m_passConstantData->ProjMat = m_passConstantData->ProjMat.Transpose();
-		memcpy(m_pCbvDataBegin, m_passConstantData, sizeof(GlobalVertexConstantData));
+		m_passConstantBuffer.mStructure.ViewMat = m_passConstantBuffer.mStructure.ViewMat.Transpose();
+		m_passConstantBuffer.mStructure.ProjMat = m_passConstantBuffer.mStructure.ProjMat.Transpose();
+		m_passConstantBuffer.UpdateBuffer();
 	}
 
 	// LightPass ConstantBuffer
 	{
-		m_ligthPassConstantData->eyePos = m_passConstantData->eyePosition;
-		m_ligthPassConstantData->lod = gui_lod;
-		m_ligthPassConstantData->light[0].position = gui_lightPos;
+		m_ligthPassConstantBuffer.mStructure.eyePos = m_passConstantBuffer.mStructure.eyePosition;
+		m_ligthPassConstantBuffer.mStructure.lod = gui_lod;
+		m_ligthPassConstantBuffer.mStructure.light[0].position = gui_lightPos;
 
-		m_ligthPassConstantData->ao = gui_ao;
-		m_ligthPassConstantData->metallic = gui_metallic;
-		m_ligthPassConstantData->roughness = gui_roughness;
-		m_ligthPassConstantData->expose = gui_cubeMapExpose;
-
-		memcpy(m_pLPCDataBegin, m_ligthPassConstantData, sizeof(LightPassConstantData));
+		m_ligthPassConstantBuffer.mStructure.ao = gui_ao;
+		m_ligthPassConstantBuffer.mStructure.metallic = gui_metallic;
+		m_ligthPassConstantBuffer.mStructure.roughness = gui_roughness;
+		m_ligthPassConstantBuffer.mStructure.expose = gui_cubeMapExpose;
+		m_ligthPassConstantBuffer.UpdateBuffer();
 	}
 
 	DirectX::SimpleMath::Matrix mat = DirectX::XMMatrixTranslation(gui_lightPos.x, gui_lightPos.y, gui_lightPos.z);
@@ -207,9 +193,9 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	mCsBuffer.UpdateBuffer();
 
 	// CubeMap ConstantBuffer
-	m_pCubeMapConstantData->expose = gui_cubeMapExpose;
-	m_pCubeMapConstantData->lodLevel = gui_cubeMapLod;
-	memcpy(m_pCubeMapCbufferBegin, m_pCubeMapConstantData, sizeof(CubeMapConstantData));
+	mCubeMapConstantData.mStructure.expose = gui_cubeMapExpose;
+	mCubeMapConstantData.mStructure.lodLevel = gui_cubeMapLod;
+	mCubeMapConstantData.UpdateBuffer();
 
 	mPostprocessingConstantBuffer.mStructure.bUseGamma = false;
 	mPostprocessingConstantBuffer.UpdateBuffer();
@@ -321,7 +307,7 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
 
 		// View Proj Matrix Constant Buffer 
-		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
+		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer.GetGPUVirtualAddress());
 
 		// Texture SRV Heap 
 		ID3D12DescriptorHeap* ppSrvHeaps[] = { m_textureHeap.Get() };
@@ -373,7 +359,7 @@ void Renderer::D3D12PassApp::FbxGeometryPass(float& deltaTime) {
 		m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
 
 		// View Proj Matrix Constant Buffer 
-		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer->GetGPUVirtualAddress());
+		m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer.GetGPUVirtualAddress());
 		//m_commandList->SetGraphicsRootConstantBufferView(3, m_ligthPassConstantBuffer->GetGPUVirtualAddress());
 
 		// Texture SRV Heap 
@@ -436,7 +422,7 @@ void Renderer::D3D12PassApp::LightPass(float& deltaTime) {
 		int cubeMapOffset = m_cubeTextureMap[m_cubeMap->GetTexturePath()] - 2;
 		CD3DX12_GPU_DESCRIPTOR_HANDLE cubeMapHandle(m_geometryPassSrvHeap->GetGPUDescriptorHandleForHeapStart(), geometryPassRtvNum + 1/*depth*/ + cubeMapOffset, m_csuHeapSize);
 		m_commandList->SetGraphicsRootDescriptorTable(1, cubeMapHandle);
-		m_commandList->SetGraphicsRootConstantBufferView(2, m_ligthPassConstantBuffer->GetGPUVirtualAddress());
+		m_commandList->SetGraphicsRootConstantBufferView(2, m_ligthPassConstantBuffer.GetGPUVirtualAddress());
 		m_screenMesh->Render(deltaTime, m_commandList, false);
 	}
 
@@ -472,7 +458,7 @@ void Renderer::D3D12PassApp::RenderNormalPass(float& deltaTime) {
 			m_commandList->RSSetScissorRects(1, &m_scissorRect);
 			m_commandList->RSSetViewports(1, &m_viewport);
 
-			m_commandList->SetGraphicsRootConstantBufferView(0, m_passConstantBuffer->GetGPUVirtualAddress());
+			m_commandList->SetGraphicsRootConstantBufferView(0, m_passConstantBuffer.GetGPUVirtualAddress());
 
 			if (bRenderMeshes) {
 				for (int i = 0; i < (int)m_staticMeshes.size(); ++i) {
@@ -513,7 +499,7 @@ void Renderer::D3D12PassApp::RenderBoundingBoxPass(float& deltaTime) {
 			m_commandList->RSSetScissorRects(1, &m_scissorRect);
 			m_commandList->RSSetViewports(1, &m_viewport);
 
-			m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer->GetGPUVirtualAddress());
+			m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer.GetGPUVirtualAddress());
 
 			if (bRenderMeshes) {
 				for (int i = 0; i < m_staticMeshes.size(); ++i) {
@@ -573,10 +559,10 @@ void Renderer::D3D12PassApp::RenderCubeMap(float& deltaTime)
 		m_commandList->RSSetViewports(1, &m_viewport);
 
 		// View Proj Matrix Constant Buffer 
-		m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer->GetGPUVirtualAddress());
+		m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer.GetGPUVirtualAddress());
 
 		//CubeMap Expose & LodLevel
-		m_commandList->SetGraphicsRootConstantBufferView(2, m_cubeMapConstantBuffer->GetGPUVirtualAddress());
+		m_commandList->SetGraphicsRootConstantBufferView(2, mCubeMapConstantData.GetGPUVirtualAddress());
 
 		// CubeMap Heap 
 		ID3D12DescriptorHeap* ppCubeHeaps[] = { m_cubeMapTextureHeap.Get() };
