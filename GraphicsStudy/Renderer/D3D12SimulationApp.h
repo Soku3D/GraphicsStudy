@@ -47,14 +47,15 @@ namespace Renderer {
 		void CFDComputeDivergencePass(float& deltaTime);
 
 		void ComputeVolumeDensityPass(float& deltaTime);
-		
+
+		void SmokeVorticityPass(float& deltaTime, const std::string& psoName, int index);
+		void SmokeDownSamplePass(float& deltaTime);
 		void SmokeSourcingDensityPass(float& deltaTime);
-		void SmokeAdvectionPass(float& deltaTime);
 		void SmokeComputeDivergencePass(float& deltaTime);
 		void SmokeComputePressurePass(float& deltaTime);
-		void SmokeDiffusePass(float& deltaTime);
-		void SmokeVorticityPass(float& deltaTime, const std::string& psoName, int index);
 		void SmokeApplyPressurePass(float& deltaTime);
+		void SmokeDiffUpSamplePass(float& deltaTime);
+		void SmokeAdvectionPass(float& deltaTime);
 
 		void RenderVolumMesh(float& deltaTime);
 		void RenderBoundingBox(float& deltaTime);
@@ -79,6 +80,7 @@ namespace Renderer {
 
 		Core::Texture3D mCloud;
 		Volume* mSmoke;
+		int upscale = 1;
 
 		bool bRenderCloud = false;
 		bool bRenderSmoke = false;

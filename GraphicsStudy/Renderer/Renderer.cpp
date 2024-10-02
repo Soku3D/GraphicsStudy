@@ -58,9 +58,10 @@
 #include "SmokeComputePressureCS.h"
 #include "SmokeComputeDivergenceCS.h"
 #include "SmokeApplyPressureCS.h"
-#include "SmokeComputeDiffuseCS.h"
 #include "SmokeComputeVorticityCS.h"
 #include "SmokeVorticityConfinementCS.h"
+#include "SmokeDownSampleCS.h"
+#include "SmokeDiffUpSampleCS.h"
 
 #include "ComputeVolumeDensityCS.h"
 #include "RenderVolumeVS.h"
@@ -135,6 +136,8 @@ namespace Renderer {
 	RootSignature smokeComputeDiffuseSignature;
 	RootSignature smokeComputeVorticitySignature;
 	RootSignature smokeVorticityConfinementSignature;
+	RootSignature smokeDownSampleSignature;
+	RootSignature smokeDiffUpSampleSignature;
 
 	RootSignature computeVolumeDensitySignature;
 	RootSignature renderVolumeSignature;
@@ -240,6 +243,8 @@ namespace Renderer {
 		smokeComputeDiffuseSignature.Initialize(2, 2, 1, samplers);
 		smokeComputeVorticitySignature.Initialize(2, 1, 1, samplers);
 		smokeVorticityConfinementSignature.Initialize(3, 1, 1, samplers);
+		smokeDownSampleSignature.Initialize(2, 2, 1, samplers);
+		smokeDiffUpSampleSignature.Initialize(4, 2, 1, samplers);
 
 		computeVolumeDensitySignature.InitializeUAV(1, 1, 0, nullptr);
 		renderVolumeSignature.Initialize(1, 2, samplers);
@@ -297,9 +302,10 @@ namespace Renderer {
 		ComputePSO smokeComputeDivergencePso("SmokeComputeDivergence");
 		ComputePSO smokeAdvectionPso("SmokeAdvection");
 		ComputePSO smokeApplyPressurePso("SmokeApplyPressure");
-		ComputePSO smokeComputeDiffusePso("SmokeComputeDiffuse");
 		ComputePSO smokeComputeVorticityPso("SmokeComputeVorticity");
 		ComputePSO smokeVorticityConfinementPso("SmokeVorticityConfinement");
+		ComputePSO smokeDownSamplePso("SmokeDownSample");
+		ComputePSO smokeDiffUpSamplePso("SmokeDiffUpSample");
 
 
 		ComputePSO perlinNoisePso("PerlinNoise");
@@ -565,14 +571,17 @@ namespace Renderer {
 		smokeApplyPressurePso.SetComputeShader(g_pSmokeApplyPressureCS, sizeof(g_pSmokeApplyPressureCS));
 		smokeApplyPressurePso.SetRootSignature(&smokeAdvectionSignature);
 
-		smokeComputeDiffusePso.SetComputeShader(g_pSmokeComputeDiffuseCS, sizeof(g_pSmokeComputeDiffuseCS));
-		smokeComputeDiffusePso.SetRootSignature(&smokeComputeDiffuseSignature);
-
 		smokeComputeVorticityPso.SetComputeShader(g_pSmokeComputeVorticityCS, sizeof(g_pSmokeComputeVorticityCS));
 		smokeComputeVorticityPso.SetRootSignature(&smokeComputeVorticitySignature);
 
 		smokeVorticityConfinementPso.SetComputeShader(g_pSmokeVorticityConfinementCS, sizeof(g_pSmokeVorticityConfinementCS));
 		smokeVorticityConfinementPso.SetRootSignature(&smokeVorticityConfinementSignature);
+
+		smokeDownSamplePso.SetComputeShader(g_pSmokeDownSampleCS, sizeof(g_pSmokeDownSampleCS));
+		smokeDownSamplePso.SetRootSignature(&smokeDownSampleSignature);
+
+		smokeDiffUpSamplePso.SetComputeShader(g_pSmokeDiffUpSampleCS, sizeof(g_pSmokeDiffUpSampleCS));
+		smokeDiffUpSamplePso.SetRootSignature(&smokeDiffUpSampleSignature);
 
 		perlinNoisePso.SetComputeShader(g_pPerlinNoiseCS, sizeof(g_pPerlinNoiseCS));
 		perlinNoisePso.SetRootSignature(&sphSimulationComputeSignature);
@@ -630,10 +639,11 @@ namespace Renderer {
 		computePsoList[smokeComputePressurePso.GetName()] = smokeComputePressurePso;
 		computePsoList[smokeComputeDivergencePso.GetName()] = smokeComputeDivergencePso;
 		computePsoList[smokeApplyPressurePso.GetName()] = smokeApplyPressurePso;
-		computePsoList[smokeComputeDiffusePso.GetName()] = smokeComputeDiffusePso;
 		computePsoList[smokeVorticityConfinementPso.GetName()] = smokeVorticityConfinementPso;
 		computePsoList[smokeComputeVorticityPso.GetName()] = smokeComputeVorticityPso;
-
+		computePsoList[smokeDiffUpSamplePso.GetName()] = smokeDiffUpSamplePso;
+		computePsoList[smokeDownSamplePso.GetName()] = smokeDownSamplePso;
+		
 		computePsoList[perlinNoisePso.GetName()] = perlinNoisePso;
 		computePsoList[computeVolumeDensityPso.GetName()] = computeVolumeDensityPso;
 
@@ -673,6 +683,8 @@ namespace Renderer {
 		smokeComputeDiffuseSignature.Finalize(device);
 		smokeComputeVorticitySignature.Finalize(device);
 		smokeVorticityConfinementSignature.Finalize(device);
+		smokeDownSampleSignature.Finalize(device);
+		smokeDiffUpSampleSignature.Finalize(device);
 
 		raytracingGlobalSignature.Finalize(device);
 

@@ -13,6 +13,7 @@ struct SimulationConstant
     
     float time;
     float sourceStrength;
+    uint upScale;
 };
 
 SamplerState gWarpLinearSampler : register(s0);

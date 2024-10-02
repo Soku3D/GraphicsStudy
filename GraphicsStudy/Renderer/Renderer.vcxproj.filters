@@ -289,12 +289,13 @@
     <FxCompile Include="SmokeComputePressureCS.hlsl" />
     <FxCompile Include="SmokeComputeDivergenceCS.hlsl" />
     <FxCompile Include="SmokeApplyPressureCS.hlsl" />
-    <FxCompile Include="SmokeComputeDiffuseCS.hlsl" />
     <FxCompile Include="SmokeComputeVorticityCS.hlsl" />
     <FxCompile Include="SmokeVorticityConfinementCS.hlsl" />
     <FxCompile Include="RenderMotionVectorPS.hlsl" />
     <FxCompile Include="RenderMotionVectorVS.hlsl" />
     <FxCompile Include="SimpleRaytracing.hlsl" />
+    <FxCompile Include="SmokeDownSampleCS.hlsl" />
+    <FxCompile Include="SmokeDiffUpSampleCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />

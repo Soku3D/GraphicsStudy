@@ -1,7 +1,7 @@
 #include "Utility.hlsli"
 #include "Smoke.hlsli"
 
-RWTexture3D<float4> gVelocity: register(u0);
+RWTexture3D<float4> gVelocity : register(u0);
 Texture3D<float> gDensity : register(t0);
 Texture3D<float4> gVorticity : register(t1);
 Texture3D<int> gBoundaryCondition : register(t2);
@@ -19,37 +19,36 @@ static int3 offset[6] =
 [numthreads(16, 16, 4)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
-    int bc = gBoundaryCondition[DTid.xyz];
-    
-    if (bc >= 0)
+ 
+    float width, height, depth;
+    gVelocity.GetDimensions(width, height, depth);
+    float density = gDensity[DTid.xyz];
+        
+    float dx = 2.f;
+    float dy = 2.f;
+    float dz = 2.f;
+    if (density > 1e-2
+        && DTid.x > 1 && DTid.y > 1 && DTid.z > 1
+        && DTid.x < width - 2 && DTid.y < height - 2 && DTid.z < depth - 2)
     {
-        float width, height, depth;
-        gVelocity.GetDimensions(width, height, depth);
-        float density = gDensity[DTid.xyz];
-        
-        float dx = 2.f;
-        float dy = 2.f;
-        float dz = 2.f;
-        if (density > 1e-2)
+        float w[6];
+        for (int i = 0; i < 6; i++)
         {
-            float w[6];
-            for (int i = 0; i < 6; i++)
-            {
-                uint3 index = DTid.xyz + offset[i];
-                float wSize = length(gVorticity[index].xyz);
-                w[i] = wSize;
-            }
-        
-            float3 eta = float3(w[1] - w[0], w[3] - w[2], w[5] - w[4]) / dx;
-            if (length(eta) > 1e-3)
-            {
-                float3 N = normalize(eta);
-                gVelocity[DTid.xyz].xyz += cross(N, gVorticity[DTid.xyz].xyz) * density * gConstantBuffer.deltaTime 
-                                            * gConstantBuffer.vorticity * depth;
-            }
+            uint3 index = DTid.xyz + offset[i];
+            float wSize = length(gVorticity[index].xyz);
+            w[i] = wSize;
         }
         
+        float3 eta = float3(w[1] - w[0], w[3] - w[2], w[5] - w[4]) / dx;
+        if (length(eta) > 1e-3)
+        {
+            float3 N = normalize(eta);
+            gVelocity[DTid.xyz].xyz += cross(N, gVorticity[DTid.xyz].xyz) * density * gConstantBuffer.deltaTime 
+                                            * gConstantBuffer.vorticity * depth;
+        }
     }
+        
+    
 }
 
 //float3 Vorticity(uint3 center)

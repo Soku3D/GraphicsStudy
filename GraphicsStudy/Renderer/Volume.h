@@ -13,13 +13,17 @@ public:
 
 	void Render(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, bool bUseConstantBuffer);
 	void Dispatch(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
+	void DispatchUpScale(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 	void RenderBoundingBox(float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commmandList);
 	void Update(float& deltaTime);
 
-	void Initialize(const int & width, const int& height, const int& depth, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
+	void Initialize(const int& width, const int& height, const int& depth, const int& upScale, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 	void CopyDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device);
 
 	D3D12_GPU_DESCRIPTOR_HANDLE GetHandle(int index) const { return CD3DX12_GPU_DESCRIPTOR_HANDLE(mHeap->GetGPUDescriptorHandleForHeapStart(), index, offset); }
+	D3D12_GPU_DESCRIPTOR_HANDLE GetDownSampleHandle(int index) const { return CD3DX12_GPU_DESCRIPTOR_HANDLE(mDownSampleHeap->GetGPUDescriptorHandleForHeapStart(), index, offset); }
+	D3D12_GPU_DESCRIPTOR_HANDLE GetUpSampleHandle(int index) const { return CD3DX12_GPU_DESCRIPTOR_HANDLE(mUpSampleHeap->GetGPUDescriptorHandleForHeapStart(), index, offset); }
+	D3D12_GPU_DESCRIPTOR_HANDLE GetAdvectionHandle(int index) const { return CD3DX12_GPU_DESCRIPTOR_HANDLE(mAdvectionHeap->GetGPUDescriptorHandleForHeapStart(), index, offset); }
 	D3D12_GPU_DESCRIPTOR_HANDLE GetCPHandle(int i, int index) const {
 		if (i == 0)
 			return CD3DX12_GPU_DESCRIPTOR_HANDLE(mCPHeap1->GetGPUDescriptorHandleForHeapStart(), index, offset);
@@ -35,6 +39,9 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE GetDivergenceHandle(int index) const {	return CD3DX12_GPU_DESCRIPTOR_HANDLE(mDivergenceHeap->GetGPUDescriptorHandleForHeapStart(), index, offset);	}
 	ID3D12DescriptorHeap* GetHeap() const { return mHeap.Get(); }
 	ID3D12DescriptorHeap* GetDivergenceHeap() const { return mDivergenceHeap.Get(); }
+	ID3D12DescriptorHeap* GetDownSampleHeap() const { return mDownSampleHeap.Get(); }
+	ID3D12DescriptorHeap* GetUpSampleHeap() const { return mUpSampleHeap.Get(); }
+	ID3D12DescriptorHeap* GetAdvectionHeap() const { return mAdvectionHeap.Get(); }
 	ID3D12DescriptorHeap* GetCPHeap(int index) const { 
 		if (index == 0)
 			return mCPHeap1.Get();
@@ -52,6 +59,11 @@ public:
 	ID3D12Resource* GetVelocityTempResource() const { return mVelocityTemp.GetResource(); }
 	ID3D12Resource* GetVelocityResource() const { return mVelocity.GetResource(); }
 
+	ID3D12Resource* GetDensityUpTempResource() const { return mDensityUpTemp.GetResource(); }
+	ID3D12Resource* GetDensityUpResource() const { return mDensityUp.GetResource(); }
+	ID3D12Resource* GetVelocityUpTempResource() const { return mVelocityUpTemp.GetResource(); }
+	ID3D12Resource* GetVelocityUpResource() const { return mVelocityUp.GetResource(); }
+
 private:
 	Core::Texture3D mDensity;
 	Core::Texture3D mDensityTemp;
@@ -63,6 +75,11 @@ private:
 	Core::Texture3D mVorticity;
 	Core::Texture3D mBoundaryCondition;
 
+	Core::Texture3D mDensityUp;
+	Core::Texture3D mDensityUpTemp;
+	Core::Texture3D mVelocityUp;
+	Core::Texture3D mVelocityUpTemp;
+
 	UINT offset;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mHeap;
 
@@ -73,4 +90,9 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mDivergenceHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mComputeVorticityHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mVorticityConfinementHeap;
+
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mDownSampleHeap;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mUpSampleHeap;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mAdvectionHeap;
+
 };

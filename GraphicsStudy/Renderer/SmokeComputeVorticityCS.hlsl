@@ -2,7 +2,7 @@
 #include "Smoke.hlsli"
 
 RWTexture3D<float4> vorticity : register(u0);
-Texture3D<float4> velocity : register(t0);
+Texture3D<float4> velocityUp : register(t0);
 Texture3D<int> gBoundaryCondition : register(t1);
 
 static int3 offset[6] =
@@ -26,7 +26,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
     if (gBoundaryCondition[DTid.xyz] >= 0)
     {
         float w, h, d;
-        velocity.GetDimensions(w, h, d);
+        velocityUp.GetDimensions(w, h, d);
         uint x = DTid.x;
         uint y = DTid.y;
         uint z = DTid.z;
@@ -47,7 +47,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 {
                     if (k != i)
                     {
-                        v[vIdx++] = dot(velocity[index].xyz, offset2[k]);
+                        v[vIdx++] = dot(velocityUp[index].xyz, offset2[k]);
                     }
                 }
             }

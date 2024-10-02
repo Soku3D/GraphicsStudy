@@ -1721,35 +1721,7 @@ void Renderer::D3D12App::CaptureHDRBufferToPNG() {
 
 void Renderer::D3D12App::CaptureBackBufferToPNG() {
 
-	m_commandAllocator->Reset();
-	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
-
-	D3D12_RESOURCE_DESC desc = CurrentBackBuffer()->GetDesc();
-	UINT64 requiredSize = 0;
-	D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
-	m_device->GetCopyableFootprints(&desc, 0, 1, 0, &footprint, nullptr, nullptr, &requiredSize);
-
-	m_commandList->ResourceBarrier(1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(
-			CurrentBackBuffer(),
-			D3D12_RESOURCE_STATE_PRESENT,
-			D3D12_RESOURCE_STATE_COPY_SOURCE));
-
-	CD3DX12_TEXTURE_COPY_LOCATION dst(imageBuffer.Get(), footprint);
-	CD3DX12_TEXTURE_COPY_LOCATION src(CurrentBackBuffer(), 0);
-	m_commandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
-
-	m_commandList->ResourceBarrier(1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(
-			CurrentBackBuffer(),
-			D3D12_RESOURCE_STATE_COPY_SOURCE,
-			D3D12_RESOURCE_STATE_PRESENT
-		));
-
-	m_commandList->Close();
-	ID3D12CommandList* lists[] = { m_commandList.Get() };
-	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
-	FlushCommandQueue();
+	CopyResource(m_commandList, imageBuffer.Get(), HDRRenderTargetBuffer(), D3D12_RESOURCE_STATE_COPY_DEST);
 
 	D3D12_RANGE range(0, 0);
 	UINT width = m_screenWidth;
@@ -1805,6 +1777,7 @@ void Renderer::D3D12App::CaptureBackBufferToPNG() {
 	stbi_write_png(ss.str().c_str(), width, height, 4, imageUnorm.data(), width * channels);
 	imageUnorm.clear();
 	imagef16.clear();
+
 }
 void Renderer::D3D12App::CreateSamplers() {
 	/*D3D12_SAMPLER_DESC clampSampler = {};

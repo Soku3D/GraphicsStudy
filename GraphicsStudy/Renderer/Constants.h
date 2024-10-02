@@ -99,6 +99,7 @@ __declspec(align(256)) struct CFDConstantData {
 
 	float time;
 	float sourceStrength;
+	int upScale;
 };
 __declspec(align(256)) struct PostprocessingConstantData {
 	float bUseGamma;
