@@ -65,8 +65,8 @@ float4 main(PSInput input) : SV_TARGET
     float3 eyeModel = eyePosition; // 
     float3 dirModel = normalize(input.worldPoition.xyz - eyeModel);
     
-    int numSteps = 128;
-    float stepSize = 2.0 / float(numSteps);
+    int numSteps = 256;
+    float stepSize = 4.0 / float(numSteps);
 
     float3 volumeAlbedo = float3(1, 1, 1);
     
@@ -78,6 +78,13 @@ float4 main(PSInput input) : SV_TARGET
     float3 lightColor = float3(1, 1, 1) * 40.0;
     
     float3 center = float3(0.5f, 0.5f, 0.5f);
+    
+    int w, h, d;
+    gVolumeDensity.GetDimensions(w, h, d);
+    float3 dim = float3(4, 2, 2);
+    float3 sphereCenter = (float3(0.15f, 0.5f, 0.5f) * dim) - float3(2.f, 1.f, 1.f);
+    float radius = 0.2f;
+    
     [loop] 
     for (int i = 0; i < numSteps; i++)
     {
@@ -87,7 +94,11 @@ float4 main(PSInput input) : SV_TARGET
         float density = gVolumeDensity.SampleLevel(clampLinearSampler, uvw, 0).r;
         // float lighting = lightingTex.SampleLevel(linearClampSampler, uvw, 0).r;
         float lighting = 1.0; 
-
+        if (length(posModel - sphereCenter) <= radius)
+        {
+            color.rgb += float3(1, 0, 0);
+            break;
+        }
         if (density > 1e-3)
         {
             float prevAlpha = color.a;

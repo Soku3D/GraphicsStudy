@@ -1708,7 +1708,7 @@ void Renderer::D3D12App::CaptureHDRBufferToPNG() {
 		ss << t->tm_hour;
 	}
 	if (t->tm_min < 9) {
-		ss << '0' << t->tm_hour;
+		ss << '0' << t->tm_min;
 	}
 	else {
 		ss << t->tm_min;
@@ -1902,7 +1902,7 @@ bool Renderer::D3D12App::InitializeDLSS()
 	sl::Feature featuresToLoad[] = { sl::kFeatureDLSS };
 	prefs.featuresToLoad = featuresToLoad;
 	const wchar_t* pluginPaths[] = {
-		L"C:/Users/son/Streamline_Sample/_bin/"  // 실제 플러그인 경로로 변경
+		L"C:/Users/son97/Streamline/bin/x64"  // 실제 플러그인 경로로 변경
 	};
 	prefs.pathsToPlugins = pluginPaths;
 	prefs.numPathsToPlugins = sizeof(pluginPaths) / sizeof(pluginPaths[0]);

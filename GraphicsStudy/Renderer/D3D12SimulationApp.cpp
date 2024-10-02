@@ -189,7 +189,7 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 	mCubeMapConstantBuffer.mStructure.lodLevel = 0.f;
 	mCubeMapConstantBuffer.UpdateBuffer();
 
-	mPostprocessingConstantBuffer.mStructure.bUseGamma = false;
+	mPostprocessingConstantBuffer.mStructure.bUseGamma = true;
 	mPostprocessingConstantBuffer.UpdateBuffer();
 
 	mCloud.Update(deltaTime);
@@ -293,7 +293,7 @@ void Renderer::D3D12SimulationApp::SmokeSimulationPass(float& deltaTime) {
 
 	bRenderSmoke = true;
 
-	//RenderCubeMap(deltaTime);
+	RenderCubeMap(deltaTime);
 
 	CopyResource(m_commandList, 
 		mSmoke->GetVelocityUpTempResource(), //dest
@@ -317,16 +317,14 @@ void Renderer::D3D12SimulationApp::SmokeSimulationPass(float& deltaTime) {
 	SmokeApplyPressurePass(deltaTime);
 
 	SmokeDiffUpSamplePass(deltaTime);
-
 	
-
 	SmokeAdvectionPass(deltaTime);
 
 	RenderBoundingBox(deltaTime);
 	RenderVolumMesh(deltaTime);
 
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
-		D3D12App::PostProcessing(deltaTime);
+		//D3D12App::PostProcessing(deltaTime);
 		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 	}
 	else
@@ -1171,9 +1169,9 @@ void Renderer::D3D12SimulationApp::RenderBoundingBox(float& deltaTime)
 
 	FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
 
-	m_commandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
+	/*m_commandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
 	m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-		1.f, 0, 0, nullptr);
+		1.f, 0, 0, nullptr);*/
 
 	m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
 
