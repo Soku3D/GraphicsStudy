@@ -26,6 +26,7 @@
     <img src="GraphicsStudy/Renderer/Results/SimulationApp/240920-959.png" width="180" height="180">
     <img src="GraphicsStudy/Renderer/Results/SimulationApp/240920-2132.png" width="180" height="180">
     <img src="GraphicsStudy/Renderer/Results/SimulationApp/240920-2130.png" width="180" height="180">
+    <img src="GraphicsStudy/Renderer/Results/SimulationApp/241002-13013.png" height="180">
 
 5. DLSS sample
 
