@@ -54,3 +54,13 @@ vcpkg install physx:x64-windows
 
 ```
 C:\Users\username\sdk
+
+
+#### Set Up Streamline SDK
+
+1. Visit the [Streamline SDK Github](https://github.com/NVIDIAGameWorks/Streamline).
+2. Download the Streamline SDK from the website.
+3. Once downloaded, extract the SDK files to the following path:
+
+```
+C:\Users\username\streamline
