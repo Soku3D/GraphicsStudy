@@ -1680,7 +1680,7 @@ void Renderer::D3D12App::CaptureHDRBufferToPNG() {
 
 	for (size_t i = 0; i < imageSize; i++)
 	{
-		imageUnorm[i] = (uint8_t)(std::clamp(fp16_ieee_to_fp32_value(imagef16[i]), 0.f, 1.f) * 255.f);
+		imageUnorm[i] = (uint8_t)(pow(std::clamp(fp16_ieee_to_fp32_value(imagef16[i]), 0.f, 1.f), invGamma) * 255.f);
 	}
 
 	time_t timer = time(NULL);
@@ -1768,7 +1768,7 @@ void Renderer::D3D12App::CaptureBackBufferToPNG() {
 		ss << t->tm_hour;
 	}
 	if (t->tm_min < 9) {
-		ss << '0' << t->tm_hour;
+		ss << '0' << t->tm_min;
 	}
 	else {
 		ss << t->tm_min;

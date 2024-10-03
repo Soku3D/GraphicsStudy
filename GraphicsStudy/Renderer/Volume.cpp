@@ -175,12 +175,13 @@ void Volume::CopyDescriptors(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	handle.Offset(1, offset);
 	device->CopyDescriptorsSimple(1, handle, mBoundaryCondition.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	
+	// VorticityConfinement Heap
 	handle = mVorticityConfinementHeap->GetCPUDescriptorHandleForHeapStart();
 	device->CopyDescriptorsSimple(1, handle, mVelocityUp.GetNSVUavCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	handle.Offset(1, offset);
-	device->CopyDescriptorsSimple(1, handle, mDensityUp.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	device->CopyDescriptorsSimple(1, handle, mVelocityUpTemp.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	handle.Offset(1, offset);
-	device->CopyDescriptorsSimple(1, handle, mVorticity.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	device->CopyDescriptorsSimple(1, handle, mDensityUp.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	handle.Offset(1, offset);
 	device->CopyDescriptorsSimple(1, handle, mBoundaryCondition.GetNSVSrvCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 

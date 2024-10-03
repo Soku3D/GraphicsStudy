@@ -64,8 +64,11 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	mCloud.Initiailize(128, 64, 64, DXGI_FORMAT_R16_FLOAT, m_device, m_commandList);
 
 	upscale = 2;
+	smokeWidth = 128;
+	smokeHeight = 64;
+	smokeDepth = 64;
 	mSmoke = new Volume();
-	mSmoke->Initialize(128, 64, 64, upscale, m_device, m_commandList);
+	mSmoke->Initialize(smokeWidth, smokeHeight, smokeDepth, upscale, m_device, m_commandList);
 
 	m_commandList->Close();
 	ID3D12CommandList* pCmdLists[] = {
@@ -101,7 +104,7 @@ void Renderer::D3D12SimulationApp::InitSimulationScene() {
 
 	m_cubeMap = std::make_shared<Core::StaticMesh>();
 	m_cubeMap->Initialize(GeometryGenerator::SimpleCubeMapBox(500.f), m_device, m_commandList);
-	m_cubeMap->SetTexturePath(std::wstring(L"PureSky") + L"EnvHDR.dds");
+	m_cubeMap->SetTexturePath(std::wstring(L"Outdoor") + L"EnvHDR.dds");
 }
 
 void Renderer::D3D12SimulationApp::OnResize()
@@ -173,8 +176,8 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 		mCFDConstantBuffer.mStructure.j = -1;
 	}
 	mCFDConstantBuffer.mStructure.color = colorLists[colorIndex];
-	//mCFDConstantBuffer.mStructure.deltaTime = (deltaTime < 1 / 60.f ? deltaTime : 1 / 60.f);
-	mCFDConstantBuffer.mStructure.deltaTime = 1 / 60.f;
+	mCFDConstantBuffer.mStructure.deltaTime = (deltaTime < 1 / 60.f ? deltaTime : 1 / 60.f);
+	//mCFDConstantBuffer.mStructure.deltaTime = 1 / 60.f;
 	mCFDConstantBuffer.mStructure.radius = 50.f;
 	mCFDConstantBuffer.mStructure.viscosity = mGuiViscosity;
 	mCFDConstantBuffer.mStructure.vorticity = mGuiVorticity;
@@ -183,13 +186,19 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 	mCFDConstantBuffer.mStructure.sourceStrength = mGuiSourceStrength;
 	mCFDConstantBuffer.mStructure.upScale = upscale;
 
+	mCFDConstantBuffer.mStructure.dxBase = XMFLOAT3(1.f / smokeWidth, 1.f / smokeHeight, 1.f / smokeDepth);
+	mCFDConstantBuffer.mStructure.dxUp = 
+		XMFLOAT3(1.f / (smokeWidth * upscale),
+				 1.f / (smokeHeight * upscale),
+				 1.f / (smokeDepth * upscale));
+
 	mCFDConstantBuffer.UpdateBuffer();
 
 	mCubeMapConstantBuffer.mStructure.expose = 2.f;
 	mCubeMapConstantBuffer.mStructure.lodLevel = 0.f;
 	mCubeMapConstantBuffer.UpdateBuffer();
 
-	mPostprocessingConstantBuffer.mStructure.bUseGamma = true;
+	mPostprocessingConstantBuffer.mStructure.bUseGamma = false;
 	mPostprocessingConstantBuffer.UpdateBuffer();
 
 	mCloud.Update(deltaTime);
@@ -292,6 +301,7 @@ void Renderer::D3D12SimulationApp::CFD(float& deltaTime)
 void Renderer::D3D12SimulationApp::SmokeSimulationPass(float& deltaTime) {
 
 	bRenderSmoke = true;
+	//bCaptureBackbuffer = true;
 
 	RenderCubeMap(deltaTime);
 
@@ -302,7 +312,7 @@ void Renderer::D3D12SimulationApp::SmokeSimulationPass(float& deltaTime) {
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS  // src state
 	);
 
-	SmokeVorticityPass(deltaTime, "SmokeComputeVorticity", 0);
+	//SmokeVorticityPass(deltaTime, "SmokeComputeVorticity", 0);
 	SmokeVorticityPass(deltaTime, "SmokeVorticityConfinement", 1);
 
 	SmokeDownSamplePass(deltaTime);
@@ -337,13 +347,13 @@ void Renderer::D3D12SimulationApp::VolumeRendering(float& deltaTime) {
 
 	bRenderCloud = true;
 
-	RenderCubeMap(deltaTime);
+	//RenderCubeMap(deltaTime);
 	ComputeVolumeDensityPass(deltaTime);
 	RenderBoundingBox(deltaTime);
 	RenderVolumMesh(deltaTime);
 
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
-		D3D12App::PostProcessing(deltaTime);
+		//D3D12App::PostProcessing(deltaTime);
 		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 	}
 	else
@@ -1169,9 +1179,9 @@ void Renderer::D3D12SimulationApp::RenderBoundingBox(float& deltaTime)
 
 	FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
 
-	/*m_commandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
-	m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-		1.f, 0, 0, nullptr);*/
+	//m_commandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
+	//m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+	//	1.f, 0, 0, nullptr);
 
 	m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
 
@@ -1198,7 +1208,7 @@ void Renderer::D3D12SimulationApp::RenderBoundingBox(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::RenderCubeMap(float& deltaTime)
 {
-	auto& pso = cubePsoLists["HDRCubeMap"];
+	auto& pso = cubePsoLists["DefaultCubeMap"];
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 

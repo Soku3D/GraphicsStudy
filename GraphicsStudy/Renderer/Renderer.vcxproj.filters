@@ -296,6 +296,7 @@
     <FxCompile Include="SimpleRaytracing.hlsl" />
     <FxCompile Include="SmokeDownSampleCS.hlsl" />
     <FxCompile Include="SmokeDiffUpSampleCS.hlsl" />
+    <FxCompile Include="CubeMapGammaPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />

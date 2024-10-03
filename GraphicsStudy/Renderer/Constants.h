@@ -97,8 +97,12 @@ __declspec(align(256)) struct CFDConstantData {
 	uint32_t i;
 	uint32_t j;
 
+	DirectX::SimpleMath::Vector3 dxBase;
 	float time;
+
+	DirectX::SimpleMath::Vector3 dxUp;
 	float sourceStrength;
+
 	int upScale;
 };
 __declspec(align(256)) struct PostprocessingConstantData {

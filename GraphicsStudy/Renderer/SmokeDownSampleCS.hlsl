@@ -22,7 +22,6 @@ void main(uint3 DTid : SV_DispatchThreadID)
         for (int j = 0; j < upScale; j++)
             for (int i = 0; i < upScale; i++)
             {
-                // TODO:
                 velocitySum += velocityUp[DTidUp + uint3(i, j, k)];
                 densitySum += densityUp[DTidUp + uint3(i, j, k)];
             }

@@ -97,6 +97,7 @@ float4 main(PSInput input) : SV_TARGET
         if (length(posModel - sphereCenter) <= radius)
         {
             color.rgb += float3(1, 0, 0);
+            color.a = 0.f;
             break;
         }
         if (density > 1e-3)

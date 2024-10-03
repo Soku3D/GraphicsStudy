@@ -81,6 +81,9 @@ namespace Renderer {
 		Core::Texture3D mCloud;
 		Volume* mSmoke;
 		int upscale = 1;
+		int smokeWidth = 128;
+		int smokeHeight = 64;
+		int smokeDepth = 64;
 
 		bool bRenderCloud = false;
 		bool bRenderSmoke = false;
@@ -106,8 +109,8 @@ namespace Renderer {
 
 
 	private:
-		float mGuiVorticity = 0.f;
+		float mGuiVorticity = 0.8f;
 		float mGuiViscosity = 0.f;
-		float mGuiSourceStrength = 2.f;
+		float mGuiSourceStrength = 1.33f;
 	};
 }

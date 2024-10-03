@@ -1,9 +1,14 @@
 #include "Utility.hlsli"
 #include "Smoke.hlsli"
 
-RWTexture3D<float> gDensity : register(u0);
-RWTexture3D<float4> gVelocity : register(u1);
-RWTexture3D<int> gBoundaryCondition : register(u2);
+RWTexture3D<float> density: register(u0);
+RWTexture3D<float4> velocity : register(u1);
+
+// boundary conditions
+// -1: Dirichlet condition
+// -2: Neumann condition
+//  0: Full cell
+RWTexture3D<int> bc : register(u2);
 
 float smootherstep(float x, float edge0 = 0.0f, float edge1 = 1.0f)
 {
@@ -14,41 +19,47 @@ float smootherstep(float x, float edge0 = 0.0f, float edge1 = 1.0f)
 }
 
 [numthreads(16, 16, 4)]
-void main( uint3 DTid : SV_DispatchThreadID )
+void main(uint3 dtID : SV_DispatchThreadID)
 {
-    //g_density[DTid.xyz] = max(0.f, g_density[DTid.xyz] - 0.1f);
-    uint w, h, d;
-    gDensity.GetDimensions(w, h, d);
-    float3 dim = float3(w, h, d);
-    gBoundaryCondition[DTid.xyz] = 0;
+    uint width, height, depth;
+    bc.GetDimensions(width, height, depth);
     
-    float3 center = float3(0.02f, 0.5f, 0.5f) * dim;
-    float radius = h * 0.2f;
-    float l = length(DTid.xyz - center) / radius;
-    //if (DTid.x == 10 && l < gConstantBuffer.radius)
-    if (l < 1.f)
+    bc[dtID] = 0;
+    
+    if (dtID.x == 0 || dtID.y == 0 || dtID.z == 0
+        || dtID.x == width - 1 || dtID.y == height - 1 || dtID.z == depth - 1)
     {
-        gVelocity[DTid.xyz] = float4(32 * gConstantBuffer.sourceStrength, 0, 0, 0) / 64.0 * float(w);
-        gDensity[DTid.xyz] = max(smootherstep(1.0 - l), gDensity[DTid.xyz]);
+        bc[dtID] = -1; // Dirichlet boundary condition
+        //density[dtID.xyz] = 0.0;
+        //velocity[dtID.xyz] = 0.0;
     }
+
+    // Source
+    float3 center = float3(0.02, 0.5, 0.5) / gConstantBuffer.dxBase;
+    int radius = 0.2 * height;
+
+    float dist = length(float3(dtID.xyz) - center) / radius;
     
-    uint x = DTid.x;
-    uint y = DTid.y;
-    uint z = DTid.z;
-    if (x == 0 || y == 0 || z == 0 || x == w - 1 || y == h - 1 || z == d - 1)
+    if (dist < 1.0)
     {
-        gBoundaryCondition[DTid.xyz] = -1;
+        velocity[dtID.xyz] = float4(32 * gConstantBuffer.sourceStrength, 0, 0, 0) / 64.0 * float(width); // scale up velocity
+        density[dtID.xyz] = max(smootherstep(1.0 - dist), density[dtID.xyz]);
+        //bc[dtID.xyz] = -2; // Neumann
     }
+
+    // Object
+    center = float3(0.15, 0.5, 0.5) / gConstantBuffer.dxBase;
+    radius = 0.1 * height;
     
-    center = float3(0.15f, 0.5f, 0.5f) * dim;
-    radius = 0.1 * h;
+    dist = length(float3(dtID.xyz) - center) / radius;
     
-    l = length(float3(DTid.xyz) - center) / radius;
-    
-    if (l < 1.0)
+    if (dist < 1.0)
     {
-        gDensity[DTid.xyz] = 0.0;
-        gVelocity[DTid.xyz] = float4(0, 0, 0, 0); 
-        gBoundaryCondition[DTid.xyz] = -2;  
+        velocity[dtID.xyz] = float4(0, 0, 0, 0) / 64.0 * width; 
+        density[dtID.xyz] = 0.0;
+        bc[dtID.xyz] = -2; // Neumann
     }
+
+    // buoyancy
+    //velocity[dtID.xyz] += float4(0, buoyancy, 0, 0) * density[dtID.xyz] * dt * width;
 }

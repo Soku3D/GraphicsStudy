@@ -1,56 +1,53 @@
 #include "Utility.hlsli"
 #include "Smoke.hlsli"
 
-RWTexture3D<float> gDivergence : register(u0);
-RWTexture3D<float> gPressure : register(u1);
-RWTexture3D<float> gPressureTemp : register(u2);
-Texture3D<float4> gVelocity : register(t0);
-Texture3D<int> gBoundaryCondition : register(t1);
+Texture3D<float4> velocity : register(t0);
 
+// boundary conditions
+// -1: Dirichlet condition
+// -2: Neumann condition
+//  0: Full cell
+Texture3D<int> bc : register(t1);
+
+RWTexture3D<float> divergence : register(u0);
+RWTexture3D<float> pressure : register(u1);
+RWTexture3D<float> pressureTemp : register(u2);
 static int3 offset[6] =
 {
-    int3(-1, 0, 0),
-    int3(1, 0, 0),
-    int3(0, -1, 0),
-    int3(0, 1, 0),
-    int3(0, 0, -1),
-    int3(0, 0, 1)
+    int3(1, 0, 0), // right
+    int3(-1, 0, 0), // left
+    int3(0, 1, 0), // up
+    int3(0, -1, 0), // down
+    int3(0, 0, 1), // back
+    int3(0, 0, -1) // front
 };
 
 [numthreads(16, 16, 4)]
 void main( uint3 DTid : SV_DispatchThreadID )
 {
-    if (gBoundaryCondition[DTid.xyz] >= 0)
+    if (bc[DTid.xyz] >= 0)
     {
-        float w, h, d;
-        gVelocity.GetDimensions(w, h, d);
-        uint x = DTid.x;
-        uint y = DTid.y;
-        uint z = DTid.z;
-    
-        float dx = 2.f;
-    
-        float divergence = 0.f;
-        for (uint i = 0; i < 6; ++i)
+        float div = 0.0;
+
+        [unroll]
+        for (int i = 0; i < 6; i++)
         {
-            uint3 idx = DTid.xyz + offset[i];
-            
-            if (gBoundaryCondition[DTid.xyz] == 0)
+            if (bc[DTid.xyz + offset[i]] == -1) // Dirichlet
             {
-                divergence += dot(gVelocity[idx].xyz, float3(offset[i])) * 0.5f;
+                div += dot(velocity[DTid.xyz].xyz, float3(offset[i]));
             }
-            else if (gBoundaryCondition[DTid.xyz] == -1)
+            if (bc[DTid.xyz + offset[i]] == -2) // Neumann
             {
-                divergence += dot(gVelocity[DTid.xyz].xyz, float3(offset[i])) * 0.5f;
+                div += dot(2 * velocity[DTid.xyz + offset[i]].xyz - velocity[DTid.xyz].xyz, float3(offset[i]));
             }
             else
             {
-                divergence += dot(2.f * gVelocity[idx].xyz - gVelocity[DTid.xyz].xyz, float3(offset[i])) * 0.5f;
+                div += dot(velocity[DTid.xyz + offset[i]].xyz, float3(offset[i]));
             }
-
         }
-        gDivergence[DTid.xyz] = divergence;
-        gPressure[DTid.xyz] = 0.f;
-        gPressureTemp[DTid.xyz] = 0.f;
+
+        divergence[DTid.xyz] = 0.5 * div;
+        pressure[DTid.xyz] = 0.0;
+        pressureTemp[DTid.xyz] = 0.0;
     }
 }

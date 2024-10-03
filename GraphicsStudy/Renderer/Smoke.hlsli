@@ -11,8 +11,12 @@ struct SimulationConstant
     uint i;
     uint j;
     
+    float3 dxBase;
     float time;
+    
+    float3 dxUp;
     float sourceStrength;
+    
     uint upScale;
 };
 

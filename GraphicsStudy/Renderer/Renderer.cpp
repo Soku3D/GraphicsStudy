@@ -8,6 +8,7 @@
 #include "CubeMapVS.h"
 #include "CubeMapPS.h"
 #include "CubeMapHdrPS.h"
+#include "CubeMapGammaPS.h"
 
 #include "CopyVS.h"
 #include "CopyPS.h"
@@ -258,6 +259,7 @@ namespace Renderer {
 
 		GraphicsPSO cubeMapPso("DefaultCubeMap");
 		GraphicsPSO hdrcubeMapPso("HDRCubeMap");
+		GraphicsPSO cubeMapGammaPso("CubeMapGamma");
 		GraphicsPSO msaaCubeMapPso("MsaaCubeMap");
 		GraphicsPSO wireCubeMapPso("WireCubeMap");
 
@@ -491,6 +493,9 @@ namespace Renderer {
 		hdrcubeMapPso.SetRasterizerState(cubeMapRasterizer);
 		hdrcubeMapPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 
+		cubeMapGammaPso = hdrcubeMapPso;
+		hdrcubeMapPso.SetPixelShader(g_pCubeMapGammaPS, sizeof(g_pCubeMapGammaPS));
+
 		wireCubeMapPso = cubeMapPso;
 		wireCubeMapPso.SetRasterizerState(wireRasterizer);
 
@@ -616,7 +621,8 @@ namespace Renderer {
 		cubePsoLists[hdrcubeMapPso.GetName()] = hdrcubeMapPso;
 		cubePsoLists[msaaCubeMapPso.GetName()] = msaaCubeMapPso;
 		cubePsoLists[wireCubeMapPso.GetName()] = wireCubeMapPso;
-
+		cubePsoLists[cubeMapGammaPso.GetName()] = cubeMapGammaPso;
+		
 		computePsoList[postProcessingPso.GetName()] = postProcessingPso;
 		computePsoList[simulationComputePso.GetName()] = simulationComputePso;
 		computePsoList[simulationPostProcessingPso.GetName()] = simulationPostProcessingPso;
