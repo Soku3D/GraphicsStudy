@@ -177,7 +177,7 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 	}
 	mCFDConstantBuffer.mStructure.color = colorLists[colorIndex];
 	mCFDConstantBuffer.mStructure.deltaTime = (deltaTime < 1 / 60.f ? deltaTime : 1 / 60.f);
-	mCFDConstantBuffer.mStructure.deltaTime = 1 / 60.f;
+	//mCFDConstantBuffer.mStructure.deltaTime = 1 / 60.f;
 	mCFDConstantBuffer.mStructure.radius = 50.f;
 	mCFDConstantBuffer.mStructure.viscosity = mGuiViscosity;
 	mCFDConstantBuffer.mStructure.vorticity = mGuiVorticity;
