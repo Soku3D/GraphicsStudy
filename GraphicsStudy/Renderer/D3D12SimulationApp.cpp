@@ -11,7 +11,7 @@ Renderer::D3D12SimulationApp::D3D12SimulationApp(const int& width, const int& he
 	bUseTextureApp = false;
 	bUseCubeMapApp = true;
 	bUseGUI = false;
-	bRenderCubeMap = true;
+	bRenderCubeMap = false;
 
 	m_appName = "SimulationApp";
 
@@ -177,7 +177,7 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 	}
 	mCFDConstantBuffer.mStructure.color = colorLists[colorIndex];
 	mCFDConstantBuffer.mStructure.deltaTime = (deltaTime < 1 / 60.f ? deltaTime : 1 / 60.f);
-	//mCFDConstantBuffer.mStructure.deltaTime = 1 / 60.f;
+	mCFDConstantBuffer.mStructure.deltaTime = 1 / 60.f;
 	mCFDConstantBuffer.mStructure.radius = 50.f;
 	mCFDConstantBuffer.mStructure.viscosity = mGuiViscosity;
 	mCFDConstantBuffer.mStructure.vorticity = mGuiVorticity;
@@ -339,7 +339,7 @@ void Renderer::D3D12SimulationApp::SmokeSimulationPass(float& deltaTime) {
 	}
 	else
 		D3D12App::CopyResourceToSwapChain(deltaTime);
-	RenderFont(deltaTime);
+	//RenderFont(deltaTime);
 }
 
 
@@ -1178,11 +1178,12 @@ void Renderer::D3D12SimulationApp::RenderBoundingBox(float& deltaTime)
 	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), renderBoundingBoxPassEvent);
 
 	FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
-
-	//m_commandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
-	//m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-	//	1.f, 0, 0, nullptr);
-
+	if (!bRenderCubeMap)
+	{
+		m_commandList->ClearRenderTargetView(HDRRendertargetView(), clearColor, 0, nullptr);
+		m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+			1.f, 0, 0, nullptr);
+	}
 	m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
 
 	m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
@@ -1208,7 +1209,7 @@ void Renderer::D3D12SimulationApp::RenderBoundingBox(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::RenderCubeMap(float& deltaTime)
 {
-	auto& pso = cubePsoLists["DefaultCubeMap"];
+	auto& pso = cubePsoLists["SimulationCubeMap"];
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 

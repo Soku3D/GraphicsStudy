@@ -1632,6 +1632,8 @@ void Renderer::D3D12App::CreateResourceView(ComPtr<ID3D12Resource>& buffer,
 // f16 unorm 변환 후 저장
 void Renderer::D3D12App::CaptureHDRBufferToPNG() {
 
+	//FlushCommandList(m_commandList);
+
 	m_commandAllocator->Reset();
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
@@ -1661,6 +1663,7 @@ void Renderer::D3D12App::CaptureHDRBufferToPNG() {
 	ID3D12CommandList* lists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
 	FlushCommandQueue();
+	//CopyResource(m_commandList, imageBuffer.Get(), HDRRenderTargetBuffer(), D3D12_RESOURCE_STATE_COPY_DEST);
 
 	D3D12_RANGE range(0, 0);
 

@@ -94,7 +94,7 @@ void main(uint3 dtID : SV_DispatchThreadID)
         if (l > 1e-3)
         {
             float3 N = eta / l;
-            velocityUp[dtID.xyz] += float4(cross(N, Vorticity(dtID.xyz)) * 1 / 60.f
+            velocityUp[dtID.xyz] += float4(cross(N, Vorticity(dtID.xyz)) * gConstantBuffer.deltaTime
                                 * density
                                 * gConstantBuffer.vorticity
                                 * depth,

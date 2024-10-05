@@ -4,8 +4,8 @@
 float3 GetUVW(float3 posModel)
 {
     float x = (posModel.x + 2.f) * 0.25f;
-    float y = (posModel.y - 1.f) * -0.5f;
-    float z = (posModel.z - 1.f) * -0.5f;
+    float y = (posModel.y + 1.f) * 0.5f;
+    float z = (posModel.z + 1.f) * 0.5f;
     return float3(x, y, z);
 }
 
@@ -94,12 +94,12 @@ float4 main(PSInput input) : SV_TARGET
         float density = gVolumeDensity.SampleLevel(clampLinearSampler, uvw, 0).r;
         // float lighting = lightingTex.SampleLevel(linearClampSampler, uvw, 0).r;
         float lighting = 1.0; 
-        if (length(posModel - sphereCenter) <= radius)
-        {
-            color.rgb += float3(1, 0, 0);
-            color.a = 0.f;
-            break;
-        }
+        //if (length(posModel - sphereCenter) <= radius)
+        //{
+        //    color.rgb += float3(1, 0, 0);
+        //    color.a = 0.f;
+        //    break;
+        //}
         if (density > 1e-3)
         {
             float prevAlpha = color.a;

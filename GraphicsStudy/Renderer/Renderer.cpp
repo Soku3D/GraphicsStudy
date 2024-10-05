@@ -258,6 +258,7 @@ namespace Renderer {
 		GraphicsPSO wirePso("Wire");
 
 		GraphicsPSO cubeMapPso("DefaultCubeMap");
+		GraphicsPSO simulationCubeMapPso("SimulationCubeMap");
 		GraphicsPSO hdrcubeMapPso("HDRCubeMap");
 		GraphicsPSO cubeMapGammaPso("CubeMapGamma");
 		GraphicsPSO msaaCubeMapPso("MsaaCubeMap");
@@ -485,6 +486,14 @@ namespace Renderer {
 		cubeMapPso.SetRasterizerState(cubeMapRasterizer);
 		cubeMapPso.SetRenderTargetFormats(2, cubeMapPassFormats, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 
+		simulationCubeMapPso = defaultPso;
+		simulationCubeMapPso.SetInputLayout((UINT)simpleElement.size(), simpleElement.data());
+		simulationCubeMapPso.SetRootSignature(&cubeMapSignature);
+		simulationCubeMapPso.SetVertexShader(g_pCubeMapVS, sizeof(g_pCubeMapVS));
+		simulationCubeMapPso.SetPixelShader(g_pCubeMapPS, sizeof(g_pCubeMapPS));
+		simulationCubeMapPso.SetRasterizerState(cubeMapRasterizer);
+		simulationCubeMapPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+
 		hdrcubeMapPso = defaultPso;
 		hdrcubeMapPso.SetInputLayout((UINT)simpleElement.size(), simpleElement.data());
 		hdrcubeMapPso.SetRootSignature(&cubeMapSignature);
@@ -622,6 +631,7 @@ namespace Renderer {
 		cubePsoLists[msaaCubeMapPso.GetName()] = msaaCubeMapPso;
 		cubePsoLists[wireCubeMapPso.GetName()] = wireCubeMapPso;
 		cubePsoLists[cubeMapGammaPso.GetName()] = cubeMapGammaPso;
+		cubePsoLists[simulationCubeMapPso.GetName()] = simulationCubeMapPso;
 		
 		computePsoList[postProcessingPso.GetName()] = postProcessingPso;
 		computePsoList[simulationComputePso.GetName()] = simulationComputePso;

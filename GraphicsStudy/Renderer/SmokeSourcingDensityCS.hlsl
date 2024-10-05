@@ -36,9 +36,11 @@ void main(uint3 dtID : SV_DispatchThreadID)
 
     // Source
     float3 center = float3(0.02, 0.5, 0.5) / gConstantBuffer.dxBase;
+    float3 center2 = float3(1.f-0.02, 0.5, 0.5) / gConstantBuffer.dxBase;
     int radius = 0.2 * height;
 
     float dist = length(float3(dtID.xyz) - center) / radius;
+    float dist2 = length(float3(dtID.xyz) - center2) / radius;
     
     if (dist < 1.0)
     {
@@ -46,20 +48,34 @@ void main(uint3 dtID : SV_DispatchThreadID)
         density[dtID.xyz] = max(smootherstep(1.0 - dist), density[dtID.xyz]);
         //bc[dtID.xyz] = -2; // Neumann
     }
+    if (dist2 < 1.0)
+    {
+        velocity[dtID.xyz] = float4(-32 * gConstantBuffer.sourceStrength, 0, 0, 0) / 64.0 * float(width); // scale up velocity
+        density[dtID.xyz] = max(smootherstep(1.0 - dist2), density[dtID.xyz]);
+        //bc[dtID.xyz] = -2; // Neumann
+    }
 
     // Object
     center = float3(0.15, 0.5, 0.5) / gConstantBuffer.dxBase;
     radius = 0.1 * height;
+    center2 = float3(1.f-0.15, 0.5, 0.5) / gConstantBuffer.dxBase;
     
     dist = length(float3(dtID.xyz) - center) / radius;
+    dist2 = length(float3(dtID.xyz) - center2) / radius;
     
     if (dist < 1.0)
     {
-        velocity[dtID.xyz] = float4(0, 0, 0, 0) / 64.0 * width; 
+        velocity[dtID.xyz] = float4(0, 0, 0, 0) / 64.0 * width;
         density[dtID.xyz] = 0.0;
         bc[dtID.xyz] = -2; // Neumann
     }
+    if (dist2 < 1.0)
+    {
+        velocity[dtID.xyz] = float4(0, 0, 0, 0) / 64.0 * width;
+        density[dtID.xyz] = 0.0;
+        bc[dtID.xyz] = -2; // Neumann
+    }
+    //velocity[dtID.xyz] += float4(0, 0.5, 0, 0) * density[dtID.xyz] * gConstantBuffer.deltaTime * width;
+    //velocity[dtID.xyz] += float4(0, 1.1, 0, 0) * density[dtID.xyz] * dt * width;
 
-    // buoyancy
-    //velocity[dtID.xyz] += float4(0, buoyancy, 0, 0) * density[dtID.xyz] * dt * width;
 }
