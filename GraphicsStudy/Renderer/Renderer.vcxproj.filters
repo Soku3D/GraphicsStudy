@@ -297,6 +297,7 @@
     <FxCompile Include="SmokeDownSampleCS.hlsl" />
     <FxCompile Include="SmokeDiffUpSampleCS.hlsl" />
     <FxCompile Include="CubeMapGammaPS.hlsl" />
+    <FxCompile Include="GeometryPassSkinnedMeshVS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />

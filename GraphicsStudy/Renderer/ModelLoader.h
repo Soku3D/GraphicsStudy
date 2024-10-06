@@ -29,6 +29,10 @@ namespace Renderer {
 		Animation::AnimationData m_animeData;
 
 	public:
+		void FindDeformingBones(const aiScene* scene);
+		void UpdateBoneTree(const aiNode* node, int* count);
+		const aiNode* FindParentsBoneId(const aiNode* node);
+
 		template<typename Vertex, typename Index>
 		void Load(std::string filename, bool loadAnimation = false, DirectX::SimpleMath::Matrix tr = DirectX::SimpleMath::Matrix())
 		{
@@ -48,16 +52,20 @@ namespace Renderer {
 				std::cout << "Can't Load Model " + basePath + filename << std::endl;
 				return;
 			}
+
+	
+			FindDeformingBones(pScene);
+			int count = 0;
+			UpdateBoneTree(pScene->mRootNode, &count);
 			
-			ProcessNode<Vertex, Index>(pScene->mRootNode, pScene, tr);
+			m_animeData.boneIdToName.resize(m_animeData.boneNameToId.size());
+			for (auto& i : m_animeData.boneNameToId)
+				m_animeData.boneIdToName[i.second] = i.first;
 
-			m_animeData.offsetMatrices.resize(m_animeData.meshNameToId.size());
-			m_animeData.meshTransforms.resize(m_animeData.meshNameToId.size());
+			m_animeData.boneParentsId.resize(m_animeData.boneNameToId.size(), -1);
+			ProcessNode<Vertex, Index>(pScene->mRootNode, pScene, tr, loadAnimation);
+					
 
-			for (auto& mesh : m_animeData.meshNameToId)
-			{
-				std::cout << mesh.first << " : " << mesh.second << "\n";
-			}
 			if (loadAnimation)
 			{
 				ReadAnimation(pScene);
@@ -77,21 +85,21 @@ namespace Renderer {
 
 				clip.duration = ani->mDuration;
 				clip.ticksPerSec = ani->mTicksPerSecond;
-				clip.keys.resize(m_animeData.meshNameToId.size());
+				clip.keys.resize(m_animeData.boneNameToId.size());
 				clip.numChannels = ani->mNumChannels;
 
 				// i번쨰 노드(채널 / 메쉬)
 				for (uint32_t c = 0; c < ani->mNumChannels; c++) {
 					const aiNodeAnim* nodeAnim = ani->mChannels[c];
-					const int meshId =
-						m_animeData.meshNameToId[nodeAnim->mNodeName.C_Str()];
+					const int boneId =
+						m_animeData.boneNameToId[nodeAnim->mNodeName.C_Str()];
 
-					clip.keys[meshId].resize(nodeAnim->mNumPositionKeys);
+					clip.keys[boneId].resize(nodeAnim->mNumPositionKeys);
 					for (uint32_t k = 0; k < nodeAnim->mNumPositionKeys; k++) {
 						const auto pos = nodeAnim->mPositionKeys[k].mValue;
 						const auto rot = nodeAnim->mRotationKeys[k].mValue;
 						const auto scale = nodeAnim->mScalingKeys[k].mValue;
-						auto& key = clip.keys[meshId][k];
+						auto& key = clip.keys[boneId][k];
 						key.pos = { pos.x, pos.y, pos.z };
 						key.rot = Quaternion(rot.x, rot.y, rot.z, rot.w);
 						key.scale = { scale.x, scale.y, scale.z };
@@ -102,23 +110,25 @@ namespace Renderer {
 
 		template<typename Vertex, typename Index>
 		void ProcessNode(aiNode* node, const aiScene* scene,
-			DirectX::SimpleMath::Matrix tr)
+			DirectX::SimpleMath::Matrix tr, bool loadAnimation)
 		{
 			using DirectX::SimpleMath::Matrix;
 
-			Matrix m;
-			ai_real* temp = &node->mTransformation.a1;
-			float* mTemp = &m._11;
-			for (int t = 0; t < 16; t++) {
-				mTemp[t] = float(temp[t]);
+			
+			if (node->mParent && m_animeData.boneNameToId.count(node->mName.C_Str()) &&
+				FindParentsBoneId(node->mParent) && loadAnimation) {
+				const auto boneId = m_animeData.boneNameToId[node->mName.C_Str()];
+				m_animeData.boneParentsId[boneId] =
+					m_animeData.boneNameToId[FindParentsBoneId(node->mParent)->mName.C_Str()];
 			}
+
+			Matrix m(&node->mTransformation.a1);
 			m = m.Transpose() * tr;
 
 			for (UINT i = 0; i < node->mNumMeshes; i++) {
 
 				aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-				m_animeData.meshNameToId[mesh->mName.C_Str()] = meshCount++;
-				auto newMesh = this->ProcessMesh<Vertex, Index>(mesh, scene);
+				auto newMesh = this->ProcessMesh<Vertex, Index>(mesh, scene, loadAnimation);
 				newMesh.m_name = mesh->mName.C_Str();
 
 				for (auto& v : newMesh.m_vertices) {
@@ -129,12 +139,12 @@ namespace Renderer {
 			}
 
 			for (UINT i = 0; i < node->mNumChildren; i++) {
-				this->ProcessNode<Vertex,Index>(node->mChildren[i], scene, m);
+				this->ProcessNode<Vertex,Index>(node->mChildren[i], scene, m, loadAnimation);
 			}
 		}
 
 		template<typename Vertex, typename Index>
-		MeshData<Vertex, Index> ProcessMesh(aiMesh* mesh, const aiScene* scene) {
+		MeshData<Vertex, Index> ProcessMesh(aiMesh* mesh, const aiScene* scene, bool loadAnimation) {
 			// Data to fill
 			std::vector<Vertex> vertices;
 			std::vector<Index> indices;
@@ -173,10 +183,44 @@ namespace Renderer {
 				for (UINT j = 0; j < face.mNumIndices; j++)
 					indices.push_back(face.mIndices[j]);
 			}
+			if (loadAnimation && mesh->HasBones()) {
 
+				std::vector<std::vector<float>> boneWeights(vertices.size());
+				std::vector<std::vector<uint8_t>> boneIndices(vertices.size());
+
+				m_animeData.offsetMatrices.resize(m_animeData.boneNameToId.size());
+				m_animeData.boneTransforms.resize(m_animeData.boneNameToId.size());
+
+				int count = 0;
+				for (uint32_t i = 0; i < mesh->mNumBones; i++) {
+					const aiBone* bone = mesh->mBones[i];
+					const uint32_t boneId = m_animeData.boneNameToId[bone->mName.C_Str()];
+
+					m_animeData.offsetMatrices[boneId] =
+						DirectX::SimpleMath::Matrix((float*)&bone->mOffsetMatrix).Transpose();
+
+					// 이 뼈가 영향을 주는 Vertex의 개수
+					for (uint32_t j = 0; j < bone->mNumWeights; j++) {
+						aiVertexWeight weight = bone->mWeights[j];
+						assert(weight.mVertexId < boneIndices.size());
+						boneIndices[weight.mVertexId].push_back(boneId);
+						boneWeights[weight.mVertexId].push_back(weight.mWeight);
+					}
+				}
+
+				for (int i = 0; i < vertices.size(); i++) {
+
+					for (int j = 0; j < boneWeights[i].size(); j++) {
+						vertices[i].blendWeights[j] = boneWeights[i][j];
+						vertices[i].boneIndices[j] = boneIndices[i][j];
+					}
+				}
+			}
 			MeshData<Vertex, Index> newMesh;
 			newMesh.m_vertices = vertices;
 			newMesh.m_indices = indices;
+
+			
 
 			if (mesh->mMaterialIndex >= 0) {
 				aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
@@ -197,5 +241,45 @@ namespace Renderer {
 			return newMesh;
 		}
 	};
+	template<typename Vertex, typename Index>
+	inline void ModelLoader<Vertex, Index>::FindDeformingBones(const aiScene* scene)
+	{
+		for (uint32_t i = 0; i < scene->mNumMeshes; i++) {
+			const auto* mesh = scene->mMeshes[i];
+			if (mesh->HasBones()) {
+				for (uint32_t i = 0; i < mesh->mNumBones; i++) {
+					const aiBone* bone = mesh->mBones[i];
+
+					m_animeData.boneNameToId[bone->mName.C_Str()] = -1;
+				}
+			}
+		}
+	}
+	template<typename Vertex, typename Index>
+	inline void ModelLoader<Vertex, Index>::UpdateBoneTree(const aiNode* node, int* count)
+	{
+		if (node) {
+			if (m_animeData.boneNameToId.count(node->mName.C_Str()))
+			{
+				m_animeData.boneNameToId[node->mName.C_Str()] = *count;
+				*count += 1;
+
+
+			}
+			for (size_t i = 0; i < node->mNumChildren; i++)
+			{
+				UpdateBoneTree(node->mChildren[i], count);
+			}
+		}
+	}
+	template<typename Vertex, typename Index>
+	inline const aiNode*  ModelLoader<Vertex, Index>::FindParentsBoneId(const aiNode* node)
+	{
+		if (!node)
+			return nullptr;
+		if (m_animeData.boneNameToId.count(node->mName.C_Str()) > 0)
+			return node;
+		return FindParentsBoneId(node->mParent);
+	}
 }
 

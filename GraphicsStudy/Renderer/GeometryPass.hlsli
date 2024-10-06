@@ -49,6 +49,11 @@ cbuffer cbPass : register(b1)
     float3 eyePosition;
 }
 
+cbuffer cbPass : register(b2)
+{
+    float4x4 boneTransforms[52];
+}
+
 struct VSInput
 {
     float3 position : POSITION;
@@ -56,6 +61,8 @@ struct VSInput
     float2 uv : TEXCOORD;
     float3 tangent : TANGENT;
 };
+
+
 struct VSOutput
 {
     float3 position : POSITION;

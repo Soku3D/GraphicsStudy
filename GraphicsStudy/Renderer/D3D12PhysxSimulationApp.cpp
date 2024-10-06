@@ -269,11 +269,11 @@ void Renderer::D3D12PhysxSimulationApp::InitScene()
 	m_screenMesh->Initialize(GeometryGenerator::Rectangle(2.f, L""), m_device, m_commandList);
 
 	DirectX::SimpleMath::Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
-	std::tuple<std::vector<PbrMeshData>, Animation::AnimationData> soldierData;
-	soldierData = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
-	soldier = std::get<0>(soldierData);
+	std::tuple<std::vector<PbrSkinnedMeshData>, Animation::AnimationData> soldierData;
+	soldierData = GeometryGenerator::ReadFromFile<PbrSkinnedVertex, uint32_t>("swatIdle.fbx", true, true, tr);
+	skinnedMeshsoldier = std::get<0>(soldierData);
 
-	mCharacter->InitStaticMesh(soldier, m_device, m_commandList);
+	mCharacter->InitStaticMesh(skinnedMeshsoldier, m_device, m_commandList);
 	mCharacter->SetPosition(XMFLOAT3(0, 0.45f, 0));
 	mCharacter->SetTexturePath(L"Soldier_Body_Albedo.dds", 0);
 	mCharacter->SetTexturePath(L"Soldier_head_Albedo.dds", 1);

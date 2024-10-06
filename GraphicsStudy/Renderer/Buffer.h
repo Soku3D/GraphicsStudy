@@ -102,4 +102,137 @@ namespace Core {
 		UINT offset;
 	};
 
+	template<typename Structure>
+	class StructureBuffer {
+	public:
+		StructureBuffer() {}
+		~StructureBuffer() {}
+
+		void Initialize(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, std::vector<Structure>& cpuData);
+		ID3D12Resource** GetAddressOf() const { return mStructureBuffer.GetAddressOf(); }
+		ID3D12Resource* Get() const { return mStructureBuffer.Get(); }
+		ID3D12Resource* GetReadBack() const { return mReadBack.Get(); }
+		ID3D12DescriptorHeap* GetHeap() const { return mHeap.Get(); }
+		D3D12_GPU_DESCRIPTOR_HANDLE GetHandle(int index) const {
+			return	CD3DX12_GPU_DESCRIPTOR_HANDLE(mHeap->GetGPUDescriptorHandleForHeapStart(), index, offset);
+		}
+		
+		D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress() { return mStructureBuffer->GetGPUVirtualAddress(); }
+
+	private:
+		UINT bufferSize;
+		UINT offset;
+		void* pGpuData;
+
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mHeapNSV;
+
+		Microsoft::WRL::ComPtr<ID3D12Resource> mStructureBuffer;
+		Microsoft::WRL::ComPtr<ID3D12Resource> mUpload;
+		Microsoft::WRL::ComPtr<ID3D12Resource> mReadBack;
+	};
+	template<typename Structure>
+	inline void StructureBuffer<Structure>::Initialize(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList,
+		std::vector<Structure>& cpuData)
+	{
+		bufferSize = (UINT)(sizeof(Structure) * cpuData.size());
+
+		// default upload buffer 생성
+		D3D12_RESOURCE_DESC resourceDesc;
+		ZeroMemory(&resourceDesc, sizeof(resourceDesc));
+		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		resourceDesc.Width = bufferSize;
+		resourceDesc.Height = 1;
+		resourceDesc.DepthOrArraySize = 1;
+		resourceDesc.MipLevels = 1;
+		resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		resourceDesc.SampleDesc.Count = 1;
+		resourceDesc.SampleDesc.Quality = 0;
+		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		resourceDesc.MipLevels = 1;
+
+		ThrowIfFailed(
+			device->CreateCommittedResource(
+				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+				D3D12_HEAP_FLAG_NONE,
+				&resourceDesc,
+				D3D12_RESOURCE_STATE_COMMON,
+				nullptr,
+				IID_PPV_ARGS(&mStructureBuffer)));
+
+		ThrowIfFailed(device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&mUpload)));
+
+		ThrowIfFailed(device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&mReadBack)));
+
+		D3D12_SUBRESOURCE_DATA subResourceData = {};
+		subResourceData.pData = cpuData.data();
+		subResourceData.RowPitch = bufferSize;
+		subResourceData.SlicePitch = bufferSize;
+
+		D3D12_RESOURCE_BARRIER barriers[] = {
+			CD3DX12_RESOURCE_BARRIER::Transition(
+				mStructureBuffer.Get(),
+				D3D12_RESOURCE_STATE_COMMON,
+				D3D12_RESOURCE_STATE_COPY_DEST)
+		};
+
+		commandList->ResourceBarrier(1, barriers);
+
+		UpdateSubresources(commandList.Get(), mStructureBuffer.Get(), mUpload.Get(), 0, 0, 1, &subResourceData);
+
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+			mStructureBuffer.Get(),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+
+
+		CD3DX12_RANGE range(0, 0);
+		mReadBack->Map(0, &range, reinterpret_cast<void**>(&pGpuData));
+
+		Renderer::Utility::CreateDescriptorHeap(device, mHeapNSV, Renderer::DescriptorType::UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
+		Renderer::Utility::CreateDescriptorHeap(device, mHeap, Renderer::DescriptorType::UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
+
+		SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		SRVDesc.Buffer.NumElements = (UINT)cpuData.size();
+		SRVDesc.Buffer.FirstElement = 0;
+
+		SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		SRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+		SRVDesc.Buffer.StructureByteStride = sizeof(Structure);
+		SRVDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+		D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
+		UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
+		UAVDesc.Buffer.CounterOffsetInBytes = 0;
+		UAVDesc.Buffer.NumElements = (UINT)cpuData.size();
+		UAVDesc.Buffer.StructureByteStride = sizeof(Structure);
+		UAVDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(mHeapNSV->GetCPUDescriptorHandleForHeapStart());
+		offset = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+		device->CreateUnorderedAccessView(mStructureBuffer.Get(), nullptr, &UAVDesc, handle);
+		handle.Offset(1, offset);
+		device->CreateShaderResourceView(mStructureBuffer.Get(), &SRVDesc, handle);
+
+		device->CopyDescriptorsSimple(2, mHeap->GetCPUDescriptorHandleForHeapStart(), mHeapNSV->GetCPUDescriptorHandleForHeapStart(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+
+	}
 }

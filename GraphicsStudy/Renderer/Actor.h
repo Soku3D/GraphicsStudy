@@ -7,6 +7,7 @@
 #include "RaytracingHlslCompat.h"
 #include <memory>
 #include "MeshData.h"
+#include "AnimationClip.h"
 
 namespace Core {
 	class StaticMesh;
@@ -74,6 +75,7 @@ namespace Core {
 		
 	protected:
 		std::unique_ptr<class Core::StaticMesh> mStaticMesh;
+		Animation::AnimationData* animeData;
 	};
 	template<typename Vertex, typename Index>
 	inline void Actor::InitStaticMesh(std::vector<MeshData<Vertex, Index>>& meshData, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)

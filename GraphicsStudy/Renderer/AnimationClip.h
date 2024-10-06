@@ -29,38 +29,59 @@ namespace Animation {
 			}
 		};
 
-		string name;              
+		string name;
 		vector<vector<Key>> keys; // m_key[meshIdx][frameIdx]
-		int numChannels;         
-		int numKeys;              
-		double duration;          
-		double ticksPerSec;      
+		int numChannels;
+		int numKeys;
+		double duration;
+		double ticksPerSec;
 	};
 
 	struct AnimationData {
 
-		map<string, int32_t> meshNameToId;
-		vector<string> meshIdToName;
+		map<string, int32_t> boneNameToId;
+		vector<int32_t> boneParentsId;
+		vector<string> boneIdToName;
 		vector<Matrix> offsetMatrices;
-		vector<Matrix> meshTransforms;
+		vector<Matrix> boneTransforms;
 		vector<AnimationClip> clips;
 		Matrix defaultTransform;
 		Matrix accumulatedRootTransform = Matrix();
 		Vector3 prevPos = Vector3(0.0f);
 
-		Matrix Get(int meshId) {
-			return meshTransforms[meshId];
+		Matrix Get(int boneId) {
+			return defaultTransform.Invert() * offsetMatrices[boneId] *
+				boneTransforms[boneId] * defaultTransform;
 		}
-		
+
 		void Update(int frame) {
 
 			auto& clip = clips[0];
+			for (int boneId = 0; boneId < boneTransforms.size(); boneId++) {
 
-			for (int meshId = 0; meshId < meshTransforms.size(); meshId++) {
+				auto& keys = clip.keys[boneId];
+				auto key = keys.size() > 0 ? keys[frame % keys.size()]
+					: AnimationClip::Key();
+				int parentId = boneParentsId[boneId];
+				Matrix parentMatrix = parentId > 0 ? boneTransforms[parentId]
+					: accumulatedRootTransform;
+				if (parentId < 0) {
+					if (frame != 0) {
+						accumulatedRootTransform =
+							Matrix::CreateTranslation(key.pos - prevPos) *
+							accumulatedRootTransform;
+					}
+					else {
+						auto temp = accumulatedRootTransform.Translation();
+						temp.y = key.pos.y; 
+						accumulatedRootTransform.Translation(temp);
+					}
 
-				auto& keys = clip.keys[meshId];
-				auto key = keys[frame % keys.size()];
-				meshTransforms[meshId] = key.GetTransform();
+					prevPos = key.pos;
+					key.pos = Vector3(0.0f);
+				}
+				boneTransforms[boneId] = key.GetTransform() * parentMatrix;
+
 			}
 		}
 	};

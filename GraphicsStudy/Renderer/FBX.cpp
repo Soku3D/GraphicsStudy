@@ -28,7 +28,7 @@ void Animation::FBX::Initialize(std::vector<PbrMeshData>& meshData, AnimationDat
 		else {
 			newMesh->Initialize(mesh, device, commandList, ModelTranslation, Material());
 		}
-		newMesh->m_inverseMat = animationData.clips[0].keys[animationData.meshNameToId[newMesh->m_name]][0].GetTransform().Invert();
+		newMesh->m_inverseMat = animationData.clips[0].keys[animationData.boneNameToId[newMesh->m_name]][0].GetTransform().Invert();
 		m_staticMeshes.push_back(newMesh);
 	}
 

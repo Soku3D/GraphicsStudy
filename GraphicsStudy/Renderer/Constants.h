@@ -80,6 +80,9 @@ __declspec(align(256)) struct CubeMapConstantData {
 	DirectX::SimpleMath::Vector2 dummy;
 };
 
+__declspec(align(256)) struct SkinnedMeshConstantData {
+	DirectX::SimpleMath::Matrix boneTransforms[60];
+};
 
 __declspec(align(256)) struct SimulationCSConstantData {
 	float deltaTime;

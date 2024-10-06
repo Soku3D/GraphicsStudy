@@ -216,10 +216,10 @@ void Renderer::D3D12SimulationApp::Render(float& deltaTime)
 {
 	//RenderNoise(deltaTime);
 	//ParticleSimulation(deltaTime);
-	//SPH(deltaTime); 
+	SPH(deltaTime); 
 	//CFD(deltaTime);
 	//VolumeRendering(deltaTime);
-	SmokeSimulationPass(deltaTime);
+	//SmokeSimulationPass(deltaTime);
 }
 
 void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
@@ -246,7 +246,7 @@ void Renderer::D3D12SimulationApp::RenderNoise(float& deltaTime)
 void Renderer::D3D12SimulationApp::GeneratePerlinNoise()
 {
 	float deltaTime = 1 / 60.f;
-	PostProcessing(deltaTime, "PerlinNoise", particle.GetRandomResource(), particle.GetHeap(), D3D12_RESOURCE_STATE_COMMON, 2);
+	//PostProcessing(deltaTime, "PerlinNoise", particle.GetRandomResource(), particle.GetHeap(), D3D12_RESOURCE_STATE_COMMON, 2);
 }
 
 void Renderer::D3D12SimulationApp::SPH(float& deltaTime)

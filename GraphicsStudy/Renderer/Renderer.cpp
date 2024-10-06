@@ -14,6 +14,7 @@
 #include "CopyPS.h"
 
 #include "GeometryPassVS.h"
+#include "GeometryPassSkinnedMeshVS.h"
 #include "GeometryPassTesslationVS.h"
 #include "GeometryPassHS.h"
 #include "GeometryPassDS.h"
@@ -110,6 +111,7 @@ namespace Renderer {
 
 	RootSignature defaultSignature;
 	RootSignature geometryPassSignature;
+	RootSignature skinnedMeshGeometryPassSignature;
 	RootSignature cubeMapSignature;
 	RootSignature copySignature;
 	RootSignature lightPassSignature;
@@ -150,6 +152,7 @@ namespace Renderer {
 	std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElement;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> pbrElement;
+	std::vector<D3D12_INPUT_ELEMENT_DESC> pbrSkinnedElement;
 
 	D3D12_STATIC_SAMPLER_DESC wrapLinearSampler;
 	D3D12_STATIC_SAMPLER_DESC wrapPointSampler;
@@ -219,7 +222,8 @@ namespace Renderer {
 		cubeMapSignature.Initialize(1, 2, 1, &wrapLinearSampler);
 		copySignature.Initialize(1, 0, 1, &wrapLinearSampler);
 
-		geometryPassSignature.Initialize(6, 2, samplers);
+		geometryPassSignature.Initialize(6, 3, samplers);
+		skinnedMeshGeometryPassSignature.Initialize(6, 3, samplers);
 		lightPassSignature.InitializeDoubleSrvHeap(5, 4, 1, samplers);
 		NormalPassSignature.Initialize(2);
 		
@@ -265,6 +269,7 @@ namespace Renderer {
 		GraphicsPSO wireCubeMapPso("WireCubeMap");
 
 		GraphicsPSO defaultGeometryPassPso("DefaultGeometryPass");
+		GraphicsPSO skinnedMeshGeometryPassPso("SkinnedMeshGeometryPass");
 		GraphicsPSO msaaGeometryPassPso("MsaaGeometryPass");
 		GraphicsPSO wireGeometryPassPso("WireGeometryPass");
 		GraphicsPSO fbxGeometryPassPso("DefaultFbxGeometryPass");
@@ -332,6 +337,16 @@ namespace Renderer {
 			{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 			{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 			{"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+		};
+		pbrSkinnedElement = {
+			{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+			{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+			{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+			{"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+			{"BLENDWEIGHT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 44, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+			{"BLENDWEIGHT", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 60, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		    {"BLENDINDICES", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, 76, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+			{"BLENDINDICES", 1, DXGI_FORMAT_R8G8B8A8_UINT, 0, 80, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 		};
 
 		defaultRasterizer = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -403,6 +418,11 @@ namespace Renderer {
 		defaultGeometryPassPso.SetRenderTargetFormats(geometryPassNum, geometryPassFormats, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
 		defaultGeometryPassPso.SetInputLayout((UINT)pbrElement.size(), pbrElement.data());
 		defaultGeometryPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+
+		skinnedMeshGeometryPassPso = defaultGeometryPassPso; 
+		skinnedMeshGeometryPassPso.SetInputLayout((UINT)pbrSkinnedElement.size(), pbrSkinnedElement.data());
+		skinnedMeshGeometryPassPso.SetVertexShader(g_pGeometryPassSkinnedMeshVS, sizeof(g_pGeometryPassSkinnedMeshVS));
+		defaultGeometryPassPso.SetRootSignature(&skinnedMeshGeometryPassSignature);
 
 		fbxGeometryPassPso = defaultPso;
 		fbxGeometryPassPso.SetRootSignature(&geometryPassSignature);
@@ -608,6 +628,7 @@ namespace Renderer {
 		modePsoLists[msaaPso.GetName()] = msaaPso;
 
 		passPsoLists[defaultGeometryPassPso.GetName()] = defaultGeometryPassPso;
+		passPsoLists[skinnedMeshGeometryPassPso.GetName()] = skinnedMeshGeometryPassPso;
 		passPsoLists[wireGeometryPassPso.GetName()] = wireGeometryPassPso;
 		passPsoLists[msaaGeometryPassPso.GetName()] = msaaGeometryPassPso;
 		passPsoLists[fbxGeometryPassPso.GetName()] = fbxGeometryPassPso;
@@ -672,6 +693,7 @@ namespace Renderer {
 		cubeMapSignature.Finalize(device);
 		copySignature.Finalize(device);
 		geometryPassSignature.Finalize(device);
+		skinnedMeshGeometryPassSignature.Finalize(device);
 		lightPassSignature.Finalize(device);
 		NormalPassSignature.Finalize(device);
 		

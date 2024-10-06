@@ -498,7 +498,7 @@ void Renderer::D3D12RayTracingApp::InitRayTracingScene()
 	//DirectX::SimpleMath::Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
 	//std::tuple<std::vector<RaytracingMeshData>, Animation::AnimationData> soldierData;
 	//soldierData = GeometryGenerator::ReadFromFile<RaytracingVertex, uint32_t>("swat.fbx", false, true, tr);
-	////auto [soldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
+	////auto [skinnedMeshsoldier, _] = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
 	//characterMesh->Initialize(std::get<0>(soldierData), m_device, m_commandList,
 	//	Vector3(0.f, 0.f, 0.f),
 	//	Material(1.f, 1.f, 1.f, 0.5f),

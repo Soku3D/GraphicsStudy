@@ -175,6 +175,7 @@ namespace Renderer {
 
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_staticMeshes;
 		std::vector<std::shared_ptr<Core::StaticMesh>> m_lightMeshes;
+		std::vector<PbrSkinnedMeshData> skinnedMeshsoldier;
 		std::vector<PbrMeshData> soldier;
 		Animation::AnimationData soldierAnimation;
 

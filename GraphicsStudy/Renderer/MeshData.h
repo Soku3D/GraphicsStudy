@@ -21,6 +21,7 @@ using SimpleMeshData = MeshData<Renderer::SimpleVertex, uint32_t>;
 using BasicMeshData = MeshData<Renderer::Vertex, uint32_t>;
 using PbrMeshData = MeshData<Renderer::PbrVertex, uint32_t>;
 using PbrMeshData32 = MeshData<Renderer::PbrVertex, uint32_t>;
+using PbrSkinnedMeshData = MeshData<Renderer::PbrSkinnedVertex, uint32_t>;
 
 
 template<typename Vertex, typename Index>

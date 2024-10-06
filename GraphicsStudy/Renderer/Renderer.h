@@ -40,6 +40,7 @@ namespace Renderer {
 	extern RootSignature geometryPassSignature;
 	extern RootSignature lightPassSignature;
 	extern RootSignature NormalPassSignature;
+	extern RootSignature skinnedMeshGeometryPassSignature;
 
 	extern RootSignature copySignature;
 	
@@ -69,6 +70,7 @@ namespace Renderer {
 	extern std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;
 	extern std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElement;
 	extern std::vector<D3D12_INPUT_ELEMENT_DESC> pbrElement;
+	extern std::vector<D3D12_INPUT_ELEMENT_DESC> pbrSkinnedElement;
 
 	extern D3D12_STATIC_SAMPLER_DESC wrapLinearSampler;
 	extern D3D12_STATIC_SAMPLER_DESC wrapPointSampler;

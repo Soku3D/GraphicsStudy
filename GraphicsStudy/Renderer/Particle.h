@@ -5,6 +5,7 @@
 #include "wrl.h"
 #include "d3d12.h"
 #include "d3dx12.h"
+#include "Buffer.h"
 
 struct Particle {
 	DirectX::SimpleMath::Vector3 position;
@@ -38,14 +39,14 @@ public:
 		Microsoft::WRL::ComPtr <ID3D12GraphicsCommandList>& commandList);
 
 	D3D12_GPU_DESCRIPTOR_HANDLE GetUavHandle() const {
-		return mHeap->GetGPUDescriptorHandleForHeapStart();
+		return mStructureBuffer.GetHandle(0);
 	}
 	D3D12_GPU_DESCRIPTOR_HANDLE GetHandle(int index) const {
-		return CD3DX12_GPU_DESCRIPTOR_HANDLE(mHeap->GetGPUDescriptorHandleForHeapStart(), index, offset);
+		return mStructureBuffer.GetHandle(index);
 	}
 
 	ID3D12DescriptorHeap* GetHeap() const {
-		return mHeap.Get();
+		return mStructureBuffer.GetHeap();
 	}
 	UINT GetParticleCount() const {
 		return (UINT)mCpu.size();
@@ -58,18 +59,19 @@ public:
 	void CopyToCpu();
 	void CopyToGpu(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 	void CreateResource(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, const int& width, const int& height, DXGI_FORMAT& format, Microsoft::WRL::ComPtr<ID3D12Resource>& resource);
-	ID3D12Resource* GetGpu() const { return mGpu.Get(); }
-	ID3D12Resource* GetReadBack() const { return mReadBack.Get(); }
+	ID3D12Resource* GetGpu() const { return mStructureBuffer.Get(); }
+	ID3D12Resource* GetReadBack() const { return mStructureBuffer.GetReadBack(); }
 	std::vector<Particle> mCpu;
 
 private:
 	
-	Microsoft::WRL::ComPtr<ID3D12Resource> mGpu;
-	Microsoft::WRL::ComPtr<ID3D12Resource> mUpload;
-	Microsoft::WRL::ComPtr<ID3D12Resource> mReadBack;
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mHeap;
-	
+	//Microsoft::WRL::ComPtr<ID3D12Resource> mGpu;
+	//Microsoft::WRL::ComPtr<ID3D12Resource> mUpload;
+	//Microsoft::WRL::ComPtr<ID3D12Resource> mReadBack;
+	//Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mHeap;
+	//UINT offset;
+	//void* pGpuData;
+	Core::StructureBuffer<Particle> mStructureBuffer;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mRandom;
-	UINT offset;
-	void* pGpuData;
+
 };

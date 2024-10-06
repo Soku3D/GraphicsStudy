@@ -27,7 +27,7 @@ bool Renderer::D3D12PassApp::Initialize()
 			return false;
 		}
 	}
-	
+
 
 	gui_lightPos = DirectX::SimpleMath::Vector3(0.f, 1.f, 0.f);
 	InitConstantBuffers();
@@ -38,6 +38,7 @@ bool Renderer::D3D12PassApp::Initialize()
 void Renderer::D3D12PassApp::InitConstantBuffers()
 {
 	mCubeMapConstantData.Initialize(m_device, m_commandList);
+	mSkinnedMeshConstantData.Initialize(m_device, m_commandList);
 }
 
 void Renderer::D3D12PassApp::InitScene()
@@ -46,16 +47,19 @@ void Renderer::D3D12PassApp::InitScene()
 	using DirectX::SimpleMath::Matrix;
 	using namespace Core;
 
-	Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
-	std::tuple<std::vector<PbrMeshData>, Animation::AnimationData> soldierData;
-	soldierData = GeometryGenerator::ReadFromFile<PbrVertex, uint32_t>("swat.fbx", false, true, tr);
-	soldier = std::get<0>(soldierData);
-
-	mCharacter->InitStaticMesh(soldier, m_device,m_commandList);
-	mCharacter->SetPosition(XMFLOAT3(0, 1.475f, 0));
+	//Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
+	Matrix tr = Matrix();
+	std::tuple<std::vector<PbrSkinnedMeshData>, Animation::AnimationData> soldierData;
+	soldierData = GeometryGenerator::ReadFromFile<PbrSkinnedVertex, uint32_t>("swatIdle.fbx", true, true, tr);
+	skinnedMeshsoldier = std::get<0>(soldierData);
+	soldierAnimation = std::get<1>(soldierData);
+	
+	mCharacter->InitStaticMesh(skinnedMeshsoldier, m_device, m_commandList);
+	//mCharacter->SetPosition(XMFLOAT3(0, 1.475f, 0));
 	mCharacter->SetTexturePath(L"Soldier_Body_Albedo.dds", 0);
 	mCharacter->SetTexturePath(L"Soldier_head_Albedo.dds", 1);
 	mCharacter->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
+	
 	mCharacter->SetMeshBoundingBox(1.f);
 
 	for (size_t i = 0; i < LIGHT_COUNT; i++)
@@ -148,12 +152,12 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 	m_inputHandler->ExicuteCommand(mCharacter.get(), deltaTime, bIsFPSMode);
 	mCharacter->Update(deltaTime);
-	/*m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
-	m_camera->Update(deltaTime);*/
+	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
+	m_camera->Update(deltaTime);
 
 	{
 		// 카메라 고정
-	/*	m_passConstantBuffer.mStructure.ViewMat = m_camera->GetViewMatrix();
+		/*m_passConstantBuffer.mStructure.ViewMat = m_camera->GetViewMatrix();
 		m_passConstantBuffer.mStructure.ProjMat = m_camera->GetProjMatrix();
 		m_passConstantBuffer.mStructure.eyePosition = m_camera->GetPosition();*/
 
@@ -181,7 +185,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	}
 
 	DirectX::SimpleMath::Matrix mat = DirectX::XMMatrixTranslation(gui_lightPos.x, gui_lightPos.y, gui_lightPos.z);
-	if(m_lightMeshes.size()>0)
+	if (m_lightMeshes.size() > 0)
 		m_lightMeshes[0]->UpdateWorldRow(mat);
 
 	for (auto& mesh : m_staticMeshes) {
@@ -207,6 +211,16 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 	mPostprocessingConstantBuffer.mStructure.bUseGamma = false;
 	mPostprocessingConstantBuffer.UpdateBuffer();
+
+	static float frame = 0;
+	soldierAnimation.Update((int)frame);
+	frame += 0.5f;
+
+	for (size_t i = 0; i < soldierAnimation.boneTransforms.size(); i++)
+	{
+		mSkinnedMeshConstantData.mStructure.boneTransforms[i] = soldierAnimation.Get(i).Transpose();
+	}
+	mSkinnedMeshConstantData.UpdateBuffer();
 }
 
 void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
@@ -260,6 +274,7 @@ void Renderer::D3D12PassApp::Render(float& deltaTime)
 {
 	GeometryPass(deltaTime);
 	FbxGeometryPass(deltaTime);
+	SkinnedMeshGeometryPass(deltaTime);
 	RenderCubeMap(deltaTime);
 	LightPass(deltaTime);
 	RenderNormalPass(deltaTime);
@@ -275,7 +290,7 @@ void Renderer::D3D12PassApp::Render(float& deltaTime)
 			CopyResource(m_commandList, HDRRenderTargetBuffer(), HDRRenderTargetBuffer2(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 		}
 	}
-	
+
 
 	CopyResourceToSwapChain(deltaTime);
 }
@@ -343,8 +358,8 @@ void Renderer::D3D12PassApp::GeometryPass(float& deltaTime) {
 			RenderLightMeshes(deltaTime);
 		}
 		// Render Player
-		RenderCharacter(deltaTime);
-		RenderPlayers(deltaTime);
+		//RenderCharacter(deltaTime);
+		//RenderPlayers(deltaTime);
 	}
 
 	ThrowIfFailed(m_commandList->Close());
@@ -396,6 +411,47 @@ void Renderer::D3D12PassApp::FbxGeometryPass(float& deltaTime) {
 
 	ID3D12CommandList* plists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
+
+	FlushCommandQueue();
+	PIXEndEvent(m_commandQueue.Get());
+}
+
+void Renderer::D3D12PassApp::SkinnedMeshGeometryPass(float& deltaTime) {
+
+	auto& pso = passPsoLists["SkinnedMeshGeometryPass"];
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), fbxGeomeytyPassEvent);
+
+	if (msaaMode) {
+		m_commandList->OMSetRenderTargets(geometryPassRtvNum, &GeometryPassMsaaRTV(), true, &MsaaDepthStencilView());
+	}
+	else {
+		m_commandList->OMSetRenderTargets(geometryPassRtvNum, &GeometryPassRTV(), true, &HDRDepthStencilView());
+	}
+
+	m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_commandList->RSSetScissorRects(1, &m_scissorRect);
+	m_commandList->RSSetViewports(1, &m_viewport);
+	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+
+	// View Proj Matrix Constant Buffer 
+	m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer.GetGPUVirtualAddress());
+	m_commandList->SetGraphicsRootConstantBufferView(3, mSkinnedMeshConstantData.GetGPUVirtualAddress());
+
+	// Texture SRV Heap 
+	ID3D12DescriptorHeap* ppSrvHeaps[] = { m_textureHeap.Get() };
+	m_commandList->SetDescriptorHeaps(_countof(ppSrvHeaps), ppSrvHeaps);
+
+	// Render Player
+	RenderCharacter(deltaTime);
+
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* plists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
+
 
 	FlushCommandQueue();
 	PIXEndEvent(m_commandQueue.Get());

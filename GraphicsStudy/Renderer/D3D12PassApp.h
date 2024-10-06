@@ -32,6 +32,7 @@ namespace Renderer {
 		void Render(float& deltaTime) override;
 		void GeometryPass(float& deltaTime);
 		void FbxGeometryPass(float& deltaTime);
+		void SkinnedMeshGeometryPass(float& deltaTime);
 		void LightPass(float& deltaTime);
 		void RenderNormalPass(float& deltaTime);
 		void RenderBoundingBoxPass(float& deltaTime);
@@ -47,6 +48,7 @@ namespace Renderer {
 
 	protected:
 		Core::ConstantBuffer<CubeMapConstantData> mCubeMapConstantData;
+		Core::ConstantBuffer<SkinnedMeshConstantData> mSkinnedMeshConstantData;
 		
 	protected:
 		bool bRenderLights = true;

@@ -47,7 +47,7 @@ void Core::StaticMesh::UpdateAnimation(const float& deltaTime, Animation::Animat
 {
 	if (animationData.clips[0].keys.size() > 0) {
 
-		m_objectConstantData->Model = m_inverseMat * animationData.Get(animationData.meshNameToId[m_name]) * m_transformFBXAnimation;
+		m_objectConstantData->Model = m_inverseMat * animationData.Get(animationData.boneNameToId[m_name]) * m_transformFBXAnimation;
 		m_objectConstantData->invTranspose = m_objectConstantData->Model.Invert();
 		m_objectConstantData->Model = m_objectConstantData->Model.Transpose();
 

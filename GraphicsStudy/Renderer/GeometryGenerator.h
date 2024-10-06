@@ -61,6 +61,9 @@ public:
 				v.position = (v.position + translation) * scale;
 			}
 		}
+		modelLoader->m_animeData.defaultTransform =
+			DirectX::SimpleMath::Matrix::CreateTranslation(translation) * DirectX::SimpleMath::Matrix::CreateScale(scale);
+
 		if (updateTangent) {
 			for (auto& mesh : meshData)
 			{

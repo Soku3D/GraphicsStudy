@@ -1821,7 +1821,7 @@ void Renderer::D3D12App::AddPlayer()
 	//		Vector3(0.f, 0.f, 0.f),
 	//		Material(1.f, 1.f, 1.f, 1.f),
 	//		true /*AO*/, true /*Height*/, true /*Metallic*/, true /*Normal*/, true /*Roughness*/, false /*Tesslation*/);
-	mesh->Initialize(soldier, m_device, m_commandList,
+	mesh->Initialize(skinnedMeshsoldier, m_device, m_commandList,
 		Vector3(0.f, 0.f, 0.f),
 		Material(1.f, 1.f, 1.f, 1.f),
 		false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
