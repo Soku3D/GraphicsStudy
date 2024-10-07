@@ -80,6 +80,17 @@ namespace Renderer {
 		float gui_edge3 = 1.f;
 		float gui_inside0 = 1.f;
 		float gui_inside1 = 1.f;
+
+		float gui_headX = 0.f;
+		float gui_headY = 0.f;
+		float gui_headZ = 0.f;
+
+		float gui_jawZ = 0.f;
+		float gui_jawRotation = 0.f;
+		float gui_eyeRotation = 0.f;
+		DirectX::SimpleMath::Matrix leftEye;
+		DirectX::SimpleMath::Matrix jaw;
+		DirectX::SimpleMath::Matrix head;
 		Material gui_material;
 
 	private:

@@ -10,7 +10,7 @@
 #include "MeshData.h"
 #include "Vertex.h"
 #include "AnimationClip.h"
-
+#include "directxtk\SimpleMath.h"
 namespace Renderer {
 
 	template<typename Vertex, typename Index>
@@ -93,7 +93,10 @@ namespace Renderer {
 					const aiNodeAnim* nodeAnim = ani->mChannels[c];
 					const int boneId =
 						m_animeData.boneNameToId[nodeAnim->mNodeName.C_Str()];
-
+					if (boneId == 7) {
+						int parentsId = m_animeData.boneParentsId[boneId];
+						std::cout << m_animeData.boneIdToName[parentsId];
+					}
 					clip.keys[boneId].resize(nodeAnim->mNumPositionKeys);
 					for (uint32_t k = 0; k < nodeAnim->mNumPositionKeys; k++) {
 						const auto pos = nodeAnim->mPositionKeys[k].mValue;
@@ -198,7 +201,9 @@ namespace Renderer {
 
 					m_animeData.offsetMatrices[boneId] =
 						DirectX::SimpleMath::Matrix((float*)&bone->mOffsetMatrix).Transpose();
-
+					/*if (boneId == 7) {
+						m_animeData.offsetMatrices[boneId].m[3][1] += 10.f;
+					}*/
 					// 이 뼈가 영향을 주는 Vertex의 개수
 					for (uint32_t j = 0; j < bone->mNumWeights; j++) {
 						aiVertexWeight weight = bone->mWeights[j];

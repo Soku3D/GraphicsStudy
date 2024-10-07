@@ -5,10 +5,22 @@
 
 using namespace Network;
 
+std::ostream& operator<<(std::ostream& out, const DirectX::SimpleMath::Matrix& mat) {
+	for (size_t i = 0; i < 4; i++)
+	{
+		for (size_t j = 0; j < 4; j++)
+		{
+			out << mat.m[i][j] << ' ';
+		}
+		out << '\n';
+	}
+	return out;
+}
+
 Renderer::D3D12PassApp::D3D12PassApp(const int& width, const int& height)
 	:D3D12App(width, height)
 {
-	bUseGUI = false;
+	bUseGUI = true;
 	bRenderCubeMap = true;
 	bRenderMeshes = true;
 	bRenderFbx = false;
@@ -47,19 +59,32 @@ void Renderer::D3D12PassApp::InitScene()
 	using DirectX::SimpleMath::Matrix;
 	using namespace Core;
 
-	//Matrix tr = DirectX::XMMatrixRotationY(XM_PI);
 	Matrix tr = Matrix();
 	std::tuple<std::vector<PbrSkinnedMeshData>, Animation::AnimationData> soldierData;
-	soldierData = GeometryGenerator::ReadFromFile<PbrSkinnedVertex, uint32_t>("swatIdle.fbx", true, true, tr);
+	soldierData = GeometryGenerator::ReadFromFile<PbrSkinnedVertex, uint32_t>("KidneyHit.fbx", true, true, tr);
 	skinnedMeshsoldier = std::get<0>(soldierData);
 	soldierAnimation = std::get<1>(soldierData);
-	
+
+	for (size_t i = 7; i < 10; i++)
+	{
+		std::cout << soldierAnimation.boneIdToName[i] << '\n';
+		std::cout << soldierAnimation.offsetMatrices[i] << '\n';
+	}
+
 	mCharacter->InitStaticMesh(skinnedMeshsoldier, m_device, m_commandList);
-	//mCharacter->SetPosition(XMFLOAT3(0, 1.475f, 0));
+	mCharacter->SetPosition(XMFLOAT3(0, 1.475f, 0));
 	mCharacter->SetTexturePath(L"Soldier_Body_Albedo.dds", 0);
 	mCharacter->SetTexturePath(L"Soldier_head_Albedo.dds", 1);
 	mCharacter->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
 	
+	soldierAnimation.offsetMatrices[7] *= DirectX::XMMatrixRotationY(XMConvertToRadians(20))* DirectX::XMMatrixTranslation(-2.791f, 11.163f, -8.093f);
+	soldierAnimation.offsetMatrices[8] *= DirectX::XMMatrixRotationY(XMConvertToRadians(-20)) * DirectX::XMMatrixTranslation(2.791f, 11.163f, -8.093f);
+	soldierAnimation.offsetMatrices[9] *= DirectX::XMMatrixRotationX(0.23) * DirectX::XMMatrixTranslation(0.f,4.f, -2.5f);
+	soldierAnimation.offsetMatrices[6] *= DirectX::XMMatrixTranslation(0.f, 4.f, 0.f);
+	soldierAnimation.offsetMatrices[5] *= DirectX::XMMatrixTranslation(0.f, 4.f, 0.f);
+	//head = soldierAnimation.boneTransforms[6];
+	jaw = soldierAnimation.offsetMatrices[9];
+
 	mCharacter->SetMeshBoundingBox(1.f);
 
 	for (size_t i = 0; i < LIGHT_COUNT; i++)
@@ -157,7 +182,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 	{
 		// 카메라 고정
-		/*m_passConstantBuffer.mStructure.ViewMat = m_camera->GetViewMatrix();
+	/*	m_passConstantBuffer.mStructure.ViewMat = m_camera->GetViewMatrix();
 		m_passConstantBuffer.mStructure.ProjMat = m_camera->GetProjMatrix();
 		m_passConstantBuffer.mStructure.eyePosition = m_camera->GetPosition();*/
 
@@ -213,9 +238,15 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	mPostprocessingConstantBuffer.UpdateBuffer();
 
 	static float frame = 0;
-	soldierAnimation.Update((int)frame);
+	
 	frame += 0.5f;
+	//DirectX::SimpleMath::Matrix m = DirectX::XMMatrixRotationY(gui_eyeRotation);
+	soldierAnimation.Update((int)frame);
+	frame = (int)frame % soldierAnimation.clips[0].keys.size();
 
+	//soldierAnimation.boneTransforms[6] = head * DirectX::XMMatrixTranslation(gui_headX, gui_headY, gui_headZ);
+
+	//soldierAnimation.offsetMatrices[9] = jaw * DirectX::XMMatrixRotationX(gui_jawRotation) *DirectX::XMMatrixTranslation(0,0,gui_jawZ);
 	for (size_t i = 0; i < soldierAnimation.boneTransforms.size(); i++)
 	{
 		mSkinnedMeshConstantData.mStructure.boneTransforms[i] = soldierAnimation.Get(i).Transpose();
@@ -247,6 +278,14 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 	if (ImGui::Button("FindSession")) {
 		findSession = true;
 	}
+
+	ImGui::SliderFloat("gui_headX", &gui_headX, -200.f, 200.f);
+	ImGui::SliderFloat("gui_headY", &gui_headY, -200.f, 200.f);
+	ImGui::SliderFloat("gui_headZ", &gui_headZ, -200.f, 200.f);
+
+	ImGui::SliderFloat("jawRotation", &gui_jawRotation, -3.14f, 3.14f);
+	ImGui::SliderFloat("eyeRotation", &gui_eyeRotation, -3.14f, 3.14f);
+
 	ImGui::SliderFloat("AO", &gui_material.ao, 0.f, 1.f);
 	ImGui::SliderFloat("Metalic", &gui_material.metallic, 0.f, 1.f);
 	ImGui::SliderFloat("Roughness", &gui_material.roughness, 0.f, 1.f);
@@ -754,6 +793,7 @@ void Renderer::D3D12PassApp::RenderCharacter(float& deltaTime) {
 
 	for (int j = 0; j < (int)mCharacter->GetMeshCount(); j++)
 	{
+
 		CD3DX12_GPU_DESCRIPTOR_HANDLE handle(m_textureHeap->GetGPUDescriptorHandleForHeapStart());
 		if ((int)m_textureMap.count(mCharacter->GetTexturePath(j)) > 0) {
 			handle.Offset(m_textureMap[mCharacter->GetTexturePath(j)], m_csuHeapSize);
@@ -763,6 +803,8 @@ void Renderer::D3D12PassApp::RenderCharacter(float& deltaTime) {
 		}
 		m_commandList->SetGraphicsRootDescriptorTable(0, handle);
 		mCharacter->Render(deltaTime, m_commandList, j);
+
+
 	}
 }
 

@@ -83,7 +83,7 @@ namespace Core {
 		mStaticMesh = std::make_unique<Core::StaticMesh>();
 		mStaticMesh->Initialize(meshData, device, commandList,
 			DirectX::SimpleMath::Vector3(0.f, 0.f, 0.f),
-			Material(1.f, 1.f, 1.f, 0.5f),
+			Material(1.f, 1.f, 0.5f, 0.8f),
 			false /*AO*/, false /*Height*/, true /*Metallic*/, true /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
 
 	

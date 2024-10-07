@@ -1683,7 +1683,8 @@ void Renderer::D3D12App::CaptureHDRBufferToPNG() {
 
 	for (size_t i = 0; i < imageSize; i++)
 	{
-		imageUnorm[i] = (uint8_t)(pow(std::clamp(fp16_ieee_to_fp32_value(imagef16[i]), 0.f, 1.f), invGamma) * 255.f);
+		//imageUnorm[i] = (uint8_t)(pow(std::clamp(fp16_ieee_to_fp32_value(imagef16[i]), 0.f, 1.f), invGamma) * 255.f);
+		imageUnorm[i] = (uint8_t)(std::clamp(fp16_ieee_to_fp32_value(imagef16[i]), 0.f, 1.f) * 255.f);
 	}
 
 	time_t timer = time(NULL);
@@ -1724,11 +1725,40 @@ void Renderer::D3D12App::CaptureHDRBufferToPNG() {
 
 void Renderer::D3D12App::CaptureBackBufferToPNG() {
 
-	CopyResource(m_commandList, imageBuffer.Get(), HDRRenderTargetBuffer(), D3D12_RESOURCE_STATE_COPY_DEST);
+	m_commandAllocator->Reset();
+	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
+
+	D3D12_RESOURCE_DESC desc = CurrentBackBuffer()->GetDesc();
+	UINT64 requiredSize = 0;
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+	m_device->GetCopyableFootprints(&desc, 0, 1, 0, &footprint, nullptr, nullptr, &requiredSize);
+
+	m_commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_PRESENT,
+			D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+	CD3DX12_TEXTURE_COPY_LOCATION dst(imageBuffer.Get(), footprint);
+	CD3DX12_TEXTURE_COPY_LOCATION src(CurrentBackBuffer(), 0);
+	m_commandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+
+	m_commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_COPY_SOURCE,
+			D3D12_RESOURCE_STATE_PRESENT
+		));
+
+	m_commandList->Close();
+	ID3D12CommandList* lists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
+	FlushCommandQueue();
 
 	D3D12_RANGE range(0, 0);
-	UINT width = m_screenWidth;
-	UINT height = m_screenHeight;
+	void* pData;
+	UINT width = (UINT)HDRRenderTargetBuffer()->GetDesc().Width;
+	UINT height = HDRRenderTargetBuffer()->GetDesc().Height;
 	UINT channels = 4;
 
 	UINT imageSize = width * height * channels;
@@ -1736,7 +1766,9 @@ void Renderer::D3D12App::CaptureBackBufferToPNG() {
 	imageUnorm.resize(imageSize);
 	UINT dataSize = width * height * channels * sizeof(uint16_t);
 
-	memcpy(imagef16.data(), pCaptureImageData, dataSize);
+	imageBuffer->Map(0, &range, reinterpret_cast<void**>(&pData));
+	memcpy(imagef16.data(), pData, dataSize);
+	imageBuffer->Unmap(0, nullptr);
 
 	float gamma = 2.2f;
 	float invGamma = 1.f / gamma;
