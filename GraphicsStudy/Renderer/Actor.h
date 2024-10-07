@@ -13,8 +13,6 @@ namespace Core {
 	class StaticMesh;
 }
 
-
-
 namespace Core {
 
 	class Actor {

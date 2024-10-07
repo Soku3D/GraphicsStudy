@@ -32,6 +32,7 @@ namespace Renderer {
 		void FindDeformingBones(const aiScene* scene);
 		void UpdateBoneTree(const aiNode* node, int* count);
 		const aiNode* FindParentsBoneId(const aiNode* node);
+		void ExtractBonePositions(aiNode* node, const aiMatrix4x4& parentTransform, const aiScene* scene);
 
 		template<typename Vertex, typename Index>
 		void Load(std::string filename, bool loadAnimation = false, DirectX::SimpleMath::Matrix tr = DirectX::SimpleMath::Matrix())
@@ -53,18 +54,25 @@ namespace Renderer {
 				return;
 			}
 
-	
 			FindDeformingBones(pScene);
 			int count = 0;
 			UpdateBoneTree(pScene->mRootNode, &count);
-			
+
+			m_animeData.bonePositions.resize(m_animeData.boneNameToId.size());
 			m_animeData.boneIdToName.resize(m_animeData.boneNameToId.size());
 			for (auto& i : m_animeData.boneNameToId)
 				m_animeData.boneIdToName[i.second] = i.first;
 
+			aiMatrix4x4 mat = aiMatrix4x4();
+
+			ExtractBonePositions(pScene->mRootNode, mat, pScene);
+
+
+
 			m_animeData.boneParentsId.resize(m_animeData.boneNameToId.size(), -1);
+			m_animeData.tPoseTransforms.resize(m_animeData.boneNameToId.size());
 			ProcessNode<Vertex, Index>(pScene->mRootNode, pScene, tr, loadAnimation);
-					
+
 
 			if (loadAnimation)
 			{
@@ -116,17 +124,19 @@ namespace Renderer {
 			DirectX::SimpleMath::Matrix tr, bool loadAnimation)
 		{
 			using DirectX::SimpleMath::Matrix;
+			Matrix m(&node->mTransformation.a1);
 
-			
+
 			if (node->mParent && m_animeData.boneNameToId.count(node->mName.C_Str()) &&
 				FindParentsBoneId(node->mParent) && loadAnimation) {
 				const auto boneId = m_animeData.boneNameToId[node->mName.C_Str()];
 				m_animeData.boneParentsId[boneId] =
 					m_animeData.boneNameToId[FindParentsBoneId(node->mParent)->mName.C_Str()];
+				m_animeData.tPoseTransforms[boneId] = m;
 			}
-
-			Matrix m(&node->mTransformation.a1);
 			m = m.Transpose() * tr;
+
+
 
 			for (UINT i = 0; i < node->mNumMeshes; i++) {
 
@@ -142,7 +152,7 @@ namespace Renderer {
 			}
 
 			for (UINT i = 0; i < node->mNumChildren; i++) {
-				this->ProcessNode<Vertex,Index>(node->mChildren[i], scene, m, loadAnimation);
+				this->ProcessNode<Vertex, Index>(node->mChildren[i], scene, m, loadAnimation);
 			}
 		}
 
@@ -201,10 +211,7 @@ namespace Renderer {
 
 					m_animeData.offsetMatrices[boneId] =
 						DirectX::SimpleMath::Matrix((float*)&bone->mOffsetMatrix).Transpose();
-					/*if (boneId == 7) {
-						m_animeData.offsetMatrices[boneId].m[3][1] += 10.f;
-					}*/
-					// 이 뼈가 영향을 주는 Vertex의 개수
+
 					for (uint32_t j = 0; j < bone->mNumWeights; j++) {
 						aiVertexWeight weight = bone->mWeights[j];
 						assert(weight.mVertexId < boneIndices.size());
@@ -225,7 +232,7 @@ namespace Renderer {
 			newMesh.m_vertices = vertices;
 			newMesh.m_indices = indices;
 
-			
+
 
 			if (mesh->mMaterialIndex >= 0) {
 				aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
@@ -278,13 +285,44 @@ namespace Renderer {
 		}
 	}
 	template<typename Vertex, typename Index>
-	inline const aiNode*  ModelLoader<Vertex, Index>::FindParentsBoneId(const aiNode* node)
+	inline const aiNode* ModelLoader<Vertex, Index>::FindParentsBoneId(const aiNode* node)
 	{
 		if (!node)
 			return nullptr;
 		if (m_animeData.boneNameToId.count(node->mName.C_Str()) > 0)
 			return node;
 		return FindParentsBoneId(node->mParent);
+	}
+	template<typename Vertex, typename Index>
+	inline void ModelLoader<Vertex, Index>::ExtractBonePositions(aiNode* node, const aiMatrix4x4& parentTransform, const aiScene* scene)
+	{
+		aiMatrix4x4 nodeTransform = parentTransform * node->mTransformation;
+
+		for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
+			aiMesh* mesh = scene->mMeshes[i];
+			for (unsigned int j = 0; j < mesh->mNumBones; ++j) {
+				aiBone* bone = mesh->mBones[j];
+				if (bone->mName == node->mName) {
+					aiMatrix4x4 boneOffset = bone->mOffsetMatrix;
+					aiMatrix4x4 globalTransform = nodeTransform * boneOffset;
+					const auto boneId = m_animeData.boneNameToId[node->mName.C_Str()];
+					// DirectX Math로 변환
+					DirectX::XMFLOAT3 bonePosition;
+					bonePosition.x = globalTransform.a4;
+					bonePosition.y = globalTransform.b4;
+					bonePosition.z = globalTransform.c4;
+
+					// 뼈 위치 추가
+					m_animeData.bonePositions[boneId] = bonePosition;
+				}
+			}
+		}
+
+
+		// 자식 노드들 처리
+		for (unsigned int i = 0; i < node->mNumChildren; ++i) {
+			ExtractBonePositions(node->mChildren[i], nodeTransform, scene);
+		}
 	}
 }
 

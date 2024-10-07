@@ -6,6 +6,7 @@ namespace Renderer {
 	struct SimpleVertex {
 		DirectX::SimpleMath::Vector3 position;
 	};
+
 	struct Vertex {
 		DirectX::SimpleMath::Vector3 position;
 		DirectX::SimpleMath::Vector3 normal;

@@ -25,7 +25,8 @@ Renderer::D3D12PassApp::D3D12PassApp(const int& width, const int& height)
 	bRenderMeshes = true;
 	bRenderFbx = false;
 	bRenderNormal = false;
-	bUseDLAA = false;
+	bUseDLAA = false; 
+	bSkeleton = true;
 	m_appName = "PassApp";
 }
 
@@ -43,7 +44,7 @@ bool Renderer::D3D12PassApp::Initialize()
 
 	gui_lightPos = DirectX::SimpleMath::Vector3(0.f, 1.f, 0.f);
 	InitConstantBuffers();
-
+	
 	return true;
 }
 
@@ -77,15 +78,18 @@ void Renderer::D3D12PassApp::InitScene()
 	mCharacter->SetTexturePath(L"Soldier_head_Albedo.dds", 1);
 	mCharacter->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
 	
-	soldierAnimation.offsetMatrices[7] *= DirectX::XMMatrixRotationY(XMConvertToRadians(20))* DirectX::XMMatrixTranslation(-2.791f, 11.163f, -8.093f);
+	/*soldierAnimation.offsetMatrices[7] *= DirectX::XMMatrixRotationY(XMConvertToRadians(20))* DirectX::XMMatrixTranslation(-2.791f, 11.163f, -8.093f);
 	soldierAnimation.offsetMatrices[8] *= DirectX::XMMatrixRotationY(XMConvertToRadians(-20)) * DirectX::XMMatrixTranslation(2.791f, 11.163f, -8.093f);
-	soldierAnimation.offsetMatrices[9] *= DirectX::XMMatrixRotationX(0.23) * DirectX::XMMatrixTranslation(0.f,4.f, -2.5f);
+	soldierAnimation.offsetMatrices[9] *= DirectX::XMMatrixRotationX(0.23f) * DirectX::XMMatrixTranslation(0.f,4.f, -2.5f);
 	soldierAnimation.offsetMatrices[6] *= DirectX::XMMatrixTranslation(0.f, 4.f, 0.f);
-	soldierAnimation.offsetMatrices[5] *= DirectX::XMMatrixTranslation(0.f, 4.f, 0.f);
+	soldierAnimation.offsetMatrices[5] *= DirectX::XMMatrixTranslation(0.f, 4.f, 0.f);*/
 	//head = soldierAnimation.boneTransforms[6];
 	jaw = soldierAnimation.offsetMatrices[9];
 
 	mCharacter->SetMeshBoundingBox(1.f);
+
+	skeletonMesh = new Core::SkeletonMesh();
+	skeletonMesh->Initialize(soldierAnimation.bonePositions, m_device, m_commandList);
 
 	for (size_t i = 0; i < LIGHT_COUNT; i++)
 	{
@@ -175,21 +179,29 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		UpdatePlayer((int)i, onlineSystem->GetClientData(i));
 	}
 
-	m_inputHandler->ExicuteCommand(mCharacter.get(), deltaTime, bIsFPSMode);
-	mCharacter->Update(deltaTime);
-	m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
-	m_camera->Update(deltaTime);
+	if (cameraFocusing) {
+		m_inputHandler->ExicuteCommand(mCharacter.get(), deltaTime, bIsFPSMode);
+		mCharacter->Update(deltaTime);
+	}
+	else {
+		m_inputHandler->ExicuteCommand(m_camera.get(), deltaTime, bIsFPSMode);
+		m_camera->Update(deltaTime);
+	}
+	
 
 	{
-		// 카메라 고정
-	/*	m_passConstantBuffer.mStructure.ViewMat = m_camera->GetViewMatrix();
-		m_passConstantBuffer.mStructure.ProjMat = m_camera->GetProjMatrix();
-		m_passConstantBuffer.mStructure.eyePosition = m_camera->GetPosition();*/
-
-		// 카메라 캐릭터 고정
-		m_passConstantBuffer.mStructure.ViewMat = mCharacter->GetViewMatrix();
-		m_passConstantBuffer.mStructure.ProjMat = mCharacter->GetProjMatrix();
-		m_passConstantBuffer.mStructure.eyePosition = mCharacter->GetCameraPosition();
+		if (!cameraFocusing) {
+			m_passConstantBuffer.mStructure.ViewMat = m_camera->GetViewMatrix();
+			m_passConstantBuffer.mStructure.ProjMat = m_camera->GetProjMatrix();
+			m_passConstantBuffer.mStructure.eyePosition = m_camera->GetPosition();
+		}
+		else {
+			// 카메라 캐릭터 고정
+			m_passConstantBuffer.mStructure.ViewMat = mCharacter->GetViewMatrix();
+			m_passConstantBuffer.mStructure.ProjMat = mCharacter->GetProjMatrix();
+			m_passConstantBuffer.mStructure.eyePosition = mCharacter->GetCameraPosition();
+		}
+	
 
 		m_passConstantBuffer.mStructure.ViewMat = m_passConstantBuffer.mStructure.ViewMat.Transpose();
 		m_passConstantBuffer.mStructure.ProjMat = m_passConstantBuffer.mStructure.ProjMat.Transpose();
@@ -242,14 +254,17 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	frame += 0.5f;
 	//DirectX::SimpleMath::Matrix m = DirectX::XMMatrixRotationY(gui_eyeRotation);
 	soldierAnimation.Update((int)frame);
-	frame = (int)frame % soldierAnimation.clips[0].keys.size();
+	if (frame > soldierAnimation.clips[0].keys.size())
+	{
+		frame = 0;
+	}
 
 	//soldierAnimation.boneTransforms[6] = head * DirectX::XMMatrixTranslation(gui_headX, gui_headY, gui_headZ);
-
 	//soldierAnimation.offsetMatrices[9] = jaw * DirectX::XMMatrixRotationX(gui_jawRotation) *DirectX::XMMatrixTranslation(0,0,gui_jawZ);
-	for (size_t i = 0; i < soldierAnimation.boneTransforms.size(); i++)
+	for (int i = 0; i < soldierAnimation.boneTransforms.size(); i++)
 	{
 		mSkinnedMeshConstantData.mStructure.boneTransforms[i] = soldierAnimation.Get(i).Transpose();
+		mSkinnedMeshConstantData.mStructure.baseTransforms[i] = soldierAnimation.offsetMatrices[i].Transpose();
 	}
 	mSkinnedMeshConstantData.UpdateBuffer();
 }
@@ -300,7 +315,9 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 	ImGui::Checkbox("Render Normal", &bRenderNormal);
 	ImGui::SameLine();
 	ImGui::Checkbox("Render CubeMap", &bRenderCubeMap);
-
+	
+	ImGui::Checkbox("Character Focusing", &cameraFocusing);
+	ImGui::SameLine();
 	ImGui::Checkbox("Render FBX", &bRenderFbx);
 	ImGui::SameLine();
 	ImGui::Checkbox("Render Mesh", &bRenderMeshes);
@@ -319,6 +336,7 @@ void Renderer::D3D12PassApp::Render(float& deltaTime)
 	RenderNormalPass(deltaTime);
 	RenderBoundingBoxPass(deltaTime);
 	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	RenderSkeleton(deltaTime);
 
 	PostProcessing(deltaTime);
 
@@ -598,6 +616,7 @@ void Renderer::D3D12PassApp::RenderNormalPass(float& deltaTime) {
 	}
 
 }
+
 void Renderer::D3D12PassApp::RenderBoundingBoxPass(float& deltaTime) {
 
 	if (bRenderBoundingBox) {
@@ -623,6 +642,40 @@ void Renderer::D3D12PassApp::RenderBoundingBoxPass(float& deltaTime) {
 				}
 			}
 			mCharacter->RenderBoundingBox(deltaTime, m_commandList);
+		}
+
+		ThrowIfFailed(m_commandList->Close());
+
+		ID3D12CommandList* plists[] = { m_commandList.Get() };
+		m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
+
+		FlushCommandQueue();
+		PIXEndEvent(m_commandQueue.Get());
+	}
+
+}
+
+void Renderer::D3D12PassApp::RenderSkeleton(float& deltaTime) {
+
+	if (bSkeleton) {
+		auto& pso = passPsoLists["RenderSkeleton"];
+
+
+		ThrowIfFailed(m_commandAllocator->Reset());
+		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+		{
+			PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), renderBoundingBoxPassEvent);
+			m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
+
+			m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+			m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+			m_commandList->RSSetScissorRects(1, &m_scissorRect);
+			m_commandList->RSSetViewports(1, &m_viewport);
+			
+			m_commandList->SetGraphicsRootConstantBufferView(0, mSkinnedMeshConstantData.GetGPUVirtualAddress());
+			m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer.GetGPUVirtualAddress());
+			//m_commandList->DrawInstanced(56, 1, 0, 0);
+			skeletonMesh->Render(deltaTime, m_commandList);
 		}
 
 		ThrowIfFailed(m_commandList->Close());

@@ -40,6 +40,8 @@ namespace Animation {
 		vector<string> boneIdToName;
 		vector<Matrix> offsetMatrices;
 		vector<Matrix> boneTransforms;
+		vector<Matrix> tPoseTransforms;
+		vector<Vector3> bonePositions;
 		vector<AnimationClip> clips;
 		Matrix defaultTransform;
 		Matrix accumulatedRootTransform = Matrix();

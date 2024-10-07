@@ -2,6 +2,7 @@
 
 #include "D3D12App.h"
 #include "Renderer.h"
+#include "SkeletonMesh.h"
 #include <DirectXTexEXR.h>
 
 namespace Renderer {
@@ -17,6 +18,8 @@ namespace Renderer {
 	public:
 		D3D12PassApp(const int& width, const int& height);
 		virtual ~D3D12PassApp() {
+			if(skeletonMesh!=nullptr)
+				delete skeletonMesh;
 			std::cout << "~D3D12PassApp" << std::endl;
 		}
 
@@ -36,6 +39,7 @@ namespace Renderer {
 		void LightPass(float& deltaTime);
 		void RenderNormalPass(float& deltaTime);
 		void RenderBoundingBoxPass(float& deltaTime);
+		void RenderSkeleton(float& deltaTime);
 		void RenderCubeMap(float& deltaTime) override;
 		void RenderGUI(float& deltaTime) override;
 
@@ -58,6 +62,7 @@ namespace Renderer {
 		bool bRenderNormal = true;
 		bool bUseDLAA = false;
 		bool bRenderBoundingBox = false;
+		bool bSkeleton = false;
 
 		bool guiUseDLAA = true;
 
@@ -92,6 +97,8 @@ namespace Renderer {
 		DirectX::SimpleMath::Matrix jaw;
 		DirectX::SimpleMath::Matrix head;
 		Material gui_material;
+
+		Core::SkeletonMesh* skeletonMesh;
 
 	private:
 		const wchar_t* geomeytyPassEvent = L"Geometry Pass ";

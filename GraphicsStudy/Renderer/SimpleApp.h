@@ -58,6 +58,7 @@ namespace Renderer {
 		POINT m_fpsModeCursorPos;
 		POINT mCursorPosition;
 		bool bCaptureBackbuffer = false;
+		bool cameraFocusing = false;
 
 	protected:
 		D3D12_COMMAND_LIST_TYPE m_commandType = D3D12_COMMAND_LIST_TYPE_DIRECT;

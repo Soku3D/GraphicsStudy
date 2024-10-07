@@ -34,6 +34,10 @@
 #include "RenderBoundingBoxPassPS.h"
 #include "RenderBoundingBoxPassGS.h"
 
+#include "RenderSkeletonGS.h"
+#include "RenderSkeletonVS.h"
+#include "RenderSkeletonPS.h"
+
 
 #include "SimulationParticlesVS.h"
 #include "SimulationParticlesGS.h"
@@ -149,6 +153,8 @@ namespace Renderer {
 
 	RootSignature renderMotionVectorSignature;
 
+	RootSignature renderSkeletonSignature;
+
 	std::vector<D3D12_INPUT_ELEMENT_DESC> defaultElement;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> simpleElement;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> pbrElement;
@@ -258,6 +264,8 @@ namespace Renderer {
 
 		renderMotionVectorSignature.Initialize(2);
 
+		renderSkeletonSignature.Initialize(2);
+
 		GraphicsPSO msaaPso("Msaa");
 		GraphicsPSO wirePso("Wire");
 
@@ -281,6 +289,7 @@ namespace Renderer {
 
 		GraphicsPSO renderNormalPassPso("NormalPass");
 		GraphicsPSO renderBoundingBoxPassPso("BoundingBoxPass");
+		GraphicsPSO renderSkeletonPso("RenderSkeleton");
 
 		GraphicsPSO copyPso("Copy");
 		GraphicsPSO copyUnormPso("CopyUnorm");
@@ -489,6 +498,15 @@ namespace Renderer {
 		renderMotionVectorPassPso.SetInputLayout((UINT)pbrElement.size(), pbrElement.data());
 		renderMotionVectorPassPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 
+		renderSkeletonPso = defaultPso;
+		renderSkeletonPso.SetVertexShader(g_pRenderSkeletonVS, sizeof(g_pRenderSkeletonVS));
+		renderSkeletonPso.SetPixelShader(g_pRenderSkeletonPS, sizeof(g_pRenderSkeletonPS));
+		renderSkeletonPso.SetGeometryShader(g_pRenderSkeletonGS, sizeof(g_pRenderSkeletonGS));
+		renderSkeletonPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		renderSkeletonPso.SetRootSignature(&renderSkeletonSignature);
+		renderSkeletonPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+		renderSkeletonPso.SetInputLayout((UINT)simpleElement.size(), simpleElement.data());
+
 		postProcessingPso.SetRootSignature(&computeSignature);
 		postProcessingPso.SetComputeShader(g_pPostprocessingCS, sizeof(g_pPostprocessingCS));
 
@@ -639,6 +657,7 @@ namespace Renderer {
 		passPsoLists[renderNormalPassPso.GetName()] = renderNormalPassPso;
 		passPsoLists[simulationRenderPso.GetName()] = simulationRenderPso;
 		passPsoLists[renderBoundingBoxPassPso.GetName()] = renderBoundingBoxPassPso;
+		passPsoLists[renderSkeletonPso.GetName()] = renderSkeletonPso;
 		
 		passPsoLists[renderVolumePassPso.GetName()] = renderVolumePassPso;
 
@@ -727,6 +746,8 @@ namespace Renderer {
 		raytracingGlobalSignature.Finalize(device);
 
 		renderMotionVectorSignature.Finalize(device);
+
+		renderSkeletonSignature.Finalize(device);
 
 		for (auto& pso : modePsoLists) {
 			pso.second.Finalize(device);

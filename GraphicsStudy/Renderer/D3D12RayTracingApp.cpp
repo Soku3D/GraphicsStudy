@@ -560,7 +560,7 @@ void Renderer::D3D12RayTracingApp::InitRayTracingScene()
 	//m_staticMeshes.push_back(sphere);
 	//m_staticMeshes.push_back(plane);
 
-	float y = 0.1f / sqrt(3.0);
+	float y = 0.1f / sqrt(3.f);
 	float x = y * m_camera->GetAspectRatio();
 	std::shared_ptr<Core::StaticMesh> triangle = std::make_shared<Core::StaticMesh>();
 	triangle->Initialize(GeometryGenerator::RTRectangle(x, y, L"worn-painted-metal_Albedo.dds"), m_device, m_commandList, Vector3(0.f, 0.f, 0.1f));
