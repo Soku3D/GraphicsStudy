@@ -78,16 +78,16 @@ void Renderer::D3D12PassApp::InitScene()
 	mCharacter->SetTexturePath(L"Soldier_head_Albedo.dds", 1);
 	mCharacter->SetTexturePath(L"Soldier_Body_Albedo.dds", 2);
 	
-	/*soldierAnimation.offsetMatrices[7] *= DirectX::XMMatrixRotationY(XMConvertToRadians(20))* DirectX::XMMatrixTranslation(-2.791f, 11.163f, -8.093f);
+	soldierAnimation.offsetMatrices[7] *= DirectX::XMMatrixRotationY(XMConvertToRadians(20))* DirectX::XMMatrixTranslation(-2.791f, 11.163f, -8.093f);
 	soldierAnimation.offsetMatrices[8] *= DirectX::XMMatrixRotationY(XMConvertToRadians(-20)) * DirectX::XMMatrixTranslation(2.791f, 11.163f, -8.093f);
 	soldierAnimation.offsetMatrices[9] *= DirectX::XMMatrixRotationX(0.23f) * DirectX::XMMatrixTranslation(0.f,4.f, -2.5f);
 	soldierAnimation.offsetMatrices[6] *= DirectX::XMMatrixTranslation(0.f, 4.f, 0.f);
-	soldierAnimation.offsetMatrices[5] *= DirectX::XMMatrixTranslation(0.f, 4.f, 0.f);*/
+	soldierAnimation.offsetMatrices[5] *= DirectX::XMMatrixTranslation(0.f, 4.f, 0.f);
 	//head = soldierAnimation.boneTransforms[6];
 	jaw = soldierAnimation.offsetMatrices[9];
 
 	mCharacter->SetMeshBoundingBox(1.f);
-
+	soldierAnimation.bonePositions[6] = skinnedMeshsoldier[0].m_vertices[0].position;
 	skeletonMesh = new Core::SkeletonMesh();
 	skeletonMesh->Initialize(soldierAnimation.bonePositions, m_device, m_commandList);
 

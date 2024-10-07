@@ -1,14 +1,9 @@
 #include "RenderSkeleton.hlsli"
 
-struct GSOutput
-{
-    float4 pos : SV_POSITION;
-};
-
 [maxvertexcount(3)]
 void main(
-	point float4 input[1] : POSITION,
-	inout TriangleStream<GSOutput> output
+	point GSInput input[1],
+	inout TriangleStream<PSInput> output
 )
 {
     float l = 0.01f;
@@ -18,15 +13,17 @@ void main(
         float2(0, l),
         float2(l, -l)
     };
-    
-    for (uint i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
-        GSOutput element;
-        float4 pos = float4(input[0].xyz, 1) + float4(offset[i], 0, 0);
-        float4 svPosition = mul(pos, View);
-        svPosition = mul(svPosition, Projection);
-        element.pos = svPosition;
+        PSInput element;
+        float4 pos = float4(input[0].position, 1.f) + float4(offset[i], 0, 0);
+        pos = mul(pos, View);
+        pos = mul(pos, Projection);
+        element.sv_position = pos;
+        
         output.Append(element);
     }
     output.RestartStrip();
+        
+ 
 }

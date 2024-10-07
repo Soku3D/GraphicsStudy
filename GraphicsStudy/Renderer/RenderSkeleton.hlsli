@@ -9,3 +9,17 @@ cbuffer cbPass : register(b1)
     matrix Projection;
     float3 eyePosition;
 }
+struct VSInput
+{
+    float3 position : POSITION;
+    uint vId : SV_VertexID;
+};
+
+struct GSInput
+{
+    float3 position : POSITION;
+};
+struct PSInput
+{
+    float4 sv_position : SV_POSITION;
+};
