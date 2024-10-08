@@ -87,7 +87,6 @@ void Renderer::D3D12PassApp::InitScene()
 	jaw = soldierAnimation.offsetMatrices[9];
 
 	mCharacter->SetMeshBoundingBox(1.f);
-	soldierAnimation.bonePositions[6] = skinnedMeshsoldier[0].m_vertices[0].position;
 	skeletonMesh = new Core::SkeletonMesh();
 	skeletonMesh->Initialize(soldierAnimation.bonePositions, m_device, m_commandList);
 
@@ -251,7 +250,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 	static float frame = 0;
 	
-	frame += 0.5f;
+	//frame += 0.5f;
 	//DirectX::SimpleMath::Matrix m = DirectX::XMMatrixRotationY(gui_eyeRotation);
 	soldierAnimation.Update((int)frame);
 	if (frame > soldierAnimation.clips[0].keys.size())
@@ -264,7 +263,8 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	for (int i = 0; i < soldierAnimation.boneTransforms.size(); i++)
 	{
 		mSkinnedMeshConstantData.mStructure.boneTransforms[i] = soldierAnimation.Get(i).Transpose();
-		mSkinnedMeshConstantData.mStructure.baseTransforms[i] = soldierAnimation.offsetMatrices[i].Transpose();
+		mSkinnedMeshConstantData.mStructure.baseTransforms[i] = (soldierAnimation.tPoseTransforms[i] * soldierAnimation.defaultTransform).Transpose();
+		mSkinnedMeshConstantData.mStructure.parentsIndex[i] = soldierAnimation.boneParentsId[i];
 	}
 	mSkinnedMeshConstantData.UpdateBuffer();
 }
@@ -665,7 +665,7 @@ void Renderer::D3D12PassApp::RenderSkeleton(float& deltaTime) {
 		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 		{
 			PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), renderBoundingBoxPassEvent);
-			m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
+			m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), false, nullptr);
 
 			m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 			m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());

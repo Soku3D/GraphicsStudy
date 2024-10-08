@@ -38,7 +38,7 @@ void Core::SkeletonMesh::Initialize(std::vector<DirectX::SimpleMath::Vector3>& v
     memcpy(mappedData, vertices.data(), bufferSize);
     mVertexGpu->Unmap(0, nullptr);
 
-    boneCount = vertices.size();
+    boneCount = (int)vertices.size();
 
     mVertexBufferView.BufferLocation = mVertexGpu->GetGPUVirtualAddress();
     mVertexBufferView.SizeInBytes = vertices.size() * sizeof(DirectX::SimpleMath::Vector3);

@@ -502,7 +502,7 @@ namespace Renderer {
 		renderSkeletonPso.SetVertexShader(g_pRenderSkeletonVS, sizeof(g_pRenderSkeletonVS));
 		renderSkeletonPso.SetPixelShader(g_pRenderSkeletonPS, sizeof(g_pRenderSkeletonPS));
 		renderSkeletonPso.SetGeometryShader(g_pRenderSkeletonGS, sizeof(g_pRenderSkeletonGS));
-		renderSkeletonPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_D24_UNORM_S8_UINT, 1, 0);
+		renderSkeletonPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
 		renderSkeletonPso.SetRootSignature(&renderSkeletonSignature);
 		renderSkeletonPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
 		renderSkeletonPso.SetInputLayout((UINT)simpleElement.size(), simpleElement.data());

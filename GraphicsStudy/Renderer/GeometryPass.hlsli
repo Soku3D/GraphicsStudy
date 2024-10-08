@@ -53,6 +53,7 @@ cbuffer cbPass : register(b2)
 {
     float4x4 boneTransforms[60];
     float4x4 baseTransforms[60];
+    int parentIndex[60];
 }
 
 struct VSInput

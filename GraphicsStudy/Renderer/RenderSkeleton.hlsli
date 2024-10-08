@@ -1,8 +1,10 @@
-cbuffer cbPass : register(b0)
+cbuffer cbSkeleton : register(b0)
 {
     float4x4 boneTransforms[60];
     float4x4 baseTransforms[60];
+    int parentsIndex[60];
 }
+
 cbuffer cbPass : register(b1)
 {
     matrix View;
@@ -17,9 +19,11 @@ struct VSInput
 
 struct GSInput
 {
-    float3 position : POSITION;
+    float3 position : POSITION0;
+    float3 parentsPosition : POSITION1;
 };
 struct PSInput
 {
     float4 sv_position : SV_POSITION;
+    float2 texcoord : TEXCOORD;
 };

@@ -125,7 +125,7 @@ namespace Renderer {
 		{
 			using DirectX::SimpleMath::Matrix;
 			Matrix m(&node->mTransformation.a1);
-
+			m = m.Transpose() * tr;
 
 			if (node->mParent && m_animeData.boneNameToId.count(node->mName.C_Str()) &&
 				FindParentsBoneId(node->mParent) && loadAnimation) {
@@ -134,10 +134,7 @@ namespace Renderer {
 					m_animeData.boneNameToId[FindParentsBoneId(node->mParent)->mName.C_Str()];
 				m_animeData.tPoseTransforms[boneId] = m;
 			}
-			m = m.Transpose() * tr;
-
-
-
+			
 			for (UINT i = 0; i < node->mNumMeshes; i++) {
 
 				aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];

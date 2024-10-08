@@ -47,7 +47,7 @@ namespace Core {
 		if (v1.x < 0) {
 			mLocalYTheta *= -1.0;
 		}
-		m_fov = DirectX::XMConvertToRadians(70.0f);
+		//m_fov = DirectX::XMConvertToRadians(70.0f);
 		m_delTheta = DirectX::XMConvertToRadians(0.2f);
 		m_delSine = sin(m_delTheta / 2.f);
 		m_delCosine = cos(m_delTheta / 2.f);
