@@ -83,7 +83,7 @@ __declspec(align(256)) struct CubeMapConstantData {
 __declspec(align(256)) struct SkinnedMeshConstantData {
 	DirectX::SimpleMath::Matrix boneTransforms[60];
 	DirectX::SimpleMath::Matrix baseTransforms[60]; // T-Pose
-	uint32_t parentsIndex[60];
+	DirectX::SimpleMath::Vector4 parentsIndex[15];
 };
 
 __declspec(align(256)) struct SimulationCSConstantData {

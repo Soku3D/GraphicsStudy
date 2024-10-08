@@ -6,7 +6,11 @@ GSInput main(VSInput input)
     float3 pos = mul(float4(input.position, 1.f), baseTransforms[input.vId]).xyz;
     output.position = pos;
     
-    int parentsIdx = parentsIndex[input.vId];
+    int pid = input.vId / 4;
+    int pid2 = input.vId % 4;
+    
+    int parentsIdx = parentsIndex[pid][pid2];
+    
     if (parentsIdx == -1)
     {
         output.parentsPosition = pos;

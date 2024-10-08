@@ -2,7 +2,7 @@ cbuffer cbSkeleton : register(b0)
 {
     float4x4 boneTransforms[60];
     float4x4 baseTransforms[60];
-    int parentsIndex[60];
+    float4 parentsIndex[15];
 }
 
 cbuffer cbPass : register(b1)
