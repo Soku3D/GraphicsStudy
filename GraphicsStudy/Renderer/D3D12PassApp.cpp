@@ -345,13 +345,13 @@ void Renderer::D3D12PassApp::Render(float& deltaTime)
 {
 	GeometryPass(deltaTime);
 	FbxGeometryPass(deltaTime);
-	SkinnedMeshGeometryPass(deltaTime);
+	//SkinnedMeshGeometryPass(deltaTime);
 	RenderCubeMap(deltaTime);
 	LightPass(deltaTime);
 	RenderNormalPass(deltaTime);
 	RenderBoundingBoxPass(deltaTime);
-	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 	RenderSkeleton(deltaTime);
+	//CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
 
 	PostProcessing(deltaTime);
 
@@ -680,7 +680,7 @@ void Renderer::D3D12PassApp::RenderSkeleton(float& deltaTime) {
 		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 		{
 			PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), renderBoundingBoxPassEvent);
-			m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), false, nullptr);
+			m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
 
 			m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 			m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
