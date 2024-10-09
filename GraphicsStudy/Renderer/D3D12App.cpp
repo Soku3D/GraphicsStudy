@@ -1692,26 +1692,26 @@ void Renderer::D3D12App::CaptureHDRBufferToPNG() {
 	t = localtime(&timer);
 	std::stringstream ss;
 	ss << "Results/" << m_appName << "/" << t->tm_year - 100;
-	if (t->tm_mon < 9) {
+	if (t->tm_mon < 10) {
 		ss << '0' << t->tm_mon + 1;
 	}
 	else {
 		ss << t->tm_mon + 1;
 	}
-	if (t->tm_mday < 9) {
+	if (t->tm_mday < 10) {
 		ss << '0' << t->tm_mday;
 	}
 	else {
 		ss << t->tm_mday;
 	}
 	ss << '-';
-	if (t->tm_hour < 9) {
+	if (t->tm_hour < 10) {
 		ss << '0' << t->tm_hour;
 	}
 	else {
 		ss << t->tm_hour;
 	}
-	if (t->tm_min < 9) {
+	if (t->tm_min < 10) {
 		ss << '0' << t->tm_min;
 	}
 	else {
@@ -1783,26 +1783,26 @@ void Renderer::D3D12App::CaptureBackBufferToPNG() {
 	t = localtime(&timer);
 	std::stringstream ss;
 	ss << "Results/" << m_appName << "/" << t->tm_year - 100;
-	if (t->tm_mon < 9) {
+	if (t->tm_mon < 10) {
 		ss << '0' << t->tm_mon + 1;
 	}
 	else {
 		ss << t->tm_mon + 1;
 	}
-	if (t->tm_mday < 9) {
+	if (t->tm_mday < 10) {
 		ss << '0' << t->tm_mday;
 	}
 	else {
 		ss << t->tm_mday;
 	}
 	ss << '-';
-	if (t->tm_hour < 9) {
+	if (t->tm_hour < 10) {
 		ss << '0' << t->tm_hour;
 	}
 	else {
 		ss << t->tm_hour;
 	}
-	if (t->tm_min < 9) {
+	if (t->tm_min < 10) {
 		ss << '0' << t->tm_min;
 	}
 	else {
