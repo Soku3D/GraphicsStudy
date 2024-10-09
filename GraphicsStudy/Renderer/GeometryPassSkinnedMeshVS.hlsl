@@ -46,9 +46,9 @@ PSInput main(SkinnedMeshVSInput input)
         tangentModel += weights[i] * mul(input.tangent, (float3x3) boneTransforms[index]);
     }
 
-    //input.position = posModel;
-    //input.normal = normalModel;
-    //input.tangent = tangentModel;
+    input.position = posModel;
+    input.normal = normalModel;
+    input.tangent = tangentModel;
     
     PSInput output;
     float4 pos = float4(input.position, 1.f);

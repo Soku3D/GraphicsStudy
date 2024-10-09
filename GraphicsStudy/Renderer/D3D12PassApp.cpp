@@ -26,7 +26,7 @@ Renderer::D3D12PassApp::D3D12PassApp(const int& width, const int& height)
 	bRenderMeshes = true;
 	bRenderFbx = false;
 	bRenderNormal = false;
-	bUseDLAA = false;
+	bUseDLAA = true;
 	bSkeleton = true;
 	m_appName = "PassApp";
 }
@@ -272,13 +272,13 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		if (i <= maxIdx)
 		{
 			if (index2 == 0)
-				mSkinnedMeshConstantData.mStructure.parentsIndex[index].x = soldierAnimation.boneParentsId[i];
+				mSkinnedMeshConstantData.mStructure.parentsIndex[index].x = (float)soldierAnimation.boneParentsId[i];
 			else if (index2 == 1)
-				mSkinnedMeshConstantData.mStructure.parentsIndex[index].y = soldierAnimation.boneParentsId[i];
+				mSkinnedMeshConstantData.mStructure.parentsIndex[index].y = (float)soldierAnimation.boneParentsId[i];
 			else if (index2 == 2)
-				mSkinnedMeshConstantData.mStructure.parentsIndex[index].z = soldierAnimation.boneParentsId[i];
+				mSkinnedMeshConstantData.mStructure.parentsIndex[index].z = (float)soldierAnimation.boneParentsId[i];
 			else
-				mSkinnedMeshConstantData.mStructure.parentsIndex[index].w = soldierAnimation.boneParentsId[i];
+				mSkinnedMeshConstantData.mStructure.parentsIndex[index].w = (float)soldierAnimation.boneParentsId[i];
 		}
 	}
 	mSkinnedMeshConstantData.UpdateBuffer();
@@ -345,7 +345,7 @@ void Renderer::D3D12PassApp::Render(float& deltaTime)
 {
 	GeometryPass(deltaTime);
 	FbxGeometryPass(deltaTime);
-	//SkinnedMeshGeometryPass(deltaTime);
+	SkinnedMeshGeometryPass(deltaTime);
 	RenderCubeMap(deltaTime);
 	LightPass(deltaTime);
 	RenderNormalPass(deltaTime);
@@ -680,7 +680,7 @@ void Renderer::D3D12PassApp::RenderSkeleton(float& deltaTime) {
 		ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
 		{
 			PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), renderBoundingBoxPassEvent);
-			m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), true, &HDRDepthStencilView());
+			m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), false, nullptr);
 
 			m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 			m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());

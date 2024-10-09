@@ -1937,7 +1937,7 @@ bool Renderer::D3D12App::InitializeDLSS()
 	sl::Feature featuresToLoad[] = { sl::kFeatureDLSS };
 	prefs.featuresToLoad = featuresToLoad;
 	const wchar_t* pluginPaths[] = {
-		L"C:/Users/son97/Streamline/bin/x64"  // 실제 플러그인 경로로 변경
+		L"C:/Users/son/Streamline/bin/x64"  // 실제 플러그인 경로로 변경
 	};
 	prefs.pathsToPlugins = pluginPaths;
 	prefs.numPathsToPlugins = sizeof(pluginPaths) / sizeof(pluginPaths[0]);

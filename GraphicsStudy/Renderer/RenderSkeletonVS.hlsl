@@ -3,8 +3,9 @@
 GSInput main(VSInput input)
 {
     GSInput output;
-    float3 pos = mul(float4(input.position, 1.f), baseTransforms[input.vId]).xyz;
-    output.position = pos;
+    float4 pos = mul(float4(input.position, 1.f), baseTransforms[input.vId]);
+    pos = mul(pos, boneTransforms[input.vId]);
+    output.position = pos.xyz;
     
     int pid = input.vId / 4;
     int pid2 = input.vId % 4;
@@ -13,12 +14,13 @@ GSInput main(VSInput input)
     
     if (parentsIdx == -1)
     {
-        output.parentsPosition = pos;
+        output.parentsPosition = pos.xyz;
     }
     else
     {
-        output.parentsPosition = mul(float4(input.position, 1.f), baseTransforms[parentsIdx]).xyz;
-
+        float4 parentsPos = mul(float4(input.position, 1.f), baseTransforms[parentsIdx]);
+        parentsPos = mul(parentsPos, boneTransforms[parentsIdx]);
+        output.parentsPosition = parentsPos.xyz;
     }
     
     return output;

@@ -1,7 +1,5 @@
 #include "RenderBoundingBoxPass.hlsli"
 
-
-
 [maxvertexcount(20)]
 void main(
 	point GSInput input[1],

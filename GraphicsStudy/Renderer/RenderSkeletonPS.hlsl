@@ -3,8 +3,10 @@
 float4 main(PSInput input) : SV_TARGET
 {
     float3 red = float3(1, 0, 0);
-    float3 white = float3(1, 1, 1);
-    float a = input.texcoord.r;
+    float3 color = 0.5f;
+    float3 L = normalize(float3(-10, 10, 0));
+    float lightStrength = max(dot(L, input.normal), 0.f);
     
-    return float4(red * a + white * (1 - a), 1);
+    color += lightStrength;
+    return float4(color, 1.f);
 }
