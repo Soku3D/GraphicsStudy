@@ -6,6 +6,7 @@
     
     <img src="GraphicsStudy/Renderer/Results/PassApp/240828-2342.png" height="200">
     <img src="GraphicsStudy/Renderer/Results/PassApp/241007-1305.png" height="200">
+    <img src="GraphicsStudy/Renderer/Results/PassApp/241009-2242.png" height="200">
 
 2. Physx Simulation sample
     
