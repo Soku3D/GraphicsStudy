@@ -2,7 +2,7 @@
 
 #define PI 3.141592
 
-[maxvertexcount(146)]
+[maxvertexcount(128)]
 void main(
 	point GSInput input[1],
 	inout TriangleStream<PSInput> output
@@ -35,6 +35,7 @@ void main(
     
     r1 = ptocL / 10.f;
     PSInput element;
+    element.vId = input[0].vId;
     float3 pos = float3(0, r1, 0);
     float3 center = input[0].parentsPosition;
        

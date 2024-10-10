@@ -26,7 +26,7 @@ Renderer::D3D12PassApp::D3D12PassApp(const int& width, const int& height)
 	bRenderMeshes = true;
 	bRenderFbx = false;
 	bRenderNormal = false;
-	bUseDLAA = true;
+	bUseDLAA = false;
 	bSkeleton = true;
 	m_appName = "PassApp";
 }
@@ -42,6 +42,8 @@ bool Renderer::D3D12PassApp::Initialize()
 		}
 	}
 
+	testBox.Center = XMFLOAT3(0, 0, 0);
+	testBox.Extents = XMFLOAT3(1, 1, 1);
 
 	gui_lightPos = DirectX::SimpleMath::Vector3(0.f, 1.f, 0.f);
 	InitConstantBuffers();
@@ -67,12 +69,6 @@ void Renderer::D3D12PassApp::InitScene()
 	skinnedMeshsoldier = std::get<0>(soldierData);
 	soldierAnimation = std::get<1>(soldierData);
 
-	for (size_t i = 7; i < 10; i++)
-	{
-		std::cout << soldierAnimation.boneIdToName[i] << '\n';
-		std::cout << soldierAnimation.offsetMatrices[i] << '\n';
-	}
-
 	mCharacter->InitStaticMesh(skinnedMeshsoldier, m_device, m_commandList);
 	mCharacter->SetPosition(XMFLOAT3(0, 1.475f, 0));
 	mCharacter->SetTexturePath(L"Soldier_Body_Albedo.dds", 0);
@@ -89,6 +85,11 @@ void Renderer::D3D12PassApp::InitScene()
 
 	mCharacter->SetMeshBoundingBox(1.f);
 	skeletonMesh = new Core::SkeletonMesh();
+	for (size_t i = 0; i < soldierAnimation.bonePositions.size(); i++)
+	{
+		DirectX::SimpleMath::Vector4 pos = DirectX::SimpleMath::Vector4(0, 0, 0, 1);
+		soldierAnimation.bonePositions[i] = DirectX::SimpleMath::Vector3(pos.x, pos.y, pos.z);
+	}
 	skeletonMesh->Initialize(soldierAnimation.bonePositions, m_device, m_commandList);
 
 	for (size_t i = 0; i < LIGHT_COUNT; i++)
@@ -251,7 +252,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 	static float frame = 0;
 
-	//frame += 0.5f;
+	frame += 0.5f;
 	//DirectX::SimpleMath::Matrix m = DirectX::XMMatrixRotationY(gui_eyeRotation);
 	soldierAnimation.Update((int)frame);
 	if (frame > soldierAnimation.clips[0].keys.size())
@@ -281,7 +282,26 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 				mSkinnedMeshConstantData.mStructure.parentsIndex[index].w = (float)soldierAnimation.boneParentsId[i];
 		}
 	}
+
+	if (lMouseButtonClicked) {
+		GetCursorPos(&mCursorPosition);
+		ScreenToClient(m_mainWnd, &mCursorPosition);
+
+		float ndcX = (2.f * ((mCursorPosition.x) / (m_screenWidth - 1.f))) - 1.f;
+		float ndcY = (2.f * ((mCursorPosition.y) / (m_screenHeight - 1.f))) - 1.f;
+
+		testBox.Transform(testBox, soldierAnimation.tPoseTransforms[5] * soldierAnimation.defaultTransform);
+		DirectX::SimpleMath::Vector3 o = XMFLOAT3(ndcX, ndcY, m_camera->GetPosition().z);
+		DirectX::SimpleMath::Vector3 d = XMFLOAT3(0, 0, -1);
+		float l;
+		mSkinnedMeshConstantData.mStructure.isClicked[1].y = testBox.Intersects(o, d, l);
+	}
+	else {
+		mSkinnedMeshConstantData.mStructure.isClicked[1].y = 0.f;
+
+	}
 	mSkinnedMeshConstantData.UpdateBuffer();
+
 }
 
 void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)

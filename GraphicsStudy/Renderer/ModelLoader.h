@@ -67,8 +67,6 @@ namespace Renderer {
 
 			ExtractBonePositions(pScene->mRootNode, mat, pScene);
 
-
-
 			m_animeData.boneParentsId.resize(m_animeData.boneNameToId.size(), -1);
 			m_animeData.tPoseTransforms.resize(m_animeData.boneNameToId.size());
 			ProcessNode<Vertex, Index>(pScene->mRootNode, pScene, tr, loadAnimation);
@@ -101,10 +99,10 @@ namespace Renderer {
 					const aiNodeAnim* nodeAnim = ani->mChannels[c];
 					const int boneId =
 						m_animeData.boneNameToId[nodeAnim->mNodeName.C_Str()];
-					if (boneId == 7) {
-						int parentsId = m_animeData.boneParentsId[boneId];
-						std::cout << m_animeData.boneIdToName[parentsId];
-					}
+					//if (boneId == 7) {
+					//	int parentsId = m_animeData.boneParentsId[boneId];
+					//	std::cout << m_animeData.boneIdToName[parentsId];
+					//}
 					clip.keys[boneId].resize(nodeAnim->mNumPositionKeys);
 					for (uint32_t k = 0; k < nodeAnim->mNumPositionKeys; k++) {
 						const auto pos = nodeAnim->mPositionKeys[k].mValue;

@@ -1936,6 +1936,7 @@ bool Renderer::D3D12App::InitializeDLSS()
 	prefs.showConsole = true;
 	sl::Feature featuresToLoad[] = { sl::kFeatureDLSS };
 	prefs.featuresToLoad = featuresToLoad;
+	// TODO : 경로 변경
 	const wchar_t* pluginPaths[] = {
 		L"C:/Users/son/Streamline/bin/x64"  // 실제 플러그인 경로로 변경
 	};

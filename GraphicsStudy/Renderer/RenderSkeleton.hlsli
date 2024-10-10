@@ -3,6 +3,7 @@ cbuffer cbSkeleton : register(b0)
     float4x4 boneTransforms[60];
     float4x4 baseTransforms[60];
     float4 parentsIndex[15];
+    float4 isClicked[15];
 }
 
 cbuffer cbPass : register(b1)
@@ -21,9 +22,11 @@ struct GSInput
 {
     float3 position : POSITION0;
     float3 parentsPosition : POSITION1;
+    uint vId : BLENDINDICES;
 };
 struct PSInput
 {
     float4 sv_position : SV_POSITION;
     float3 normal : NORMAL;
+    uint vId : BLENDINDICES;
 };

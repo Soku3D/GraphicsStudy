@@ -3,6 +3,7 @@
 GSInput main(VSInput input)
 {
     GSInput output;
+    output.vId = input.vId;
     float4 pos = mul(float4(input.position, 1.f), baseTransforms[input.vId]);
     pos = mul(pos, boneTransforms[input.vId]);
     output.position = pos.xyz;

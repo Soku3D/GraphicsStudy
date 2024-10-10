@@ -108,5 +108,6 @@ namespace Renderer {
 
 	protected:
 		
+		DirectX::BoundingBox testBox;
 	};
 }

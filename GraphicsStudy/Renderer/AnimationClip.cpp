@@ -16,6 +16,9 @@ namespace Animation {
 			auto& keys = clip.keys[boneId];
 			auto key = keys.size() > 0 ? keys[frame % keys.size()]
 				: AnimationClip::Key();
+			if (boneId == 50 || boneId == 49 || boneId == 48) {
+				key = keys[0];
+			}
 			int parentId = boneParentsId[boneId];
 			Matrix parentMatrix = parentId > 0 ? boneTransforms[parentId]
 				: accumulatedRootTransform;
@@ -35,7 +38,6 @@ namespace Animation {
 				key.pos = Vector3(0.0f);
 			}
 			boneTransforms[boneId] = key.GetTransform() * parentMatrix;
-
 		}
 	}
 
