@@ -42,10 +42,7 @@ bool Renderer::D3D12PassApp::Initialize()
 		}
 	}
 
-	testBox.Center = XMFLOAT3(0, 0, 0);
-	testBox.Extents = XMFLOAT3(1, 1, 1);
-
-	gui_lightPos = DirectX::SimpleMath::Vector3(0.f, 1.f, 0.f);
+	gui_lightPos = DirectX::SimpleMath::Vector3(0.f, 0.f, 0.f);
 	InitConstantBuffers();
 
 	return true;
@@ -252,7 +249,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 	static float frame = 0;
 
-	frame += 0.5f;
+	//frame += 0.5f;
 	//DirectX::SimpleMath::Matrix m = DirectX::XMMatrixRotationY(gui_eyeRotation);
 	soldierAnimation.Update((int)frame);
 	if (frame > soldierAnimation.clips[0].keys.size())
@@ -268,40 +265,84 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		mSkinnedMeshConstantData.mStructure.boneTransforms[i] = soldierAnimation.Get(i).Transpose();
 		mSkinnedMeshConstantData.mStructure.baseTransforms[i] = (soldierAnimation.tPoseTransforms[i] * soldierAnimation.defaultTransform).Transpose();
 
+		int32_t parentsId = soldierAnimation.boneParentsId[i];
 		int index = i / 4;
 		int index2 = i % 4;
 		if (i <= maxIdx)
 		{
 			if (index2 == 0)
-				mSkinnedMeshConstantData.mStructure.parentsIndex[index].x = (float)soldierAnimation.boneParentsId[i];
+				mSkinnedMeshConstantData.mStructure.parentsIndex[index].x = (float)parentsId;
 			else if (index2 == 1)
-				mSkinnedMeshConstantData.mStructure.parentsIndex[index].y = (float)soldierAnimation.boneParentsId[i];
+				mSkinnedMeshConstantData.mStructure.parentsIndex[index].y = (float)parentsId;
 			else if (index2 == 2)
-				mSkinnedMeshConstantData.mStructure.parentsIndex[index].z = (float)soldierAnimation.boneParentsId[i];
+				mSkinnedMeshConstantData.mStructure.parentsIndex[index].z = (float)parentsId;
 			else
-				mSkinnedMeshConstantData.mStructure.parentsIndex[index].w = (float)soldierAnimation.boneParentsId[i];
+				mSkinnedMeshConstantData.mStructure.parentsIndex[index].w = (float)parentsId;
+
+		}
+		if (lMouseButtonClicked && parentsId > 0) {
+			GetCursorPos(&mCursorPosition);
+			ScreenToClient(m_mainWnd, &mCursorPosition);
+
+			float ndcX = (2.f * ((mCursorPosition.x + 0.5f) / (m_screenWidth))) - 1.f;
+			float ndcY = (2.f * ((mCursorPosition.y + 0.5f) / (m_screenHeight))) - 1.f;
+
+			DirectX::SimpleMath::Vector3 childCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[i] * soldierAnimation.defaultTransform * soldierAnimation.Get(i));
+			DirectX::SimpleMath::Vector3 parentsCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[parentsId] * soldierAnimation.defaultTransform * soldierAnimation.Get(parentsId));
+
+			DirectX::SimpleMath::Vector3 center = (childCenter + parentsCenter) * 0.5f;
+			float length = (childCenter - parentsCenter).Length();
+			skeletonBoundingSphere.Radius = length / 2.5f;
+			skeletonBoundingSphere.Center = center;
+
+			DirectX::SimpleMath::Vector3 ndcNear = DirectX::SimpleMath::Vector3(ndcX, -ndcY, 0.f);
+			DirectX::SimpleMath::Vector3 ndcFar = DirectX::SimpleMath::Vector3(ndcX, -ndcY, 1.f);
+			DirectX::SimpleMath::Matrix inverseViewProj = (m_camera->GetViewMatrix() * m_camera->GetProjMatrix()).Invert();
+
+			DirectX::SimpleMath::Vector3 nearWorld = DirectX::SimpleMath::Vector3::Transform(ndcNear, inverseViewProj);
+			DirectX::SimpleMath::Vector3 farWorld = DirectX::SimpleMath::Vector3::Transform(ndcFar, inverseViewProj);
+			DirectX::SimpleMath::Vector3 o = nearWorld;
+			DirectX::SimpleMath::Vector3 d = farWorld - nearWorld;
+			d.Normalize();
+			DirectX::SimpleMath::Ray curRay = DirectX::SimpleMath::Ray(nearWorld, d);
+
+
+			float l;
+			if (curRay.Intersects(skeletonBoundingSphere, l))
+			{
+				if (index2 == 0)
+					mSkinnedMeshConstantData.mStructure.isClicked[index].x = 1.f;
+				else if (index2 == 1)
+					mSkinnedMeshConstantData.mStructure.isClicked[index].y = 1.f;
+				else if (index2 == 2)
+					mSkinnedMeshConstantData.mStructure.isClicked[index].z = 1.f;
+				else
+					mSkinnedMeshConstantData.mStructure.isClicked[index].w = 1.f;
+			}
+			else {
+				if (index2 == 0)
+					mSkinnedMeshConstantData.mStructure.isClicked[index].x = 0.f;
+				else if (index2 == 1)
+					mSkinnedMeshConstantData.mStructure.isClicked[index].y = 0.f;
+				else if (index2 == 2)
+					mSkinnedMeshConstantData.mStructure.isClicked[index].z = 0.f;
+				else
+					mSkinnedMeshConstantData.mStructure.isClicked[index].w = 0.f;
+
+			}
+		}
+		else {
+			if (index2 == 0)
+				mSkinnedMeshConstantData.mStructure.isClicked[index].x = 0.f;
+			else if (index2 == 1)
+				mSkinnedMeshConstantData.mStructure.isClicked[index].y = 0.f;
+			else if (index2 == 2)
+				mSkinnedMeshConstantData.mStructure.isClicked[index].z = 0.f;
+			else
+				mSkinnedMeshConstantData.mStructure.isClicked[index].w = 0.f;
 		}
 	}
-
-	if (lMouseButtonClicked) {
-		GetCursorPos(&mCursorPosition);
-		ScreenToClient(m_mainWnd, &mCursorPosition);
-
-		float ndcX = (2.f * ((mCursorPosition.x) / (m_screenWidth - 1.f))) - 1.f;
-		float ndcY = (2.f * ((mCursorPosition.y) / (m_screenHeight - 1.f))) - 1.f;
-
-		testBox.Transform(testBox, soldierAnimation.tPoseTransforms[5] * soldierAnimation.defaultTransform);
-		DirectX::SimpleMath::Vector3 o = XMFLOAT3(ndcX, ndcY, m_camera->GetPosition().z);
-		DirectX::SimpleMath::Vector3 d = XMFLOAT3(0, 0, -1);
-		float l;
-		mSkinnedMeshConstantData.mStructure.isClicked[1].y = testBox.Intersects(o, d, l);
-	}
-	else {
-		mSkinnedMeshConstantData.mStructure.isClicked[1].y = 0.f;
-
-	}
 	mSkinnedMeshConstantData.UpdateBuffer();
-
 }
 
 void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)

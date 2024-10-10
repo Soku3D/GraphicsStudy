@@ -1,27 +1,27 @@
-#include "SkeletonMesh.h"
+#include "Ray.h"
 #include "Utility.h"
 #include "directxtk\SimpleMath.h"
 
-Core::SkeletonMesh::SkeletonMesh()
+Core::Ray::Ray()
 {
 }
 
-Core::SkeletonMesh::~SkeletonMesh()
+Core::Ray::~Ray()
 {
 }
 
-void Core::SkeletonMesh::Update(const float& deltaTime)
+void Core::Ray::Update(const float& deltaTime)
 {
 }
 
-void Core::SkeletonMesh::Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
+void Core::Ray::Render(const float& deltaTime, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
 {
     commandList->IASetVertexBuffers(0, 1, &mVertexBufferView);
     commandList->DrawInstanced(boneCount, 1, 0, 0);
 }
 
-void Core::SkeletonMesh::Initialize(std::vector<DirectX::SimpleMath::Vector3>& vertices, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
-{    
+void Core::Ray::Initialize(std::vector<DirectX::SimpleMath::Vector3>& vertices, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
+{
     size_t bufferSize = vertices.size() * sizeof(DirectX::SimpleMath::Vector3);
     // Vertex Buffer 리소스 생성
     ThrowIfFailed(device->CreateCommittedResource(

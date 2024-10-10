@@ -11,8 +11,8 @@ float4 main(PSInput input) : SV_TARGET
     int vid1 = input.vId / 4;
     int vid2 = input.vId % 4;
     
-    bool isClicked = parentsIndex[vid1][vid2];
-    if (isClicked)
+    bool clicked = isClicked[vid1][vid2];
+    if (clicked)
     {
         color = red;
     }
