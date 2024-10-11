@@ -86,8 +86,12 @@ void main(
     output.RestartStrip();
     if(ptocL>1e-3)
     {
-        float3 crossDir = cross(normPtoc, float3(1, 0, 0));
-    
+        float3 crossDir = cross(normPtoc, float3(0, 0, 1));
+        if (normPtoc.z == 1 || normPtoc.z == -1)
+        {
+            crossDir = cross(normPtoc, float3(0, 1, 0));
+        }
+          
         float3 point0 = input[0].parentsPosition + ptoc * 0.25f;
         crossDir = crossDir * r1 * 2.f;
     

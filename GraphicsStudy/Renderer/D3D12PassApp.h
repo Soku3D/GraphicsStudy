@@ -100,6 +100,11 @@ namespace Renderer {
 
 		Core::SkeletonMesh* skeletonMesh;
 
+		std::string gui_skeletonIndex = 0;
+		float gui_skeletonX = 0;
+		float gui_skeletonY = 0;
+		float gui_skeletonZ = 0;
+
 	private:
 		const wchar_t* geomeytyPassEvent = L"Geometry Pass ";
 		const wchar_t* fbxGeomeytyPassEvent = L"FBX Geometry Pass ";

@@ -77,7 +77,7 @@ void Renderer::D3D12PassApp::InitScene()
 	soldierAnimation.offsetMatrices[9] *= DirectX::XMMatrixRotationX(0.23f) * DirectX::XMMatrixTranslation(0.f, 4.f, -2.5f);
 	soldierAnimation.offsetMatrices[6] *= DirectX::XMMatrixTranslation(0.f, 4.f, 0.f);
 	soldierAnimation.offsetMatrices[5] *= DirectX::XMMatrixTranslation(0.f, 4.f, 0.f);
-	//head = soldierAnimation.boneTransforms[6];
+
 	jaw = soldierAnimation.offsetMatrices[9];
 
 	mCharacter->SetMeshBoundingBox(1.f);
@@ -286,17 +286,21 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 			float ndcX = (2.f * ((mCursorPosition.x + 0.5f) / (m_screenWidth))) - 1.f;
 			float ndcY = (2.f * ((mCursorPosition.y + 0.5f) / (m_screenHeight))) - 1.f;
+			ndcY *= -1;
+			
+			DirectX::SimpleMath::Vector3 childCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[i] * soldierAnimation.defaultTransform );
+			DirectX::SimpleMath::Vector3 parentsCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[parentsId] * soldierAnimation.defaultTransform );
 
-			DirectX::SimpleMath::Vector3 childCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[i] * soldierAnimation.defaultTransform * soldierAnimation.Get(i));
-			DirectX::SimpleMath::Vector3 parentsCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[parentsId] * soldierAnimation.defaultTransform * soldierAnimation.Get(parentsId));
+			//DirectX::SimpleMath::Vector3 childCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[i] * soldierAnimation.defaultTransform * soldierAnimation.Get(i));
+			//DirectX::SimpleMath::Vector3 parentsCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[parentsId] * soldierAnimation.defaultTransform * soldierAnimation.Get(parentsId));
 
 			DirectX::SimpleMath::Vector3 center = (childCenter + parentsCenter) * 0.5f;
 			float length = (childCenter - parentsCenter).Length();
 			skeletonBoundingSphere.Radius = length / 2.5f;
 			skeletonBoundingSphere.Center = center;
 
-			DirectX::SimpleMath::Vector3 ndcNear = DirectX::SimpleMath::Vector3(ndcX, -ndcY, 0.f);
-			DirectX::SimpleMath::Vector3 ndcFar = DirectX::SimpleMath::Vector3(ndcX, -ndcY, 1.f);
+			DirectX::SimpleMath::Vector3 ndcNear = DirectX::SimpleMath::Vector3(ndcX, ndcY, 0.f);
+			DirectX::SimpleMath::Vector3 ndcFar = DirectX::SimpleMath::Vector3(ndcX, ndcY, 1.f);
 			DirectX::SimpleMath::Matrix inverseViewProj = (m_camera->GetViewMatrix() * m_camera->GetProjMatrix()).Invert();
 
 			DirectX::SimpleMath::Vector3 nearWorld = DirectX::SimpleMath::Vector3::Transform(ndcNear, inverseViewProj);
@@ -398,7 +402,7 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 	ImGui::SameLine();
 	ImGui::Checkbox("Render Mesh", &bRenderMeshes);
 	ImGui::SameLine();
-	ImGui::Checkbox("Uuse DLAA", &guiUseDLAA);
+	ImGui::Checkbox("Use DLAA", &guiUseDLAA);
 	ImGui::SliderFloat("Jitter Offset", &guiDLAAJitterOffset, 0.f, 10.f);
 }
 
