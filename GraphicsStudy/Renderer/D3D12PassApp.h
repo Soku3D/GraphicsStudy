@@ -114,5 +114,10 @@ namespace Renderer {
 	protected:
 		
 		DirectX::BoundingSphere skeletonBoundingSphere;
+		std::string skeletonName = "";
+		int selectedSkeletonId = -1;
+		float gui_skeletonX = 0.f;
+		float gui_skeletonY = 0.f;
+		float gui_skeletonZ = 0.f;
 	};
 }

@@ -259,6 +259,17 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 	//soldierAnimation.boneTransforms[6] = head * DirectX::XMMatrixTranslation(gui_headX, gui_headY, gui_headZ);
 	//soldierAnimation.offsetMatrices[9] = jaw * DirectX::XMMatrixRotationX(gui_jawRotation) *DirectX::XMMatrixTranslation(0,0,gui_jawZ);
+	float ndcX = -2;
+	float ndcY = -2;
+	if (lMouseButtonClicked) {
+
+		GetCursorPos(&mCursorPosition);
+		ScreenToClient(m_mainWnd, &mCursorPosition);
+
+		ndcX = (2.f * ((mCursorPosition.x + 0.5f) / (m_screenWidth))) - 1.f;
+		ndcY = (2.f * ((mCursorPosition.y + 0.5f) / (m_screenHeight))) - 1.f;
+	}
+
 	for (int i = 0; i < soldierAnimation.boneTransforms.size(); i++)
 	{
 		int maxIdx = soldierAnimation.boneTransforms.size() - 1;
@@ -314,6 +325,8 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 			float l;
 			if (curRay.Intersects(skeletonBoundingSphere, l))
 			{
+				skeletonName = soldierAnimation.boneIdToName[i];
+				selectedSkeletonId = i;
 				if (index2 == 0)
 					mSkinnedMeshConstantData.mStructure.isClicked[index].x = 1.f;
 				else if (index2 == 1)
@@ -324,6 +337,8 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 					mSkinnedMeshConstantData.mStructure.isClicked[index].w = 1.f;
 			}
 			else {
+				//skeletonName = "";
+
 				if (index2 == 0)
 					mSkinnedMeshConstantData.mStructure.isClicked[index].x = 0.f;
 				else if (index2 == 1)
@@ -335,7 +350,23 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 			}
 		}
+		else if (selectedSkeletonId == i)
+		{
+			skeletonName = soldierAnimation.boneIdToName[i];
+			//selectedSkeletonId = i;
+			if (index2 == 0)
+				mSkinnedMeshConstantData.mStructure.isClicked[index].x = 1.f;
+			else if (index2 == 1)
+				mSkinnedMeshConstantData.mStructure.isClicked[index].y = 1.f;
+			else if (index2 == 2)
+				mSkinnedMeshConstantData.mStructure.isClicked[index].z = 1.f;
+			else
+				mSkinnedMeshConstantData.mStructure.isClicked[index].w = 1.f;
+		}
 		else {
+			//skeletonName = "";
+			//selectedSkeletonId = -1;
+
 			if (index2 == 0)
 				mSkinnedMeshConstantData.mStructure.isClicked[index].x = 0.f;
 			else if (index2 == 1)
@@ -373,10 +404,11 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 	if (ImGui::Button("FindSession")) {
 		findSession = true;
 	}
+	ImGui::Text(skeletonName.c_str());
 
-	ImGui::SliderFloat("gui_headX", &gui_headX, -200.f, 200.f);
-	ImGui::SliderFloat("gui_headY", &gui_headY, -200.f, 200.f);
-	ImGui::SliderFloat("gui_headZ", &gui_headZ, -200.f, 200.f);
+	ImGui::SliderFloat("Skeleton X", &gui_skeletonX, -2.f, 2.f);
+	ImGui::SliderFloat("Skeleton Y", &gui_skeletonY, -2, 2);
+	ImGui::SliderFloat("Skeleton Z", &gui_skeletonZ, -2, 2);
 
 	ImGui::SliderFloat("jawRotation", &gui_jawRotation, -3.14f, 3.14f);
 	ImGui::SliderFloat("eyeRotation", &gui_eyeRotation, -3.14f, 3.14f);
@@ -404,6 +436,8 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 	ImGui::SameLine();
 	ImGui::Checkbox("Use DLAA", &guiUseDLAA);
 	ImGui::SliderFloat("Jitter Offset", &guiDLAAJitterOffset, 0.f, 10.f);
+
+
 }
 
 void Renderer::D3D12PassApp::Render(float& deltaTime)
