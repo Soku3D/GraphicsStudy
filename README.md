@@ -4,9 +4,9 @@
 ### DirectX 12 samples
 1. Deferred Shading sample
     
-    <img src="GraphicsStudy/Renderer/Results/PassApp/240828-2342.png" height="200">
-    <img src="GraphicsStudy/Renderer/Results/PassApp/241007-1305.png" height="200">
-    <img src="GraphicsStudy/Renderer/Results/PassApp/241009-2242.png" height="200">
+    <img src="GraphicsStudy/Renderer/Results/PassApp/240828-2342.png" width="640" height="360">
+    <img src="GraphicsStudy/Renderer/Results/PassApp/241007-1305.png" width="640" height="360">
+    <img src="GraphicsStudy/Renderer/Results/PassApp/241009-2242.png" width="640" height="360">
 
 2. Physx Simulation sample
     
