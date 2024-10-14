@@ -4,19 +4,19 @@
 ### DirectX 12 samples
 1. Deferred Shading sample
     
-    <img src="GraphicsStudy/Renderer/Results/PassApp/240828-2342.png" width="640" height="360">
-    <img src="GraphicsStudy/Renderer/Results/PassApp/241007-1305.png" width="640" height="360">
-    <img src="GraphicsStudy/Renderer/Results/PassApp/241009-2242.png" width="640" height="360">
+    <img src="GraphicsStudy/Renderer/Results/PassApp/240828-2342.png" width="320" height="180">
+    <img src="GraphicsStudy/Renderer/Results/PassApp/241007-1305.png" width="320" height="180">
+    <img src="GraphicsStudy/Renderer/Results/PassApp/241009-2242.png" width="320" height="180">
 
 2. Physx Simulation sample
     
-    <img src="GraphicsStudy/Renderer/Results/PhysxSimulationApp/240828-1952.png" alt="Physx Simulation" height="200">
+    <img src="GraphicsStudy/Renderer/Results/PhysxSimulationApp/240828-1952.png" alt="Physx Simulation" width="320" height="180">
 
 3. Raytracing sample
     
-    <img src="GraphicsStudy/Renderer/Results/RaytracingApp/240911-2317.png" height="200">
-    <img src="GraphicsStudy/Renderer/Results/RaytracingApp/240916-1228.png" height="200">
-    <img src="GraphicsStudy/Renderer/Results/RaytracingApp/240922-2242.png" height="200">
+    <img src="GraphicsStudy/Renderer/Results/RaytracingApp/240911-2317.png" width="320" height="180">
+    <img src="GraphicsStudy/Renderer/Results/RaytracingApp/240916-1228.png" width="320" height="180">
+    <img src="GraphicsStudy/Renderer/Results/RaytracingApp/240922-2242.png" width="320" height="180">
     
 4. Simulation sample
     
