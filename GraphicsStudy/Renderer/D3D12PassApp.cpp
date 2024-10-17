@@ -31,6 +31,14 @@ Renderer::D3D12PassApp::D3D12PassApp(const int& width, const int& height)
 	m_appName = "PassApp";
 }
 
+Renderer::D3D12PassApp::~D3D12PassApp()
+{
+	if (skeletonMesh != nullptr)
+		delete skeletonMesh;
+	std::cout << "~D3D12PassApp" << std::endl;
+	light = nullptr;
+}
+
 bool Renderer::D3D12PassApp::Initialize()
 {
 	if (!D3D12App::Initialize())
@@ -41,8 +49,10 @@ bool Renderer::D3D12PassApp::Initialize()
 			return false;
 		}
 	}
+	pLight = new Core::Light();
 
 	gui_lightPos = DirectX::SimpleMath::Vector3(0.f, 1.5f, 0.f);
+	pLight->SetPositionAndDirection(gui_lightPos, XMFLOAT3(0, -1, 1));
 	InitConstantBuffers();
 
 	return true;
@@ -78,7 +88,7 @@ void Renderer::D3D12PassApp::InitScene()
 	soldierAnimation.offsetMatrices[6] *= DirectX::XMMatrixTranslation(0.f, 4.f, 0.f);
 	soldierAnimation.offsetMatrices[5] *= DirectX::XMMatrixTranslation(0.f, 4.f, 0.f);
 
-	jaw = soldierAnimation.offsetMatrices[9];
+	//jaw = soldierAnimation.offsetMatrices[9];
 
 	mCharacter->SetMeshBoundingBox(1.f);
 	skeletonMesh = new Core::SkeletonMesh();
@@ -97,7 +107,6 @@ void Renderer::D3D12PassApp::InitScene()
 			Material(1.f, 1.f, 0.1f, 1.f),
 			false /*AO*/, false /*Height*/, false /*Metallic*/, false /*Normal*/, false /*Roughness*/, false /*Tesslation*/);
 		m_lightMeshes.push_back(sphere);
-
 	}
 	std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
 	std::vector<PbrMeshData> planeData = { GeometryGenerator::PbrBox(10, 1, 10, L"worn-painted-metal_Albedo.dds", 10, 1, 10) };
@@ -219,9 +228,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		m_ligthPassConstantBuffer.UpdateBuffer();
 	}
 
-	DirectX::SimpleMath::Matrix mat = DirectX::XMMatrixTranslation(gui_lightPos.x, gui_lightPos.y, gui_lightPos.z);
-	if (m_lightMeshes.size() > 0)
-		m_lightMeshes[0]->UpdateWorldRow(mat);
+
 
 	for (auto& mesh : m_staticMeshes) {
 		mesh->Update(deltaTime);
@@ -247,6 +254,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 	mPostprocessingConstantBuffer.mStructure.bUseGamma = false;
 	mPostprocessingConstantBuffer.UpdateBuffer();
 
+	// Update Skeleton Animation
 	static float frame = 0;
 
 	if (bRunAnimation) {
@@ -300,7 +308,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 			float ndcX = (2.f * ((mCursorPosition.x + 0.5f) / (m_screenWidth))) - 1.f;
 			float ndcY = (2.f * ((mCursorPosition.y + 0.5f) / (m_screenHeight))) - 1.f;
 			ndcY *= -1;
-			
+
 			DirectX::SimpleMath::Vector3 childCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[i] * soldierAnimation.defaultTransform * soldierAnimation.Get(i));
 			DirectX::SimpleMath::Vector3 parentsCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[parentsId] * soldierAnimation.defaultTransform * soldierAnimation.Get(parentsId));
 
@@ -380,6 +388,13 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 		}
 	}
 	mSkinnedMeshConstantData.UpdateBuffer();
+
+	//Update Light
+	pLight->SetPositionAndDirection(gui_lightPos, XMFLOAT3(0, -1, 1));
+	DirectX::SimpleMath::Matrix mat = DirectX::XMMatrixTranslation(gui_lightPos.x, gui_lightPos.y, gui_lightPos.z);
+	if (m_lightMeshes.size() > 0)
+		m_lightMeshes[0]->UpdateWorldRow(mat);
+
 }
 
 void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
@@ -451,6 +466,7 @@ void Renderer::D3D12PassApp::Render(float& deltaTime)
 	GeometryPass(deltaTime);
 	FbxGeometryPass(deltaTime);
 	SkinnedMeshGeometryPass(deltaTime);
+	DepthOnlyPass(deltaTime);
 	RenderCubeMap(deltaTime);
 	LightPass(deltaTime);
 	RenderNormalPass(deltaTime);
@@ -629,6 +645,44 @@ void Renderer::D3D12PassApp::SkinnedMeshGeometryPass(float& deltaTime) {
 	ID3D12CommandList* plists[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
 
+
+	FlushCommandQueue();
+	PIXEndEvent(m_commandQueue.Get());
+}
+
+void Renderer::D3D12PassApp::DepthOnlyPass(float& deltaTime) {
+
+	auto& pso = passPsoLists["DepthOnlyPass"];
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), geomeytyPassEvent);
+	FLOAT clearColor[4] = { 0.f,0.f,0.f,0.f };
+
+
+	m_commandList->OMSetRenderTargets(geometryPassRtvNum, &GeometryPassMsaaRTV(), true, &MsaaDepthStencilView());
+
+	m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_commandList->RSSetScissorRects(1, &m_scissorRect);
+	m_commandList->RSSetViewports(1, &m_viewport);
+	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+
+	// View Proj Matrix Constant Buffer 
+	m_commandList->SetGraphicsRootConstantBufferView(2, m_passConstantBuffer.GetGPUVirtualAddress());
+
+	// Texture SRV Heap 
+	ID3D12DescriptorHeap* ppSrvHeaps[] = { m_textureHeap.Get() };
+	m_commandList->SetDescriptorHeaps(_countof(ppSrvHeaps), ppSrvHeaps);
+
+	if (bRenderMeshes)
+	{
+		RenderStaticMeshes(deltaTime);
+	}
+
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* plists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(plists), plists);
 
 	FlushCommandQueue();
 	PIXEndEvent(m_commandQueue.Get());

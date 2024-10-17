@@ -60,6 +60,19 @@ namespace Core {
 		ThrowIfFailed(mSimuationConstantBuffer->Map(0, &range, reinterpret_cast<void**>(&pSimulationConstant)));
 	}
 
+	class Texture2D {
+	public:
+		Texture2D() {};
+		~Texture2D() {};
+
+		void Initiailize(UINT width, UINT height, UINT depth, DXGI_FORMAT format, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commmandList);
+
+	private:
+		UINT mWidth;
+		UINT mHeight;
+
+	};
+
 	class Texture3D {
 	public:
 		Texture3D() {};
@@ -232,7 +245,6 @@ namespace Core {
 		device->CreateShaderResourceView(mStructureBuffer.Get(), &SRVDesc, handle);
 
 		device->CopyDescriptorsSimple(2, mHeap->GetCPUDescriptorHandleForHeapStart(), mHeapNSV->GetCPUDescriptorHandleForHeapStart(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-
 	}
+
 }

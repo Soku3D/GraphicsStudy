@@ -169,6 +169,7 @@
     <ClCompile Include="FBX.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="InputHandler.cpp" />
+    <ClCompile Include="Light.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ModelLoader.cpp" />
     <ClCompile Include="Object.cpp" />
@@ -209,6 +210,7 @@
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="HlslCompat.h" />
     <ClInclude Include="InputHandler.h" />
+    <ClInclude Include="Light.h" />
     <ClInclude Include="MeshData.h" />
     <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="Object.h" />

@@ -98,3 +98,8 @@ void Core::Texture3D::RenderBoundingBox(float& deltaTime, Microsoft::WRL::ComPtr
 	}
 }
 
+void Core::Texture2D::Initiailize(UINT width, UINT height, UINT depth, DXGI_FORMAT format, Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commmandList)
+{
+	mWidth = width;
+	mHeight = height;
+}

@@ -4,6 +4,7 @@
 #include "Renderer.h"
 #include "SkeletonMesh.h"
 #include <DirectXTexEXR.h>
+#include "Light.h"
 
 namespace Renderer {
 
@@ -17,11 +18,7 @@ namespace Renderer {
 	class D3D12PassApp :public D3D12App {
 	public:
 		D3D12PassApp(const int& width, const int& height);
-		virtual ~D3D12PassApp() {
-			if(skeletonMesh!=nullptr)
-				delete skeletonMesh;
-			std::cout << "~D3D12PassApp" << std::endl;
-		}
+		virtual ~D3D12PassApp();
 
 		bool Initialize() override;
 		virtual void InitConstantBuffers();
@@ -36,6 +33,7 @@ namespace Renderer {
 		void GeometryPass(float& deltaTime);
 		void FbxGeometryPass(float& deltaTime);
 		void SkinnedMeshGeometryPass(float& deltaTime);
+		void DepthOnlyPass(float& deltaTime);
 		void LightPass(float& deltaTime);
 		void RenderNormalPass(float& deltaTime);
 		void RenderBoundingBoxPass(float& deltaTime);
@@ -53,7 +51,7 @@ namespace Renderer {
 	protected:
 		Core::ConstantBuffer<CubeMapConstantData> mCubeMapConstantData;
 		Core::ConstantBuffer<SkinnedMeshConstantData> mSkinnedMeshConstantData;
-		
+
 	protected:
 		bool bRenderLights = true;
 		bool bRenderMeshes = true;
@@ -105,15 +103,18 @@ namespace Renderer {
 		const wchar_t* geomeytyPassEvent = L"Geometry Pass ";
 		const wchar_t* fbxGeomeytyPassEvent = L"FBX Geometry Pass ";
 		const wchar_t* lightPassEvent = L"Light Pass ";
-		
+
 
 	protected:
-		
+
 		DirectX::BoundingSphere skeletonBoundingSphere;
 		std::string skeletonName = "";
 		int selectedSkeletonId = -1;
 		float gui_skeletonX = 0.f;
 		float gui_skeletonY = 0.f;
 		float gui_skeletonZ = 0.f;
+
+	protected:
+		Core::Light* pLight;
 	};
 }
