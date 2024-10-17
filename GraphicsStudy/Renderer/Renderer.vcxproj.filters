@@ -117,6 +117,9 @@
     <ClCompile Include="Ray.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3D12App.h">
@@ -246,6 +249,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Ray.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
