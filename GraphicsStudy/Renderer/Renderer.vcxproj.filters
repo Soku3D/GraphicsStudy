@@ -313,8 +313,6 @@
     <FxCompile Include="RenderSkeletonVS.hlsl" />
     <FxCompile Include="RenderSkeletonPS.hlsl" />
     <FxCompile Include="RenderSkeletonGS.hlsl" />
-    <FxCompile Include="DepthOnlyPassVS.hlsl" />
-    <FxCompile Include="DepthOnlyPassPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />
@@ -333,6 +331,5 @@
     <None Include="Smoke.hlsli" />
     <None Include="MotionVector.hlsli" />
     <None Include="RenderSkeleton.hlsli" />
-    <None Include="DepthOnlyPass.hlsli" />
   </ItemGroup>
 </Project>

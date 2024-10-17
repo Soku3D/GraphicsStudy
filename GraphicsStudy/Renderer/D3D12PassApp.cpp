@@ -42,7 +42,7 @@ bool Renderer::D3D12PassApp::Initialize()
 		}
 	}
 
-	gui_lightPos = DirectX::SimpleMath::Vector3(0.f, 0.f, 0.f);
+	gui_lightPos = DirectX::SimpleMath::Vector3(0.f, 1.5f, 0.f);
 	InitConstantBuffers();
 
 	return true;
@@ -249,7 +249,9 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 	static float frame = 0;
 
-	//frame += 0.5f;
+	if (bRunAnimation) {
+		frame += 0.5f;
+	}
 	//DirectX::SimpleMath::Matrix m = DirectX::XMMatrixRotationY(gui_eyeRotation);
 	soldierAnimation.Update((int)frame);
 	if (frame > soldierAnimation.clips[0].keys.size())
@@ -272,7 +274,7 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 
 	for (int i = 0; i < soldierAnimation.boneTransforms.size(); i++)
 	{
-		int maxIdx = soldierAnimation.boneTransforms.size() - 1;
+		int maxIdx = (int)soldierAnimation.boneTransforms.size() - 1;
 		mSkinnedMeshConstantData.mStructure.boneTransforms[i] = soldierAnimation.Get(i).Transpose();
 		mSkinnedMeshConstantData.mStructure.baseTransforms[i] = (soldierAnimation.tPoseTransforms[i] * soldierAnimation.defaultTransform).Transpose();
 
@@ -299,8 +301,8 @@ void Renderer::D3D12PassApp::Update(float& deltaTime)
 			float ndcY = (2.f * ((mCursorPosition.y + 0.5f) / (m_screenHeight))) - 1.f;
 			ndcY *= -1;
 			
-			DirectX::SimpleMath::Vector3 childCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[i] * soldierAnimation.defaultTransform );
-			DirectX::SimpleMath::Vector3 parentsCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[parentsId] * soldierAnimation.defaultTransform );
+			DirectX::SimpleMath::Vector3 childCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[i] * soldierAnimation.defaultTransform * soldierAnimation.Get(i));
+			DirectX::SimpleMath::Vector3 parentsCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[parentsId] * soldierAnimation.defaultTransform * soldierAnimation.Get(parentsId));
 
 			//DirectX::SimpleMath::Vector3 childCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[i] * soldierAnimation.defaultTransform * soldierAnimation.Get(i));
 			//DirectX::SimpleMath::Vector3 parentsCenter = DirectX::SimpleMath::Vector4::Transform(DirectX::SimpleMath::Vector4(0, 0, 0, 1), soldierAnimation.tPoseTransforms[parentsId] * soldierAnimation.defaultTransform * soldierAnimation.Get(parentsId));
@@ -403,6 +405,10 @@ void Renderer::D3D12PassApp::UpdateGUI(float& deltaTime)
 	ImGui::SameLine();
 	if (ImGui::Button("FindSession")) {
 		findSession = true;
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Animation")) {
+		bRunAnimation = !bRunAnimation;
 	}
 	ImGui::Text(skeletonName.c_str());
 
