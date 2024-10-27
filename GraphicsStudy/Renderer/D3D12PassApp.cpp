@@ -36,7 +36,7 @@ Renderer::D3D12PassApp::~D3D12PassApp()
 	if (skeletonMesh != nullptr)
 		delete skeletonMesh;
 	std::cout << "~D3D12PassApp" << std::endl;
-	light = nullptr;
+	//light = nullptr;
 }
 
 bool Renderer::D3D12PassApp::Initialize()
@@ -466,7 +466,7 @@ void Renderer::D3D12PassApp::Render(float& deltaTime)
 	GeometryPass(deltaTime);
 	FbxGeometryPass(deltaTime);
 	SkinnedMeshGeometryPass(deltaTime);
-	DepthOnlyPass(deltaTime);
+	//DepthOnlyPass(deltaTime);
 	RenderCubeMap(deltaTime);
 	LightPass(deltaTime);
 	RenderNormalPass(deltaTime);

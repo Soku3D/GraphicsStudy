@@ -56,6 +56,9 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	sphParticle.InitializeSPH(SPH_SIMULATION_PARTICLE_SIZE);
 	sphParticle.BuildResources(m_device, m_commandList);
 
+	mSpring.Initialize(10);
+	mSpring.BuildResources(m_device, m_commandList);
+
 	stableFluids.Initialize();
 
 	InitSimulationScene();
@@ -216,10 +219,11 @@ void Renderer::D3D12SimulationApp::Render(float& deltaTime)
 {
 	//RenderNoise(deltaTime);
 	//ParticleSimulation(deltaTime);
-	SPH(deltaTime); 
+	//SPH(deltaTime); 
 	//CFD(deltaTime);
 	//VolumeRendering(deltaTime);
 	//SmokeSimulationPass(deltaTime);
+	SpringSimulation(deltaTime);
 }
 
 void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
@@ -227,6 +231,19 @@ void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
 	SimulationPass(deltaTime);
 	SimulationRenderPass(deltaTime);
 	PostProcessing(deltaTime, "SimulationPostProcessing", HDRRenderTargetBuffer(), m_hdrUavHeap.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
+		D3D12App::PostProcessing(deltaTime);
+		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
+	}
+	else
+		D3D12App::CopyResourceToSwapChain(deltaTime);
+}
+
+void Renderer::D3D12SimulationApp::SpringSimulation(float& deltaTime)
+{
+	SimulationPass(deltaTime);
+	SimulationRenderPass(deltaTime);
+	
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
 		D3D12App::PostProcessing(deltaTime);
 		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
@@ -359,7 +376,6 @@ void Renderer::D3D12SimulationApp::VolumeRendering(float& deltaTime) {
 	else
 		D3D12App::CopyResourceToSwapChain(deltaTime);
 }
-
 
 void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
 {

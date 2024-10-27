@@ -3,6 +3,7 @@
 #include "D3D12App.h"
 #include "Renderer.h"
 #include "Particle.h"
+#include "Spring.h"
 #include "StableFluids.h"
 #include "Volume.h"
 
@@ -25,6 +26,7 @@ namespace Renderer {
 		void Render(float& deltaTime) override;
 
 		void ParticleSimulation(float& deltaTime);
+		void SpringSimulation(float& deltaTime);
 		void RenderNoise(float& deltaTime);
 		void GeneratePerlinNoise();
 		void SPH(float& deltaTime);
@@ -72,6 +74,7 @@ namespace Renderer {
 	protected:
 		Particles particle;
 		Particles sphParticle;
+		Springs mSpring;
 		StableFluids stableFluids;
 		Core::ConstantBuffer<SimulationCSConstantData> mSimulationConstantBuffer;
 		Core::ConstantBuffer<CFDConstantData> mCFDConstantBuffer;

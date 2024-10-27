@@ -34,6 +34,7 @@ void Particles::Initialize(int numPatricles)
 		mCpu[i] = particle;
 	}
 }
+
 void Particles::InitializeSPH(int numPatricles)
 {
 	using DirectX::SimpleMath::Vector3;
