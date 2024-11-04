@@ -10,7 +10,7 @@ void main(
 	point GSInput input[1],
 	inout TriangleStream<PSInput> output)
 {
-    float2 center = input[0].position.xy;
+    float3 center = input[0].position.xyz;
     float radius = input[0].radius / 3.f;
     radius = input[0].radius;
     
@@ -36,37 +36,29 @@ void main(
     p1.life =
     p2.life = input[0].life;
     
-    float z = clamp(input[0].life, 0.f, 1.f);
-    z = 1.f - z;
-    float2 prevPosition = float2(0, radius);
+    float3 prevPosition = float3(0, radius, 0);
     
-    float2 currPosition;
-    p0.svPosition = float4(center, z, 1);
+    float3 currPosition;
+    float4 svPos = float4(center, 1);
+    svPos = mul(svPos, View);
+    svPos = mul(svPos, Projection);
+    p0.svPosition = svPos;
     p0.position = center;
-    
-    //float l = radius * sqrt(2);
-    //p0.svPosition = float4(center + float2(-l, -l), 0, 1);
-    //p1.svPosition = float4(center + float2(-l, l), 0, 1);
-    //p2.svPosition = float4(center + float2(l, l), 0, 1);
-    //output.Append(p0);
-    //output.Append(p1);
-    //output.Append(p2);
-    //output.RestartStrip();
-    
-    //p1.svPosition = float4(center + float2(l, -l), 0, 1);
-    //output.Append(p0);
-    //output.Append(p2);
-    //output.Append(p1);
-          
-    //output.RestartStrip();
-    
+      
     for (int i = 0; i < 10; ++i)
     {
         output.Append(p0);
-        p1.svPosition = float4(center + prevPosition, z, 1);
+        svPos = float4(center + prevPosition, 1);
+        svPos = mul(svPos, View);
+        svPos = mul(svPos, Projection);
+        p1.svPosition = svPos;
         p1.position = center + prevPosition;
-        currPosition = mul(prevPosition, mat);
-        p2.svPosition = float4(center + currPosition, z, 1);
+        
+        currPosition.xyz = float3(mul(prevPosition.xy, mat), 0.f);
+        svPos = float4(center + currPosition, 1);
+        svPos = mul(svPos, View);
+        svPos = mul(svPos, Projection);
+        p2.svPosition = svPos;
         p2.position = center + currPosition;
         output.Append(p2);
        

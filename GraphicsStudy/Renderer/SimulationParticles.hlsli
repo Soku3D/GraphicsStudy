@@ -1,6 +1,13 @@
 #include "Particle.hlsli"
 
 StructuredBuffer<Particle> particles : register(t0);
+cbuffer cbPass : register(b0)
+{
+    matrix View;
+    matrix Projection;
+    float3 eyePosition;
+}
+
 struct VSInput
 {
     uint vId : SV_VertexID;
@@ -16,8 +23,8 @@ struct GSInput
 struct PSInput
 {
     float4 svPosition : SV_Position;
-    float2 position : Position0;
-    float2 center : Position1;
+    float3 position : Position0;
+    float3 center : Position1;
     float radius : DEPTH0;
     float3 color : COLOR;
     float life : DEPTH1;

@@ -26,18 +26,18 @@ namespace Renderer {
 		void Render(float& deltaTime) override;
 
 		void ParticleSimulation(float& deltaTime);
-		void SpringSimulation(float& deltaTime);
+		void ClothSimulation(float& deltaTime);
 		void RenderNoise(float& deltaTime);
 		void GeneratePerlinNoise();
 		void SPH(float& deltaTime);
 		void CFD(float& deltaTime);
 		void VolumeRendering(float& deltaTime);
+		void SimulationPass(float& deltaTime, const std::string& particleName);
 		void SmokeSimulationPass(float& deltaTime);
 
-		void SimulationPass(float& deltaTime);
 		void SPHSimulationPass(float& deltaTime, const std::string& psoName);
 		void PostProcessing(float& deltaTime, const std::string& psoName, ID3D12Resource* hdrResource, ID3D12DescriptorHeap* resourceUavHeap, D3D12_RESOURCE_STATES resourceState, int heapIndex = 0);
-		void SimulationRenderPass(float& deltaTime);
+		void SimulationRenderPass(float& deltaTime, const std::string& particleName);
 		void SPHSimulationRenderPass(float& deltaTime);
 		void RenderFont(float& deltaTime);
 		void CFDPass(float& deltaTime, const std::string& psoName);
@@ -59,6 +59,8 @@ namespace Renderer {
 		void SmokeDiffUpSamplePass(float& deltaTime);
 		void SmokeAdvectionPass(float& deltaTime);
 
+		void ClothImplicitMethodPass(float& deltaTime, const std::string& psoName, const std::string& particleName);
+
 		void RenderVolumMesh(float& deltaTime);
 		void RenderBoundingBox(float& deltaTime);
 		void RenderCubeMap(float& deltaTime);
@@ -72,8 +74,9 @@ namespace Renderer {
 		//void CopyDensityToSwapChain(float& deltaTime);
 
 	protected:
-		Particles particle;
-		Particles sphParticle;
+		std::map<std::string, Particles> particles;
+		//Particles sphParticle;
+		//Particles clothParticle;
 		Springs mSpring;
 		StableFluids stableFluids;
 		Core::ConstantBuffer<SimulationCSConstantData> mSimulationConstantBuffer;

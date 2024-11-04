@@ -76,6 +76,46 @@ void Particles::InitializeSPH(int numPatricles)
 	}
 }
 
+
+void Particles::InitializeCloth(int n)
+{
+	using DirectX::SimpleMath::Vector3;
+	using DirectX::SimpleMath::Vector2;
+
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<> distribPos(-0.04, 0.04f);
+	std::uniform_real_distribution<> distribColor(0.f, 1.f);
+	
+	float radius = 0.04f;
+
+	float baseX = -2.f;
+	float baseY = 2.f;
+	float dx = 4.f / n;
+	float dy = 4.f / n;
+	mCpu.resize(n*n);
+	
+	for (int y = 0; y < n; y++)
+	{
+		for (int x = 0; x < n; x++)
+		{
+			int i = y * n + x;
+			Particle particle;
+			particle.color = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
+			if (y == 0) 
+				particle.position = Vector3(baseX + dx * x * 0.9f, baseY - dy * y, 0.f);
+			else
+				particle.position = Vector3(baseX + dx * x, baseY - dy * y, 0.f);
+			particle.velocity = Vector3::Zero;
+			particle.radius = radius;
+
+			mCpu[i] = particle;
+		}
+	
+	}
+}
+
+
 void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, DXGI_FORMAT format, int width, int height) {
 	CreateResource(device, commandList, width, height, format, mRandom);
 
@@ -85,6 +125,24 @@ void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Mi
 void Particles::BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList)
 {
 	mStructureBuffer.Initialize(device, commandList, mCpu);
+	mStructureBufferTemp.Initialize(device, commandList, mCpu);
+	offset = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	heapDesc.NodeMask = 0;
+	heapDesc.NumDescriptors = 4;
+	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+
+	ThrowIfFailed(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mHeap.ReleaseAndGetAddressOf())));
+	CD3DX12_CPU_DESCRIPTOR_HANDLE destHandle(mHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE srcHandle(mStructureBuffer.GetNSVCPUHandle(0));
+	CD3DX12_CPU_DESCRIPTOR_HANDLE srcTempHandle(mStructureBufferTemp.GetNSVCPUHandle(0));
+
+	device->CopyDescriptorsSimple(2, destHandle, srcHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	destHandle.Offset(2, offset);
+	device->CopyDescriptorsSimple(2, destHandle, srcTempHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	
 	//const UINT bufferSize = (UINT)(sizeof(Particle) * mCpu.size());
 
 	//// default upload buffer 생성

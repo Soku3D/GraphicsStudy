@@ -49,15 +49,20 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	mCFDConstantBuffer.Initialize(m_device, m_commandList);
 	mVolumeConstantBuffer.Initialize(m_device, m_commandList);
 	mCubeMapConstantBuffer.Initialize(m_device, m_commandList);
-
+	Particles particle;
 	particle.Initialize(100);
 	particle.BuildResources(m_device, m_commandList, m_hdrFormat, m_screenWidth, m_screenHeight);
+
+	Particles sphParticle;
 
 	sphParticle.InitializeSPH(SPH_SIMULATION_PARTICLE_SIZE);
 	sphParticle.BuildResources(m_device, m_commandList);
 
-	mSpring.Initialize(10);
-	mSpring.BuildResources(m_device, m_commandList);
+	/*mSpring.Initialize(10);
+	mSpring.BuildResources(m_device, m_commandList);*/
+	Particles clothParticle;
+	clothParticle.InitializeCloth(40);
+	clothParticle.BuildResources(m_device, m_commandList);
 
 	stableFluids.Initialize();
 
@@ -80,8 +85,9 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	m_commandQueue->ExecuteCommandLists(1, pCmdLists);
 	FlushCommandQueue();
 
-	sphParticle.BuildDescriptors(m_device, m_commandList);
-	particle.BuildDescriptors(m_device, m_commandList);
+	particles["particle"] = particle;
+	particles["sphParticle"] = sphParticle;
+	particles["clothParticle"] = clothParticle;
 
 	GeneratePerlinNoise();
 
@@ -223,13 +229,13 @@ void Renderer::D3D12SimulationApp::Render(float& deltaTime)
 	//CFD(deltaTime);
 	//VolumeRendering(deltaTime);
 	//SmokeSimulationPass(deltaTime);
-	SpringSimulation(deltaTime);
+	ClothSimulation(deltaTime);
 }
 
 void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
 {
-	SimulationPass(deltaTime);
-	SimulationRenderPass(deltaTime);
+	SimulationPass(deltaTime, "particle");
+	SimulationRenderPass(deltaTime, "particle");
 	PostProcessing(deltaTime, "SimulationPostProcessing", HDRRenderTargetBuffer(), m_hdrUavHeap.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
 		D3D12App::PostProcessing(deltaTime);
@@ -239,11 +245,18 @@ void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
 		D3D12App::CopyResourceToSwapChain(deltaTime);
 }
 
-void Renderer::D3D12SimulationApp::SpringSimulation(float& deltaTime)
+void Renderer::D3D12SimulationApp::ClothSimulation(float& deltaTime)
 {
-	SimulationPass(deltaTime);
-	SimulationRenderPass(deltaTime);
-	
+	CopyResource(m_commandList,
+		particles["clothParticle"].GetTempParticleResource(), //dest
+		particles["clothParticle"].GetParticleResource(), //src
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, // dest state
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS  // src state
+	);
+
+	ClothImplicitMethodPass(deltaTime, "clothComputeSpringForces", "clothParticle");
+	SimulationRenderPass(deltaTime, "clothParticle");
+	PostProcessing(deltaTime, "SimulationPostProcessing", HDRRenderTargetBuffer(), m_hdrUavHeap.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
 		D3D12App::PostProcessing(deltaTime);
 		CopyResource(m_commandList, CurrentBackBuffer(), HDRRenderTargetBuffer());
@@ -255,7 +268,7 @@ void Renderer::D3D12SimulationApp::SpringSimulation(float& deltaTime)
 void Renderer::D3D12SimulationApp::RenderNoise(float& deltaTime)
 {
 	//bCaptureBackbuffer = true;
-	CopyResource(m_commandList, HDRRenderTargetBuffer(), particle.GetRandomResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COMMON);
+	CopyResource(m_commandList, HDRRenderTargetBuffer(), particles["particle"].GetRandomResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COMMON);
 	D3D12App::CopyResourceToSwapChain(deltaTime);
 	//D3D12SimulationApp::CopyResourceToSwapChain(deltaTime, particle.GetHeap(), particle.GetHandle(3));
 }
@@ -377,7 +390,7 @@ void Renderer::D3D12SimulationApp::VolumeRendering(float& deltaTime) {
 		D3D12App::CopyResourceToSwapChain(deltaTime);
 }
 
-void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
+void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime, const std::string& particleName)
 {
 	auto& pso = computePsoList["SimulationCompute"];
 
@@ -387,15 +400,15 @@ void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime)
 
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 	ID3D12DescriptorHeap* pHeaps[] = {
-		particle.GetHeap()
+		particles[particleName].GetHeap()
 	};
 	//m_commandList->ClearUnorderedAccessViewUint(,)
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
-	m_commandList->SetComputeRootDescriptorTable(0, particle.GetUavHandle());
-	m_commandList->SetComputeRootDescriptorTable(1, particle.GetHandle(3)); // random srv
+	m_commandList->SetComputeRootDescriptorTable(0, particles[particleName].GetUavHandle());
+	m_commandList->SetComputeRootDescriptorTable(1, particles[particleName].GetHandle(3)); // random srv
 
 	m_commandList->SetComputeRootConstantBufferView(2, mSimulationConstantBuffer.GetGPUVirtualAddress());
-	UINT dispatchX = (particle.GetParticleCount() - 1 + SIMULATION_PARTICLE_SIZE) / SIMULATION_PARTICLE_SIZE;
+	UINT dispatchX = (particles[particleName].GetParticleCount() - 1 + SIMULATION_PARTICLE_SIZE) / SIMULATION_PARTICLE_SIZE;
 	m_commandList->Dispatch(dispatchX, 1, 1);
 	//m_commandList->ExecuteIndirect(,)
 	ThrowIfFailed(m_commandList->Close());
@@ -419,13 +432,13 @@ void Renderer::D3D12SimulationApp::SPHSimulationPass(float& deltaTime, const std
 
 	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
 	ID3D12DescriptorHeap* pHeaps[] = {
-		sphParticle.GetHeap()
+		particles["sphParticle"].GetHeap()
 	};
 	//m_commandList->ClearUnorderedAccessViewUint(,)
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
-	m_commandList->SetComputeRootDescriptorTable(0, sphParticle.GetUavHandle());
+	m_commandList->SetComputeRootDescriptorTable(0, particles["sphParticle"].GetUavHandle());
 	m_commandList->SetComputeRootConstantBufferView(1, mSimulationConstantBuffer.GetGPUVirtualAddress());
-	UINT dispatchX = (sphParticle.GetParticleCount() - 1 + SIMULATION_PARTICLE_SIZE) / SIMULATION_PARTICLE_SIZE;
+	UINT dispatchX = (particles["sphParticle"].GetParticleCount() - 1 + SIMULATION_PARTICLE_SIZE) / SIMULATION_PARTICLE_SIZE;
 	m_commandList->Dispatch(dispatchX, 1, 1);
 	//m_commandList->ExecuteIndirect(,)
 	ThrowIfFailed(m_commandList->Close());
@@ -492,7 +505,7 @@ void Renderer::D3D12SimulationApp::PostProcessing(float& deltaTime, const std::s
 	}
 }
 
-void Renderer::D3D12SimulationApp::SimulationRenderPass(float& deltaTime)
+void Renderer::D3D12SimulationApp::SimulationRenderPass(float& deltaTime, const std::string& particleName)
 {
 	auto& pso = passPsoLists["SimulationRenderPass"];
 
@@ -505,7 +518,7 @@ void Renderer::D3D12SimulationApp::SimulationRenderPass(float& deltaTime)
 	//m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clear, 0, nullptr);
 	m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
 		1.f, 0, 0, nullptr);
-	//m_commandList->ClearRenderTargetView(HDRRendertargetView(), clear, 0, nullptr);
+	m_commandList->ClearRenderTargetView(HDRRendertargetView(), clear, 0, nullptr);
 
 	m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 	m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), false, nullptr);
@@ -515,11 +528,13 @@ void Renderer::D3D12SimulationApp::SimulationRenderPass(float& deltaTime)
 	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
 
 	ID3D12DescriptorHeap* pHeaps[] = {
-		particle.GetHeap()
+		particles[particleName].GetHeap()
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
-	m_commandList->SetGraphicsRootDescriptorTable(0, particle.GetHandle(0)); // particle uav
-	m_commandList->DrawInstanced(particle.GetParticleCount(), 1, 0, 0);
+	m_commandList->SetGraphicsRootDescriptorTable(0, particles[particleName].GetHandle(0)); // particle uav
+	// View Proj Matrix Constant Buffer 
+	m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer.GetGPUVirtualAddress());
+	m_commandList->DrawInstanced(particles[particleName].GetParticleCount(), 1, 0, 0);
 
 	ThrowIfFailed(m_commandList->Close());
 
@@ -555,13 +570,15 @@ void Renderer::D3D12SimulationApp::SPHSimulationRenderPass(float& deltaTime)
 	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
 
 	ID3D12DescriptorHeap* pHeaps[] = {
-		sphParticle.GetHeap()
+		particles["sphParticle"].GetHeap()
 	};
 	m_commandList->SetDescriptorHeaps(1, pHeaps);
-	m_commandList->SetGraphicsRootDescriptorTable(0, sphParticle.GetHandle(0));
+	m_commandList->SetGraphicsRootDescriptorTable(0, particles["sphParticle"].GetHandle(0));
+	// View Proj Matrix Constant Buffer 
+	m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer.GetGPUVirtualAddress());
 	const float blendColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	m_commandList->OMSetBlendFactor(blendColor);
-	m_commandList->DrawInstanced(sphParticle.GetParticleCount(), 1, 0, 0);
+	m_commandList->DrawInstanced(particles["sphParticle"].GetParticleCount(), 1, 0, 0);
 
 	int fps = (int)(1.f / deltaTime);
 	std::wstringstream wss;
@@ -1145,6 +1162,42 @@ void Renderer::D3D12SimulationApp::SmokeAdvectionPass(float& deltaTime)
 	PIXEndEvent(m_commandQueue.Get());
 }
 
+
+void Renderer::D3D12SimulationApp::ClothImplicitMethodPass(float& deltaTime, const std::string& psoName, const std::string & particleName)
+{
+	auto& pso = computePsoList[psoName];
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), sphSimulationPassEvent);
+
+	m_commandList->SetComputeRootSignature(pso.GetRootSignature());
+	ID3D12DescriptorHeap* pHeaps[] = {
+		particles[particleName].GetIntegratedHeap()
+	};
+
+	//m_commandList->ClearUnorderedAccessViewUint(,)
+	m_commandList->SetDescriptorHeaps(1, pHeaps);
+	m_commandList->SetComputeRootDescriptorTable(0, particles[particleName].GetIntegratedGpuHandle(0)); // uav
+	m_commandList->SetComputeRootDescriptorTable(1, particles[particleName].GetIntegratedGpuHandle(3)); // temp srv
+
+	m_commandList->SetComputeRootConstantBufferView(2, mSimulationConstantBuffer.GetGPUVirtualAddress());
+
+	UINT dispatchX = (particles[particleName].GetParticleCount() - 1 + SIMULATION_PARTICLE_SIZE) / SIMULATION_PARTICLE_SIZE;
+	m_commandList->Dispatch(dispatchX, 1, 1);
+	//m_commandList->ExecuteIndirect(,)
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* pCmdLists[] = {
+		m_commandList.Get()
+	};
+	m_commandQueue->ExecuteCommandLists(1, pCmdLists);
+	FlushCommandQueue();
+
+	PIXEndEvent(m_commandQueue.Get());
+}
+
+
 void Renderer::D3D12SimulationApp::RenderVolumMesh(float& deltaTime)
 {
 	auto& pso = passPsoLists["RenderVolumePass"];
@@ -1278,44 +1331,47 @@ void Renderer::D3D12SimulationApp::RenderCubeMap(float& deltaTime)
 
 void Renderer::D3D12SimulationApp::RenderGUI(float& deltaTime)
 {
-	ImGui_ImplDX12_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
-	ImGui::Begin("GUI");
-	UpdateGUI(deltaTime);
+	if (bUseGUI) {
+		ImGui_ImplDX12_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+		ImGui::Begin("GUI");
+		UpdateGUI(deltaTime);
 
-	ImGui::End();
-	ImGui::Render();
+		ImGui::End();
+		ImGui::Render();
 
-	{
-		ThrowIfFailed(m_guiCommandAllocator->Reset());
-		ThrowIfFailed(m_guiCommandList->Reset(m_guiCommandAllocator.Get(), nullptr));
+		{
+			ThrowIfFailed(m_guiCommandAllocator->Reset());
+			ThrowIfFailed(m_guiCommandList->Reset(m_guiCommandAllocator.Get(), nullptr));
 
-		PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 255, 255), guiPassEvent);
+			PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 255, 255), guiPassEvent);
 
 
-		m_guiCommandList->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(
-				CurrentBackBuffer(),
-				D3D12_RESOURCE_STATE_PRESENT,
-				D3D12_RESOURCE_STATE_RENDER_TARGET
-			));
+			m_guiCommandList->ResourceBarrier(1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(
+					CurrentBackBuffer(),
+					D3D12_RESOURCE_STATE_PRESENT,
+					D3D12_RESOURCE_STATE_RENDER_TARGET
+				));
 
-		m_guiCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), false, nullptr);
-		ID3D12DescriptorHeap* pHeaps[] = { m_guiFontHeap.Get() };
-		m_guiCommandList->SetDescriptorHeaps(static_cast<UINT>(std::size(pHeaps)), pHeaps);
-		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_guiCommandList.Get());
+			m_guiCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), false, nullptr);
+			ID3D12DescriptorHeap* pHeaps[] = { m_guiFontHeap.Get() };
+			m_guiCommandList->SetDescriptorHeaps(static_cast<UINT>(std::size(pHeaps)), pHeaps);
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_guiCommandList.Get());
 
-		m_guiCommandList->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(
-				CurrentBackBuffer(),
-				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_PRESENT
-			));
+			m_guiCommandList->ResourceBarrier(1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(
+					CurrentBackBuffer(),
+					D3D12_RESOURCE_STATE_RENDER_TARGET,
+					D3D12_RESOURCE_STATE_PRESENT
+				));
+		}
+		m_guiCommandList->Close();
+		ID3D12CommandList* lists[] = { m_guiCommandList.Get() };
+		m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
 	}
-	m_guiCommandList->Close();
-	ID3D12CommandList* lists[] = { m_guiCommandList.Get() };
-	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
+	
 
 	m_swapChain->Present(0, 0);
 	m_frameIndex = (m_frameIndex + 1) % m_swapChainCount;
@@ -1341,13 +1397,13 @@ void Renderer::D3D12SimulationApp::FireParticles(const int& fireCount)
 		ndcPosition.y *= -1.f;
 		//std::cout << ndcPosition.x << ' ' << ndcPosition.y << ' ';
 		int sleepCount = 0;
-		for (UINT i = 0; i < sphParticle.GetParticleCount(); i++)
+		for (UINT i = 0; i < particles["sphParticle"].GetParticleCount(); i++)
 		{
-			if (sphParticle[i].life <= 0.f) {
-				sphParticle[i].position = ndcPosition;
+			if (particles["sphParticle"][i].life <= 0.f) {
+				particles["sphParticle"][i].position = ndcPosition;
 				float theta = (float)distribVelocityDir(gen);;
-				sphParticle[i].velocity = XMFLOAT3((float)std::cos(theta) * 2.f, (float)std::sin(theta) * 2.f, 0.f);
-				sphParticle[i].life = 3.f;
+				particles["sphParticle"][i].velocity = XMFLOAT3((float)std::cos(theta) * 2.f, (float)std::sin(theta) * 2.f, 0.f);
+				particles["sphParticle"][i].life = 3.f;
 				++sleepCount;
 				if (sleepCount == fireCount)
 					break;

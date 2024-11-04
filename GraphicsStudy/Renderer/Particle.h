@@ -31,6 +31,7 @@ public:
 
 	void Initialize(int numPatricles);
 	void InitializeSPH(int numPatricles);
+	void InitializeCloth(int n);
 	void BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, DXGI_FORMAT format, int width, int height);
 	//void BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, int width, int height);
 	void BuildResources(Microsoft::WRL::ComPtr <ID3D12Device5> & device,
@@ -48,6 +49,17 @@ public:
 	ID3D12DescriptorHeap* GetHeap() const {
 		return mStructureBuffer.GetHeap();
 	}
+
+	ID3D12DescriptorHeap* GetIntegratedHeap() const {
+		return mHeap.Get();
+	}
+	D3D12_GPU_DESCRIPTOR_HANDLE GetIntegratedGpuHandle(int index) const {
+		return CD3DX12_GPU_DESCRIPTOR_HANDLE( mHeap->GetGPUDescriptorHandleForHeapStart(), index, offset);
+	}
+	D3D12_CPU_DESCRIPTOR_HANDLE GetIntegratedCpuHandle(int index) const {
+		return CD3DX12_CPU_DESCRIPTOR_HANDLE(mHeap->GetCPUDescriptorHandleForHeapStart(), index, offset);
+	}
+
 	UINT GetParticleCount() const {
 		return (UINT)mCpu.size();
 	}
@@ -55,6 +67,9 @@ public:
 		return mCpu[index];
 	}
 	ID3D12Resource* GetRandomResource() const { return mRandom.Get(); }
+	ID3D12Resource* GetParticleResource() const { return mStructureBuffer.Get(); }
+	ID3D12Resource* GetTempParticleResource() const { return  mStructureBufferTemp.Get();
+	}
 
 	void CopyToCpu();
 	void CopyToGpu(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
@@ -68,10 +83,12 @@ private:
 	//Microsoft::WRL::ComPtr<ID3D12Resource> mGpu;
 	//Microsoft::WRL::ComPtr<ID3D12Resource> mUpload;
 	//Microsoft::WRL::ComPtr<ID3D12Resource> mReadBack;
-	//Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mHeap;
-	//UINT offset;
+
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mHeap;
+	UINT offset;
 	//void* pGpuData;
 	Core::StructureBuffer<Particle> mStructureBuffer;
+	Core::StructureBuffer<Particle> mStructureBufferTemp;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mRandom;
 
 };

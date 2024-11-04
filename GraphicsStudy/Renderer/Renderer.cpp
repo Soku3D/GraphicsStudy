@@ -69,6 +69,8 @@
 #include "SmokeDownSampleCS.h"
 #include "SmokeDiffUpSampleCS.h"
 
+#include "ClothComputeSpringForcesCS.h"
+
 #include "ComputeVolumeDensityCS.h"
 #include "RenderVolumeVS.h"
 #include "RenderVolumePS.h"
@@ -145,6 +147,9 @@ namespace Renderer {
 	RootSignature smokeVorticityConfinementSignature;
 	RootSignature smokeDownSampleSignature;
 	RootSignature smokeDiffUpSampleSignature;
+
+	RootSignature clothComputeSpringForcesSignature;
+
 
 	RootSignature computeVolumeDensitySignature;
 	RootSignature renderVolumeSignature;
@@ -235,7 +240,7 @@ namespace Renderer {
 		
 		simulationComputeSignature.Initialize(1, 1, 1, wrapSamplers);
 		sphSimulationComputeSignature.InitializeUAV(1, 1, 0, nullptr);
-		simulationSignature.Initialize(1, 0, 0, nullptr);
+		simulationSignature.Initialize(1, 1, 0, nullptr);
 		simulationPostProcessingSignature.InitializeUAV(1, 1, 0, nullptr);
 		
 		cfdSourcingSignature.InitializeUAV(2, 1, samplers);
@@ -256,6 +261,8 @@ namespace Renderer {
 		smokeVorticityConfinementSignature.Initialize(3, 1, 1, samplers);
 		smokeDownSampleSignature.Initialize(2, 2, 1, samplers);
 		smokeDiffUpSampleSignature.Initialize(4, 2, 1, samplers);
+
+		clothComputeSpringForcesSignature.Initialize(1, 1, 1, samplers);
 
 		computeVolumeDensitySignature.InitializeUAV(1, 1, 0, nullptr);
 		renderVolumeSignature.Initialize(1, 2, samplers);
@@ -324,6 +331,7 @@ namespace Renderer {
 		ComputePSO smokeDownSamplePso("SmokeDownSample");
 		ComputePSO smokeDiffUpSamplePso("SmokeDiffUpSample");
 
+		ComputePSO clothComputeSpringForcesPso("clothComputeSpringForces");
 
 		ComputePSO perlinNoisePso("PerlinNoise");
 
@@ -568,8 +576,9 @@ namespace Renderer {
 		simulationRenderPso.SetPixelShader(g_pSimulationParticlesPS, sizeof(g_pSimulationParticlesPS));
 		simulationRenderPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
 		simulationRenderPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
-		simulationRenderPso.SetBlendState(addColorBlender);
-
+		//simulationRenderPso.SetBlendState(addColorBlender);
+		simulationRenderPso.SetBlendState(defaultBlender);
+		
 		simulationComputePso.SetComputeShader(g_pSimulationCulNoiseCS, sizeof(g_pSimulationCulNoiseCS));
 		simulationComputePso.SetRootSignature(&simulationComputeSignature);
 
@@ -636,6 +645,10 @@ namespace Renderer {
 		smokeDiffUpSamplePso.SetComputeShader(g_pSmokeDiffUpSampleCS, sizeof(g_pSmokeDiffUpSampleCS));
 		smokeDiffUpSamplePso.SetRootSignature(&smokeDiffUpSampleSignature);
 
+		clothComputeSpringForcesPso.SetComputeShader(g_pClothComputeSpringForcesCS, sizeof(g_pClothComputeSpringForcesCS));
+		clothComputeSpringForcesPso.SetRootSignature(&clothComputeSpringForcesSignature);
+
+
 		perlinNoisePso.SetComputeShader(g_pPerlinNoiseCS, sizeof(g_pPerlinNoiseCS));
 		perlinNoisePso.SetRootSignature(&sphSimulationComputeSignature);
 
@@ -700,6 +713,8 @@ namespace Renderer {
 		computePsoList[smokeComputeVorticityPso.GetName()] = smokeComputeVorticityPso;
 		computePsoList[smokeDiffUpSamplePso.GetName()] = smokeDiffUpSamplePso;
 		computePsoList[smokeDownSamplePso.GetName()] = smokeDownSamplePso;
+
+		computePsoList[clothComputeSpringForcesPso.GetName()] = clothComputeSpringForcesPso;
 		
 		computePsoList[perlinNoisePso.GetName()] = perlinNoisePso;
 		computePsoList[computeVolumeDensityPso.GetName()] = computeVolumeDensityPso;
@@ -743,6 +758,8 @@ namespace Renderer {
 		smokeVorticityConfinementSignature.Finalize(device);
 		smokeDownSampleSignature.Finalize(device);
 		smokeDiffUpSampleSignature.Finalize(device);
+
+		clothComputeSpringForcesSignature.Finalize(device);
 
 		raytracingGlobalSignature.Finalize(device);
 

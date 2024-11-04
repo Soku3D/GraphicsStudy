@@ -325,6 +325,7 @@
     <FxCompile Include="RenderSkeletonVS.hlsl" />
     <FxCompile Include="RenderSkeletonPS.hlsl" />
     <FxCompile Include="RenderSkeletonGS.hlsl" />
+    <FxCompile Include="ClothComputeSpringForcesCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />

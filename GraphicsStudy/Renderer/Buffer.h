@@ -126,10 +126,18 @@ namespace Core {
 		ID3D12Resource* Get() const { return mStructureBuffer.Get(); }
 		ID3D12Resource* GetReadBack() const { return mReadBack.Get(); }
 		ID3D12DescriptorHeap* GetHeap() const { return mHeap.Get(); }
+		// 0 : uav , 1 : srv
 		D3D12_GPU_DESCRIPTOR_HANDLE GetHandle(int index) const {
 			return	CD3DX12_GPU_DESCRIPTOR_HANDLE(mHeap->GetGPUDescriptorHandleForHeapStart(), index, offset);
 		}
-		
+		// 0 : uav , 1 : srv
+		D3D12_GPU_DESCRIPTOR_HANDLE GetNSVGPUHandle(int index = 0) const {
+			return	CD3DX12_GPU_DESCRIPTOR_HANDLE(mHeapNSV->GetGPUDescriptorHandleForHeapStart(), index, offset);
+		}
+		// 0 : uav , 1 : srv
+		D3D12_CPU_DESCRIPTOR_HANDLE GetNSVCPUHandle(int index = 0) const {
+			return	CD3DX12_CPU_DESCRIPTOR_HANDLE(mHeapNSV->GetCPUDescriptorHandleForHeapStart(), index, offset);
+		}
 		D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress() { return mStructureBuffer->GetGPUVirtualAddress(); }
 
 	private:
