@@ -18,7 +18,7 @@ ConstantBuffer<SimulationConstant> gConstantBuffer : register(b0);
 
 float2 GetPos(int pos)
 {
-    return float2(pos / height, pos % height);
+    return float2(pos % height, pos / height);
 }
 
 float3 ComputeEdge(float2 dir, int uId, float3 position, float3 velocity)
@@ -26,6 +26,7 @@ float3 ComputeEdge(float2 dir, int uId, float3 position, float3 velocity)
     float2 Xi = GetPos(uId);
     float2 Xj = Xi + dir;
     float3 vel = float3(0.f, 0.f, 0.f);
+    
     if (Xj.x >= 0.f && Xj.y >= 0.f && Xj.x < width && Xj.y < height)
     {
         uint posJ = Xj.x + Xj.y * height;
@@ -34,8 +35,8 @@ float3 ComputeEdge(float2 dir, int uId, float3 position, float3 velocity)
         float edgelen = length(dir);
         float3 posdif = Pj.position - position;
         float3 veldif = Pj.velocity - velocity;
-
-        vel += normalize(posdif) * (clamp(length(posdif) - edgelen, -1.0, 1.0) * 0.015); // spring
+        float l = 0.1f;
+        vel += normalize(posdif) * (clamp(length(posdif) - edgelen, -l, l) * 0.015); // spring
 
         vel += normalize(posdif) * (dot(normalize(posdif), veldif) * 0.010); // damper
     }
@@ -68,8 +69,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
     velocity += ComputeEdge(float2(-l, -l), DTid.x, position, p.velocity);
     
     p.velocity = velocity;
-    //p.position = position + velocity;
-    //p.position += velocity;
+    p.position = position + velocity;
     p.velocity.y -= gravity; 
     
     float baseX = -2.f;
@@ -81,7 +81,11 @@ void main(uint3 DTid : SV_DispatchThreadID)
     int y = DTid.x / height;
     if (y == 0)
     {
-        p.position = float3(baseX + dx * DTid.x * 0.9f, baseY, 0.f);
+        float baseX = -2.f;
+        float baseY = 2.f;
+        float dx = 4.f / height;
+        p.position = float3(baseX + dx * (DTid.x % height) * 0.9f, baseY, 0.f);
+        p.velocity = float3(0.f, 0.f, 0.f);
     }
     
     particles[DTid.x] = p;
