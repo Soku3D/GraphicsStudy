@@ -89,10 +89,11 @@ void Particles::InitializeCloth(int n)
 	
 	float radius = 0.04f;
 
-	float baseX = -2.f;
-	float baseY = 2.f;
-	float dx = 4.f / n;
-	float dy = 4.f / n;
+	float baseX = 0.f;
+	float baseY = 0.f;
+	float dx = 1.f;
+	float dy = 1.f;
+
 	mCpu.resize(n*n);
 	
 	for (int y = 0; y < n; y++)
@@ -102,10 +103,8 @@ void Particles::InitializeCloth(int n)
 			int i = y * n + x;
 			Particle particle;
 			particle.color = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
-			if (y == 0) 
-				particle.position = Vector3(baseX + dx * x * 0.9f, baseY - dy * y, 0.f);
-			else
-				particle.position = Vector3(baseX + dx * x, baseY - dy * y, 0.f);
+			particle.position = Vector3(baseX + dx * x * 0.85f, baseY - dy * y, 0.f);
+
 			particle.velocity = Vector3::Zero;
 			particle.radius = radius;
 

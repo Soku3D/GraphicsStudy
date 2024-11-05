@@ -2,8 +2,8 @@
 
 RWStructuredBuffer<Particle> particles : register(u0);
 StructuredBuffer<Particle> particlesTemp : register(t0);
-static const int height = 40;
-static const int width = 40;
+static const int height = 64;
+static const int width = 64;
 static const float3 windvel = float3(0.01f, 0.f, -0.005f);
 static const float gravity = 0.0022f;
 
@@ -35,10 +35,10 @@ float3 ComputeEdge(float2 dir, int uId, float3 position, float3 velocity)
         float edgelen = length(dir);
         float3 posdif = Pj.position - position;
         float3 veldif = Pj.velocity - velocity;
-        float l = 0.1f;
-        vel += normalize(posdif) * (clamp(length(posdif) - edgelen, -l, l) * 0.015); // spring
+        
+        vel += normalize(posdif) * (clamp(length(posdif) - edgelen, -1.0, 1.0) * 0.15) * 0.5f; // spring
 
-        vel += normalize(posdif) * (dot(normalize(posdif), veldif) * 0.010); // damper
+        vel += normalize(posdif) * (dot(normalize(posdif), veldif) * 0.10) * 0.5f; // damper
     }
     return vel;
 }
@@ -65,26 +65,23 @@ void main(uint3 DTid : SV_DispatchThreadID)
     velocity += ComputeEdge(float2(0.0, -l), DTid.x, position, p.velocity);
     velocity += ComputeEdge(float2(l, 0.0), DTid.x, position, p.velocity);
     velocity += ComputeEdge(float2(-l, 0.0), DTid.x, position, p.velocity);
-    velocity += ComputeEdge(float2(l, l), DTid.x, position, p.velocity);
-    velocity += ComputeEdge(float2(-l, -l), DTid.x, position, p.velocity);
+    velocity += ComputeEdge(float2(l, -l), DTid.x, position, p.velocity);
+    velocity += ComputeEdge(float2(-l, l), DTid.x, position, p.velocity);
     
     p.velocity = velocity;
     p.position = position + velocity;
     p.velocity.y -= gravity; 
     
-    float baseX = -2.f;
-    float baseY = 2.f;
-    float n = 40.f;
-    float dx = 4.f / n;
-    float dy = 4.f / n;
-    
+
     int y = DTid.x / height;
     if (y == 0)
     {
-        float baseX = -2.f;
-        float baseY = 2.f;
-        float dx = 4.f / height;
-        p.position = float3(baseX + dx * (DTid.x % height) * 0.9f, baseY, 0.f);
+        float baseX = 0.f;
+        float baseY = 0.f;
+        float dx = 1.f;
+        float dy = 1.f;
+
+        p.position = float3(baseX + dx * (DTid.x % height) * 0.85f, baseY, 0.f);
         p.velocity = float3(0.f, 0.f, 0.f);
     }
     

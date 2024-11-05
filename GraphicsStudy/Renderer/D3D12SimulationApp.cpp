@@ -61,7 +61,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	/*mSpring.Initialize(10);
 	mSpring.BuildResources(m_device, m_commandList);*/
 	Particles clothParticle;
-	clothParticle.InitializeCloth(40);
+	clothParticle.InitializeCloth(64);
 	clothParticle.BuildResources(m_device, m_commandList);
 
 	stableFluids.Initialize();
