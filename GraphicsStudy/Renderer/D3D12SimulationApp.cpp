@@ -46,6 +46,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
 	mSimulationConstantBuffer.Initialize(m_device, m_commandList);
+	mClothSimulationConstantBuffer.Initialize(m_device, m_commandList);
 	mCFDConstantBuffer.Initialize(m_device, m_commandList);
 	mVolumeConstantBuffer.Initialize(m_device, m_commandList);
 	mCubeMapConstantBuffer.Initialize(m_device, m_commandList);
@@ -61,7 +62,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	/*mSpring.Initialize(10);
 	mSpring.BuildResources(m_device, m_commandList);*/
 	Particles clothParticle;
-	clothParticle.InitializeCloth(64);
+	clothParticle.InitializeCloth(100,100);
 	clothParticle.BuildResources(m_device, m_commandList);
 
 	stableFluids.Initialize();
@@ -144,6 +145,11 @@ void Renderer::D3D12SimulationApp::Update(float& deltaTime)
 	mSimulationConstantBuffer.mStructure.deltaTime = (deltaTime < 1 / 300.f ? deltaTime : 1 / 300.f);
 	mSimulationConstantBuffer.mStructure.time = (float)m_timer.GetElapsedTime();
 	mSimulationConstantBuffer.UpdateBuffer();
+	
+	mClothSimulationConstantBuffer.mStructure.deltaTime = (deltaTime < 1 / 300.f ? deltaTime : 1 / 300.f);
+	mClothSimulationConstantBuffer.mStructure.width = particles["clothParticle"].width;
+	mClothSimulationConstantBuffer.mStructure.height = particles["clothParticle"].height;
+	mClothSimulationConstantBuffer.UpdateBuffer();
 
 	static int colorIndex = 0;
 	static float mPrevMouseNdcX = -1.0f;
@@ -235,7 +241,7 @@ void Renderer::D3D12SimulationApp::Render(float& deltaTime)
 void Renderer::D3D12SimulationApp::ParticleSimulation(float& deltaTime)
 {
 	SimulationPass(deltaTime, "particle");
-	SimulationRenderPass(deltaTime, "particle");
+	SimulationRenderPass(deltaTime,"SimulationRenderPass", "particle");
 	PostProcessing(deltaTime, "SimulationPostProcessing", HDRRenderTargetBuffer(), m_hdrUavHeap.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
 		D3D12App::PostProcessing(deltaTime);
@@ -255,7 +261,8 @@ void Renderer::D3D12SimulationApp::ClothSimulation(float& deltaTime)
 	);
 
 	ClothImplicitMethodPass(deltaTime, "clothComputeSpringForces", "clothParticle");
-	SimulationRenderPass(deltaTime, "clothParticle");
+	SimulationRenderPass(deltaTime, "RenderCloth", "clothParticle");
+	//SimulationRenderPass(deltaTime, "SimulationRenderPass", "clothParticle");
 	PostProcessing(deltaTime, "SimulationPostProcessing", HDRRenderTargetBuffer(), m_hdrUavHeap.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
 		D3D12App::PostProcessing(deltaTime);
@@ -407,7 +414,7 @@ void Renderer::D3D12SimulationApp::SimulationPass(float& deltaTime, const std::s
 	m_commandList->SetComputeRootDescriptorTable(0, particles[particleName].GetUavHandle());
 	m_commandList->SetComputeRootDescriptorTable(1, particles[particleName].GetHandle(3)); // random srv
 
-	m_commandList->SetComputeRootConstantBufferView(2, mSimulationConstantBuffer.GetGPUVirtualAddress());
+	m_commandList->SetComputeRootConstantBufferView(2, mClothSimulationConstantBuffer.GetGPUVirtualAddress());
 	UINT dispatchX = (particles[particleName].GetParticleCount() - 1 + SIMULATION_PARTICLE_SIZE) / SIMULATION_PARTICLE_SIZE;
 	m_commandList->Dispatch(dispatchX, 1, 1);
 	//m_commandList->ExecuteIndirect(,)
@@ -505,9 +512,9 @@ void Renderer::D3D12SimulationApp::PostProcessing(float& deltaTime, const std::s
 	}
 }
 
-void Renderer::D3D12SimulationApp::SimulationRenderPass(float& deltaTime, const std::string& particleName)
+void Renderer::D3D12SimulationApp::SimulationRenderPass(float& deltaTime, const std::string& psoName, const std::string& particleName)
 {
-	auto& pso = passPsoLists["SimulationRenderPass"];
+	auto& pso = passPsoLists[psoName];
 
 	ThrowIfFailed(m_commandAllocator->Reset());
 	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
@@ -534,6 +541,7 @@ void Renderer::D3D12SimulationApp::SimulationRenderPass(float& deltaTime, const 
 	m_commandList->SetGraphicsRootDescriptorTable(0, particles[particleName].GetHandle(0)); // particle uav
 	// View Proj Matrix Constant Buffer 
 	m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer.GetGPUVirtualAddress());
+	m_commandList->SetGraphicsRootConstantBufferView(2, mClothSimulationConstantBuffer.GetGPUVirtualAddress());
 	m_commandList->DrawInstanced(particles[particleName].GetParticleCount(), 1, 0, 0);
 
 	ThrowIfFailed(m_commandList->Close());
@@ -1181,7 +1189,7 @@ void Renderer::D3D12SimulationApp::ClothImplicitMethodPass(float& deltaTime, con
 	m_commandList->SetComputeRootDescriptorTable(0, particles[particleName].GetIntegratedGpuHandle(0)); // uav
 	m_commandList->SetComputeRootDescriptorTable(1, particles[particleName].GetIntegratedGpuHandle(3)); // temp srv
 
-	m_commandList->SetComputeRootConstantBufferView(2, mSimulationConstantBuffer.GetGPUVirtualAddress());
+	m_commandList->SetComputeRootConstantBufferView(2, mClothSimulationConstantBuffer.GetGPUVirtualAddress());
 
 	UINT dispatchX = (particles[particleName].GetParticleCount() - 1 + SIMULATION_PARTICLE_SIZE) / SIMULATION_PARTICLE_SIZE;
 	m_commandList->Dispatch(dispatchX, 1, 1);

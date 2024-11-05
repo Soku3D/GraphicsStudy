@@ -2,27 +2,49 @@
 
 RWStructuredBuffer<Particle> particles : register(u0);
 StructuredBuffer<Particle> particlesTemp : register(t0);
-static const int height = 64;
-static const int width = 64;
+
 static const float3 windvel = float3(0.01f, 0.f, -0.005f);
 static const float gravity = 0.0022f;
 
 struct SimulationConstant
 {
     float delTime;
+    float width;
+    float height;
 };
 
 ConstantBuffer<SimulationConstant> gConstantBuffer : register(b0);
 
-
-
 float2 GetPos(int pos)
 {
-    return float2(pos % height, pos / height);
+    return float2(pos % (int) gConstantBuffer.height, pos / (int) gConstantBuffer.height);
 }
+
+float3 GetNormal(int pos)
+{
+    float2 currPos = GetPos(pos);
+    int width = (int) gConstantBuffer.width;
+    int height = (int) gConstantBuffer.height;
+    
+    int l = currPos.x > 0 ? pos - 1 : pos;
+    int r = currPos.x < width-1 ? pos + 1 : pos;
+    int u = currPos.y > 0 ? pos - height : pos;
+    int d = currPos.y < height-1 ? pos + height : pos;
+    
+    float3 pl = particlesTemp[l].position;
+    float3 pr = particlesTemp[r].position;
+    float3 pu = particlesTemp[u].position;
+    float3 pd = particlesTemp[d].position;
+    
+    return cross(pu - pd, pr - pl);
+}
+
 
 float3 ComputeEdge(float2 dir, int uId, float3 position, float3 velocity)
 {
+    int width = (int) gConstantBuffer.width;
+    int height = (int) gConstantBuffer.height;
+    
     float2 Xi = GetPos(uId);
     float2 Xj = Xi + dir;
     float3 vel = float3(0.f, 0.f, 0.f);
@@ -53,6 +75,9 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float3 velocity = p.velocity;
     float3 position = p.position;
     
+    int width = (int) gConstantBuffer.width;
+    int height = (int) gConstantBuffer.height;
+    
     velocity += ComputeEdge(float2(0.0, l), DTid.x, position, p.velocity);
     velocity += ComputeEdge(float2(0.0, -l), DTid.x, position, p.velocity);
     velocity += ComputeEdge(float2(l, 0.0), DTid.x, position, p.velocity);
@@ -69,10 +94,14 @@ void main(uint3 DTid : SV_DispatchThreadID)
     velocity += ComputeEdge(float2(-l, l), DTid.x, position, p.velocity);
     
     p.velocity = velocity;
+    
     p.position = position + velocity;
     p.velocity.y -= gravity; 
     
-
+    float3 norm = normalize(GetNormal(DTid.x));
+    //velocity += norm * (dot(norm, velocity - windvel) * 0.05);
+    
+    
     int y = DTid.x / height;
     if (y == 0)
     {

@@ -70,6 +70,9 @@
 #include "SmokeDiffUpSampleCS.h"
 
 #include "ClothComputeSpringForcesCS.h"
+#include "RenderClothVS.h"
+#include "RenderClothGS.h"
+#include "RenderClothPS.h"
 
 #include "ComputeVolumeDensityCS.h"
 #include "RenderVolumeVS.h"
@@ -149,7 +152,7 @@ namespace Renderer {
 	RootSignature smokeDiffUpSampleSignature;
 
 	RootSignature clothComputeSpringForcesSignature;
-
+	RootSignature clothRenderSignature;
 
 	RootSignature computeVolumeDensitySignature;
 	RootSignature renderVolumeSignature;
@@ -263,6 +266,7 @@ namespace Renderer {
 		smokeDiffUpSampleSignature.Initialize(4, 2, 1, samplers);
 
 		clothComputeSpringForcesSignature.Initialize(1, 1, 1, samplers);
+		clothRenderSignature.Initialize(1, 2, 0, nullptr);
 
 		computeVolumeDensitySignature.InitializeUAV(1, 1, 0, nullptr);
 		renderVolumeSignature.Initialize(1, 2, samplers);
@@ -297,6 +301,7 @@ namespace Renderer {
 		GraphicsPSO renderNormalPassPso("NormalPass");
 		GraphicsPSO renderBoundingBoxPassPso("BoundingBoxPass");
 		GraphicsPSO renderSkeletonPso("RenderSkeleton");
+		GraphicsPSO renderClothPso("RenderCloth");
 
 		GraphicsPSO copyPso("Copy");
 		GraphicsPSO copyUnormPso("CopyUnorm");
@@ -307,6 +312,7 @@ namespace Renderer {
 		ComputePSO simulationPostProcessingPso("SimulationPostProcessing");
 		ComputePSO simulationComputePso("SimulationCompute");
 		GraphicsPSO simulationRenderPso("SimulationRenderPass");
+		
 
 		ComputePSO sphSimulationComputePso("SphSimulationCompute");
 		ComputePSO sphComputeRhoPso("SphComputeRho");
@@ -579,6 +585,16 @@ namespace Renderer {
 		//simulationRenderPso.SetBlendState(addColorBlender);
 		simulationRenderPso.SetBlendState(defaultBlender);
 		
+		renderClothPso = defaultPso;
+		renderClothPso.SetRootSignature(&clothRenderSignature);
+		renderClothPso.SetVertexShader(g_pRenderClothVS, sizeof(g_pRenderClothVS));
+		renderClothPso.SetGeometryShader(g_pRenderClothGS, sizeof(g_pRenderClothGS));
+		renderClothPso.SetPixelShader(g_pRenderClothPS, sizeof(g_pRenderClothPS));
+		renderClothPso.SetRenderTargetFormat(hdrFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
+		renderClothPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+		renderClothPso.SetBlendState(defaultBlender);
+
+
 		simulationComputePso.SetComputeShader(g_pSimulationCulNoiseCS, sizeof(g_pSimulationCulNoiseCS));
 		simulationComputePso.SetRootSignature(&simulationComputeSignature);
 
@@ -670,6 +686,8 @@ namespace Renderer {
 		passPsoLists[msaaLightPassPso.GetName()] = msaaLightPassPso;
 		passPsoLists[renderNormalPassPso.GetName()] = renderNormalPassPso;
 		passPsoLists[simulationRenderPso.GetName()] = simulationRenderPso;
+		passPsoLists[renderClothPso.GetName()] = renderClothPso;
+		
 		passPsoLists[renderBoundingBoxPassPso.GetName()] = renderBoundingBoxPassPso;
 		passPsoLists[renderSkeletonPso.GetName()] = renderSkeletonPso;
 		
@@ -760,6 +778,7 @@ namespace Renderer {
 		smokeDiffUpSampleSignature.Finalize(device);
 
 		clothComputeSpringForcesSignature.Finalize(device);
+		clothRenderSignature.Finalize(device);
 
 		raytracingGlobalSignature.Finalize(device);
 

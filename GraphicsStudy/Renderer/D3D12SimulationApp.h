@@ -37,7 +37,7 @@ namespace Renderer {
 
 		void SPHSimulationPass(float& deltaTime, const std::string& psoName);
 		void PostProcessing(float& deltaTime, const std::string& psoName, ID3D12Resource* hdrResource, ID3D12DescriptorHeap* resourceUavHeap, D3D12_RESOURCE_STATES resourceState, int heapIndex = 0);
-		void SimulationRenderPass(float& deltaTime, const std::string& particleName);
+		void SimulationRenderPass(float& deltaTime, const std::string& psoName, const std::string& particleName);
 		void SPHSimulationRenderPass(float& deltaTime);
 		void RenderFont(float& deltaTime);
 		void CFDPass(float& deltaTime, const std::string& psoName);
@@ -80,6 +80,7 @@ namespace Renderer {
 		Springs mSpring;
 		StableFluids stableFluids;
 		Core::ConstantBuffer<SimulationCSConstantData> mSimulationConstantBuffer;
+		Core::ConstantBuffer<ClothSimulationConstantData> mClothSimulationConstantBuffer;
 		Core::ConstantBuffer<CFDConstantData> mCFDConstantBuffer;
 		Core::ConstantBuffer<VolumeConstantData> mVolumeConstantBuffer;
 		Core::ConstantBuffer<CubeMapConstantData> mCubeMapConstantBuffer;

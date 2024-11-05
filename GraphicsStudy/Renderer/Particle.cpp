@@ -79,6 +79,14 @@ void Particles::InitializeSPH(int numPatricles)
 
 void Particles::InitializeCloth(int n)
 {
+	InitializeCloth(n, n);
+}
+
+void Particles::InitializeCloth(int width, int height)
+{
+	this->width = width;
+	this->height = height;
+
 	using DirectX::SimpleMath::Vector3;
 	using DirectX::SimpleMath::Vector2;
 
@@ -94,16 +102,16 @@ void Particles::InitializeCloth(int n)
 	float dx = 1.f;
 	float dy = 1.f;
 
-	mCpu.resize(n*n);
+	mCpu.resize(width*height);
 	
-	for (int y = 0; y < n; y++)
+	for (int y = 0; y < height; y++)
 	{
-		for (int x = 0; x < n; x++)
+		for (int x = 0; x < width; x++)
 		{
-			int i = y * n + x;
+			int i = y * height + x;
 			Particle particle;
 			particle.color = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
-			particle.position = Vector3(baseX + dx * x * 0.85f, baseY - dy * y, 0.f);
+			particle.position = Vector3(baseX + dx * x * 0.85f, baseY - dy * y, baseY - dy * y * 0.1f);
 
 			particle.velocity = Vector3::Zero;
 			particle.radius = radius;

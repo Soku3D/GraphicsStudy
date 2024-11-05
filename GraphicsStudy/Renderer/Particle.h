@@ -32,6 +32,7 @@ public:
 	void Initialize(int numPatricles);
 	void InitializeSPH(int numPatricles);
 	void InitializeCloth(int n);
+	void InitializeCloth(int width, int height);
 	void BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, DXGI_FORMAT format, int width, int height);
 	//void BuildResources(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, int width, int height);
 	void BuildResources(Microsoft::WRL::ComPtr <ID3D12Device5> & device,
@@ -77,6 +78,9 @@ public:
 	ID3D12Resource* GetGpu() const { return mStructureBuffer.Get(); }
 	ID3D12Resource* GetReadBack() const { return mStructureBuffer.GetReadBack(); }
 	std::vector<Particle> mCpu;
+
+	int width;
+	int height;
 
 private:
 	

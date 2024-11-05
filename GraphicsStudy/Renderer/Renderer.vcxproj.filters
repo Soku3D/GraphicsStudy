@@ -326,6 +326,9 @@
     <FxCompile Include="RenderSkeletonPS.hlsl" />
     <FxCompile Include="RenderSkeletonGS.hlsl" />
     <FxCompile Include="ClothComputeSpringForcesCS.hlsl" />
+    <FxCompile Include="RenderClothVS.hlsl" />
+    <FxCompile Include="RenderClothPS.hlsl" />
+    <FxCompile Include="RenderClothGS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common.hlsli" />
@@ -344,5 +347,6 @@
     <None Include="Smoke.hlsli" />
     <None Include="MotionVector.hlsli" />
     <None Include="RenderSkeleton.hlsli" />
+    <None Include="Cloth.hlsli" />
   </ItemGroup>
 </Project>

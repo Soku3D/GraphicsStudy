@@ -91,6 +91,11 @@ __declspec(align(256)) struct SimulationCSConstantData {
 	float deltaTime;
 	float time;
 };
+__declspec(align(256)) struct ClothSimulationConstantData {
+	float deltaTime;
+	float width;
+	float height;
+};
 
 __declspec(align(256)) struct CFDConstantData {
 	DirectX::SimpleMath::Vector3 color;
