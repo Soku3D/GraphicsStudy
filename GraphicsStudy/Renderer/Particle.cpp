@@ -108,10 +108,10 @@ void Particles::InitializeCloth(int width, int height)
 	{
 		for (int x = 0; x < width; x++)
 		{
-			int i = y * height + x;
+			int i = y * width + x;
 			Particle particle;
 			particle.color = Vector3((float)distribColor(gen), (float)distribColor(gen), (float)distribColor(gen));
-			particle.position = Vector3(baseX + dx * x * 0.85f, baseY - dy * y, baseY - dy * y * 0.1f);
+			particle.position = Vector3(baseX + dx * x * 0.85f, baseY - dy * y * 1.1f, baseY - dy * y * 0.1f);
 
 			particle.velocity = Vector3::Zero;
 			particle.radius = radius;

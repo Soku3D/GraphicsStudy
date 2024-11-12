@@ -62,7 +62,7 @@ bool Renderer::D3D12SimulationApp::Initialize()
 	/*mSpring.Initialize(10);
 	mSpring.BuildResources(m_device, m_commandList);*/
 	Particles clothParticle;
-	clothParticle.InitializeCloth(100,100);
+	clothParticle.InitializeCloth(1,2);
 	clothParticle.BuildResources(m_device, m_commandList);
 
 	stableFluids.Initialize();
@@ -261,8 +261,8 @@ void Renderer::D3D12SimulationApp::ClothSimulation(float& deltaTime)
 	);
 
 	ClothImplicitMethodPass(deltaTime, "clothComputeSpringForces", "clothParticle");
-	SimulationRenderPass(deltaTime, "RenderCloth", "clothParticle");
-	//SimulationRenderPass(deltaTime, "SimulationRenderPass", "clothParticle");
+	//ClothRenderPass(deltaTime, "RenderCloth", "clothParticle");
+	SimulationRenderPass(deltaTime, "SimulationRenderPass", "clothParticle");
 	PostProcessing(deltaTime, "SimulationPostProcessing", HDRRenderTargetBuffer(), m_hdrUavHeap.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 	if (m_backbufferFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
 		D3D12App::PostProcessing(deltaTime);
@@ -513,6 +513,48 @@ void Renderer::D3D12SimulationApp::PostProcessing(float& deltaTime, const std::s
 }
 
 void Renderer::D3D12SimulationApp::SimulationRenderPass(float& deltaTime, const std::string& psoName, const std::string& particleName)
+{
+	auto& pso = passPsoLists[psoName];
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), pso.GetPipelineStateObject()));
+
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(0, 0, 255), simulationRenderPassEvent);
+
+	FLOAT clear[4] = { 0,0,0,0 };
+	//m_commandList->ClearRenderTargetView(CurrentBackBufferView(), clear, 0, nullptr);
+	m_commandList->ClearDepthStencilView(HDRDepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+		1.f, 0, 0, nullptr);
+	m_commandList->ClearRenderTargetView(HDRRendertargetView(), clear, 0, nullptr);
+
+	m_commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+	m_commandList->OMSetRenderTargets(1, &HDRRendertargetView(), false, nullptr);
+	m_commandList->RSSetViewports(1, &m_viewport);
+	m_commandList->RSSetScissorRects(1, &m_scissorRect);
+
+	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature());
+
+	ID3D12DescriptorHeap* pHeaps[] = {
+		particles[particleName].GetHeap()
+	};
+	m_commandList->SetDescriptorHeaps(1, pHeaps);
+	m_commandList->SetGraphicsRootDescriptorTable(0, particles[particleName].GetHandle(0)); // particle uav
+	// View Proj Matrix Constant Buffer 
+	m_commandList->SetGraphicsRootConstantBufferView(1, m_passConstantBuffer.GetGPUVirtualAddress());
+	m_commandList->DrawInstanced(particles[particleName].GetParticleCount(), 1, 0, 0);
+
+	ThrowIfFailed(m_commandList->Close());
+
+	ID3D12CommandList* pCmdLists[] = {
+		m_commandList.Get()
+	};
+	m_commandQueue->ExecuteCommandLists(1, pCmdLists);
+	FlushCommandQueue();
+
+	PIXEndEvent(m_commandQueue.Get());
+}
+
+void Renderer::D3D12SimulationApp::ClothRenderPass(float& deltaTime, const std::string& psoName, const std::string& particleName)
 {
 	auto& pso = passPsoLists[psoName];
 

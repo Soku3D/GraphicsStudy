@@ -42,6 +42,9 @@ float3 GetNormal(int pos)
 
 float3 ComputeEdge(float2 dir, int uId, float3 position, float3 velocity)
 {
+    float ks = 3.f;
+    float mass = 1.f;
+    
     int width = (int) gConstantBuffer.width;
     int height = (int) gConstantBuffer.height;
     
@@ -58,9 +61,13 @@ float3 ComputeEdge(float2 dir, int uId, float3 position, float3 velocity)
         float3 posdif = Pj.position - position;
         float3 veldif = Pj.velocity - velocity;
         
-        vel += normalize(posdif) * (clamp(length(posdif) - edgelen, -1.0, 1.0) * 0.15) * 0.5f; // spring
-
-        vel += normalize(posdif) * (dot(normalize(posdif), veldif) * 0.10) * 0.5f; // damper
+        float3 forceDir = normalize(posdif);
+        
+        //vel += -((ks * forceDir * (edgelen - length(posdif))) / mass) * gConstantBuffer.delTime;
+        float du = dir.x;
+        float dv = dir.y;
+        float dx = 
+        
     }
     return vel;
 }
@@ -85,24 +92,23 @@ void main(uint3 DTid : SV_DispatchThreadID)
     velocity += ComputeEdge(float2(l, l), DTid.x, position, p.velocity);
     velocity += ComputeEdge(float2(-l, -l), DTid.x, position, p.velocity);
     
-    l = 2.f;
-    velocity += ComputeEdge(float2(0.0, l), DTid.x, position, p.velocity);
-    velocity += ComputeEdge(float2(0.0, -l), DTid.x, position, p.velocity);
-    velocity += ComputeEdge(float2(l, 0.0), DTid.x, position, p.velocity);
-    velocity += ComputeEdge(float2(-l, 0.0), DTid.x, position, p.velocity);
-    velocity += ComputeEdge(float2(l, -l), DTid.x, position, p.velocity);
-    velocity += ComputeEdge(float2(-l, l), DTid.x, position, p.velocity);
+    //l = 2.f;
+    //velocity += ComputeEdge(float2(0.0, l), DTid.x, position, p.velocity);
+    //velocity += ComputeEdge(float2(0.0, -l), DTid.x, position, p.velocity);
+    //velocity += ComputeEdge(float2(l, 0.0), DTid.x, position, p.velocity);
+    //velocity += ComputeEdge(float2(-l, 0.0), DTid.x, position, p.velocity);
+    //velocity += ComputeEdge(float2(l, -l), DTid.x, position, p.velocity);
+    //velocity += ComputeEdge(float2(-l, l), DTid.x, position, p.velocity);
     
     p.velocity = velocity;
-    
     p.position = position + velocity;
-    p.velocity.y -= gravity; 
+    //p.velocity.y -= gravity; 
     
     float3 norm = normalize(GetNormal(DTid.x));
     //velocity += norm * (dot(norm, velocity - windvel) * 0.05);
     
     
-    int y = DTid.x / height;
+    int y = DTid.x / width;
     if (y == 0)
     {
         float baseX = 0.f;
